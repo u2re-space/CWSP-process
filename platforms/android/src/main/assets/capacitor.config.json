@@ -1,6 +1,6 @@
 {
-  "appId": "space.u2re.document",
-  "appName": "CWSP Document",
+  "appId": "space.u2re.process",
+  "appName": "CWSP Process",
   "webDir": "public",
   "android": {
     "path": "../../../../platforms/android"
