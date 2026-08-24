@@ -17,6 +17,16 @@ document.documentElement.dataset.cwspSurface = "cw-process";
 document.documentElement.dataset.cwspNativeShell = "capacitor";
 document.documentElement.dataset.cwspEnabledViews = enabledViews.join(",");
 document.documentElement.dataset.cwspDefaultView = "workcenter";
+try {
+    const host = String(location.hostname || "").toLowerCase();
+    const dedicated = host === "process.u2re.space" || host === "workcenter.u2re.space";
+    if (!dedicated) {
+        const m = String(location.pathname || "").match(/^(\/(?:process|workcenter))(?:\/|$)/i);
+        if (m) document.documentElement.dataset.cwspRouterBase = m[1].toLowerCase();
+    }
+} catch {
+    /* ignore */
+}
 
 void SystemBars.hide({ bar: SystemBarType.NavigationBar }).catch(() => {
     /* native-only; web preview ignores */
