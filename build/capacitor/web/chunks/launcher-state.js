@@ -1,5 +1,5 @@
 import { n as __exportAll } from "./rolldown-runtime.js";
-import { Cn as observe, Dn as makeObjectAssignable, En as stringRef, Gt as makeUIState, Hn as __vitePreload, Kt as saveUIState, On as safe, Xt as loadDesktopRaw, Yt as decodeDesktopState, at as subscribeFsBackendRegister, it as resolveFsBackend, ot as resolveEntryIcon, qt as JSOX } from "../com/app.js";
+import { $t as loadDesktopRaw, An as makeObjectAssignable, En as observe, Gn as __vitePreload, Jt as makeUIState, Qt as decodeDesktopState, Xt as JSOX, Yt as saveUIState, at as resolveFsBackend, jn as safe, kn as stringRef, ot as subscribeFsBackendRegister, st as resolveEntryIcon } from "../com/app.js";
 //#region ../../modules/views/home-view/src/ts/layout.ts
 var DEFAULT_LAYOUT = [4, 8];
 var clamp = (value, min, max) => {
@@ -1686,11 +1686,24 @@ var hydrateFromOpfs = async (io) => {
 		stripCoreRailTilesFromGrid({ markDirty: true });
 	}
 };
+var skipLinkStoreOpfs = () => {
+	try {
+		if (String(document.documentElement?.dataset?.cwspSku || "").toLowerCase() === "document") return true;
+		const host = String(location.hostname || "").toLowerCase();
+		if (/(^|\.)md\.u2re\.space$/.test(host)) return true;
+	} catch {}
+	return false;
+};
 var initLinkStore = () => {
 	const boot = linkStoreBoot();
 	if (boot.opfsReady) return boot.opfsReady;
 	boot.opfsReady = (async () => {
 		const ls = getLsLike();
+		if (skipLinkStoreOpfs()) {
+			boot.opfsIo = null;
+			boot.opfsHydrated = true;
+			return;
+		}
 		try {
 			boot.opfsIo = await Promise.race([createOpfsLinkStoreIo(), new Promise((_, reject) => {
 				setTimeout(() => reject(/* @__PURE__ */ new Error("[link-store] OPFS getDirectory timeout")), 800);

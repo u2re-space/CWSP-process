@@ -1,37 +1,7 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../shells/boot-index.js","../chunks/rolldown-runtime.js","../shells/boot-history-base.js","../com/app.js","../fest/core.js","../com/service.js","../fest/veela.js","../chunks/BootLoader.js","../shells/preference.js","../chunks/capacitor-settings-permissions.js","../chunks/capacitor-permissions.js"])))=>i.map(i=>d[i]);
-import { a as applyCwspSku, g as stashSkuHandoff } from "../shells/boot-history-base.js";
-import { Hn as __vitePreload } from "../com/app.js";
-//#region \0vite/modulepreload-polyfill.js
-(function polyfill() {
-	const relList = document.createElement("link").relList;
-	if (relList && relList.supports && relList.supports("modulepreload")) return;
-	for (const link of document.querySelectorAll("link[rel=\"modulepreload\"]")) processPreload(link);
-	new MutationObserver((mutations) => {
-		for (const mutation of mutations) {
-			if (mutation.type !== "childList") continue;
-			for (const node of mutation.addedNodes) if (node.tagName === "LINK" && node.rel === "modulepreload") processPreload(node);
-		}
-	}).observe(document, {
-		childList: true,
-		subtree: true
-	});
-	function getFetchOpts(link) {
-		const fetchOpts = {};
-		if (link.integrity) fetchOpts.integrity = link.integrity;
-		if (link.referrerPolicy) fetchOpts.referrerPolicy = link.referrerPolicy;
-		if (link.crossOrigin === "use-credentials") fetchOpts.credentials = "include";
-		else if (link.crossOrigin === "anonymous") fetchOpts.credentials = "omit";
-		else fetchOpts.credentials = "same-origin";
-		return fetchOpts;
-	}
-	function processPreload(link) {
-		if (link.ep) return;
-		link.ep = true;
-		const fetchOpts = getFetchOpts(link);
-		fetch(link.href, fetchOpts);
-	}
-})();
-//#endregion
+import "../chunks/vite-preload-BsPm7yBB.js";
+import { a as applyCwspSku } from "../shells/boot-history-base.js";
+const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
 //#region src/frontend/web/sku-boot.ts
 var ENABLED_VIEWS = "minimal,workcenter,settings,history";
 var detectHostKind = (explicit) => {
@@ -69,40 +39,9 @@ var showProcessBootFailure = (error, mount = document.body) => {
 	mount.style.cssText = "margin:0;padding:16px;font:14px/1.4 ui-monospace,monospace;background:#111;color:#f66;white-space:pre-wrap;";
 	mount.textContent = `[CWSP-process] boot failed\n\n${message}`;
 };
-/**
-* WHY: Capacitor share / PROCESS_TEXT should land in WorkCenter on this SKU,
-* not only fan out to the clipboard bus.
-*/
-var installProcessShareIngress = () => {
-	const g = globalThis;
-	if (g.__CWSP_PROCESS_SHARE__) return;
-	g.__CWSP_PROCESS_SHARE__ = true;
-	window.addEventListener("cws:shareIntent", (ev) => {
-		const detail = ev.detail;
-		let text = "";
-		let filename = "";
-		if (typeof detail === "string") text = detail;
-		else if (detail && typeof detail === "object") {
-			text = String(detail.text || detail.asset?.data || "");
-			filename = String(detail.asset?.name || "");
-		}
-		text = text.trim();
-		if (!text) return;
-		stashSkuHandoff({
-			dest: "workcenter",
-			content: text,
-			filename: filename || void 0
-		});
-		window.dispatchEvent(new CustomEvent("cwsp:process-open", { detail: {
-			content: text,
-			filename
-		} }));
-	});
-};
 var bootProcessSku = async (container, kind, view = "workcenter") => {
 	const host = detectHostKind(kind);
 	stampProcessSku(host);
-	installProcessShareIngress();
 	if (host === "capacitor") try {
 		const { SystemBarType, SystemBars } = await __vitePreload(async () => {
 			const { SystemBarType, SystemBars } = await import("../shells/boot-index.js").then((n) => n.tn);

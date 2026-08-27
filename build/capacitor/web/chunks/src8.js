@@ -1,6 +1,6 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./crx-control-session.js","../com/app.js","./rolldown-runtime.js","../shells/boot-index.js","../shells/boot-history-base.js","../fest/core.js","../com/service.js","../fest/veela.js"])))=>i.map(i=>d[i]);
 import { c as isCwspSku, i as apkManifestForSku, p as readCwspSku, r as androidPackageForSku, s as inferCwspSkuFromLocation, u as isWebHubSurface } from "../shells/boot-history-base.js";
-import { Cn as observe, Hn as __vitePreload, Nn as removeAdopted, Tn as ref, cn as H, gn as StorageKeys, vn as setString } from "../com/app.js";
+import { En as observe, Gn as __vitePreload, In as removeAdopted, On as ref, dn as H, xn as setString, yn as StorageKeys } from "../com/app.js";
 import { o as SettingsChannelAction } from "../views/viewer.js";
 import "./storage.js";
 import { A as canonicalHubSettingsSection, B as visibleHubSettingsSections, Dn as resolveCwspUrlFields, F as readSettingsAreaSection, I as rememberSettingsAreaSection, L as resolveEffectiveHubSettingsSection, M as hasBuiltInSettingsPanel, N as hubSettingsSectionPath, Nn as normalizeEcosystemToken, P as pruneBuiltInSettingsTabs, Pn as resolveEcosystemToken, R as resolveSettingsShellProfile, St as applyAirpadRuntimeFromAppSettings, Wn as sendMessage, Z as DEFAULT_INSTRUCTION_TEMPLATES, _t as ensureCrxCwspSettingsSeeded, at as isEnabledView, bt as noteSettingsControlSync, ct as applyTheme, dt as FALLBACK_BASE_COLOR, ft as defaultColorSource, gt as ensureCapacitorCwspSettingsSeeded, j as defaultSettingsTabForProfile, jn as BUILTIN_AI_MODELS, k as SIBLING_HUB_SETTINGS_SECTIONS, mt as normalizeHexColor, pt as isAppearanceColorSource, t as navigateToView, vt as getLastSettingsSaveReport, xt as saveSettings, yt as loadSettings, z as skuForHubSettingsSection } from "../shells/boot-index.js";
@@ -1214,7 +1214,7 @@ var fleetRow = (sku, label) => {
 	const title = document.createElement("h4");
 	title.textContent = label;
 	const manifest = apkManifestForSku(sku);
-	wrap.append(title, versionHint(sku, "Not checked — tap Check"), skuButtons(sku), settingsHint(sku === "transfer" ? `Reads ${manifest} (ecosystem token). Same versionCode still sideloads.` : `Reads ${manifest}. Same versionCode still sideloads.`));
+	wrap.append(title, versionHint(sku, "Not checked — tap Check"), skuButtons(sku), settingsHint(sku === "transfer" ? `Reads ${manifest} (ecosystem token). Newer versionCode or versionName is an update.` : `Reads ${manifest}. Newer versionCode or versionName is an update.`));
 	return wrap;
 };
 var apkUpdateFields = (ctx) => {
@@ -2506,21 +2506,50 @@ var createSettingsView = (opts) => {
 			manifest: apkManifestForSku(sku)
 		};
 	};
+	const apkVersionCode = (value) => {
+		if (typeof value === "number" && Number.isFinite(value)) return value;
+		if (typeof value === "string" && value.trim() && value !== "?") {
+			const n = Number(value);
+			return Number.isFinite(n) ? n : null;
+		}
+		return null;
+	};
+	const compareApkVersionName = (remote, local) => {
+		const parts = (raw) => String(raw || "").trim().split(/[+-]/)[0].split(".").map((bit) => Number(String(bit).replace(/[^0-9]/g, "")) || 0);
+		const a = parts(remote);
+		const b = parts(local);
+		if (!String(remote || "").trim() && !String(local || "").trim()) return 0;
+		const n = Math.max(a.length, b.length);
+		for (let i = 0; i < n; i++) {
+			const av = a[i] || 0;
+			const bv = b[i] || 0;
+			if (av !== bv) return av < bv ? -1 : 1;
+		}
+		return 0;
+	};
 	const paintApkVersion = (el, echo, result) => {
 		if (!el) return;
 		const anyResult = result;
 		const name = String(echo.localVersionName || echo.versionName || anyResult?.versionName || "").trim();
-		const code = echo.localVersionCode ?? echo.versionCode ?? anyResult?.versionCode;
+		const code = apkVersionCode(echo.localVersionCode ?? echo.versionCode ?? anyResult?.versionCode);
 		const sig = String(echo.localSignatureSha256 || echo.signatureSha256 || "").slice(0, 12);
 		const remoteName = String(echo.remoteVersionName || "").trim();
-		const remoteCode = echo.remoteVersionCode;
-		const installed = echo.installed === false || anyResult?.installed === false ? false : echo.installed === true || anyResult?.installed === true || Boolean(name && code != null && code !== 0 && code !== "?");
-		const remoteBit = remoteCode != null && remoteCode !== "" ? ` · gateway ${remoteName || "?"} (${remoteCode})` : "";
+		const remoteCode = apkVersionCode(echo.remoteVersionCode);
+		const installed = echo.installed === false || anyResult?.installed === false ? false : echo.installed === true || anyResult?.installed === true || Boolean(name && code != null && code !== 0);
+		const remoteBit = remoteCode != null ? ` · gateway ${remoteName || "?"} (${remoteCode})` : "";
 		if (!installed) {
 			el.textContent = `Not installed — Download & install to sideload.${remoteBit}`;
 			return;
 		}
 		el.textContent = `Installed: ${name || "?"} (${code ?? "?"})` + (sig ? ` · sig ${sig}…` : "") + remoteBit;
+	};
+	const apkBridgeFields = () => {
+		return {
+			srcEl: root.querySelector("[data-field=\"shell.apkUpdateSource\"]"),
+			endpointEl: root.querySelector("[data-field=\"core.endpointUrl\"]"),
+			tokenEl: root.querySelector("[data-field=\"core.ecosystemToken\"]"),
+			insecureEl: root.querySelector("[data-field=\"core.allowInsecureTls\"]")
+		};
 	};
 	const field = (sel) => root.querySelector(sel);
 	note = root.querySelector("[data-note]");
@@ -2895,9 +2924,33 @@ var createSettingsView = (opts) => {
 		if (isCapacitorNative()) __vitePreload(() => import("../shells/boot-index.js").then((n) => n.Yt).then(async (m) => {
 			const hints = [...root.querySelectorAll("[data-apk-local-version]")];
 			if (!hints.length) return;
+			const { srcEl, endpointEl, tokenEl, insecureEl } = apkBridgeFields();
+			const source = (srcEl?.value || s.shell?.apkUpdateSource || "wan").trim();
+			const endpointUrl = (endpointEl?.value || s.core?.endpointUrl || "").trim();
+			const token = (tokenEl?.value || "").trim() || resolveEcosystemToken(s);
+			const allowInsecureTls = insecureEl?.checked ?? Boolean(s.core?.allowInsecureTls);
 			await Promise.all(hints.map(async (el) => {
-				const result = await m.invokeCwsNative("app:info", apkUpdateTarget(el));
-				paintApkVersion(el, result?.echo || {}, result);
+				const target = apkUpdateTarget(el);
+				try {
+					const result = await m.invokeCwsNative("app:update:check", {
+						...target,
+						source,
+						endpointUrl,
+						token,
+						ecosystemToken: token,
+						allowInsecureTls
+					});
+					const echo = result?.echo || {};
+					if (echo.error) {
+						const info = await m.invokeCwsNative("app:info", target);
+						paintApkVersion(el, info?.echo || {}, info);
+						return;
+					}
+					paintApkVersion(el, echo, result);
+				} catch {
+					const info = await m.invokeCwsNative("app:info", target);
+					paintApkVersion(el, info?.echo || {}, info);
+				}
 			}));
 		}), __vite__mapDeps([3,2,4,1,5,6,7]), import.meta.url).catch(() => {});
 	}).catch(() => {
@@ -3227,10 +3280,7 @@ var createSettingsView = (opts) => {
 				setNote(apkInstallBtn ? "Downloading APK…" : "Checking for update…", { tone: "warn" });
 				try {
 					const s = await loadSettings();
-					const srcEl = root.querySelector("[data-field=\"shell.apkUpdateSource\"]");
-					const endpointEl = root.querySelector("[data-field=\"core.endpointUrl\"]");
-					const tokenEl = root.querySelector("[data-field=\"core.ecosystemToken\"]");
-					const insecureEl = root.querySelector("[data-field=\"core.allowInsecureTls\"]");
+					const { srcEl, endpointEl, tokenEl, insecureEl } = apkBridgeFields();
 					const versionEl = root.querySelector("[data-apk-local-version]");
 					const source = (srcEl?.value || s.shell?.apkUpdateSource || "wan").trim();
 					const endpointUrl = (endpointEl?.value || s.core?.endpointUrl || "").trim();
@@ -3262,20 +3312,31 @@ var createSettingsView = (opts) => {
 						setNote(echo?.launchedInstaller ? "Installer launched — confirm on the system prompt." : "Install request sent.", { tone: "ok" });
 						return;
 					}
-					const local = echo?.localVersionCode ?? "?";
-					const remote = echo?.remoteVersionCode ?? "?";
-					const avail = echo?.updateAvailable === true;
+					const local = apkVersionCode(echo?.localVersionCode);
+					const remote = apkVersionCode(echo?.remoteVersionCode);
+					const localName = String(echo?.localVersionName || "").trim();
+					const remoteName = String(echo?.remoteVersionName || "").trim();
+					const avail = echo?.updateAvailable === true || result?.updateAvailable === true || remote != null && local != null && remote > local || compareApkVersionName(remoteName, localName) > 0;
 					const sigOk = echo?.signatureCompatible !== false;
 					const installed = echo?.installed === true;
+					const reason = String(echo?.reason || "");
 					if (!sigOk) {
-						setNote(`Signature mismatch — remote APK not signed like this install (local ${local}, remote ${remote}).`, { tone: "err" });
+						setNote(`Signature mismatch — remote APK not signed like this install (local ${local ?? "?"}, remote ${remote ?? "?"}).`, { tone: "err" });
 						return;
 					}
 					if (!installed) {
-						setNote(`${target.sku}: not installed — remote ${remote} (${echo?.remoteVersionName || "?"}). Download & install to sideload.`, { tone: "warn" });
+						setNote(`${target.sku}: not installed — remote ${remote ?? "?"} (${remoteName || "?"}). Download & install to sideload.`, { tone: "warn" });
 						return;
 					}
-					setNote(avail ? `${target.sku}: update available ${local} → ${remote} (${echo?.remoteVersionName || "?"}).` : `${target.sku}: same version (local ${local}, remote ${remote}) — Download & install will sideload.`, { tone: avail ? "warn" : "ok" });
+					if (reason === "gateway-older" || remote != null && local != null && remote < local && !avail) {
+						setNote(`${target.sku}: gateway older (local ${localName || "?"} ${local}, remote ${remoteName || "?"} ${remote}). Publish the newer APK.`, { tone: "warn" });
+						return;
+					}
+					if (local == null && remote == null) {
+						setNote(`${target.sku}: native echo missing versions — try Check again.`, { tone: "err" });
+						return;
+					}
+					setNote(avail ? `${target.sku}: update available ${localName || local} → ${remoteName || remote} (${local ?? "?"} → ${remote ?? "?"}).` : `${target.sku}: current (local ${localName || "?"} ${local ?? "?"}, remote ${remoteName || "?"} ${remote ?? "?"}) — Download & install will sideload.`, { tone: avail ? "warn" : "ok" });
 				} catch (e) {
 					setNote(String(e?.message || e), { tone: "err" });
 				}

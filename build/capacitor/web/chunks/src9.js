@@ -1,6 +1,6 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../vendor/marked.js","./rolldown-runtime.js","../vendor/marked-katex-extension.js","../vendor/katex.js","./DocxExport.js","./BootLoader.js","../com/app.js","../fest/core.js","../shells/boot-index.js","../shells/boot-history-base.js","../com/service.js","../fest/veela.js","../shells/preference.js","./capacitor-settings-permissions.js","./capacitor-permissions.js"])))=>i.map(i=>d[i]);
 import { _ as takeSkuHandoff, d as publicHrefForSku, g as stashSkuHandoff, m as shouldHandoffViewToSibling } from "../shells/boot-history-base.js";
-import { $ as ensureStyleSheet, An as loadAsAdopted, At as matchMappedRoot, Ct as decodeBase64ToBytes, Dt as getDir, Et as parseDataUrl, Hn as __vitePreload, Mt as openDirectory, Nn as removeAdopted, Nt as provide, Tn as ref, Tt as normalizeDataAsset, _t as pickSidecarDirectoryFiles, bt as saveMarkdownBlob, cn as H, dt as isMarkdownRelativeRef, et as reinitializeRegistry, ft as mountPickedDirectory, gt as pickMarkdownFile, ht as pickAssetDirectory, jt as normalizePath, kt as isVirtualFsPath, mt as originalRelFromRef, pt as observeFileSystemHandle, ut as findEntryRelPath, vt as provideBoundRelative, wt as isBase64Like, yn as affected, yt as relPathCandidates } from "../com/app.js";
+import { At as getDir, Ct as saveMarkdownBlob, Dt as isBase64Like, Et as decodeBase64ToBytes, Ft as openDirectory, Gn as __vitePreload, In as removeAdopted, It as provide, Mt as isVirtualFsPath, Nn as loadAsAdopted, Nt as matchMappedRoot, On as ref, Ot as normalizeDataAsset, Pt as normalizePath, Sn as affected, St as resolveFileUnderDirectory, _t as pickAssetDirectory, bt as provideBoundRelative, dn as H, dt as findEntryRelPath, et as ensureStyleSheet, ft as indexDirectoryFiles, gt as originalRelFromRef, ht as observeFileSystemHandle, kt as parseDataUrl, mt as mountPickedDirectory, pt as isMarkdownRelativeRef, tt as reinitializeRegistry, vt as pickMarkdownFile, xt as relPathCandidates, yt as pickSidecarDirectoryFiles } from "../com/app.js";
 import { c as sendViewProtocolMessage, l as createViewConstructor, n as createViewState, r as ExplorerChannelAction, s as ViewerChannelAction } from "../views/viewer.js";
 import { Y as ingressStampWasSuperseded, yt as loadSettings } from "../shells/boot-index.js";
 import { i as validateReadableFileForIngress, n as textIngressLooksCorrupt, t as pickAuthoritativeTransferFiles } from "../com/service.js";
@@ -166,6 +166,7 @@ var CwViewViewer = createViewConstructor(TAG, (Base) => {
 		sidecarAssets = /* @__PURE__ */ new Map();
 		assetObjectUrls = [];
 		sourceObserver = null;
+		boundFsChangeTimer = 0;
 		customSheet = null;
 		userStyleModules = {
 			screenCss: "",
@@ -639,7 +640,7 @@ var CwViewViewer = createViewConstructor(TAG, (Base) => {
 						mdRoot.innerHTML = sanitized;
 						this.captureOriginalRelRefs(mdRoot);
 						renderTarget.append(outlineNav, mdRoot);
-						if (this.boundMountRoot) this.applyBoundProvideBlobs(mdRoot);
+						if (this.hasBoundAssets()) this.applyBoundProvideBlobs(mdRoot);
 						this.applyRenderedLinkBehavior(mdRoot);
 						this.watchVirtualSource(this.sourceUrl);
 						this.refreshDocumentOutline(outlineNav, mdRoot);
@@ -682,26 +683,46 @@ var CwViewViewer = createViewConstructor(TAG, (Base) => {
 			} catch {}
 			this.assetObjectUrls = [];
 		}
+		hasBoundAssets() {
+			return Boolean(this.boundMountRoot || this.boundDirectory || this.sidecarAssets.size);
+		}
 		watchVirtualSource(source) {
 			this.sourceObserver?.disconnect?.();
 			this.sourceObserver = null;
+			const attach = (handle) => {
+				if (!handle) return;
+				this.sourceObserver = observeFileSystemHandle(handle, () => this.scheduleBoundFsRewire());
+			};
+			if (this.boundDirectory) {
+				attach(this.boundDirectory);
+				return;
+			}
 			const path = this.normalizeSourceUrl(source);
 			if (!path || !isVirtualFsPath(path)) return;
-			provide(path).then(async () => {
-				const nav = navigator;
-				const getDirHandle = nav?.storage?.getDirectory;
-				let handle = null;
-				try {
-					const mapped = matchMappedRoot(getDir(path));
-					const resolved = mapped ? await mapped.resolver() : null;
-					handle = resolved instanceof FileSystemDirectoryHandle ? resolved : null;
-					if (!handle && typeof getDirHandle === "function" && path.startsWith("/user/")) handle = await getDirHandle.call(nav.storage);
-				} catch {
-					return;
-				}
-				if (!handle) return;
-				this.sourceObserver = observeFileSystemHandle(handle, () => this.onRefresh());
-			});
+			const mapped = matchMappedRoot(getDir(path));
+			if (!mapped || mapped.root === "/" || mapped.root === "/user/" || mapped.root === "/assets/") return;
+			mapped.resolver().then((resolved) => {
+				if (resolved instanceof FileSystemDirectoryHandle) attach(resolved);
+			}).catch(() => {});
+		}
+		scheduleBoundFsRewire() {
+			if (this.boundFsChangeTimer) clearTimeout(this.boundFsChangeTimer);
+			this.boundFsChangeTimer = globalThis.setTimeout(() => {
+				this.boundFsChangeTimer = 0;
+				this.onBoundFsChange();
+			}, 50);
+		}
+		async onBoundFsChange() {
+			if (this.boundDirectory) try {
+				const indexed = await indexDirectoryFiles(this.boundDirectory);
+				this.rememberSidecarFiles(indexed.map((row) => {
+					try {
+						Object.defineProperty(row.file, "webkitRelativePath", { value: row.rel });
+					} catch {}
+					return row.file;
+				}));
+			} catch {}
+			if (!await this.rewireBoundMedia()) this.onRefresh();
 		}
 		applyRouteParams(params) {
 			const handed = takeSkuHandoff("viewer", "document");
@@ -846,15 +867,26 @@ var CwViewViewer = createViewConstructor(TAG, (Base) => {
 				node.setAttribute("href", "#");
 			}
 		}
-		/** After bind: original relative → main-thread `provide()` → blob URL (no OPFS worker, no HTTP). */
+		/** Sidecar map / FSA handle first — `provide(/mounts/…)` can miss if OPFS `mappedRoots` is a second module copy. */
+		async resolveBoundAssetFile(rel) {
+			const sidecar = this.lookupSidecarFile(rel, originalRelFromRef(rel));
+			if (sidecar) return sidecar;
+			if (this.boundDirectory) {
+				const fromDir = await resolveFileUnderDirectory(this.boundDirectory, rel).catch(() => null);
+				if (fromDir) return fromDir;
+			}
+			if (!this.boundMountRoot) return null;
+			return provideBoundRelative(this.boundMountRoot, rel, this.sourceUrl);
+		}
+		/** After bind: original relative → File (sidecar / FSA / provide) → blob URL. */
 		async applyBoundProvideBlobs(root) {
-			if (!this.boundMountRoot) return 0;
+			if (!this.hasBoundAssets()) return 0;
 			this.revokeAssetUrls();
 			let count = 0;
 			for (const node of root.querySelectorAll("[data-md-rel]")) {
 				const rel = (node.getAttribute("data-md-rel") || "").trim();
 				if (!rel) continue;
-				const file = await provideBoundRelative(this.boundMountRoot, rel, this.sourceUrl);
+				const file = await this.resolveBoundAssetFile(rel);
 				if (!file) continue;
 				const blobUrl = URL.createObjectURL(file);
 				this.assetObjectUrls.push(blobUrl);
@@ -872,7 +904,7 @@ var CwViewViewer = createViewConstructor(TAG, (Base) => {
 		}
 		async rewireMarkdownRefs(root) {
 			this.captureOriginalRelRefs(root);
-			if (!this.boundMountRoot) return 0;
+			if (!this.hasBoundAssets()) return 0;
 			return this.applyBoundProvideBlobs(root);
 		}
 		resolveUrlAgainstSource(rawValue) {
@@ -1696,6 +1728,29 @@ var CwViewViewer = createViewConstructor(TAG, (Base) => {
 				this.showMessage("Failed to process pasted content");
 			}
 		}
+		looksLikeBinaryPreviewFile(file) {
+			const mime = (file.type || "").toLowerCase();
+			const name = (file.name || "").toLowerCase();
+			if (mime.startsWith("image/") || mime === "application/pdf") return true;
+			return /\.(png|jpe?g|gif|webp|bmp|svg|avif|pdf)$/i.test(name);
+		}
+		/** Image / PDF / downloadable blob — not markdown ingest. */
+		showSharedBinaryPreview(file) {
+			const target = this.queryViewerSlotted("[data-render-target]");
+			if (!target) {
+				this.showMessage(file.name || "Opened file");
+				return;
+			}
+			const url = URL.createObjectURL(file);
+			this.assetObjectUrls.push(url);
+			const mime = (file.type || "").toLowerCase();
+			const name = file.name || "file";
+			const safeName = name.replace(/[<>&"]/g, "");
+			if (mime.startsWith("image/") || /\.(png|jpe?g|gif|webp|bmp|svg|avif)$/i.test(name)) target.innerHTML = `<img class="view-viewer__share-preview" src="${url}" alt="${safeName}" style="max-width:100%;height:auto" />`;
+			else if (mime === "application/pdf" || /\.pdf$/i.test(name)) target.innerHTML = `<iframe class="view-viewer__share-preview" src="${url}" title="${safeName}" style="width:100%;min-height:70vh;border:0"></iframe>`;
+			else target.innerHTML = `<p>Opened ${safeName} (${file.size} bytes)</p><a href="${url}" download="${safeName}">Download</a>`;
+			this.showMessage(name);
+		}
 		isTextLikeFile(file) {
 			const name = (file.name || "").toLowerCase();
 			const type = (file.type || "").toLowerCase();
@@ -2120,6 +2175,10 @@ var CwViewViewer = createViewConstructor(TAG, (Base) => {
 			this.isViewVisible = false;
 			this.isPointerInView = false;
 			this.revokeAssetUrls();
+			if (this.boundFsChangeTimer) {
+				clearTimeout(this.boundFsChangeTimer);
+				this.boundFsChangeTimer = 0;
+			}
 			this.sourceObserver?.disconnect?.();
 			this.sourceObserver = null;
 			console.log("[Viewer] Hidden");
@@ -2229,6 +2288,10 @@ var CwViewViewer = createViewConstructor(TAG, (Base) => {
 					console.warn("[Viewer] Ingress file rejected:", vr.reason, fileEarly.name);
 					fileEarly = null;
 				}
+			}
+			if (fileEarly && this.looksLikeBinaryPreviewFile(fileEarly)) {
+				this.showSharedBinaryPreview(fileEarly);
+				return;
 			}
 			if (Array.isArray(payload?.files)) this.rememberSidecarFiles(payload.files.filter((file) => file instanceof File), fileEarly);
 			const transferSource = this.pickDocumentSourcePath(payload?.virtualPath, payload?.src, payload?.path, payload?.hint?.source, payload?.source);

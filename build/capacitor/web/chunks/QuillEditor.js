@@ -1,4 +1,4 @@
-import { cn as H } from "../com/app.js";
+import { dn as H } from "../com/app.js";
 import { t as quill_default } from "../vendor/quill.js";
 //#region ../../modules/views/editor-view/src/ts/QuillEditor.ts
 var QuillEditor = class {

@@ -1,6 +1,6 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../com/app.js","./rolldown-runtime.js"])))=>i.map(i=>d[i]);
 import { f as publicHrefForView, g as stashSkuHandoff, m as shouldHandoffViewToSibling } from "../shells/boot-history-base.js";
-import { An as loadAsAdopted, Cn as observe, G as FileManager, Hn as __vitePreload, K as FileManagerContent_default, Nn as removeAdopted, _n as getString, gn as StorageKeys, nt as openUnifiedContextMenu, vn as setString } from "../com/app.js";
+import { En as observe, Gn as __vitePreload, In as removeAdopted, K as FileManager, Nn as loadAsAdopted, bn as getString, q as FileManagerContent_default, rt as openUnifiedContextMenu, xn as setString, yn as StorageKeys } from "../com/app.js";
 import { c as sendViewProtocolMessage, l as createViewConstructor, r as ExplorerChannelAction } from "../views/viewer.js";
 import "./storage.js";
 import { ar as speedDialItems, er as addSpeedDialItem, ir as persistSpeedDialMeta, nr as ensureSpeedDialMeta, rr as persistSpeedDialItems, tr as createEmptySpeedDialItem } from "../shells/boot-index.js";
@@ -323,7 +323,7 @@ function setupExplorerEvents(explorer, opts, inject, signal) {
 			const loadPath = path || `${explorer?.path || "/"}${item.name || ""}`;
 			try {
 				const { provide } = await __vitePreload(async () => {
-					const { provide } = await import("../com/app.js").then((n) => n.st);
+					const { provide } = await import("../com/app.js").then((n) => n.ct);
 					return { provide };
 				}, __vite__mapDeps([0,1]), import.meta.url);
 				item.file = await provide(loadPath);

@@ -6,7 +6,7 @@
  * Reason: One process SKU stamp for PWA, Capacitor, and CRX (WorkCenter + settings + history).
  */
 
-import { applyCwspSku, stashSkuHandoff } from "com/config/ecosystem-skus";
+import { applyCwspSku } from "com/config/ecosystem-skus";
 
 export type ProcessHostKind = "capacitor" | "web" | "crx";
 
@@ -60,30 +60,11 @@ export const showProcessBootFailure = (error: unknown, mount: HTMLElement = docu
 };
 
 /**
- * WHY: Capacitor share / PROCESS_TEXT should land in WorkCenter on this SKU,
- * not only fan out to the clipboard bus.
+ * WHY: Capacitor `cws:shareIntent` is ingested by `installCapacitorShareIntentBridge`
+ * (SKU pipeline: AI or Work Center attach). This stamp-only hook stays for callers.
  */
 export const installProcessShareIngress = (): void => {
-    const g = globalThis as { __CWSP_PROCESS_SHARE__?: boolean };
-    if (g.__CWSP_PROCESS_SHARE__) return;
-    g.__CWSP_PROCESS_SHARE__ = true;
-    window.addEventListener("cws:shareIntent", (ev: Event) => {
-        const detail = (ev as CustomEvent<{ text?: string; asset?: { name?: string; data?: string } } | string>)
-            .detail;
-        let text = "";
-        let filename = "";
-        if (typeof detail === "string") text = detail;
-        else if (detail && typeof detail === "object") {
-            text = String(detail.text || detail.asset?.data || "");
-            filename = String(detail.asset?.name || "");
-        }
-        text = text.trim();
-        if (!text) return;
-        stashSkuHandoff({ dest: "workcenter", content: text, filename: filename || undefined });
-        window.dispatchEvent(
-            new CustomEvent("cwsp:process-open", { detail: { content: text, filename } })
-        );
-    });
+    /* share pipeline lives in capacitor-share-intent + initIngressPWA */
 };
 
 export const bootProcessSku = async (

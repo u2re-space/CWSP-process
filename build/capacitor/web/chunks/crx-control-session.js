@@ -1,4 +1,4 @@
-import { Hn as __vitePreload } from "../com/app.js";
+const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
 //#region src/shared/other/config/settings/crx-control-session.ts
 /** chrome.storage.local key — never sessionStorage (must survive browser restart). */
 var CRX_CONTROL_SESSION_KEY = "cwsp-control-session-v1";

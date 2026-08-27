@@ -1,7 +1,8 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./BootLoader.js","../com/app.js","./rolldown-runtime.js","../fest/core.js","../shells/boot-index.js","../shells/boot-history-base.js","../com/service.js","../fest/veela.js","../shells/preference.js","./capacitor-settings-permissions.js","./capacitor-permissions.js","./RuntimeSettings.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./BootLoader.js","../com/app.js","./rolldown-runtime.js","../fest/core.js","../shells/boot-index.js","../shells/boot-history-base.js","../com/service.js","../fest/veela.js","../shells/preference.js","./capacitor-settings-permissions.js","./capacitor-permissions.js","./RuntimeSettings.js","./sku-ingress.js"])))=>i.map(i=>d[i]);
 import { d as publicHrefForSku, h as siblingSkuForView, m as shouldHandoffViewToSibling, n as SKU_HUB_PATHS, o as ensureCwspSkuFromLocation, r as androidPackageForSku, s as inferCwspSkuFromLocation, t as ECOSYSTEM_SKUS } from "../shells/boot-history-base.js";
-import { Et as parseDataUrl, Hn as __vitePreload, Qt as initClipboardReceiver, Zt as copy, lt as bindDirectoryForLaunchedFiles, wt as isBase64Like } from "../com/app.js";
+import { Dt as isBase64Like, Gn as __vitePreload, en as copy, kt as parseDataUrl, tn as initClipboardReceiver, ut as bindDirectoryForLaunchedFiles } from "../com/app.js";
 import { $n as resolveProcessApiUrl, Gn as sendProtocolMessage, Jn as BROADCAST_CHANNELS, Kn as unifiedMessaging, Qn as viewBroadcastChannelName, X as unifiedMessaging$1, Zn as normalizeDestination, et as buildShareDataFromCachedPayload, nt as storeShareTargetPayloadToCache, tt as consumeCachedShareTargetPayload, yt as loadSettings, zn as enqueuePendingMessage } from "../shells/boot-index.js";
+import { applyLauncherIngress, skuIngressHint } from "./sku-ingress.js";
 import { t as summarizeForLog$1 } from "./LogSanitizer.js";
 //#region src/shared/boot/toast.ts
 var DEFAULT_CONFIG = {
@@ -991,6 +992,9 @@ var getContentType = (payload) => {
 	return "other";
 };
 var pickDestination = (payload, contentType) => {
+	ensureCwspSkuFromLocation();
+	const skuHint = skuIngressHint(payload);
+	if (skuHint?.destination) return skuHint.destination;
 	if (payload.hint?.action === "save") return "explorer";
 	/** Readable docs should win over stale `hint.destination` from cached/share envelopes. */
 	if (contentType === "markdown" || contentType === "text") return "viewer";
@@ -1003,15 +1007,25 @@ var pickDestination = (payload, contentType) => {
 };
 var toMessageType = (destination, hint) => {
 	if (destination === "viewer") return hint?.action === "open" ? "content-load" : "content-view";
-	if (destination === "explorer") return "file-save";
+	if (destination === "explorer") {
+		if (hint?.action === "ask") return "file-ask";
+		if (hint?.action === "open") return "navigate-path";
+		return "file-save";
+	}
 	if (destination === "workcenter") return "content-attach";
 	if (destination === "editor") return "content-load";
+	if (destination === "home") return hint?.action === "wallpaper" ? "content-share" : "content-share";
 	return "content-share";
 };
 var resolveViewTransfer = (payload) => {
 	const contentType = getContentType(payload);
+	const skuHint = skuIngressHint(payload);
 	const destination = pickDestination(payload, contentType);
-	const messageType = toMessageType(destination, payload.hint);
+	const hint = skuHint ? {
+		...payload.hint,
+		...skuHint
+	} : payload.hint;
+	const messageType = toMessageType(destination, hint);
 	const files = Array.isArray(payload.files) ? payload.files : [];
 	const data = {
 		title: payload.title,
@@ -1019,13 +1033,13 @@ var resolveViewTransfer = (payload) => {
 		content: payload.text,
 		url: payload.url,
 		files,
-		filename: payload.hint?.filename || files[0]?.name,
+		filename: hint?.filename || files[0]?.name,
 		source: payload.source,
 		route: payload.route,
-		hint: payload.hint
+		hint
 	};
 	/** INVARIANT: do not overwrite `data.source` (transfer enum). Path goes on src/path/virtualPath. */
-	const virtualSource = String(payload.hint?.source || "").trim();
+	const virtualSource = String(hint?.source || payload.url || "").trim();
 	if (virtualSource && virtualSource !== "share-target" && virtualSource !== "launch-queue" && virtualSource !== "clipboard" && virtualSource !== "pending") {
 		data.path = virtualSource;
 		data.src = virtualSource;
@@ -1041,7 +1055,7 @@ var resolveViewTransfer = (payload) => {
 			source: payload.source,
 			route: payload.route,
 			pending: Boolean(payload.pending),
-			hint: payload.hint,
+			hint,
 			...payload.metadata || {}
 		}
 	};
@@ -1049,7 +1063,7 @@ var resolveViewTransfer = (payload) => {
 		source: payload.source,
 		route: payload.route,
 		pending: payload.pending,
-		hint: payload.hint,
+		hint,
 		contentType,
 		destination,
 		messageType,
@@ -1602,14 +1616,29 @@ var routeToTransferView = async (shareData, source, hint, pending = false) => {
 		imageCountReported: preparedData.imageCount,
 		timestamp: preparedData.timestamp
 	}));
-	const forceAttachToWorkCenter = await shouldForceWorkCenterAttachment(preparedData);
-	const mergedViewerHint = (inferShareContentType(preparedData) === "markdown" || inferShareContentType(preparedData) === "text") && !forceAttachToWorkCenter ? {
+	let autoProcessShared = true;
+	try {
+		autoProcessShared = ((await loadSettings().catch(() => null))?.ai?.autoProcessShared ?? true) !== false;
+	} catch {
+		autoProcessShared = true;
+	}
+	const sku = inferCwspSkuFromLocation();
+	const skuHint = skuIngressHint(preparedData, {
+		sku,
+		autoProcessShared
+	});
+	const forceAttachToWorkCenter = !skuHint && await shouldForceWorkCenterAttachment(preparedData);
+	const textLike = inferShareContentType(preparedData) === "markdown" || inferShareContentType(preparedData) === "text";
+	const mergedViewerHint = !skuHint && textLike && !forceAttachToWorkCenter ? {
 		...hint,
 		destination: "viewer",
 		action: "open",
 		filename: hint?.filename || files[0]?.name
 	} : void 0;
-	const resolvedHint = forceAttachToWorkCenter ? {
+	const resolvedHint = skuHint ? {
+		...hint,
+		...skuHint
+	} : forceAttachToWorkCenter ? {
 		destination: "workcenter",
 		action: "attach",
 		...hint || {}
@@ -1642,6 +1671,41 @@ var routeToTransferView = async (shareData, source, hint, pending = false) => {
 		messageType: resolved.messageType,
 		contentType: resolved.contentType
 	});
+	if (sku === "process" && resolvedHint?.action === "process") try {
+		await processShareTargetData(preparedData, true);
+	} catch (error) {
+		console.warn("[ViewTransfer] Process SKU auto-AI failed:", error);
+	}
+	if (sku === "launcher" || resolved.destination === "home") {
+		const capacitorNative = (() => {
+			try {
+				const c = globalThis.Capacitor;
+				return typeof c?.isNativePlatform === "function" && Boolean(c.isNativePlatform());
+			} catch {
+				return false;
+			}
+		})();
+		const urlish = String(preparedData.url || preparedData.sharedUrl || "").trim() || /^(https?:\/\/|www\.)/i.test(String(preparedData.text || "").trim());
+		if (capacitorNative && files.length === 0 && urlish) {} else try {
+			const kind = await applyLauncherIngress({
+				files,
+				title: preparedData.title,
+				text: preparedData.text,
+				url: preparedData.url || preparedData.sharedUrl,
+				action: resolvedHint?.action
+			});
+			if (kind === "wallpaper") showToast({
+				message: "Wallpaper updated",
+				kind: "success"
+			});
+			else if (kind === "shortcut") showToast({
+				message: "Shortcut added",
+				kind: "success"
+			});
+		} catch (error) {
+			console.warn("[ViewTransfer] Launcher share apply failed:", error);
+		}
+	}
 	const currentPath = (globalThis?.location?.pathname || "").replace(/\/+$/, "") || "/";
 	const destPath = pathForSkuHostView(resolved.routePath);
 	const destNorm = destPath.replace(/\/+$/, "") || "/";
@@ -1693,6 +1757,10 @@ var routeToTransferView = async (shareData, source, hint, pending = false) => {
 		else await tryNavigateLiveShell();
 		return delivered;
 	}
+	if (resolved.destination === "home" || sku === "launcher") {
+		await tryNavigateLiveShell();
+		return delivered;
+	}
 	if (currentPath !== destNorm) {
 		if (!await tryNavigateLiveShell()) {
 			const nextUrl = new URL(globalThis?.location?.href);
@@ -1708,6 +1776,27 @@ var routeToTransferView = async (shareData, source, hint, pending = false) => {
 	await tryNavigateLiveShell();
 	console.log("[ViewTransfer] Already on resolved route:", destNorm);
 	return delivered;
+};
+/** Capacitor / sku-boot entry: stage files then run the same share pipeline as PWA. */
+var ingestSharePayload = async (shareData, source = "share-target") => {
+	const files = Array.isArray(shareData.files) ? shareData.files.filter((f) => f instanceof File) : [];
+	try {
+		await storeShareTargetPayloadToCache({
+			files,
+			meta: {
+				title: shareData.title,
+				text: shareData.text,
+				url: shareData.url || shareData.sharedUrl,
+				source,
+				route: source,
+				timestamp: shareData.timestamp || Date.now(),
+				fileCount: files.length || shareData.fileCount,
+				imageCount: shareData.imageCount,
+				hint: shareData.hint
+			}
+		});
+	} catch {}
+	return routeToTransferView(shareData, source, extractTransferHint(shareData), false);
 };
 /**
 * Extract processable content from share data
@@ -1825,7 +1914,7 @@ var processShareTargetData = async (shareData, skipIfEmpty = false) => {
 			body: JSON.stringify({
 				content: processingContent,
 				contentType,
-				processingType: "general-processing",
+				processingType: (await loadSettings().catch(() => null))?.ai?.shareTargetMode === "analyze" ? "general-processing" : "recognize-content",
 				metadata: {
 					source: "share-target",
 					title: shareData.title || "Shared Content",
@@ -2002,8 +2091,10 @@ var handleShareTarget = () => {
 			url: params.get("url") || void 0,
 			sharedUrl: params.get("sharedUrl") || void 0,
 			timestamp: Date.now(),
-			source: "url-params"
+			source: "url-params",
+			hint: params.get("filename") ? { filename: params.get("filename") || void 0 } : void 0
 		};
+		const shareId = String(params.get("shareId") || "").trim();
 		console.log("[ShareTarget] Share data from URL params:", summarizeForLog({
 			title: shareFromParams.title,
 			text: shareFromParams.text,
@@ -2017,10 +2108,38 @@ var handleShareTarget = () => {
 			"title",
 			"text",
 			"url",
-			"sharedUrl"
+			"sharedUrl",
+			"shareId",
+			"filename",
+			"sku"
 		].forEach((p) => cleanUrl.searchParams.delete(p));
 		globalThis?.history?.replaceState?.({}, "", cleanUrl.pathname + cleanUrl.hash);
 		(async () => {
+			if (shareId) try {
+				const res = await fetch(`/api/vds/share/${encodeURIComponent(shareId)}`);
+				if (res.ok) {
+					const row = await res.json();
+					const { dataUrlToFile } = await __vitePreload(async () => {
+						const { dataUrlToFile } = await import("./sku-ingress.js");
+						return { dataUrlToFile };
+					}, __vite__mapDeps([12,5,1,2]), import.meta.url);
+					const files = [];
+					for (const item of row.files || []) {
+						if (!item?.data) continue;
+						const file = await dataUrlToFile(item.data, String(item.name || "shared.bin"), String(item.type || "application/octet-stream"));
+						if (file) files.push(file);
+					}
+					if (row.title && !shareFromParams.title) shareFromParams.title = row.title;
+					if (row.text && !shareFromParams.text) shareFromParams.text = row.text;
+					if (row.url && !shareFromParams.sharedUrl) shareFromParams.sharedUrl = row.url;
+					if (files.length) {
+						shareFromParams.files = files;
+						shareFromParams.fileCount = files.length;
+					}
+				}
+			} catch (error) {
+				console.warn("[ShareTarget] VDS share stash missed:", error);
+			}
 			const transferPayload = await mergeUrlParamsShareWithCache(shareFromParams);
 			const { content, type } = extractShareContent(transferPayload);
 			const pendingFiles = Number(transferPayload.fileCount ?? 0) > 0;
@@ -2229,11 +2348,12 @@ var setupLaunchQueueConsumer = async () => {
 				}
 				if (files.length > 0) {
 					const mdForBind = files.find((file) => isTextLikeFile(file)) || files[0];
-					let hint = files.length === 1 && isTextLikeFile(files[0]) ? {
+					const launchSku = inferCwspSkuFromLocation();
+					let hint = files.length === 1 && isTextLikeFile(files[0]) && (!launchSku || launchSku === "crx") ? {
 						destination: "viewer",
 						action: "open",
 						filename: files[0]?.name
-					} : void 0;
+					} : { filename: files[0]?.name };
 					/**
 					* WHY: Launch Queue drops the parent folder. Same user-activation can still
 					* open showDirectoryPicker({ startIn: fileHandle }) so relative images resolve.
@@ -2352,4 +2472,4 @@ var initIngressPWA = async () => {
 	return _ingressPwaPromise;
 };
 //#endregion
-export { initIngressPWA };
+export { ingestSharePayload, initIngressPWA };

@@ -1,6 +1,6 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../shells/boot-index.js","./rolldown-runtime.js","../shells/boot-history-base.js","../com/app.js","../fest/core.js","../com/service.js","../fest/veela.js","./admin-doors.js","./transfer-history-runtime.js","./capacitor-permissions.js","./capacitor-share-intent.js","./capacitor-clipboard-asset.js"])))=>i.map(i=>d[i]);
 import { n as __exportAll } from "./rolldown-runtime.js";
-import { Hn as __vitePreload, cn as H, yn as affected } from "../com/app.js";
+import { Gn as __vitePreload, Sn as affected, dn as H } from "../com/app.js";
 import { at as isEnabledView } from "../shells/boot-index.js";
 import { t as ShellBase } from "./shells.js";
 import { a as SHELL_SLOT } from "../shells/environment-environment-overlay.js";
