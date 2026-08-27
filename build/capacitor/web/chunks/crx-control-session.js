@@ -1,4 +1,4 @@
-import { vn as __vitePreload } from "../com/app.js";
+import { Hn as __vitePreload } from "../com/app.js";
 //#region src/shared/other/config/settings/crx-control-session.ts
 /** chrome.storage.local key — never sessionStorage (must survive browser restart). */
 var CRX_CONTROL_SESSION_KEY = "cwsp-control-session-v1";

@@ -1,4 +1,4 @@
-//#region ../../modules/projects/subsystem/src/other/config/ecosystem-skus.ts
+//#region ../../modules/subsystem/src/other/config/ecosystem-skus.ts
 var ECOSYSTEM_SKUS = {
 	launcher: {
 		sku: "launcher",
@@ -81,9 +81,96 @@ var readCwspSku = () => {
 		return "";
 	}
 };
+/** Stamp `data-cwsp-sku` so Settings / openView / APK update resolve the same host. */
+var applyCwspSku = (sku) => {
+	try {
+		document.documentElement.dataset.cwspSku = sku;
+		const rec = ECOSYSTEM_SKUS[sku];
+		if (rec.defaultView && !document.documentElement.dataset.cwspDefaultView) document.documentElement.dataset.cwspDefaultView = rec.defaultView;
+	} catch {}
+};
 var siblingSkuForView = (view) => {
 	return VIEW_TO_SIBLING_SKU[String(view || "").trim().toLowerCase()] || null;
 };
+var HUB_PUBLIC_HOSTS = ["u2re.space", "www.u2re.space"];
+var SKU_PUBLIC_HOSTS = {
+	document: ["md.u2re.space", "www.md.u2re.space"],
+	explorer: ["explorer.u2re.space", "www.explorer.u2re.space"],
+	process: ["process.u2re.space", "workcenter.u2re.space"],
+	transfer: [
+		"cwsp.u2re.space",
+		"www.cwsp.u2re.space",
+		"transfer.u2re.space"
+	]
+};
+/** Hub/LAN Fastify prefixes — never nest (`/viewer/explorer`). */
+var SKU_HUB_PATHS = {
+	document: [
+		"markdown",
+		"document",
+		"viewer"
+	],
+	explorer: [
+		"explorer",
+		"files",
+		"fm"
+	],
+	process: ["workcenter", "process"],
+	transfer: ["cwsp", "transfer"]
+};
+var currentHostname = () => {
+	try {
+		return String(globalThis.location?.hostname || "").toLowerCase();
+	} catch {
+		return "";
+	}
+};
+var firstPathSegment = () => {
+	try {
+		return (String(globalThis.location?.pathname || "/").split("?")[0] || "/").split("/").filter(Boolean)[0]?.toLowerCase() || "";
+	} catch {
+		return "";
+	}
+};
+var isLanOrLoopbackHost = (host) => host === "localhost" || host === "127.0.0.1" || host === "::1" || /^\d{1,3}(\.\d{1,3}){3}$/.test(host);
+var isHubPublicHost = (hostname) => {
+	const host = String(hostname || currentHostname()).toLowerCase();
+	return HUB_PUBLIC_HOSTS.includes(host);
+};
+var skuForHubPathSegment = (segment) => {
+	const seg = String(segment || "").trim().toLowerCase();
+	if (!seg) return "";
+	for (const sku of Object.keys(SKU_HUB_PATHS)) if (SKU_HUB_PATHS[sku].includes(seg)) return sku;
+	return "";
+};
+/** Host + hub/LAN path mount → SKU. `u2re.space/` stays launcher (full chrome). */
+var inferCwspSkuFromLocation = () => {
+	const stamped = readCwspSku();
+	if (stamped) return stamped;
+	const host = currentHostname();
+	for (const sku of Object.keys(SKU_PUBLIC_HOSTS)) if (SKU_PUBLIC_HOSTS[sku].includes(host)) return sku;
+	const fromPath = skuForHubPathSegment(firstPathSegment());
+	if (fromPath) return fromPath;
+	if (isHubPublicHost(host) || isLanOrLoopbackHost(host)) return "launcher";
+	return "";
+};
+var ensureCwspSkuFromLocation = () => {
+	const sku = inferCwspSkuFromLocation();
+	if (sku) applyCwspSku(sku);
+	return sku;
+};
+var isCwspNativeHost = () => {
+	try {
+		const g = globalThis;
+		const platform = g.Capacitor?.getPlatform?.();
+		return Boolean(g.Capacitor?.isNativePlatform?.() || platform === "android" || platform === "ios" || g.__CWS_NATIVE__ === true);
+	} catch {
+		return false;
+	}
+};
+try {
+	ensureCwspSkuFromLocation();
+} catch {}
 var androidPackageForSku = (sku) => ECOSYSTEM_SKUS[sku]?.androidPackage ?? null;
 //#endregion
-export { androidPackageForSku, isCwspSku, readCwspSku, siblingSkuForView };
+export { androidPackageForSku, isCwspNativeHost, isCwspSku, readCwspSku, siblingSkuForView };

@@ -1,4 +1,4 @@
-import { fn as JSOX } from "../com/app.js";
+import { qt as JSOX } from "../com/app.js";
 //#region src/shared/other/document/AIResponseParser.ts
 /**
 * Robust AI Response Parser

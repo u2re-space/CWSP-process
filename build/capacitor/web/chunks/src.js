@@ -1,153 +1,796 @@
-import { Jt as H } from "../com/app.js";
-import { t as ShellBase } from "./shells.js";
-import { a as SHELL_SLOT } from "../shells/environment-environment-overlay.js";
-//#region ../../modules/shells/immersive-shell/src/base.scss?inline
-var base_default = "@layer shell.tokens, shell.immersive, shell.components, shell.utilities, shell.markdown-host-theme, shell.overrides;@layer shell.tokens{:root:has(.app-shell,.app-shell[data-style=immersive],.app-shell[data-style=raw]),:where(.app-shell,.app-shell[data-style=immersive],.app-shell[data-style=raw]){color-scheme:light dark;--shell-bg:light-dark(var(--color-surface),var(--color-surface));--shell-fg:light-dark(var(--color-on-surface),var(--color-on-surface));--shell-nav-bg:light-dark(var(--color-surface-container-high),var(--color-surface-container-high));--shell-nav-fg:light-dark(var(--color-on-surface),var(--color-on-surface));--shell-nav-border:light-dark(var(--color-outline-variant),var(--color-outline-variant));--shell-btn-hover:light-dark(var(--color-surface-container),var(--color-surface-container));--shell-btn-active-bg:light-dark(var(--color-surface-container-low),var(--color-surface-container-low));--shell-btn-active-fg:light-dark(var(--color-on-surface),var(--color-on-surface));--shell-status-bg:light-dark(var(--color-surface-container-low),var(--color-surface-container-low));--shell-status-fg:light-dark(var(--color-on-surface),var(--color-on-surface));--shell-loading-bg:light-dark(var(--color-surface),var(--color-surface));--shell-loading-fg:light-dark(var(--color-on-surface),var(--color-on-surface));--shell-loading-spinner-track:light-dark(color-mix(in oklab,var(--color-outline-variant) 35%,transparent),color-mix(in oklab,var(--color-outline-variant) 45%,transparent));--shell-loading-spinner-accent:light-dark(var(--color-primary),var(--color-primary));--shell-nav-height:var(--shell-nav-height-immersive,48px);--shell-sidebar-width:0;--shell-status-height:24px;--shell-padding:0}:host{--shell-bg:transparent;--shell-fg:inherit}:host([data-theme=dark]){--shell-bg:transparent;--shell-fg:inherit}}@layer shell.immersive{:host{align-self:stretch;background-color:initial;block-size:stretch;display:block;inline-size:100%;justify-self:stretch;min-block-size:max(100%,100dvh);min-inline-size:0}:where(.app-shell,.app-shell[data-style=immersive],.app-shell[data-style=raw]){align-items:stretch;background:transparent;background-color:initial;block-size:stretch;color:inherit;color-scheme:light dark;contain:layout style;display:flex;flex-direction:column;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica Neue,Arial,BlinkMacSystemFont,sans-serif;gap:0;inline-size:stretch;inset:0;justify-content:flex-start;margin:0;max-block-size:stretch;max-inline-size:stretch;min-block-size:0;min-inline-size:0;overflow:hidden;padding:0;position:absolute;-webkit-tap-highlight-color:transparent;border-radius:0}:where(.app-shell,.app-shell[data-style=immersive],.app-shell[data-style=raw])[data-theme=light]{color-scheme:light}:where(.app-shell,.app-shell[data-style=immersive],.app-shell[data-style=raw])[data-theme=dark]{color-scheme:dark}@media print{:where(.app-shell,.app-shell[data-style=immersive],.app-shell[data-style=raw]){display:contents!important}}}@layer shell.components{:where(.app-shell,.app-shell[data-style=immersive],.app-shell[data-style=raw]) slot{display:contents!important}.app-shell__viewport{align-self:stretch;flex:1 1 0;isolation:isolate;position:relative}.app-shell__underlying,.app-shell__viewport{min-block-size:0;min-inline-size:0;overflow:hidden}.app-shell__underlying{inset:0;pointer-events:none;position:absolute;z-index:0}.app-shell__underlying>slot::slotted(*){pointer-events:auto}.app-shell__content{block-size:stretch;border-radius:0;container-type:size;display:flex;flex-direction:column;inline-size:stretch;inset:0;max-block-size:stretch;max-inline-size:stretch;min-block-size:0;min-inline-size:0;overflow:auto;padding:0;position:absolute;scrollbar-color:rgba(128,128,128,.4) transparent;scrollbar-width:thin;z-index:1}.app-shell__content>*{flex:1 1 auto;min-block-size:0;min-inline-size:0}.app-shell__content slot:not([name])::slotted([data-view=explorer]){display:flex!important;flex:1 1 auto!important;flex-direction:column!important;min-block-size:0!important;overflow:hidden!important}.app-shell__content::-webkit-scrollbar{inline-size:8px}.app-shell__content::-webkit-scrollbar-track{background:transparent}.app-shell__content::-webkit-scrollbar-thumb{background-color:rgba(128,128,128,.4);border-radius:4px}.app-shell__overlays{inset:0;overflow:visible;pointer-events:none;position:absolute;z-index:4}.app-shell__overlays>*{pointer-events:auto}.app-shell__overlays>slot::slotted(*){pointer-events:auto}.app-shell__status{animation:d .2s ease-out;background-color:var(--shell-status-bg);border-radius:var(--radius-lg,8px);box-shadow:var(--elev-3,0 4px 12px rgba(0,0,0,.15));color:var(--shell-status-fg);font-size:var(--text-sm,.875rem);font-weight:var(--font-weight-medium,500);inset-block-end:var(--space-2xl,1.5rem);inset-inline-start:50%;padding:var(--space-md,.75rem) var(--space-xl,1.5rem);position:fixed;transform:translateX(-50%);z-index:3}.app-shell__status:empty,.app-shell__status[hidden]{display:none}.app-shell__loading,[data-shell-loading]{align-items:center;background-color:var(--shell-loading-bg,var(--shell-bg));block-size:stretch;box-sizing:border-box;color:var(--shell-loading-fg,var(--shell-fg));display:flex;filter:none;flex-direction:column;font-family:inherit;font-size:var(--shell-loading-font-size,.875rem);gap:var(--shell-loading-gap,var(--space-lg,1rem));inline-size:stretch;inset:0;isolation:isolate;justify-content:center;line-height:1.35;margin:0;max-block-size:stretch;max-inline-size:stretch;min-block-size:0;min-inline-size:0;opacity:1;padding:var(--shell-loading-pad,var(--space-2xl,2rem));pointer-events:none;position:absolute;transform:none;z-index:2}.app-shell__loading[hidden],[data-shell-loading][hidden]{display:none!important}.app-shell__loading .app-shell__loading-spinner,.app-shell__loading .loading-spinner,[data-shell-loading] .app-shell__loading-spinner,[data-shell-loading] .loading-spinner{animation:c .8s linear infinite;block-size:var(--shell-loading-spinner-size,32px);border:3px solid var(--shell-loading-spinner-track);border-block-start-color:var(--shell-loading-spinner-accent);border-radius:50%;display:block;flex-shrink:0;inline-size:var(--shell-loading-spinner-size,32px)}:is(.app-shell__loading,[data-shell-loading]) .app-shell__loading-label{color:inherit;display:block;font:inherit;margin:0;opacity:.85;padding:0;pointer-events:none}}@layer shell.utilities{@keyframes c{to{transform:rotate(1turn)}}@keyframes d{0%{opacity:0;transform:translate(-50%,.5rem)}to{opacity:1;transform:translate(-50%)}}}@layer shell.overrides{@media (max-width:480px){:where(.app-shell,.app-shell[data-style=immersive],.app-shell[data-style=raw]){--shell-nav-height:48px}}@media print{.app-shell{background:white;color:black;contain:none;overflow:visible}.app-shell,.app-shell__viewport{display:contents!important}.app-shell__overlays,.app-shell__underlying{display:none!important}.app-shell__content{contain:none;display:contents!important;overflow:visible;position:static!important}}@media print{.app-shell__content::-webkit-scrollbar{display:none}.app-shell__content>[data-view],.app-shell__content>slot:not([name])::slotted([data-view]){block-size:auto!important;inline-size:auto!important;inset:auto!important;max-block-size:none!important;min-block-size:0!important;overflow:visible!important;position:static!important}.cw-view-viewer-shell,.cw-view-viewer__prose,.markdown-body,.markdown-viewer-content,.result-content,[data-cw-view-host=true],[data-cw-view-host=true]>.cw-view-element__mount,[data-cw-viewer-prose],markdown-viewer,md-view{block-size:auto!important;contain:none!important;container-type:normal!important;max-block-size:none!important;overflow:visible!important}}:is(html,body):has([data-shell=immersive]){--shell-nav-height:0;--shell-content-padding:0;--shell-sidebar-width:0;--shell-status-height:0}:root:has(.app-shell) .app-shell{background-color:var(--shell-bg,var(--color-surface,#ffffff));color:var(--shell-fg,var(--color-on-surface,#1a1a1a));display:flex;flex-direction:column;inset:0;position:absolute;transition:background-color .2s ease,color .2s ease}.app-shell__content{scroll-behavior:smooth;scrollbar-color:var(--shell-scrollbar,rgba(128,128,128,.3)) transparent}.app-shell__content::-webkit-scrollbar{inline-size:6px}.app-shell__content::-webkit-scrollbar-thumb{background-color:var(--shell-scrollbar,rgba(128,128,128,.3));border-radius:3px}.app-shell__status{animation:d .2s ease-out;background-color:var(--shell-status-bg,rgba(0,0,0,.8));border-radius:8px;color:var(--shell-status-fg,#ffffff);font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;font-size:.875rem;inset-block-end:1rem;inset-inline-start:50%;padding:.75rem 1.5rem;position:fixed;transform:translateX(-50%);z-index:3}.app-shell__status:empty,.app-shell__status[hidden]{display:none}}@layer shell.markdown-host-theme{@scope (\n        markdown-view,\n        md-view,\n        .markdown-view,\n        cw-view-viewer,\n        .cw-view-viewer-shell,\n        :host(markdown-view),\n        :host(md-view),\n        :host(.markdown-view),\n        :host(cw-view-viewer)\n    ){:host([data-theme=light]) ::slotted([data-view=viewer]){color-scheme:light;--base-color:var(--color-primary,#5a7fff);--base-color-neutralized:color-mix(in oklab,var(--base-color) 60%,gray);--view-bg:var(--color-surface,--u2-color-mod(var(--base-color-neutralized),70));--view-fg:var(--color-on-surface,--u2-color-mod(var(--base-color-neutralized),900));--view-toolbar-bg:color-mix(in oklab,--u2-color-mod(var(--base-color-neutralized),900) 6%,transparent);--view-btn-hover-bg:color-mix(in oklab,--u2-color-mod(var(--base-color-neutralized),900) 7%,transparent);--view-code-bg:--u2-color-mod(var(--base-color-neutralized),120);--view-blockquote-bg:color-mix(in oklab,--u2-color-mod(var(--base-color-neutralized),900) 3%,transparent);--color-on-surface:--u2-color-mod(var(--base-color-neutralized),980);--viewer-toolbar-row-fill:--u2-color-mod(var(--base-color),160);--view-picon-fill:--u2-color-mod(var(--base-color-neutralized),780);--view-picon-fill-hover:var(--color-primary,--u2-color-mod(var(--base-color-neutralized),550));--color-surface-container-high:color-mix(in oklab,--u2-color-mod(var(--base-color-neutralized),900) 10%,transparent)}:host([data-theme=dark]) ::slotted([data-view=viewer]){color-scheme:dark;--base-color:var(--color-primary,#5a7fff);--base-color-neutralized:color-mix(in oklab,var(--base-color) 60%,gray);--view-bg:var(--color-surface,--u2-color-mod(var(--base-color-neutralized),960));--view-fg:var(--color-on-surface,--u2-color-mod(var(--base-color-neutralized),100));--view-toolbar-bg:color-mix(in oklab,--u2-color-mod(var(--base-color-neutralized),100) 6%,transparent);--view-btn-hover-bg:color-mix(in oklab,--u2-color-mod(var(--base-color-neutralized),100) 8%,transparent);--view-code-bg:--u2-color-mod(var(--base-color-neutralized),900);--view-blockquote-bg:color-mix(in oklab,--u2-color-mod(var(--base-color-neutralized),100) 4%,transparent);--color-on-surface:--u2-color-mod(var(--base-color-neutralized),10);--viewer-toolbar-row-fill:--u2-color-mod(var(--base-color-neutralized),880);--view-picon-fill:--u2-color-mod(var(--base-color-neutralized),280);--view-picon-fill-hover:--u2-color-mod(var(--base-color-neutralized),420);--color-surface-container-high:color-mix(in oklab,--u2-color-mod(var(--base-color-neutralized),100) 14%,transparent)}:host([data-theme=light]) ::slotted([data-view=viewer]) :where(.markdown-body,[data-render-target].markdown-body){--base-color-neutralized:color-mix(in oklab,var(--base-color) 60%,gray);--color-surface:--u2-color-mod(var(--base-color-neutralized,var(--color-primary)),10);--color-on-surface:--u2-color-mod(var(--base-color-neutralized,var(--color-primary)),980);color-scheme:light}:host([data-theme=dark]) ::slotted([data-view=viewer]) :where(.markdown-body,[data-render-target].markdown-body){--base-color-neutralized:color-mix(in oklab,var(--base-color) 60%,gray);--color-surface:--u2-color-mod(var(--base-color-neutralized,var(--color-primary)),980);--color-on-surface:--u2-color-mod(var(--base-color-neutralized,var(--color-primary)),10);color-scheme:dark}}}";
-//#endregion
-//#region ../../modules/shells/immersive-shell/src/index.ts
-/**
-* Immersive Shell
-*
-* Immersive shell with no frames, navigation UI, or chrome.
-* Just a content container with theme support.
-*
-* Use cases:
-* - Fullscreen views
-* - Print layouts
-* - Embedded views
-* - Single-component rendering
-*/
-var ImmersiveShell = class extends ShellBase {
-	id = "immersive";
-	name = "Immersive";
-	layout = {
-		hasSidebar: false,
-		hasToolbar: false,
-		hasTabs: false,
-		supportsMultiView: false,
-		supportsWindowing: false
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../com/app.js","./rolldown-runtime.js"])))=>i.map(i=>d[i]);
+import { f as publicHrefForView, g as stashSkuHandoff, m as shouldHandoffViewToSibling } from "../shells/boot-history-base.js";
+import { An as loadAsAdopted, Cn as observe, G as FileManager, Hn as __vitePreload, K as FileManagerContent_default, Nn as removeAdopted, _n as getString, gn as StorageKeys, nt as openUnifiedContextMenu, vn as setString } from "../com/app.js";
+import { c as sendViewProtocolMessage, l as createViewConstructor, r as ExplorerChannelAction } from "../views/viewer.js";
+import "./storage.js";
+import { ar as speedDialItems, er as addSpeedDialItem, ir as persistSpeedDialMeta, nr as ensureSpeedDialMeta, rr as persistSpeedDialItems, tr as createEmptySpeedDialItem } from "../shells/boot-index.js";
+//#region ../CWSP-explorer/src/inject.ts
+/** Merge inject layers: menu items concatenate; handlers shallow-merge last-wins; onWire chains in order. */
+function mergeExplorerInject(...layers) {
+	const defined = layers.filter(Boolean);
+	if (!defined.length) return void 0;
+	return {
+		extraBackgroundMenuItems: (ctx) => defined.flatMap((l) => l.extraBackgroundMenuItems?.(ctx) ?? []),
+		contextActionHandlers: defined.reduce((acc, l) => ({
+			...acc,
+			...l.contextActionHandlers ?? {}
+		}), {}),
+		onWire: (fm, root) => {
+			for (const l of defined) l.onWire?.(fm, root);
+		}
 	};
-	wcoGeometryHandler = null;
-	wcoResizeHandler = null;
-	/** Content shell turns this off so only page overlays apply (no wallpaper/speed-dial layer). */
-	includeUnderlyingSlot() {
-		return true;
-	}
-	createLayout() {
-		const underlying = this.includeUnderlyingSlot() ? H`
-            <div class="app-shell__underlying">
-                <slot name="${SHELL_SLOT.underlying}"></slot>
-            </div>
-        ` : "";
-		return H`
-            <div class="app-shell" data-shell="immersive" data-style="immersive">
-                <div class="app-shell__viewport">
-                    ${underlying}
-                    <main class="app-shell__content" data-shell-content role="main">
-                        <slot></slot>
-                    </main>
-                    <div class="app-shell__loading" data-shell-loading role="status" aria-live="polite">
-                        <div class="loading-spinner" aria-hidden="true"></div>
-                        <span class="app-shell__loading-label">Loading...</span>
-                    </div>
-                    <div class="app-shell__overlays" data-shell-overlays>
-                        <slot name="${SHELL_SLOT.overlay}"></slot>
-                    </div>
-                </div>
-                <div class="app-shell__status" data-shell-status hidden aria-live="polite"></div>
-            </div>
-        `;
-	}
-	getStylesheet() {
-		return base_default;
-	}
-	/**
-	* Theme lives on `cw-shell-*` in `applyTheme`; inner `.app-shell` needs the same `data-theme`
-	* so shell SCSS `&[data-theme="light"|"dark"]` and token rules apply (matches MinimalShell).
-	*/
-	applyTheme(theme) {
-		const inner = this.rootElement?.shadowRoot?.querySelector(".app-shell");
-		if (inner) inner.dataset.theme = this.resolveShellColorScheme(theme);
-		super.applyTheme(theme);
-	}
-	/**
-	* Routed views use the default (unnamed) slot inside `<main data-shell-content>`; append to the
-	* shell host in light DOM so document-level view CSS still targets roots that pierce shadow.
-	*/
-	renderView(element) {
-		if (!this.contentContainer || !this.rootElement) {
-			console.warn(`[${this.id}] No content container available`);
-			return;
-		}
-		this.contentContainer.setAttribute("data-current-view", this.currentView.value);
-		const previousId = this.navigationState.previousView;
-		if (previousId && previousId !== this.currentView.value && this.loadedViews.has(previousId)) {
-			const prev = this.loadedViews.get(previousId);
-			prev.element.removeAttribute("data-view");
-			prev.element.hidden = true;
-			if (this.rootElement.contains(prev.element)) prev.element.remove();
-		}
-		element.setAttribute("data-view", this.currentView.value);
-		element.hidden = false;
-		element.removeAttribute("slot");
-		if (!this.rootElement.contains(element)) this.rootElement.appendChild(element);
-		const loading = (this.rootElement?.shadowRoot?.querySelector(".app-shell") ?? this.rootElement)?.querySelector(".app-shell__loading");
-		if (loading) loading.hidden = true;
-		this.currentViewElement = element;
-	}
-	async mount(container) {
-		await super.mount(container);
-		this.setupHashNavigation();
-		this.setupPopstateNavigation();
-		this.bindWindowControlsOverlay();
-	}
-	unmount() {
-		this.unbindWindowControlsOverlay();
-		super.unmount();
-	}
-	bindWindowControlsOverlay() {
-		const overlay = (globalThis?.navigator || {})?.windowControlsOverlay;
-		const host = this.rootElement;
-		if (!host || !overlay) return;
-		const update = () => {
-			const isVisible = Boolean(overlay?.visible);
-			host.setAttribute("data-wco-visible", isVisible ? "true" : "false");
-			const rect = overlay?.getTitlebarAreaRect?.();
-			if (isVisible && rect) {
-				host.style.setProperty("--wco-titlebar-x", `${Math.max(0, Number(rect.x) || 0)}px`);
-				host.style.setProperty("--wco-titlebar-y", `${Math.max(0, Number(rect.y) || 0)}px`);
-				host.style.setProperty("--wco-titlebar-width", `${Math.max(0, Number(rect.width) || 0)}px`);
-				host.style.setProperty("--wco-titlebar-height", `${Math.max(0, Number(rect.height) || 0)}px`);
-			} else {
-				host.style.setProperty("--wco-titlebar-x", "0px");
-				host.style.setProperty("--wco-titlebar-y", "0px");
-				host.style.setProperty("--wco-titlebar-width", "0px");
-				host.style.setProperty("--wco-titlebar-height", "0px");
-			}
-		};
-		this.wcoGeometryHandler = () => update();
-		this.wcoResizeHandler = () => update();
-		try {
-			overlay?.addEventListener?.("geometrychange", this.wcoGeometryHandler);
-		} catch {}
-		globalThis?.addEventListener?.("resize", this.wcoResizeHandler);
-		update();
-	}
-	unbindWindowControlsOverlay() {
-		const overlay = (globalThis?.navigator || {})?.windowControlsOverlay;
-		if (overlay && this.wcoGeometryHandler) try {
-			overlay?.removeEventListener?.("geometrychange", this.wcoGeometryHandler);
-		} catch {}
-		if (this.wcoResizeHandler) globalThis?.removeEventListener?.("resize", this.wcoResizeHandler);
-		this.wcoGeometryHandler = null;
-		this.wcoResizeHandler = null;
-	}
-};
-/**
-* Create a immersive shell instance
-*/
-function createShell(_container) {
-	return new ImmersiveShell();
+}
+var registered;
+/** App-wide explorer hooks (boot/plugins). */
+function registerExplorerInject(api) {
+	registered = api;
+}
+function getRegisteredExplorerInject() {
+	return registered;
 }
 //#endregion
-export { ImmersiveShell, createShell, createShell as default, base_default as t };
+//#region ../CWSP-explorer/src/utils.ts
+/**
+* Empty-area / shell context menu for Explorer.
+* Delegates to unified menu (icons, vertical layout, overlay mount, no backdrop-filter mask bugs).
+*/
+var openExplorerContextMenu = (x, y, items, options) => {
+	const entries = items.map((item) => ({
+		id: item.id,
+		label: item.label,
+		...item.icon ? { icon: item.icon } : {},
+		action: () => item.action()
+	}));
+	openUnifiedContextMenu({
+		x,
+		y,
+		items: entries,
+		compact: true,
+		anchor: options?.anchor ?? null,
+		resolveOverlayMountPoint: options?.resolveOverlayMountPoint
+	});
+};
+var requestOpenView = (request) => {
+	const viewId = String(request?.viewId || "").trim().toLowerCase();
+	if (!viewId) return;
+	if (shouldHandoffViewToSibling(viewId)) {
+		const href = publicHrefForView(viewId);
+		if (href) {
+			globalThis.location.assign(href);
+			return;
+		}
+	}
+	const raw = request?.target || "window";
+	const target = raw === "base" ? "immersive" : raw;
+	globalThis?.dispatchEvent?.(new CustomEvent("cw:view-open-request", { detail: {
+		viewId,
+		target,
+		params: request?.params || {}
+	} }));
+};
+var TEXT_FILE_EXTENSIONS = /* @__PURE__ */ new Set([
+	"md",
+	"markdown",
+	"txt",
+	"text",
+	"json",
+	"xml",
+	"yml",
+	"yaml",
+	"html",
+	"htm",
+	"css",
+	"js",
+	"mjs",
+	"cjs",
+	"ts",
+	"tsx",
+	"jsx",
+	"log",
+	"ini",
+	"conf",
+	"cfg",
+	"csv"
+]);
+var buildExplorerProcessId = (path) => {
+	const suffix = Math.random().toString(36).slice(2, 8);
+	const stamp = Date.now().toString(36);
+	return `explorer-${String(path || "root").replace(/[^a-z0-9_-]/gi, "-").slice(0, 18) || "root"}-${stamp}-${suffix}`;
+};
+var extOf = (filename = "") => {
+	const next = String(filename).trim().toLowerCase();
+	const idx = next.lastIndexOf(".");
+	if (idx <= 0 || idx >= next.length - 1) return "";
+	return next.slice(idx + 1);
+};
+var isTextLikeFile = (file) => {
+	if (!file) return false;
+	const type = String(file.type || "").toLowerCase();
+	if (!type || type.startsWith("text/")) return true;
+	if (type.includes("markdown") || type.includes("json") || type.includes("xml")) return true;
+	return TEXT_FILE_EXTENSIONS.has(extOf(file.name || ""));
+};
+var buildViewerProcessId = (path) => {
+	const suffix = Math.random().toString(36).slice(2, 8);
+	const stamp = Date.now().toString(36);
+	return `viewer-${String(path || "viewer").replace(/[^a-z0-9_-]/gi, "-").slice(0, 18) || "viewer"}-${stamp}-${suffix}`;
+};
+var guessNextShortcutCell = () => {
+	const occupied = new Set(Array.from(speedDialItems ?? []).map((item) => `${Math.round(item?.cell?.[0] || 0)}:${Math.round(item?.cell?.[1] || 0)}`));
+	const maxRows = 12;
+	const maxCols = 8;
+	for (let row = 0; row < maxRows; row += 1) for (let col = 0; col < maxCols; col += 1) {
+		const key = `${col}:${row}`;
+		if (!occupied.has(key)) return [col, row];
+	}
+	return [0, 0];
+};
+//#endregion
+//#region ../CWSP-explorer/src/runtime.ts
+function loadLastPath(explorer, initialPath) {
+	if (initialPath && initialPath.trim()) {
+		explorer.path = initialPath.trim();
+		return;
+	}
+	const persisted = String(getString(StorageKeys.EXPLORER_PATH, "/user/") || "").trim();
+	explorer.path = !persisted || persisted === "/" ? "/user/" : persisted;
+}
+function setupExplorerEvents(explorer, opts, inject, signal) {
+	const listenerOpts = { signal };
+	const showMessage = (message) => opts.shellContext?.showMessage?.(message);
+	const openFileInViewer = async (item, fullPath, target = "window") => {
+		const file = item?.file;
+		if (!file || !isTextLikeFile(file)) return false;
+		const sourcePath = String(fullPath || "");
+		if (shouldHandoffViewToSibling("viewer")) {
+			try {
+				stashSkuHandoff({
+					dest: "viewer",
+					content: await file.text(),
+					filename: file.name || "",
+					src: sourcePath
+				});
+			} catch {
+				stashSkuHandoff({
+					dest: "viewer",
+					filename: file.name || "",
+					src: sourcePath
+				});
+			}
+			const href = publicHrefForView("viewer");
+			if (href) globalThis.location.assign(href);
+			return true;
+		}
+		if (target === "base" || target === "immersive") {
+			requestOpenView({
+				viewId: "viewer",
+				target: "immersive",
+				params: {
+					src: sourcePath,
+					filename: file.name || "",
+					processId: buildViewerProcessId(sourcePath)
+				}
+			});
+			return true;
+		}
+		const processId = buildViewerProcessId(sourcePath);
+		requestOpenView({
+			viewId: "viewer",
+			target: "window",
+			params: {
+				processId,
+				src: sourcePath,
+				filename: file.name || ""
+			}
+		});
+		try {
+			if (!await sendViewProtocolMessage({
+				type: "content-view",
+				source: "explorer",
+				destination: "viewer",
+				contentType: file.type || "text/plain",
+				attachments: [{
+					data: file,
+					source: "explorer-viewer-open"
+				}],
+				data: {
+					filename: file.name,
+					path: sourcePath,
+					source: sourcePath
+				},
+				metadata: {
+					processId,
+					openTarget: "window"
+				}
+			})) showMessage("Viewer is not ready yet, retrying in background");
+		} catch (error) {
+			console.warn("[Explorer] Failed to send viewer payload:", error);
+		}
+		return true;
+	};
+	const attachToWorkCenter = async (item, mode) => {
+		const file = item?.file;
+		if (!file) {
+			showMessage("No file selected");
+			return;
+		}
+		const sourcePath = `${explorer?.path || "/"}${item?.name || file.name}`;
+		if (shouldHandoffViewToSibling("workcenter")) {
+			try {
+				const content = isTextLikeFile(file) ? await file.text() : "";
+				stashSkuHandoff({
+					dest: "workcenter",
+					content,
+					filename: file.name || "",
+					src: sourcePath
+				});
+			} catch {
+				stashSkuHandoff({
+					dest: "workcenter",
+					filename: file.name || "",
+					src: sourcePath
+				});
+			}
+			const href = publicHrefForView("workcenter");
+			if (href) globalThis.location.assign(href);
+			return;
+		}
+		if (mode === "headless") requestOpenView({
+			viewId: "workcenter",
+			target: "headless",
+			params: {
+				queue: "1",
+				mode: "headless",
+				sourcePath
+			}
+		});
+		else if (mode === "active") requestOpenView({
+			viewId: "workcenter",
+			target: "window"
+		});
+		else requestOpenView({
+			viewId: "workcenter",
+			target: "window",
+			params: {
+				minimized: "1",
+				queue: "1",
+				sourcePath
+			}
+		});
+		if (await sendViewProtocolMessage({
+			type: "content-share",
+			source: "explorer",
+			destination: "workcenter",
+			contentType: file.type || "application/octet-stream",
+			attachments: [{
+				data: file,
+				source: "explorer-workcenter-attach"
+			}],
+			data: {
+				filename: file.name,
+				path: sourcePath,
+				source: "explorer-attach",
+				queued: mode !== "active"
+			},
+			metadata: {
+				queueState: mode === "active" ? "awaiting" : mode === "queued" ? "pending" : "queued",
+				mode,
+				sourcePath
+			}
+		})) showMessage(mode === "active" ? `Attached ${file.name} to Work Center` : `Queued ${file.name} for Work Center (${mode})`);
+		else showMessage("Work Center queue is unavailable");
+	};
+	const pinToHome = (item) => {
+		const file = item?.file;
+		const name = String(item?.name || file?.name || "").trim();
+		if (!name) {
+			showMessage("Nothing to pin");
+			return;
+		}
+		const path = `${explorer?.path || "/"}${name}`;
+		const cell = observe(guessNextShortcutCell());
+		const shortcut = createEmptySpeedDialItem(cell);
+		shortcut.label.value = name;
+		shortcut.icon.value = item?.kind === "directory" ? "folder" : "file-text";
+		shortcut.action = "open-link";
+		addSpeedDialItem(shortcut);
+		const meta = ensureSpeedDialMeta(shortcut.id, { action: "open-link" });
+		meta.action = "open-link";
+		meta.href = path;
+		meta.description = `Pinned from Explorer: ${path}`;
+		persistSpeedDialItems();
+		persistSpeedDialMeta();
+		showMessage(`Pinned ${name} to Home`);
+	};
+	const getItemPath = (item) => `${explorer?.path || "/"}${item?.name || ""}`;
+	const mergedHandlers = {
+		view: async (item) => {
+			await openFileInViewer(item, getItemPath(item), "window");
+		},
+		"view-base": async (item) => {
+			await openFileInViewer(item, getItemPath(item), "base");
+		},
+		"attach-workcenter": (item) => attachToWorkCenter(item, "active"),
+		"attach-workcenter-queued": (item) => attachToWorkCenter(item, "queued"),
+		"attach-workcenter-headless": (item) => attachToWorkCenter(item, "headless"),
+		"pin-home": (item) => pinToHome(item),
+		...inject?.contextActionHandlers ?? {}
+	};
+	const onFileOpen = async (e) => {
+		const { item, path } = e.detail || {};
+		if (item?.kind !== "file") return;
+		if (!item.file) {
+			const loadPath = path || `${explorer?.path || "/"}${item.name || ""}`;
+			try {
+				const { provide } = await __vitePreload(async () => {
+					const { provide } = await import("../com/app.js").then((n) => n.st);
+					return { provide };
+				}, __vite__mapDeps([0,1]), import.meta.url);
+				item.file = await provide(loadPath);
+			} catch {}
+		}
+		if (!item.file) return;
+		if (!await openFileInViewer(item, path, "window")) requestOpenView({
+			viewId: "workcenter",
+			target: "window"
+		});
+	};
+	explorer.addEventListener("open-item", onFileOpen, listenerOpts);
+	explorer.addEventListener("open", onFileOpen, listenerOpts);
+	explorer.addEventListener("rs-open", onFileOpen, listenerOpts);
+	const savePath = () => {
+		setString(StorageKeys.EXPLORER_PATH, explorer.path || "/user/");
+	};
+	explorer.addEventListener("entries-updated", savePath, listenerOpts);
+	explorer.addEventListener("rs-navigate", savePath, listenerOpts);
+	explorer.addEventListener("context-action", async (event) => {
+		const detail = event.detail || {};
+		const action = String(detail.action || "");
+		const item = detail.item;
+		if (!action) return;
+		const handler = mergedHandlers[action];
+		if (!handler) return;
+		await handler(item);
+	}, listenerOpts);
+	explorer.addEventListener("contextmenu", (event) => {
+		if ((event.composedPath?.() || []).some((node) => {
+			const el = node;
+			if (!el || typeof el.classList?.contains !== "function") return false;
+			return el.classList.contains("row") || el.classList.contains("action-btn") || el.classList.contains("ctx-menu");
+		})) return;
+		event.preventDefault();
+		const path = explorer?.path || "/";
+		const extra = inject?.extraBackgroundMenuItems?.({ path }) ?? [];
+		openExplorerContextMenu(event.clientX, event.clientY, [
+			{
+				id: "refresh",
+				label: "Refresh",
+				icon: "arrows-clockwise",
+				action: () => {
+					explorer.navigate(path);
+				}
+			},
+			{
+				id: "open-new-explorer",
+				label: "New Explorer window",
+				icon: "books",
+				action: () => requestOpenView({
+					viewId: "explorer",
+					target: "window",
+					params: {
+						path,
+						processId: buildExplorerProcessId(path)
+					}
+				})
+			},
+			{
+				id: "open-home",
+				label: "Go to Home",
+				icon: "house",
+				action: () => opts.shellContext?.navigate?.("home")
+			},
+			...extra
+		], {
+			anchor: event.target instanceof Element ? event.target : explorer,
+			resolveOverlayMountPoint: opts.shellContext?.resolveOverlayMountPoint
+		});
+	}, listenerOpts);
+}
+function setupFallbackExplorerEvents(shellRoot, opts, signal) {
+	const listenerOpts = { signal };
+	const showMessage = (msg) => opts.shellContext?.showMessage?.(msg);
+	const filesList = shellRoot.querySelector("[data-fallback-files]");
+	const pickBtn = shellRoot.querySelector("[data-action=\"pick-files\"]");
+	const workBtn = shellRoot.querySelector("[data-action=\"open-workcenter\"]");
+	if (!pickBtn || !filesList) return;
+	const input = document.createElement("input");
+	input.type = "file";
+	input.multiple = true;
+	input.accept = ".md,.markdown,.txt,.json,.xml,.yaml,.yml,.csv,.log,text/*";
+	input.style.display = "none";
+	shellRoot.append(input);
+	pickBtn.addEventListener("click", () => input.click(), listenerOpts);
+	workBtn?.addEventListener("click", () => requestOpenView({
+		viewId: "workcenter",
+		target: "window"
+	}), listenerOpts);
+	input.addEventListener("change", async () => {
+		const files = Array.from(input.files || []);
+		filesList.replaceChildren();
+		if (files.length === 0) return;
+		for (const file of files) {
+			const li = document.createElement("li");
+			li.textContent = file.name;
+			filesList.append(li);
+		}
+		const firstTextLike = files.find((file) => isTextLikeFile(file));
+		if (firstTextLike) {
+			requestOpenView({
+				viewId: "viewer",
+				target: "window"
+			});
+			if (!await sendViewProtocolMessage({
+				type: "content-view",
+				source: "explorer-fallback",
+				destination: "viewer",
+				contentType: firstTextLike.type || "text/plain",
+				attachments: [{
+					data: firstTextLike,
+					source: "explorer-fallback"
+				}],
+				data: {
+					filename: firstTextLike.name,
+					source: "explorer-fallback"
+				}
+			})) showMessage("Viewer is not ready yet");
+		}
+	}, listenerOpts);
+}
+/**
+* Attach explorer behaviors to `shellRoot` (`.view-explorer`). Returns cleanup and the file manager host if present.
+*/
+function wireExplorerSubtree(shellRoot, wireOpts) {
+	const injectMerged = mergeExplorerInject(getRegisteredExplorerInject(), wireOpts.inject);
+	const ac = new AbortController();
+	const { signal } = ac;
+	const fm = shellRoot.querySelector("ui-file-manager");
+	injectMerged?.onWire?.(fm, shellRoot);
+	if (fm) {
+		loadLastPath(fm, wireOpts.initialPath ?? null);
+		setupExplorerEvents(fm, wireOpts, injectMerged, signal);
+		return {
+			cleanup: () => {
+				setString(StorageKeys.EXPLORER_PATH, fm.path || "/user/");
+				ac.abort();
+			},
+			fileManager: fm
+		};
+	}
+	setupFallbackExplorerEvents(shellRoot, wireOpts, signal);
+	return {
+		cleanup: () => ac.abort(),
+		fileManager: null
+	};
+}
+//#endregion
+//#region ../CWSP-explorer/src/theme.ts
+/** Read app-level resolved theme when available (PWA / shell); else null. */
+function readAppDataTheme() {
+	if (typeof document === "undefined") return null;
+	const raw = document.documentElement?.getAttribute("data-theme");
+	if (raw === "light" || raw === "dark") return raw;
+	return null;
+}
+/** Effective scheme after resolving `system` — prefers `html[data-theme]`, then prefers-color-scheme. */
+function resolveExplorerColorSchemePreference(mode) {
+	if (mode === "light" || mode === "dark") return mode;
+	const fromDoc = readAppDataTheme();
+	if (fromDoc) return fromDoc;
+	if (typeof globalThis.matchMedia === "function" && globalThis.matchMedia("(prefers-color-scheme: light)").matches) return "light";
+	return "dark";
+}
+/** Push resolved scheme onto the explorer shell for CSS tokens under `[data-explorer-color-scheme]`. */
+function applyExplorerColorScheme(shellRoot, mode) {
+	if (!shellRoot) return;
+	const resolved = resolveExplorerColorSchemePreference(mode ?? void 0);
+	shellRoot.dataset.explorerColorScheme = resolved;
+	shellRoot.style.setProperty("color-scheme", resolved);
+}
+/**
+* When `colorScheme === "system"`, re-apply explorer tokens whenever app `data-theme` or OS scheme changes.
+* Call `disconnect()` on unmount; no-op if `mode` is fixed `light` | `dark`.
+*/
+function subscribeExplorerSystemTheme(shellRoot, getMode) {
+	const noop = () => ({ disconnect: () => {} });
+	if (!shellRoot || typeof document === "undefined") return noop();
+	const apply = () => {
+		if (!shellRoot.isConnected) return;
+		if ((getMode() ?? "system") !== "system") return;
+		applyExplorerColorScheme(shellRoot, "system");
+	};
+	if ((getMode() ?? "system") !== "system") return noop();
+	const root = document.documentElement;
+	const mq = typeof globalThis.matchMedia === "function" ? globalThis.matchMedia("(prefers-color-scheme: dark)") : null;
+	const obs = new MutationObserver(apply);
+	try {
+		obs.observe(root, {
+			attributes: true,
+			attributeFilter: ["data-theme"]
+		});
+	} catch {
+		obs.disconnect();
+		return noop();
+	}
+	mq?.addEventListener("change", apply);
+	apply();
+	return { disconnect: () => {
+		obs.disconnect();
+		mq?.removeEventListener("change", apply);
+	} };
+}
+//#endregion
+//#region ../CWSP-explorer/src/index.scss?inline
+var src_default = "@layer ux-file-manager{:host(ui-file-manager),:host(ui-file-manager) :where(*){box-sizing:border-box;user-select:none;-webkit-tap-highlight-color:transparent}:host(ui-file-manager){background-color:var(--color-surface);block-size:100%;border-radius:0;color:var(--color-on-surface);container-type:inline-size;content-visibility:visible;display:flex;flex:1 1 auto;flex-direction:column;inline-size:100%;line-height:normal;margin:0;max-block-size:none;max-inline-size:none;min-block-size:0;min-inline-size:0;overflow:hidden;perspective:1000;--ui-icon-size:var(--ui-explorer-icon-size,1.5rem);--ui-icon-padding:0px;--icon-color:var(--color-on-surface)}:host(ui-file-manager) .fm-root{block-size:100%;display:grid;flex:1 1 auto;gap:0;grid-template-columns:[content-col] minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);inline-size:100%;min-block-size:0;min-inline-size:0;overflow:hidden;position:relative}:host(ui-file-manager) .fm-toolbar{background:var(--color-surface,#1e1e1e);border-radius:0;box-shadow:0 1px 0 color-mix(in oklab,var(--color-on-surface,#fff) 6%,transparent);display:grid;gap:.625rem;grid-auto-flow:column;grid-column:1/-1;grid-template-columns:minmax(0,max-content) minmax(0,1fr) minmax(0,max-content);grid-template-rows:minmax(0,1fr);line-height:normal;padding:.5rem .75rem;place-content:center;place-items:center}:host(ui-file-manager) .fm-toolbar :is(button,input){background-color:initial;color:var(--color-on-surface)}:host(ui-file-manager) .fm-toolbar input{background:color-mix(in oklab,var(--color-on-surface,#fff) 6%,transparent);block-size:stretch;border:none;border-radius:999px;font:.8125rem/1.35 ui-monospace,Cascadia Code,SF Mono,Consolas,monospace;inline-size:stretch;outline:none;overflow:auto;padding:.45rem .85rem}:host(ui-file-manager) .fm-toolbar input:focus-visible{box-shadow:0 0 0 2px color-mix(in oklab,var(--color-primary,#5a7fff) 45%,transparent)}:host(ui-file-manager) .fm-toolbar .btn{align-items:center;appearance:none;aspect-ratio:1/1;background:transparent;block-size:2.5rem;border:0;border-radius:999px;cursor:pointer;display:inline-flex;inline-size:2.5rem;justify-content:center;padding:0;transition:background .14s ease,transform .1s ease}:host(ui-file-manager) .fm-toolbar .btn ui-icon{--ui-icon-size:var(--ui-explorer-icon-size,1.5rem);--ui-icon-padding:0px;block-size:var(--ui-icon-size)!important;flex-shrink:0;inline-size:var(--ui-icon-size)!important;max-block-size:var(--ui-icon-size)!important;max-inline-size:var(--ui-icon-size)!important;min-block-size:var(--ui-icon-size)!important;min-inline-size:var(--ui-icon-size)!important}:host(ui-file-manager) .fm-toolbar .btn:hover{background:color-mix(in oklab,var(--color-on-surface) 9%,transparent)}:host(ui-file-manager) .fm-toolbar .btn:active{transform:scale(.96)}:host(ui-file-manager) .fm-toolbar .btn:focus-visible{outline:2px solid color-mix(in oklab,var(--color-primary,#5a7fff) 55%,transparent);outline-offset:1px}:host(ui-file-manager) .fm-toolbar>*{align-items:center;block-size:fit-content;display:flex;flex-direction:row;flex-wrap:nowrap;gap:.2rem;min-block-size:stretch}:host(ui-file-manager) .fm-toolbar .fm-toolbar-left{grid-column:1}:host(ui-file-manager) .fm-toolbar :is(.fm-toolbar-left,.fm-toolbar-right){background:color-mix(in oklab,var(--color-on-surface,#fff) 5.5%,transparent);border-radius:999px;padding:.2rem}:host(ui-file-manager) .fm-toolbar .fm-toolbar-center{background:color-mix(in oklab,var(--color-on-surface,#fff) 5.5%,transparent);block-size:fit-content;border-radius:999px;flex-grow:1;grid-column:2;inline-size:stretch;min-block-size:2.5rem;overflow:hidden;padding:0;place-content:stretch;justify-content:start;place-items:stretch}:host(ui-file-manager) .fm-toolbar .fm-toolbar-center>*{block-size:stretch;inline-size:stretch}:host(ui-file-manager) .fm-toolbar .fm-toolbar-center input{background:transparent;inline-size:stretch;padding-inline:.9rem}:host(ui-file-manager) .fm-toolbar .fm-toolbar-right{grid-column:3}:host(ui-file-manager) .fm-sidebar{align-content:start;border-radius:.5rem;display:none;gap:.5rem;grid-column:sidebar-col;grid-row:2;justify-content:start;justify-items:start;line-height:normal;padding:.5rem;text-align:start}:host(ui-file-manager) .fm-sidebar .sec{display:grid;gap:.25rem;place-content:start;justify-content:start;place-items:start;justify-items:start}:host(ui-file-manager) .fm-sidebar .sec-title{font-weight:600;opacity:.8;padding-block:.25rem;place-self:start}:host(ui-file-manager) .fm-sidebar .link{appearance:none;border:0;border-radius:.375rem;cursor:pointer;line-height:normal;padding:.25rem .375rem;text-align:start}:host(ui-file-manager) .fm-content{block-size:100%;border-radius:0;display:flex;flex:1 1 auto;flex-direction:column;grid-column:content-col;grid-row:2;inline-size:100%;min-block-size:0;min-inline-size:0;overflow:hidden;padding:0 .35rem .45rem;scrollbar-color:color-mix(in oklab,var(--color-on-surface) 22%,transparent) transparent;scrollbar-width:thin}:host(ui-file-manager) .status{opacity:.8;padding:.5rem}:host(ui-file-manager) .status.error{color:var(--error-color,crimson)}@container (inline-size < 520px){:host(ui-file-manager) .fm-content{grid-column:1/-1}:host(ui-file-manager) .fm-root{grid-column:1/-1}:host(ui-file-manager) .fm-grid{grid-column:1/-1}:host(ui-file-manager) .fm-root[data-with-sidebar=true]{grid-template-columns:[content-col] minmax(0,1fr)}:host(ui-file-manager) .fm-sidebar{display:none!important}}}@layer ux-file-manager-content{:host(ui-file-manager-content),:host(ui-file-manager-content) :where(*){overflow:hidden;scrollbar-color:transparent transparent;scrollbar-gutter:auto;scrollbar-width:none}:host(ui-file-manager-content){background-color:var(--color-surface);block-size:100%;border:0 transparent;border-radius:0;color:var(--color-on-surface);contain:none;container-type:size;display:flex;flex:1 1 auto;flex-direction:column;grid-column:1/-1;inline-size:100%;isolation:isolate;margin:0;min-block-size:0;min-inline-size:0;outline:0 none transparent;overflow:hidden;perspective:1000;pointer-events:auto;position:relative;scrollbar-color:transparent transparent;scrollbar-gutter:auto;scrollbar-width:none;touch-action:manipulation;z-index:1}:host(ui-file-manager-content) .fm-grid{align-content:start;block-size:100%;border:0 transparent;display:grid;flex:1 1 auto;grid-template-columns:[icon] var(--ui-explorer-icon-track,2rem) [name] minmax(0,1fr) [size] minmax(4.5rem,6rem) [date] minmax(0,7.5rem) [actions] minmax(6.75rem,max-content);grid-template-rows:auto minmax(0,1fr);inline-size:stretch;min-block-size:0;min-inline-size:0;outline:0 none transparent;overflow:hidden;pointer-events:none;row-gap:0;scrollbar-color:transparent transparent;scrollbar-gutter:auto;scrollbar-width:none;touch-action:manipulation}@container (inline-size <= 600px){:host(ui-file-manager-content) .fm-grid{grid-template-columns:[icon] var(--ui-explorer-icon-track,2rem) [name] minmax(0,1fr) [size] minmax(4.5rem,6rem) [date] minmax(0,0) [actions] minmax(6.75rem,max-content)}}:host(ui-file-manager-content) .fm-grid-rows{align-content:start;block-size:100%;contain:none;contain-intrinsic-size:1px var(--ui-explorer-row-height,2.625rem);content-visibility:visible;display:grid;gap:.25rem;grid-auto-rows:var(--ui-explorer-row-height,2.625rem);grid-column:1/-1;grid-template-columns:subgrid;inline-size:100%;min-block-size:0;min-inline-size:0;overflow:auto;pointer-events:auto;scrollbar-color:color-mix(in oklab,var(--color-on-surface) 22%,transparent) transparent;scrollbar-gutter:stable;scrollbar-width:thin;touch-action:manipulation;z-index:1}:host(ui-file-manager-content) .fm-grid-rows slot{display:contents!important}:host(ui-file-manager-content) :where(.row){background-color:color-mix(in oklab,var(--color-on-surface,#fff) 3%,transparent);block-size:var(--ui-explorer-row-height,2.625rem);border:none;border-radius:.625rem;color:var(--color-on-surface);cursor:pointer;display:grid;grid-column:1/-1;grid-template-rows:minmax(0,var(--ui-explorer-row-height,2.625rem))!important;inline-size:stretch;min-block-size:0;order:var(--order,1)!important;place-content:center;place-items:center;justify-items:start;padding:0 .65rem;place-self:stretch;pointer-events:auto;touch-action:manipulation;user-drag:none;-webkit-user-drag:none;flex-wrap:nowrap;gap:.35rem;letter-spacing:normal;overflow:hidden;text-align:start;text-overflow:ellipsis;text-wrap:nowrap;white-space:nowrap}@media (hover:hover) and (pointer:fine){:host(ui-file-manager-content) :where(.row){user-drag:element;-webkit-user-drag:element}}:host(ui-file-manager-content) :where(.row) ui-icon{--ui-icon-size:var(--ui-explorer-icon-size,1.5rem);--ui-icon-padding:0px;block-size:var(--ui-icon-size);flex-shrink:0;inline-size:var(--ui-icon-size);min-block-size:var(--ui-icon-size);min-inline-size:var(--ui-icon-size);place-content:center;place-items:center}:host(ui-file-manager-content) :where(.row) :is(a,span){background-color:initial!important}:host(ui-file-manager-content) :where(.row)>*{background-color:initial!important;block-size:auto;min-block-size:0}:host(ui-file-manager-content) .row:hover{background-color:color-mix(in oklab,var(--color-on-surface) 8%,transparent)}:host(ui-file-manager-content) .row:active{background-color:color-mix(in oklab,var(--color-on-surface) 11%,transparent)}:host(ui-file-manager-content) .row:focus-visible{outline:2px solid var(--color-primary,#5a7fff);outline-offset:-2px}:host(ui-file-manager-content) .c:not(.icon){block-size:auto;color:inherit;display:flex;flex-direction:row;inline-size:auto;min-inline-size:0;overflow:hidden;place-content:center;justify-content:start;min-block-size:0;place-items:center;text-align:start;text-overflow:ellipsis;text-wrap:nowrap;white-space:nowrap}:host(ui-file-manager-content) .icon{aspect-ratio:1;block-size:1.5rem;display:flex;flex-shrink:0;grid-column:icon;inline-size:1.5rem;min-block-size:1.5rem;min-inline-size:1.5rem;overflow:visible;place-content:center;place-items:center}:host(ui-file-manager-content) .icon :is(img,ui-icon){--ui-icon-size:var(--ui-explorer-icon-size,1.5rem);--ui-icon-padding:0px;block-size:var(--ui-icon-size)!important;flex-shrink:0;inline-size:var(--ui-icon-size)!important;max-block-size:var(--ui-icon-size)!important;max-inline-size:var(--ui-icon-size)!important;min-block-size:var(--ui-icon-size)!important;min-inline-size:var(--ui-icon-size)!important;object-fit:contain}:host(ui-file-manager-content) .name{grid-column:name;inline-size:stretch}:host(ui-file-manager-content) .size{grid-column:size;justify-content:end;text-align:end}:host(ui-file-manager-content) .date{grid-column:date;justify-content:end;text-align:end}:host(ui-file-manager-content) .actions{grid-column:actions}:host(ui-file-manager-content) .fm-grid,:host(ui-file-manager-content) .fm-grid-header,:host(ui-file-manager-content) .row,:host(ui-file-manager-content) ::slotted(.row){grid-template-columns:[icon] var(--ui-explorer-icon-track,2rem) [name] minmax(0,1fr) [size] minmax(4.5rem,6rem) [date] minmax(0,7.5rem) [actions] minmax(6.75rem,max-content)}@container (inline-size <= 600px){:host(ui-file-manager-content) .fm-grid,:host(ui-file-manager-content) .fm-grid-header,:host(ui-file-manager-content) .row,:host(ui-file-manager-content) ::slotted(.row){grid-template-columns:[icon] var(--ui-explorer-icon-track,2rem) [name] minmax(0,1fr) [size] minmax(4.5rem,6rem) [date] minmax(0,0) [actions] minmax(6.75rem,max-content)}:host(ui-file-manager-content) .date{display:none!important}}:host(ui-file-manager-content) .actions{background-color:color-mix(in oklab,var(--color-on-surface,#fff) 5%,transparent);block-size:2.125rem;border:none;border-radius:999px;color:var(--color-on-surface);display:flex;flex-direction:row;flex-wrap:nowrap;gap:.15rem;inline-size:max-content;max-inline-size:stretch;padding:.2rem;place-content:center;justify-content:flex-end;place-items:center;place-self:center;justify-self:end;overflow:visible;pointer-events:none}:host(ui-file-manager-content) .action-btn{appearance:none;aspect-ratio:1;background-color:initial;block-size:1.85rem;border:none;border-radius:999px;box-shadow:none;color:var(--color-on-surface);cursor:pointer;display:inline-flex;flex-shrink:0;inline-size:1.85rem;min-block-size:1.85rem;min-inline-size:1.85rem;overflow:hidden;padding:0;place-content:center;place-items:center;pointer-events:auto;position:relative;transition:background .14s ease,transform .1s ease}:host(ui-file-manager-content) .action-btn:hover{background-color:color-mix(in oklab,var(--color-on-surface) 12%,transparent)}:host(ui-file-manager-content) .action-btn:active{transform:scale(.94)}:host(ui-file-manager-content) .action-btn:focus-visible{outline:2px solid color-mix(in oklab,var(--color-primary,#5a7fff) 55%,transparent);outline-offset:1px}:host(ui-file-manager-content) .action-btn ui-icon{--ui-icon-size:var(--ui-explorer-action-icon-size,1.15rem);--ui-icon-padding:0px;block-size:var(--ui-icon-size)!important;inline-size:var(--ui-icon-size)!important;max-block-size:var(--ui-icon-size)!important;max-inline-size:var(--ui-icon-size)!important;min-block-size:var(--ui-icon-size)!important;min-inline-size:var(--ui-icon-size)!important}:host(ui-file-manager-content) .fm-grid-header{background:color-mix(in oklab,var(--color-on-surface,#fff) 3.5%,transparent);border:none;border-radius:0;box-shadow:0 1px 0 color-mix(in oklab,var(--color-on-surface,#fff) 6%,transparent);color:var(--color-on-surface-variant);display:grid;font-size:.6875rem;font-weight:600;gap:.35rem;grid-column:1/-1;inset-block-start:0;letter-spacing:.04em;min-block-size:2rem;opacity:1;padding:.4rem .65rem;place-content:center;justify-content:start;place-items:center;justify-items:start;pointer-events:auto;position:sticky!important;text-align:start;text-transform:uppercase;touch-action:manipulation;z-index:8}:host(ui-file-manager-content) .fm-grid-header>*{inline-size:auto}:host(ui-file-manager-content) .fm-grid-header .c{font-weight:600}:host(ui-file-manager-content) .fm-grid-header .icon{grid-column:icon}:host(ui-file-manager-content) .fm-grid-header .name{grid-column:name;inline-size:stretch}:host(ui-file-manager-content) .fm-grid-header .size{grid-column:size;justify-content:end;text-align:end}:host(ui-file-manager-content) .fm-grid-header .date{grid-column:date;justify-content:end;text-align:end}:host(ui-file-manager-content) .fm-grid-header .actions{block-size:fit-content;border-radius:0;box-shadow:none;display:flex;flex-direction:row;flex-wrap:nowrap;gap:.25rem;grid-column:actions;inline-size:stretch;max-inline-size:stretch;overflow:hidden;padding:0;place-content:center;justify-content:flex-end;place-items:center;justify-items:end;justify-self:end;text-align:end;text-overflow:ellipsis;text-wrap:nowrap;white-space:nowrap}}@layer ux-normalize,\n    tokens,\n    ux-tokens,\n    base,\n    ux-base,\n    layout,\n    ux-layout,\n    shells,\n    shell,\n    views,\n    view,\n    viewer,\n    components,\n    ux-components,\n    ux-layer,\n    ui-icon,\n    ui-icon-reset,\n    ux-file-manager,\n    ux-file-manager-content,\n    utilities,\n    ux-utilities,\n    theme,\n    ux-theme,\n    markdown,\n    essentials,\n    print,\n    print-breaks,\n    view-transitions,\n    overrides,\n    ux-overrides;@layer components{.btn,button{align-items:center;background:var(--color-bg-alt);border:1px solid var(--color-border);border-radius:var(--radius-md);color:var(--color-fg);cursor:pointer;display:inline-flex;font-size:var(--font-size-sm);font-weight:500;gap:var(--space-sm);justify-content:center;padding-block:0;padding-inline:0;transition:all var(--transition-fast)}@supports (color:contrast-color(red)){.btn,button{color:contrast-color(var(--color-bg-alt))}}.btn:hover:not(:disabled),button:hover:not(:disabled){background:var(--color-border);color:contrast-color(var(--color-border))}.btn:focus-visible,button:focus-visible{outline:2px solid var(--color-primary);outline-offset:2px}.btn:disabled,button:disabled{cursor:not-allowed;opacity:.5}.btn{--ui-bg:var(--color-surface-container-high);--ui-fg:var(--color-on-surface);--ui-bg-hover:var(--color-surface-container-highest);--ui-ring:var(--color-primary);--ui-radius:var(--radius-lg);--ui-pad-y:var(--space-sm);--ui-pad-x:var(--space-lg);--ui-font-size:var(--text-sm);--ui-font-weight:var(--font-weight-semibold);--ui-min-h:40px;--ui-opacity:1;appearance:none;background:var(--ui-bg);block-size:calc-size(fit-content,max(var(--ui-min-h),size));border:none;border-radius:var(--ui-radius);box-shadow:var(--elev-0);color:var(--ui-fg);contain:none;container-type:normal;flex-direction:row;flex-wrap:nowrap;font-size:var(--ui-font-size);font-weight:var(--ui-font-weight);gap:var(--space-xs);letter-spacing:.01em;line-height:1.2;max-block-size:stretch;max-inline-size:none;min-block-size:fit-content;min-inline-size:calc-size(fit-content,size + .5rem + var(--icon-size,1rem));opacity:var(--ui-opacity);overflow:hidden;padding:max(var(--ui-pad-y,0px),0px) max(var(--ui-pad-x,0px),0px);place-content:center;align-content:safe center;justify-content:safe center;place-items:center;align-items:safe center;justify-items:safe center;pointer-events:auto;text-align:center;text-decoration:none;text-overflow:ellipsis;text-rendering:auto;text-shadow:none;text-transform:none;text-wrap:nowrap;touch-action:manipulation;transition:background-color var(--motion-fast),box-shadow var(--motion-fast),transform var(--motion-fast);user-select:none;white-space:nowrap}@supports (color:contrast-color(red)){.btn{color:contrast-color(var(--ui-bg))}}.btn>ui-icon{align-self:center;color:inherit;flex-shrink:0;pointer-events:none;vertical-align:middle}@media (max-width:480px){.btn.btn-icon{aspect-ratio:1/1;block-size:fit-content;font-size:0!important;gap:0;max-block-size:stretch;max-inline-size:fit-content;min-inline-size:0}.btn.btn-icon .btn-text,.btn.btn-icon span:not(.sr-only){display:none!important}}.btn:hover{background:var(--ui-bg-hover);box-shadow:var(--elev-1);color:contrast-color(var(--ui-bg-hover));transform:translateY(-1px)}.btn:active{box-shadow:var(--elev-0);transform:translateY(0)}.btn:focus-visible{box-shadow:0 0 0 3px color-mix(in oklab,var(--ui-ring) 35%,transparent);outline:none}.btn:disabled{cursor:not-allowed;opacity:.5;transform:none!important}.btn:disabled:hover{background:var(--color-surface-container-high);box-shadow:var(--elev-0);color:contrast-color(var(--color-surface-container-high))}.btn.active,.btn.primary{--ui-bg:var(--color-primary);--ui-fg:var(--color-on-primary);--ui-ring:var(--color-primary)}.btn.primary{--ui-bg-hover:color-mix(in oklab,var(--color-primary) 90%,black)}.btn.active{box-shadow:var(--elev-1)}.btn.small{--ui-pad-y:var(--space-xs);--ui-pad-x:var(--space-md);--ui-font-size:var(--text-xs);--ui-min-h:32px;--ui-radius:var(--radius-md)}.btn.icon-btn{block-size:40px;inline-size:40px;--ui-pad-y:0px;--ui-pad-x:0px;--ui-radius:9999px;--ui-font-size:var(--text-lg)}.btn[data-action=export-docx],.btn[data-action=export-md],.btn[data-action=open-md]{--ui-font-size:12px;--ui-pad-x:8px;--ui-pad-y:0px;--ui-min-h:28px}.btn:is([data-action=view-markdown-viewer],[data-action=view-markdown-editor],[data-action=view-rich-editor],[data-action=view-settings],[data-action=view-history],[data-action=view-workcenter]){--ui-font-size:13px;--ui-font-weight:500;--ui-pad-x:12px;--ui-pad-y:0px;--ui-min-h:32px;--ui-radius:16px;text-transform:capitalize}.btn:is([data-action=view-markdown-viewer],[data-action=view-markdown-editor],[data-action=view-rich-editor],[data-action=view-settings],[data-action=view-history],[data-action=view-workcenter][data-current],[data-action=view-workcenter].active){--ui-bg:var(--color-surface-container-highest);--ui-fg:var(--color-primary);--ui-ring:var(--color-primary)}.btn:is([data-action=toggle-edit],[data-action=snip],[data-action=solve],[data-action=code],[data-action=css],[data-action=voice],[data-action=edit-templates],[data-action=recognize],[data-action=analyze],[data-action=select-files],[data-action=clear-prompt],[data-action=view-full-history]){--ui-font-size:12px;--ui-pad-x:8px;--ui-pad-y:0px;--ui-min-h:28px;--ui-radius:14px}.btn:has(>span:only-of-type:empty),.btn:has(>ui-icon):not(:has(>:not(ui-icon))){aspect-ratio:1/1;block-size:fit-content;font-size:0!important;gap:0;max-block-size:stretch;max-inline-size:fit-content;min-inline-size:0;overflow:visible}.btn:has(>span:only-of-type:empty) span:not(.sr-only),.btn:has(>ui-icon):not(:has(>:not(ui-icon))) span:not(.sr-only){display:none!important}.btn-primary{background:var(--color-primary);border-color:var(--color-primary);color:white}@supports (color:contrast-color(red)){.btn-primary{color:contrast-color(var(--color-primary))}}.btn-primary:hover:not(:disabled){background:var(--color-primary-hover);border-color:var(--color-primary-hover);color:contrast-color(var(--color-primary-hover))}@media (max-inline-size:768px){.btn{--ui-pad-y:var(--space-xs);--ui-pad-x:var(--space-md);--ui-font-size:var(--text-xs);--ui-min-h:36px}}@media (max-inline-size:480px){.btn{--ui-pad-y:var(--space-xs);--ui-pad-x:var(--space-xs);--ui-font-size:var(--text-xs);--ui-min-h:32px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.btn.btn-icon{overflow:visible}}@media (prefers-reduced-motion:reduce){.btn{transition:none}.btn,.btn:active,.btn:hover{transform:none!important}}}@layer utilities{.round-decor{--background-tone-shift:0;border-radius:.25rem;overflow:hidden;padding-block:.25rem}.round-decor:empty{display:none;padding:0;pointer-events:none;visibility:collapse}.time-format{display:inline-flex;flex-direction:row;font:500 .9em InterVariable,Inter,Fira Mono,Menlo,Consolas,monospace;font-kerning:auto;font-optical-sizing:auto;font-stretch:condensed;font-variant-numeric:tabular-nums;padding:.125rem;place-content:center;place-items:center;place-self:center;font-width:condensed;letter-spacing:-.05em;text-align:center;text-overflow:ellipsis;text-wrap:nowrap;white-space:nowrap}.ui-ws-item:not([data-layer=labels]) span{aspect-ratio:1/1;block-size:fit-content;display:inline;inline-size:fit-content;pointer-events:none}.ui-ws-item{cursor:pointer;pointer-events:auto;user-select:none}.ui-ws-item:active,.ui-ws-item:has(:active){cursor:grabbing;will-change:inset,translate,transform,opacity,z-index}}@layer essentials{@media print{.component-error,.component-loading,.ctx-menu,.ux-anchor{block-size:0!important;border:none!important;display:none!important;inline-size:0!important;inset:0!important;margin:0!important;max-block-size:0!important;max-inline-size:0!important;min-block-size:0!important;min-inline-size:0!important;opacity:0!important;overflow:hidden!important;padding:0!important;pointer-events:none!important;position:absolute!important;visibility:hidden!important;z-index:-1!important}}@media screen{.ctx-menu,.ui-grid-item,ui-modal,ui-window-frame{--font-family:\"InterVariable\",\"Inter\",\"Helvetica Neue\",\"Helvetica\",\"Calibri\",\"Roboto\",ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif}.ui-grid-item,ui-modal,ui-window-frame{--opacity:1;--scale:1;--rotate:0deg;--translate-x:0%;--translate-y:0%;content-visibility:auto;isolation:isolate;opacity:var(--opacity,1);rotate:0deg;scale:1;transform-box:fill-box;transform-origin:50% 50%;transform-style:flat;translate:0 0 0}.ctx-menu{--font-family:\"InterVariable\",\"Inter\",\"Helvetica Neue\",\"Helvetica\",\"Calibri\",\"Roboto\",ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif;color-scheme:light dark}.ctx-menu,.ctx-menu *{content-visibility:visible;visibility:visible}.ctx-menu{align-items:stretch;backdrop-filter:blur(10px);background-color:var(--color-surface,light-dark(#f6f8fc,#1b2029));block-size:fit-content;border:1px solid var(--color-outline-variant,light-dark(#c9ced8,#474e5e));border-radius:var(--radius-md,10px);box-shadow:0 10px 28px light-dark(rgba(15,23,42,.14),rgba(0,0,0,.42)),0 0 0 1px light-dark(rgba(15,23,42,.08),rgba(255,255,255,.07));color:var(--color-on-surface,light-dark(#12151c,#eceff7));display:flex;flex-direction:column;font-family:var(--font-family,'system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif')!important;font-size:.875rem;font-weight:400;inline-size:max-content;max-inline-size:min(240px,100cqi);min-inline-size:160px;opacity:1;padding:.25rem 0;pointer-events:auto;position:fixed;text-align:start;transform:scale3d(var(--scale,1),var(--scale,1),1) translate3d(var(--translate-x,0),var(--translate-y,0),0);transition:opacity .15s ease-out,visibility .15s ease-out,transform .15s ease-out;visibility:visible;z-index:99999}@supports (color:contrast-color(red)) and (color:light-dark(red,red)){.ctx-menu{color:contrast-color(var(--color-surface,light-dark(#f6f8fc,#1b2029)))}}.ctx-menu[data-hidden]{opacity:0;pointer-events:none;visibility:hidden}.ctx-menu>*{align-items:center;background-color:initial;border:none;border-radius:var(--radius-sm,8px);color:var(--color-on-surface,light-dark(#12151c,#eceff7));cursor:pointer;display:flex;flex-direction:row;font-family:var(--font-family,'system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif')!important;gap:.5rem;inline-size:stretch;justify-content:flex-start;min-block-size:2rem;outline:none;overflow:hidden;padding:.375rem .75rem;pointer-events:auto;position:relative;text-align:start;text-overflow:ellipsis;text-wrap:nowrap;transition:background-color .15s ease,color .15s ease;white-space:nowrap}@supports (color:contrast-color(red)) and (color:light-dark(red,red)){.ctx-menu>*{color:contrast-color(var(--color-surface,light-dark(#f6f8fc,#1b2029)))}}.ctx-menu>:hover{background-color:var(--color-surface-container-high,light-dark(#e8ecf4,#2a3140));color:var(--color-on-surface,light-dark(#12151c,#eceff7))}@supports (color:contrast-color(red)) and (color:light-dark(red,red)){.ctx-menu>:hover{color:contrast-color(var(--color-surface-container-high,light-dark(#e8ecf4,#2a3140)))}}.ctx-menu>:active{background-color:var(--color-surface-container-highest,light-dark(#dde3ee,#343b4d));color:var(--color-on-surface,light-dark(#12151c,#eceff7))}@supports (color:contrast-color(red)) and (color:light-dark(red,red)){.ctx-menu>:active{color:contrast-color(var(--color-surface-container-highest,light-dark(#dde3ee,#343b4d)))}}.ctx-menu>:focus-visible{background-color:var(--color-surface-container-high,light-dark(#e8ecf4,#2a3140));color:contrast-color(var(--color-surface-container-high,light-dark(#e8ecf4,#2a3140)));outline:2px solid var(--color-primary,light-dark(#1d6fd1,#7eb8ff));outline-offset:1px}.ctx-menu>:not(.ctx-menu-separator){gap:.5rem}.ctx-menu>*>*{pointer-events:none}.ctx-menu>*>span{color:inherit;flex:1 1 auto;font-size:.875rem;font-weight:400;line-height:1.25;min-inline-size:0;pointer-events:none;text-align:start!important;user-select:none}.ctx-menu>*>ui-icon{--icon-size:1rem;block-size:var(--icon-size);flex-shrink:0;inline-size:var(--icon-size);user-select:none}.ctx-menu.ctx-menu-separator,.ctx-menu>*>ui-icon,.ctx-menu>.ctx-menu-separator{color:var(--color-on-surface-variant,light-dark(#545c6f,#b4bfd4));pointer-events:none}.ctx-menu.ctx-menu-separator,.ctx-menu>.ctx-menu-separator{background-color:var(--color-outline-variant,light-dark(#c9ced8,#474e5e));block-size:1px;margin:.125rem .375rem;min-block-size:auto;opacity:.55;padding:0}@supports (color:contrast-color(red)) and (color:light-dark(red,red)){.ctx-menu.ctx-menu-separator,.ctx-menu>.ctx-menu-separator{color:contrast-color(var(--color-outline-variant,light-dark(#c9ced8,#474e5e)))}}.ctx-menu.grid-rows{align-items:stretch;display:flex!important;flex-direction:column;grid-auto-rows:unset!important;grid-template-columns:unset!important}.ctx-menu.grid-rows>:not(.ctx-menu-separator){align-items:center!important;display:flex!important;flex-flow:row nowrap!important;grid-column:unset!important;grid-row:unset!important;grid-template-columns:unset!important;grid-template-rows:unset!important;justify-content:flex-start!important;place-content:unset!important;place-items:unset!important}.ux-anchor{--shift-x:var(--client-x,0px);--shift-y:var(--client-y,0px);--translate-x:round(nearest,min(0px,calc(100cqi - (100% + var(--shift-x, 0px)))),calc(1px / var(--pixel-ratio, 1)))!important;--translate-y:round(nearest,min(0px,calc(100cqb - (100% + var(--shift-y, 0px)))),calc(1px / var(--pixel-ratio, 1)))!important;direction:ltr;inset-block-end:auto;inset-block-start:max(var(--shift-y),var(--status-bar-padding,0px));inset-inline-end:auto;inset-inline-start:max(var(--shift-x),0px);transform:none;translate:0 0 0;writing-mode:horizontal-tb}.component-error,.component-loading{align-items:center;color:var(--text-secondary,light-dark(#666,#aaa));display:flex;flex-direction:column;gap:1rem;justify-content:center;padding:2rem}.component-loading .loading-spinner{animation:spin 1s linear infinite;block-size:2rem;border:2px solid var(--border,light-dark(#ddd,#444));border-block-start:2px solid var(--primary,light-dark(#007bff,#5fa8ff));border-radius:50%;inline-size:2rem}.component-error{text-align:center}.component-error h3{color:var(--error,light-dark(#dc3545,#ff6b6b));margin:0}.component-error p{margin:0}ui-icon{align-items:center;block-size:var(--icon-size,1.25rem);color:currentColor;display:inline-flex;fill:currentColor;flex-shrink:0;font-size:1rem;inline-size:var(--icon-size,1.25rem);justify-content:center;min-block-size:var(--icon-size,1.25rem);min-inline-size:var(--icon-size,1.25rem);opacity:1;vertical-align:middle;visibility:visible}ui-icon :is(img,svg){block-size:100%;color:inherit;fill:currentColor;inline-size:100%}:is(button,.btn)>ui-icon{color:inherit}.file-picker{align-items:center;display:flex;flex-direction:column;justify-content:center;min-block-size:300px;padding:2rem;text-align:center}.file-picker .file-picker-header{margin-block-end:2rem}.file-picker .file-picker-header h2{color:var(--color-on-surface);font-size:1.5rem;font-weight:600;margin:0 0 .5rem}.file-picker .file-picker-header p{color:var(--color-on-surface-variant);font-size:.9rem;margin:0}.file-picker .file-picker-actions{display:flex;flex-wrap:wrap;gap:1rem;justify-content:center;margin-block-end:2rem}.file-picker .file-picker-actions .btn{align-items:center;border:1px solid transparent;border-radius:var(--radius-md);display:flex;font-weight:500;gap:.5rem;padding:.75rem 1.5rem;transition:all .2s ease}.file-picker .file-picker-actions .btn:hover{box-shadow:0 4px 8px rgba(0,0,0,.1);transform:translateY(-1px)}.file-picker .file-picker-actions .btn.btn-primary{background:var(--color-primary);border-color:var(--color-primary);color:var(--color-on-primary)}@supports (color:contrast-color(red)){.file-picker .file-picker-actions .btn.btn-primary{color:contrast-color(var(--color-primary))}}.file-picker .file-picker-actions .btn:not(.btn-primary){background:var(--color-surface-container);border-color:var(--color-outline-variant);color:var(--color-on-surface)}@supports (color:contrast-color(red)){.file-picker .file-picker-actions .btn:not(.btn-primary){color:contrast-color(var(--color-surface-container))}}.file-picker .file-picker-info{max-inline-size:400px}.file-picker .file-picker-info p{color:var(--color-on-surface-variant);font-size:.85rem;margin:.25rem 0}.file-picker .file-picker-info p strong{color:var(--color-on-surface)}}}#app:has(>ui-window.explorer-native-window),#app:has(>ui-window[native-mode]){block-size:100%;display:flex;flex-direction:column;min-block-size:0}ui-window.explorer-native-window,ui-window.explorer-native-window[native-mode]{flex:1 1 auto;min-block-size:0}.explorer-native-window__body{display:flex;flex-direction:column;min-inline-size:0;overflow:hidden}.explorer-native-window__body,.explorer-native-window__body>.view-explorer{block-size:100%;flex:1 1 auto;inline-size:100%;min-block-size:0}@layer view-explorer{@layer tokens{:root:has([data-view=explorer]),html:has([data-view=explorer]){--view-layout:\"flex\";--view-content-max-width:none}.view-explorer{--explorer-menu-radius:0.75rem;--explorer-menu-pad:0.35rem;--ui-explorer-row-height:2.875rem;--explorer-font-sans:var(--font-family,\"InterVariable\",\"Inter\",\"Segoe UI Variable\",ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,\"Segoe UI\",Roboto,sans-serif);--explorer-font-mono:ui-monospace,\"Cascadia Code\",\"Cascadia Mono\",\"SF Mono\",Menlo,Consolas,\"DejaVu Sans Mono\",monospace}.view-explorer[data-explorer-color-scheme=light]{--base-color:var(--color-primary,#2e3a64);--base-color-neutralized:color-mix(in oklab,var(--base-color) 60%,gray);--color-surface:--u2-color-mod(var(--base-color-neutralized),10);--color-on-surface:--u2-color-mod(var(--base-color-neutralized),980);--color-on-surface-variant:--u2-color-mod(var(--base-color-neutralized),800);--color-on-primary:--u2-color-mod(var(--base-color-neutralized),20);--color-outline-variant:--u2-color-mod(var(--base-color-neutralized),100);--color-surface-container:--u2-color-mod(var(--base-color-neutralized),5);--color-surface-container-high:--u2-color-mod(var(--base-color-neutralized),10);--color-surface-container-highest:--u2-color-mod(var(--base-color-neutralized),20);--color-error:#ba1a1a;--error-color:--u2-color-mod(color-mix(in oklab,var(--color-error) 60%,gray),550)}.view-explorer[data-explorer-color-scheme=dark]{--base-color:var(--color-primary,#2e3a64);--base-color-neutralized:color-mix(in oklab,var(--base-color) 60%,gray);--color-surface:--u2-color-mod(var(--base-color-neutralized),960);--color-on-surface:--u2-color-mod(var(--base-color-neutralized),10);--color-on-surface-variant:--u2-color-mod(var(--base-color-neutralized),20);--color-on-primary:--u2-color-mod(var(--base-color-neutralized),80);--color-outline-variant:--u2-color-mod(var(--base-color-neutralized),900);--color-surface-container:--u2-color-mod(var(--base-color-neutralized),960);--color-surface-container-high:--u2-color-mod(var(--base-color-neutralized),980);--color-surface-container-highest:--u2-color-mod(var(--base-color-neutralized),1000);--color-error:#ffb4ab;--error-color:--u2-color-mod(var(--color-error),480)}}@layer shell{:host:has(.view-explorer){background:var(--color-surface,var(--view-bg,light-dark(#f7f8fc,#1a1d24)));block-size:100%;color:var(--color-on-surface,var(--view-fg,light-dark(#1a1c1f,#e8eaed)));contain:layout style;display:flex;flex-direction:column;font-family:var(--font-family,var(--explorer-font-sans,system-ui,sans-serif));font-size:.875rem;line-height:1.5;min-block-size:0}@supports (color:contrast-color(red)) and (color:light-dark(red,red)){:host:has(.view-explorer){color:contrast-color(var(--color-surface,var(--view-bg,light-dark(#f7f8fc,#1a1d24))))}}cw-view-explorer{box-sizing:border-box}.view-explorer,cw-view-explorer{block-size:100%;display:flex;flex:1 1 0;flex-direction:column;inline-size:100%;min-block-size:0;min-inline-size:0}.view-explorer{background:var(--color-surface,var(--view-bg));border:none;border-radius:0;color:var(--color-on-surface,var(--view-fg));font-family:var(--font-family,var(--explorer-font-sans,system-ui,sans-serif));overflow:hidden}@supports (color:contrast-color(red)) and (color:light-dark(red,red)){.view-explorer{color:contrast-color(var(--color-surface,var(--view-bg,light-dark(#f7f8fc,#1a1d24))))}}.view-explorer__content{background:transparent;box-sizing:border-box;color:inherit;display:flex;flex:1 1 0;flex-direction:column;margin:0;min-block-size:0;min-inline-size:0;overflow:hidden;padding:0}.view-explorer__content>ui-file-manager{block-size:100%;flex:1 1 0;inline-size:100%;min-block-size:0;min-inline-size:0}}@layer components{.view-explorer__error,.view-explorer__loading{align-items:center;block-size:100%;display:flex;flex-direction:column;gap:1rem;justify-content:center}.view-explorer__loading{color:var(--color-on-surface);opacity:.65}.view-explorer__spinner{animation:f .8s linear infinite;block-size:32px;border:3px solid var(--view-border,color-mix(in oklab,var(--color-on-surface,#888) 18%,transparent));border-block-start-color:var(--color-primary,#3794ff);border-radius:50%;inline-size:32px}.view-explorer__error p{color:var(--color-error,#f2b8b5);margin:0}.view-explorer__error button{background:var(--color-primary,#3794ff);border:none;border-radius:.375rem;color:var(--color-on-primary,#fff);cursor:pointer;padding:.5rem 1rem}@supports (color:contrast-color(red)){.view-explorer__error button{color:contrast-color(var(--color-primary,#3794ff))}}.view-explorer__error button:hover{filter:brightness(1.08)}.view-explorer__fallback{block-size:100%;box-sizing:border-box;display:flex;flex-direction:column;gap:.75rem;overflow:auto;padding:1rem 1.125rem}.view-explorer__fallback h3{font-size:1rem;font-weight:600;margin:0}.view-explorer__fallback p{color:var(--view-fg-muted,var(--color-on-surface-variant));font-size:.875rem;line-height:1.45;margin:0}.view-explorer__fallback-actions{display:flex;flex-wrap:wrap;gap:.5rem}.view-explorer__fallback-actions button{background:color-mix(in oklab,var(--color-on-surface,#fff) 8%,transparent);border:none;border-radius:999px;color:inherit;cursor:pointer;font-size:.8125rem;font-weight:500;padding:.5rem 1rem}@supports (color:color-mix(in lch,red,blue)) and (color:contrast-color(red)){.view-explorer__fallback-actions button{color:contrast-color(color-mix(in oklab,var(--color-on-surface,#fff) 8%,transparent))}}.view-explorer__fallback-actions button:hover{background:color-mix(in oklab,var(--color-on-surface,#fff) 13%,transparent);color:contrast-color(color-mix(in oklab,var(--color-on-surface,#fff) 13%,transparent))}.view-explorer__fallback-actions button:focus-visible{outline:2px solid color-mix(in oklab,var(--color-primary,#3794ff) 60%,transparent);outline-offset:1px}.view-explorer__fallback-files{color:var(--color-on-surface-variant);display:grid;font-size:.8125rem;gap:.35rem;margin:.5rem 0 0;padding-inline-start:1.125rem}}@layer animations{@keyframes f{to{transform:rotate(1turn)}}}}";
+//#endregion
+//#region ../CWSP-explorer/src/index.ts
+function coerceColorScheme(raw) {
+	if (raw === "light" || raw === "dark" || raw === "system") return raw;
+	if (typeof raw === "string") {
+		const t = raw.trim().toLowerCase();
+		if (t === "light" || t === "dark" || t === "system") return t;
+	}
+}
+function resolveExplorerOptionsColorScheme(opts) {
+	if (!opts) return void 0;
+	const ex = opts;
+	if (ex.colorScheme) return ex.colorScheme;
+	return coerceColorScheme(ex.params?.colorScheme ?? ex.params?.theme);
+}
+function normalizeSetColorSchemePayload(payload) {
+	if (payload === void 0 || payload === null) return void 0;
+	if (typeof payload === "string") return coerceColorScheme(payload.trim());
+	if (typeof payload === "object") {
+		const o = payload;
+		return coerceColorScheme(o.colorScheme ?? o.scheme ?? o.theme);
+	}
+}
+function buildExplorerShell() {
+	const shell = document.createElement("div");
+	shell.className = "view-explorer";
+	shell.setAttribute("data-view", "explorer");
+	shell.setAttribute("aria-label", "File explorer");
+	const content = document.createElement("div");
+	content.className = "view-explorer__content";
+	content.setAttribute("data-explorer-content", "");
+	const fm = document.createElement("ui-file-manager");
+	fm.setAttribute("view-mode", "list");
+	content.append(fm);
+	shell.append(content);
+	return shell;
+}
+function buildFallbackShell() {
+	const shell = document.createElement("div");
+	shell.className = "view-explorer";
+	shell.setAttribute("data-view", "explorer");
+	shell.setAttribute("aria-label", "File explorer (fallback)");
+	const content = document.createElement("div");
+	content.className = "view-explorer__content";
+	content.setAttribute("data-explorer-content", "");
+	content.innerHTML = `
+        <div class="view-explorer__fallback">
+            <h3>Explorer fallback mode</h3>
+            <p>File manager component is unavailable; use local files below.</p>
+            <div class="view-explorer__fallback-actions">
+                <button type="button" data-action="pick-files">Open files</button>
+                <button type="button" data-action="open-workcenter">Open Work Center</button>
+            </div>
+            <ul class="view-explorer__fallback-files" data-fallback-files></ul>
+        </div>`;
+	shell.append(content);
+	return shell;
+}
+var TAG = "cw-view-explorer";
+var CwViewExplorer = createViewConstructor(TAG, (Base) => {
+	return class ExplorerView extends Base {
+		id = "explorer";
+		name = "Explorer";
+		icon = "folder";
+		explorerRoot = null;
+		explorerCleanup = null;
+		wiredFileManager = null;
+		initialPath = null;
+		explorerInject;
+		_sheet = null;
+		themeSync = null;
+		lifecycle = {
+			onMount: () => {
+				this._sheet ??= loadAsAdopted(src_default);
+				this.syncExplorerThemeSubscription();
+				this.attachExplorerWire();
+			},
+			onUnmount: () => {
+				this.themeSync?.disconnect();
+				this.themeSync = null;
+				this.detachExplorerWire();
+				removeAdopted(this._sheet);
+				this._sheet = null;
+			},
+			onShow: () => {
+				this._sheet ??= loadAsAdopted(src_default);
+				this.syncExplorerThemeSubscription();
+				if (!this.explorerCleanup && this.explorerRoot) this.attachExplorerWire();
+			},
+			onHide: () => {
+				this.themeSync?.disconnect();
+				this.themeSync = null;
+				this.detachExplorerWire();
+				try {
+					if (this._sheet) removeAdopted(this._sheet);
+				} catch {}
+				this._sheet = null;
+			}
+		};
+		constructor(options) {
+			super();
+			if (options) {
+				this.options = options;
+				this.explorerInject = options.explorerInject;
+				if (options.params?.path) this.initialPath = String(options.params.path);
+				const fromParams = coerceColorScheme(options.params?.colorScheme ?? options.params?.theme);
+				if (!options.colorScheme && fromParams) this.options.colorScheme = fromParams;
+			}
+		}
+		/** Imperative theme — persists on view options for later re-renders. */
+		setExplorerColorScheme(mode) {
+			this.options.colorScheme = mode;
+			applyExplorerColorScheme(this.explorerRoot, mode);
+			this.syncExplorerThemeSubscription();
+		}
+		/** When using `system`, follow `html[data-theme]` + OS scheme; rebuild subscription on mode change. */
+		syncExplorerThemeSubscription() {
+			this.themeSync?.disconnect();
+			this.themeSync = null;
+			if (!this.explorerRoot) return;
+			this.themeSync = subscribeExplorerSystemTheme(this.explorerRoot, () => this.options.colorScheme ?? "system");
+		}
+		render = (options) => {
+			if (options) {
+				this.options = {
+					...this.options,
+					...options
+				};
+				const p = options?.params?.path;
+				if (p) this.initialPath = String(p);
+				const inj = options?.explorerInject;
+				if (inj !== void 0) this.explorerInject = inj;
+			}
+			if (this.explorerCleanup) {
+				this.themeSync?.disconnect();
+				this.themeSync = null;
+				this.detachExplorerWire();
+			}
+			const hasFileManager = Boolean(customElements.get("ui-file-manager"));
+			this.explorerRoot = hasFileManager ? buildExplorerShell() : buildFallbackShell();
+			const scheme = resolveExplorerOptionsColorScheme(options) ?? resolveExplorerOptionsColorScheme(this.options);
+			applyExplorerColorScheme(this.explorerRoot, scheme ?? "system");
+			this.syncExplorerThemeSubscription();
+			return this.explorerRoot;
+		};
+		getToolbar() {
+			return null;
+		}
+		canHandleMessage(messageType) {
+			return [
+				"file-save",
+				"navigate-path",
+				"content-explorer",
+				ExplorerChannelAction.SetColorScheme
+			].includes(messageType);
+		}
+		async handleMessage(message) {
+			const msg = message;
+			if (msg.type === ExplorerChannelAction.SetColorScheme) {
+				const next = normalizeSetColorSchemePayload(msg.data?.colorScheme ?? msg.data?.scheme ?? msg.data?.theme) ?? "system";
+				this.setExplorerColorScheme(next);
+				return;
+			}
+			if (msg.data?.file instanceof File) {
+				await this.saveIncomingFileToWorkspace(msg.data.file, msg.data.path || msg.data.into);
+				return;
+			}
+			const targetPath = msg.data?.path || msg.data?.into;
+			if (targetPath && this.wiredFileManager) this.wiredFileManager.navigate(targetPath);
+		}
+		async saveIncomingFileToWorkspace(file, destPath) {
+			const op = this.wiredFileManager?.operative;
+			if (!op?.ingestFileIntoWorkspace) return false;
+			await op.ingestFileIntoWorkspace(file, destPath);
+			return true;
+		}
+		/** Imperative API — channels / tooling (`ui-file-manager` when wired). */
+		navigateExplorer(path) {
+			const p = String(path || "").trim();
+			if (!p || !this.wiredFileManager) return;
+			return this.wiredFileManager.navigate(p);
+		}
+		getExplorerFileManager() {
+			return this.wiredFileManager;
+		}
+		getExplorerShellRoot() {
+			return this.explorerRoot;
+		}
+		invokeChannelApi(action, payload) {
+			const pathFromPayload = () => {
+				if (typeof payload === "string") return payload.trim();
+				if (payload && typeof payload === "object") {
+					const o = payload;
+					const raw = o.path ?? o.into ?? o.target;
+					return typeof raw === "string" ? raw.trim() : "";
+				}
+				return "";
+			};
+			switch (action) {
+				case ExplorerChannelAction.NavigatePath:
+				case ExplorerChannelAction.ContentExplorer:
+				case ExplorerChannelAction.Navigate: {
+					const path = pathFromPayload();
+					if (!path) return false;
+					this.navigateExplorer(path);
+					return true;
+				}
+				case ExplorerChannelAction.GetPath: return this.wiredFileManager?.path ?? null;
+				case ExplorerChannelAction.FileSave:
+				case "file-save": {
+					const o = payload && typeof payload === "object" ? payload : {};
+					const file = o.file instanceof File ? o.file : null;
+					const dest = typeof o.path === "string" ? o.path : typeof o.into === "string" ? o.into : void 0;
+					if (!file) return false;
+					return this.saveIncomingFileToWorkspace(file, dest);
+				}
+				case ExplorerChannelAction.RequestUse:
+					this.wiredFileManager?.requestUse?.();
+					return true;
+				case ExplorerChannelAction.RequestUpload:
+					this.wiredFileManager?.requestUpload?.();
+					return true;
+				case ExplorerChannelAction.RequestPaste:
+					this.wiredFileManager?.requestPaste?.();
+					return true;
+				case ExplorerChannelAction.SetColorScheme: {
+					const next = normalizeSetColorSchemePayload(payload) ?? "system";
+					this.setExplorerColorScheme(next);
+					return true;
+				}
+				case "get-color-scheme": {
+					const o = this.options;
+					return o.colorScheme ?? resolveExplorerOptionsColorScheme(o) ?? "system";
+				}
+				default: return this.handleMessage({
+					type: action,
+					data: typeof payload === "object" && payload ? payload : { path: pathFromPayload() || void 0 }
+				}).then(() => true);
+			}
+		}
+		attachExplorerWire() {
+			if (!this.explorerRoot) return;
+			const shellOpts = this.options;
+			const { cleanup, fileManager } = wireExplorerSubtree(this.explorerRoot, {
+				shellContext: shellOpts?.shellContext,
+				initialPath: this.initialPath,
+				inject: this.explorerInject
+			});
+			this.explorerCleanup = cleanup;
+			this.wiredFileManager = fileManager;
+		}
+		detachExplorerWire() {
+			this.explorerCleanup?.();
+			this.explorerCleanup = null;
+			this.wiredFileManager = null;
+		}
+	};
+});
+function createExplorerView(options) {
+	return new CwViewExplorer(options);
+}
+//#endregion
+export { CwViewExplorer, FileManager, FileManagerContent_default as FileManagerContent, TAG, applyExplorerColorScheme, createExplorerView, createExplorerView as default, getRegisteredExplorerInject, mergeExplorerInject, readAppDataTheme, registerExplorerInject, resolveExplorerColorSchemePreference, subscribeExplorerSystemTheme, wireExplorerSubtree };

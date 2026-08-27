@@ -1,7 +1,7 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./CustomInstructions.js","./rolldown-runtime.js","../shells/boot-index.js","../com/app.js","../fest/core.js","../com/service.js","../fest/veela.js","./utils.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./CustomInstructions.js","./rolldown-runtime.js","../shells/boot-index.js","../shells/boot-history-base.js","../com/app.js","../fest/core.js","../com/service.js","../fest/veela.js","./utils.js"])))=>i.map(i=>d[i]);
 import { n as __exportAll } from "./rolldown-runtime.js";
-import { G as loadSettings } from "../shells/boot-index.js";
-import { vn as __vitePreload } from "../com/app.js";
+import { Hn as __vitePreload } from "../com/app.js";
+import { yt as loadSettings } from "../shells/boot-index.js";
 import { n as getRuntimeSettings } from "./RuntimeSettings.js";
 import { i as buildInstructionPrompt, n as SVG_GRAPHICS_ADDON, o as getIntermediateRecognitionInstruction, r as TRANSLATE_INSTRUCTION, s as getOutputFormatInstruction, t as LANGUAGE_INSTRUCTIONS } from "./utils.js";
 import { a as unwrapUnwantedCodeBlocks, i as isImageData, n as getGPTInstance, r as getResponseFormat } from "./entities.js";
@@ -34,7 +34,7 @@ var getActiveCustomInstruction = async () => {
 		const { getActiveInstructionText } = await __vitePreload(async () => {
 			const { getActiveInstructionText } = await import("./CustomInstructions.js").then((n) => n.t);
 			return { getActiveInstructionText };
-		}, __vite__mapDeps([0,1,2,3,4,5,6,7]), import.meta.url);
+		}, __vite__mapDeps([0,1,2,3,4,5,6,7,8]), import.meta.url);
 		return await getActiveInstructionText();
 	} catch {
 		return "";

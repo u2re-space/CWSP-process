@@ -1,6 +1,7 @@
-import { G as loadSettings, Rn as serviceChannels, d as applyTheme, dn as ViewRegistry, f as resyncThemeAfterAdoptedViewSheet, gn as isEnabledView, l as scheduleViewModulePrefetch, p as syncBrowserChromeTheme, q as saveSettings, v as getTransitionDirection, y as withViewTransition } from "../shells/boot-index.js";
-import { $ as ensureStyleSheet, Et as dynamicTheme, Sn as preloadStyle, cn as ref, xn as loadInlineStyle } from "../com/app.js";
-import { n as initBootShellWindowActivity } from "../shells/preference.js";
+import { f as publicHrefForView, m as shouldHandoffViewToSibling } from "../shells/boot-history-base.js";
+import { $ as ensureStyleSheet, Bt as dynamicTheme, Mn as preloadStyle, Tn as ref, jn as loadInlineStyle } from "../com/app.js";
+import { A as canonicalHubSettingsSection, Fn as getTransitionDirection, In as withViewTransition, L as resolveEffectiveHubSettingsSection, N as hubSettingsSectionPath, U as ViewRegistry, V as scheduleViewModulePrefetch, at as isEnabledView, ct as applyTheme, lt as resyncThemeAfterAdoptedViewSheet, rt as serviceChannels, ut as syncBrowserChromeTheme, xt as saveSettings, yt as loadSettings } from "../shells/boot-index.js";
+import { a as stripHistoryBase, i as pathForSkuHostView, n as initBootShellWindowActivity, o as withHistoryBase, r as ensureHistoryBaseDataset } from "../shells/preference.js";
 import { o as resolveOverlayMountPoint } from "../shells/environment-environment-overlay.js";
 //#region src/frontend/boot/shell-elements.ts
 var ShellHost = class extends HTMLElement {
@@ -352,67 +353,6 @@ var showToast = (options) => {
 	return toast;
 };
 //#endregion
-//#region src/frontend/boot/history-base.ts
-var KNOWN_PATH_MOUNTS = [
-	"cwsp",
-	"markdown",
-	"explorer",
-	"workcenter",
-	"kvm"
-];
-/**
-* Router base path without trailing slash ("" at domain root, "/cwsp" on IP path mount).
-* WHY: absolute `/network` history entries drop the Fastify debugPath prefix and 404 on reload.
-*/
-function getHistoryBasePath() {
-	try {
-		const fromData = String(globalThis.document?.documentElement?.dataset?.cwspRouterBase || "").trim();
-		if (fromData) return (fromData.startsWith("/") ? fromData : `/${fromData}`).replace(/\/+$/, "") || "";
-		const baseHref = globalThis.document?.querySelector?.("base")?.getAttribute("href");
-		if (baseHref && baseHref !== "/" && !baseHref.startsWith(".")) {
-			const origin = globalThis.location?.origin || "http://localhost";
-			return new URL(baseHref, origin).pathname.replace(/\/+$/, "") || "";
-		}
-		const pathname = String(globalThis.location?.pathname || "/");
-		const re = new RegExp(`^/(${KNOWN_PATH_MOUNTS.join("|")})(?:/|$)`, "i");
-		const m = pathname.match(re);
-		if (m?.[1]) return `/${m[1].toLowerCase()}`;
-	} catch {}
-	return "";
-}
-/** Prefix an absolute app path with the history base (`/network` → `/cwsp/network`). */
-function withHistoryBase(pathname) {
-	const base = getHistoryBasePath();
-	let path = String(pathname || "/").trim() || "/";
-	if (!path.startsWith("/")) path = `/${path}`;
-	if (!base) return path;
-	if (path === base || path.startsWith(`${base}/`)) return path;
-	if (path === "/") return `${base}/`;
-	return `${base}${path}`;
-}
-/** Strip history base from a location pathname before view matching. */
-function stripHistoryBase(pathname) {
-	const base = getHistoryBasePath();
-	let path = String(pathname || "/");
-	if (!path.startsWith("/")) path = `/${path}`;
-	if (!base) return path;
-	if (path === base || path === `${base}/`) return "/";
-	if (path.startsWith(`${base}/`)) {
-		const rest = path.slice(base.length);
-		return rest.startsWith("/") ? rest : `/${rest}`;
-	}
-	return path;
-}
-/** Persist detected mount on `<html>` so later navigations stay scoped. */
-function ensureHistoryBaseDataset() {
-	const base = getHistoryBasePath();
-	try {
-		const el = globalThis.document?.documentElement;
-		if (el && base) el.dataset.cwspRouterBase = base;
-	} catch {}
-	return base;
-}
-//#endregion
 //#region src/frontend/boot/shells.ts
 /** Views backed by {@link SERVICE_CHANNEL_CONFIG}; lazily initialized on first navigate when not boot-preloaded. */
 var VIEW_SERVICE_CHANNEL_IDS = /* @__PURE__ */ new Set([
@@ -584,7 +524,13 @@ var ShellBase = class {
 		const onOpen = (ev) => {
 			const d = ev.detail || {};
 			const vid = typeof d.viewId === "string" ? d.viewId.trim().toLowerCase() : "";
-			if (!vid || !isEnabledView(vid)) return;
+			if (!vid) return;
+			if (shouldHandoffViewToSibling(vid)) {
+				const href = publicHrefForView(vid);
+				if (href) globalThis.location.assign(href);
+				return;
+			}
+			if (!isEnabledView(vid)) return;
 			const target = String(d.target ?? "window").toLowerCase();
 			if ([
 				"window",
@@ -646,8 +592,21 @@ var ShellBase = class {
 	}
 	async navigate(viewId, params, navOptions) {
 		console.log(`[${this.id}] Navigating to: ${viewId}`, params);
+		if (shouldHandoffViewToSibling(viewId)) {
+			const href = publicHrefForView(viewId);
+			if (href && typeof globalThis.location !== "undefined") {
+				globalThis.location.assign(href);
+				return;
+			}
+		}
 		const navToken = ++this.navigationToken;
-		if (!navOptions?.force && viewId === this.currentView.value && this.sameRouteParams(params, this.navigationState.params)) {
+		const mergedParams = { ...params || {} };
+		if (viewId === "settings") {
+			const section = hubSettingsSectionPath(canonicalHubSettingsSection(mergedParams.section || resolveEffectiveHubSettingsSection() || ""));
+			if (section) mergedParams.section = section;
+			else delete mergedParams.section;
+		}
+		if (!navOptions?.force && viewId === this.currentView.value && this.sameRouteParams(mergedParams, this.navigationState.params)) {
 			const entry = this.loadedViews.get(viewId);
 			if (entry?.element.isConnected && (this.contentContainer?.contains(entry.element) || this.rootElement?.contains(entry.element)) && !entry.element.hidden) {
 				this.hideShellLoadingPlaceholder();
@@ -657,7 +616,7 @@ var ShellBase = class {
 		const previousView = this.navigationState.currentView;
 		this.navigationState.previousView = previousView;
 		this.navigationState.currentView = viewId;
-		this.navigationState.params = params;
+		this.navigationState.params = mergedParams;
 		if (this.navigationState.viewHistory[this.navigationState.viewHistory.length - 1] !== viewId) {
 			this.navigationState.viewHistory.push(viewId);
 			if (this.navigationState.viewHistory.length > 50) this.navigationState.viewHistory.shift();
@@ -665,28 +624,30 @@ var ShellBase = class {
 		this.currentView.value = viewId;
 		if (typeof window !== "undefined" && typeof window != "undefined") {
 			ensureHistoryBaseDataset();
-			const searchParams = new URLSearchParams(params || {});
+			const searchParams = new URLSearchParams(mergedParams);
 			searchParams.set("shell", this.id);
+			searchParams.delete("section");
 			const isPathRoutedShell = this.id === "minimal" || this.id === "immersive" || this.id === "environment";
 			const search = searchParams.toString() ? "?" + searchParams.toString() : "";
-			const pathname = withHistoryBase(isPathRoutedShell ? `/${String(viewId || "home").replace(/^\/+/, "")}` : "/");
+			const viewPath = viewId === "settings" ? mergedParams.section ? `/settings/${mergedParams.section}` : "/settings" : `/${String(viewId || "home").replace(/^\/+/, "")}`;
+			const pathname = withHistoryBase(isPathRoutedShell ? pathForSkuHostView(viewPath) : "/");
 			const newPathAndSearch = pathname + search;
 			try {
 				const next = new URL(newPathAndSearch, globalThis.location.origin);
 				const cur = new URL(globalThis.location.href);
 				if (next.pathname !== cur.pathname || next.search !== cur.search) globalThis?.history?.pushState?.({
 					viewId,
-					params
+					params: mergedParams
 				}, "", next.pathname + next.search);
 			} catch {
 				if (globalThis?.location?.pathname !== pathname || (globalThis?.location?.search || "") !== search) globalThis?.history?.pushState?.({
 					viewId,
-					params
+					params: mergedParams
 				}, "", newPathAndSearch);
 			}
 		}
 		try {
-			const element = await this.loadView(viewId, params);
+			const element = await this.loadView(viewId, mergedParams);
 			if (navToken !== this.navigationToken) {
 				this.hideShellLoadingPlaceholder();
 				return;
@@ -742,6 +703,19 @@ var ShellBase = class {
 					element: refreshed
 				});
 				if (cached.view.lifecycle?.onMount) await cached.view.lifecycle.onMount();
+				return refreshed;
+			}
+			if (viewId === "settings") {
+				const refreshed = cached.view.render({
+					shellContext: this.getContext(),
+					params,
+					initialData
+				});
+				this.loadedViews.set(viewId, {
+					view: cached.view,
+					element: refreshed
+				});
+				if (cached.view.getToolbar && this.toolbarContainer) this.setViewToolbar(cached.view.getToolbar());
 				return refreshed;
 			}
 			if (viewId === "viewer" || viewId === "print") {
@@ -1125,6 +1099,7 @@ var ShellBase = class {
 			const stateView = (globalThis?.history?.state)?.viewId;
 			return stateView && isEnabledView(String(stateView)) ? stateView : null;
 		}
+		if ((stripped.split("/").filter(Boolean)[0] || "") === "settings" && isEnabledView("settings")) return "settings";
 		return isEnabledView(stripped) ? stripped : null;
 	}
 };

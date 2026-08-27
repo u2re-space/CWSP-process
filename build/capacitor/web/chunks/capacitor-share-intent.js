@@ -1,6 +1,6 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../shells/boot-index.js","./rolldown-runtime.js","../com/app.js","../fest/core.js","../com/service.js","../fest/veela.js"])))=>i.map(i=>d[i]);
-import { Nt as isCapacitorCwsNativeShell, cn as splitMultiValueList } from "../shells/boot-index.js";
-import { vn as __vitePreload } from "../com/app.js";
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../shells/boot-index.js","./rolldown-runtime.js","../shells/boot-history-base.js","../com/app.js","../fest/core.js","../com/service.js","../fest/veela.js"])))=>i.map(i=>d[i]);
+import { Hn as __vitePreload } from "../com/app.js";
+import { $t as isCapacitorCwsNativeShell, An as splitMultiValueList } from "../shells/boot-index.js";
 import { n as isCapacitorNative } from "./capacitor-permissions.js";
 //#region src/frontend/boot/capacitor-share-intent.ts
 /**
@@ -54,7 +54,7 @@ var installCapacitorShareIntentBridge = () => {
 		(async () => {
 			const { text, asset } = parseSharePayload(ev.detail);
 			if (!text && !asset) return;
-			const [{ loadSettings }, ws] = await Promise.all([__vitePreload(() => import("../shells/boot-index.js").then((n) => n.V), __vite__mapDeps([0,1,2,3,4,5]), import.meta.url), __vitePreload(() => import("../shells/boot-index.js").then((n) => n.c), __vite__mapDeps([0,1,2,3,4,5]), import.meta.url)]);
+			const [{ loadSettings }, ws] = await Promise.all([__vitePreload(() => import("../shells/boot-index.js").then((n) => n.ht), __vite__mapDeps([0,1,2,3,4,5,6]), import.meta.url), __vitePreload(() => import("../shells/boot-index.js").then((n) => n.l), __vite__mapDeps([0,1,2,3,4,5,6]), import.meta.url)]);
 			const nodes = readDestinationNodes(loadSettings());
 			ws.connectWS();
 			if (asset) ws.sendCoordinatorAct("clipboard:update", {

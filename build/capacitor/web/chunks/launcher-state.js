@@ -1,5 +1,5 @@
 import { n as __exportAll } from "./rolldown-runtime.js";
-import { Ft as loadDesktopRaw, G as resolveEntryIcon, Mt as saveUIState, Pt as decodeDesktopState, U as resolveFsBackend, W as subscribeFsBackendRegister, dn as safe, fn as JSOX, jt as makeUIState, ln as stringRef, on as observe, un as makeObjectAssignable, vn as __vitePreload } from "../com/app.js";
+import { Cn as observe, Dn as makeObjectAssignable, En as stringRef, Gt as makeUIState, Hn as __vitePreload, Kt as saveUIState, On as safe, Xt as loadDesktopRaw, Yt as decodeDesktopState, at as subscribeFsBackendRegister, it as resolveFsBackend, ot as resolveEntryIcon, qt as JSOX } from "../com/app.js";
 //#region ../../modules/views/home-view/src/ts/layout.ts
 var DEFAULT_LAYOUT = [4, 8];
 var clamp = (value, min, max) => {

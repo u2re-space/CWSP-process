@@ -11,6 +11,9 @@ async function launcherList(_query) {
 async function launcherLaunch(_pkg, _component) {
 	return false;
 }
+async function launcherHasPackages(_pkgs) {
+	return {};
+}
 async function launcherIcon(_cacheKey, _size = 64, _variant = "default", _pack = "", _drawable = "") {
 	return "";
 }
@@ -27,4 +30,4 @@ async function launcherIconBlobUrl(_cacheKey, _size = 64, _variant = "default", 
 	return "";
 }
 //#endregion
-export { launcherIcon, launcherIconBlobUrl, launcherIconPackIcons, launcherIconPacks, launcherIconVariants, launcherIsDefault, launcherLaunch, launcherList, launcherRequestDefault };
+export { launcherHasPackages, launcherIcon, launcherIconBlobUrl, launcherIconPackIcons, launcherIconPacks, launcherIconVariants, launcherIsDefault, launcherLaunch, launcherList, launcherRequestDefault };

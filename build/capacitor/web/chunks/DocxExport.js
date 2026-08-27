@@ -1,6 +1,6 @@
 import { r as __require$1 } from "./rolldown-runtime.js";
-import { t as renderMathInElement } from "../vendor/katex.js";
 import { t as f } from "../vendor/marked.js";
+import { t as renderMathInElement } from "../vendor/katex.js";
 import { t as src_default } from "../vendor/marked-katex-extension.js";
 //#region ../../node_modules/docx/dist/index.mjs
 var __create = Object.create;

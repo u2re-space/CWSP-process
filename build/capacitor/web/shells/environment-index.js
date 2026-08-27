@@ -1,5 +1,5 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./environment-window-views-browser-view.js","../chunks/rolldown-runtime.js"])))=>i.map(i=>d[i]);
-import { an as numberRef, in as booleanRef, rn as effect, vn as __vitePreload, y as tryLaunchSiblingView } from "../com/app.js";
+import { Hn as __vitePreload, Sn as numberRef, bn as effect, p as tryLaunchSiblingView, xn as booleanRef } from "../com/app.js";
 import { a as SHELL_SLOT, i as isEnvironmentShellContainerHost, o as resolveOverlayMountPoint, s as resolveShellOverlaysMount, t as getOrCreateEnvironmentOverlayMount } from "./environment-environment-overlay.js";
 import { a as setChromeFlyoutShellHost } from "./environment-components-calendar-CalendarFlyout.js";
 import { t as restoreQuickFilters } from "./environment-components-settings-QuickSettings.js";
@@ -870,7 +870,8 @@ function createWorkspaceWindowLayer(workspace, options = {}) {
 		if (!id || id === "home") return;
 		if (id === "airpad") return;
 		try {
-			if (document.documentElement.dataset.cwspSku === "launcher") {
+			const native = document.documentElement.dataset.cwspNativeShell === "capacitor" || Boolean(globalThis.Capacitor?.isNativePlatform?.());
+			if (document.documentElement.dataset.cwspSku === "launcher" && native) {
 				tryLaunchSiblingView(id).then((launched) => {
 					if (!launched) openViewWindowContinue(id, opts);
 				});

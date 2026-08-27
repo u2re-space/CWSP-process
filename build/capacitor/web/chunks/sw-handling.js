@@ -1,7 +1,7 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./BootLoader.js","./rolldown-runtime.js","../shells/boot-index.js","../com/app.js","../fest/core.js","../com/service.js","../fest/veela.js","../shells/preference.js","./capacitor-settings-permissions.js","./capacitor-permissions.js","./RuntimeSettings.js"])))=>i.map(i=>d[i]);
-import { An as enqueuePendingMessage, Bn as BROADCAST_CHANNELS, En as storeShareTargetPayloadToCache, G as loadSettings, In as sendProtocolMessage, Ln as unifiedMessaging, Tn as consumeCachedShareTargetPayload, Un as normalizeDestination, Wn as viewBroadcastChannelName, bn as unifiedMessaging$1, wn as buildShareDataFromCachedPayload } from "../shells/boot-index.js";
-import { It as copy, Lt as initClipboardReceiver, _t as parseDataUrl, ht as isBase64Like, vn as __vitePreload } from "../com/app.js";
-import { a as siblingSkuForView, i as readCwspSku, n as androidPackageForSku, t as ECOSYSTEM_SKUS } from "../assets/index-TDAASpVX.js";
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./BootLoader.js","../com/app.js","./rolldown-runtime.js","../fest/core.js","../shells/boot-index.js","../shells/boot-history-base.js","../com/service.js","../fest/veela.js","../shells/preference.js","./capacitor-settings-permissions.js","./capacitor-permissions.js","./RuntimeSettings.js"])))=>i.map(i=>d[i]);
+import { d as publicHrefForSku, h as siblingSkuForView, m as shouldHandoffViewToSibling, n as SKU_HUB_PATHS, o as ensureCwspSkuFromLocation, r as androidPackageForSku, s as inferCwspSkuFromLocation, t as ECOSYSTEM_SKUS } from "../shells/boot-history-base.js";
+import { Et as parseDataUrl, Hn as __vitePreload, Qt as initClipboardReceiver, Zt as copy, lt as bindDirectoryForLaunchedFiles, wt as isBase64Like } from "../com/app.js";
+import { $n as resolveProcessApiUrl, Gn as sendProtocolMessage, Jn as BROADCAST_CHANNELS, Kn as unifiedMessaging, Qn as viewBroadcastChannelName, X as unifiedMessaging$1, Zn as normalizeDestination, et as buildShareDataFromCachedPayload, nt as storeShareTargetPayloadToCache, tt as consumeCachedShareTargetPayload, yt as loadSettings, zn as enqueuePendingMessage } from "../shells/boot-index.js";
 import { t as summarizeForLog$1 } from "./LogSanitizer.js";
 //#region src/shared/boot/toast.ts
 var DEFAULT_CONFIG = {
@@ -663,6 +663,56 @@ var cleanupPWAClipboard = () => {
 	_pwaClipboardInitialized = false;
 };
 //#endregion
+//#region src/shared/boot/history-base.ts
+var KNOWN_PATH_MOUNTS = [
+	"cwsp",
+	"transfer",
+	"markdown",
+	"document",
+	"viewer",
+	"explorer",
+	"workcenter",
+	"process",
+	"kvm"
+];
+/** Dedicated PWA hosts — app lives at `/`. Hub/LAN keep `/markdown` `/viewer` path mounts. */
+var DEDICATED_SKU_HOSTS = [
+	"md.u2re.space",
+	"www.md.u2re.space",
+	"explorer.u2re.space",
+	"www.explorer.u2re.space",
+	"process.u2re.space",
+	"workcenter.u2re.space",
+	"cwsp.u2re.space",
+	"www.cwsp.u2re.space",
+	"transfer.u2re.space"
+];
+function isDedicatedSkuHost(hostname) {
+	try {
+		const host = String(hostname ?? globalThis.location?.hostname ?? "").toLowerCase();
+		return DEDICATED_SKU_HOSTS.includes(host);
+	} catch {
+		return false;
+	}
+}
+function isKnownPathMountSegment(segment) {
+	return KNOWN_PATH_MOUNTS.includes(String(segment || "").toLowerCase());
+}
+/**
+* On a named SKU host, `/viewer` `/markdown` `/explorer` … are Fastify aliases of `/`, not view routes.
+* WHY: minimal path-routing wrote `/viewer?shell=minimal` → 302 `/viewer/` → 302 `/` → bootloop.
+*/
+function pathForSkuHostView(viewPath) {
+	let path = String(viewPath || "/").trim() || "/";
+	if (!path.startsWith("/")) path = `/${path}`;
+	if (!isDedicatedSkuHost()) return path;
+	const seg = path.replace(/^\/+/, "").split("/")[0]?.toLowerCase() || "";
+	if (!seg || !isKnownPathMountSegment(seg)) return path;
+	const sku = inferCwspSkuFromLocation();
+	if (sku && sku !== "launcher" && sku !== "crx") return SKU_HUB_PATHS[sku]?.includes(seg) ? "/" : path;
+	return "/";
+}
+//#endregion
 //#region src/shared/routing/pwa/sw-url.ts
 var isLikelyJavaScriptContentType = (contentType) => {
 	const ct = (contentType || "").toLowerCase();
@@ -793,7 +843,7 @@ var getServiceWorkerCandidates = () => {
 		"MODE": "capacitor",
 		"PROD": true,
 		"SSR": false,
-		"VITE_ENABLED_VIEWS": "minimal,workcenter,settings"
+		"VITE_ENABLED_VIEWS": "minimal,workcenter,settings,history"
 	}.DEV);
 	const bases = serviceWorkerPathBases();
 	const perBaseDev = [];
@@ -974,6 +1024,13 @@ var resolveViewTransfer = (payload) => {
 		route: payload.route,
 		hint: payload.hint
 	};
+	/** INVARIANT: do not overwrite `data.source` (transfer enum). Path goes on src/path/virtualPath. */
+	const virtualSource = String(payload.hint?.source || "").trim();
+	if (virtualSource && virtualSource !== "share-target" && virtualSource !== "launch-queue" && virtualSource !== "clipboard" && virtualSource !== "pending") {
+		data.path = virtualSource;
+		data.src = virtualSource;
+		data.virtualPath = virtualSource;
+	}
 	const resolved = {
 		destination: normalizeDestination(destination),
 		routePath: `/${destination}`,
@@ -1015,18 +1072,21 @@ var mirrorTransferToViewChannel = (resolved, message) => {
 };
 var dispatchViewTransfer = async (payload) => {
 	const resolved = resolveViewTransfer(payload);
-	const currentSku = readCwspSku();
+	ensureCwspSkuFromLocation();
 	const sibling = siblingSkuForView(resolved.destination);
-	if (currentSku && currentSku !== "crx" && sibling && sibling !== currentSku) {
+	if (shouldHandoffViewToSibling(resolved.destination) && sibling) {
 		const pkg = androidPackageForSku(sibling);
 		let handedOff = false;
 		if (pkg) try {
 			const bridge = await __vitePreload(() => import("./launcher-bridge.js"), [], import.meta.url);
 			handedOff = Boolean(await bridge.launcherLaunch?.(pkg));
 		} catch {}
-		if (!handedOff) {
+		if (!handedOff && typeof location !== "undefined") try {
+			location.assign(publicHrefForSku(sibling));
+			handedOff = true;
+		} catch {
 			const scheme = ECOSYSTEM_SKUS[sibling]?.scheme;
-			if (scheme && typeof location !== "undefined") try {
+			if (scheme) try {
 				location.assign(`${scheme}://`);
 				handedOff = true;
 			} catch {}
@@ -1311,7 +1371,7 @@ var initServiceWorker = async (_options = _swOptions) => {
 				"MODE": "capacitor",
 				"PROD": true,
 				"SSR": false,
-				"VITE_ENABLED_VIEWS": "minimal,workcenter,settings"
+				"VITE_ENABLED_VIEWS": "minimal,workcenter,settings,history"
 			};
 			if (!registration) {
 				if (viteEnv?.DEV) console.warn("[PWA] Service worker not registered (dev): probe failed for dev-sw/sw.js — check Vite BASE_URL matches vite-plugin-pwa dev worker path.");
@@ -1583,6 +1643,8 @@ var routeToTransferView = async (shareData, source, hint, pending = false) => {
 		contentType: resolved.contentType
 	});
 	const currentPath = (globalThis?.location?.pathname || "").replace(/\/+$/, "") || "/";
+	const destPath = pathForSkuHostView(resolved.routePath);
+	const destNorm = destPath.replace(/\/+$/, "") || "/";
 	let silentRoute = false;
 	try {
 		const sp = new URLSearchParams(globalThis?.location?.search || "");
@@ -1594,9 +1656,9 @@ var routeToTransferView = async (shareData, source, hint, pending = false) => {
 		if (!delivered) return false;
 		try {
 			const { bootLoader } = await __vitePreload(async () => {
-				const { bootLoader } = await import("./BootLoader.js").then((n) => n.t);
+				const { bootLoader } = await import("./BootLoader.js");
 				return { bootLoader };
-			}, __vite__mapDeps([0,1,2,3,4,5,6,7,8,9]), import.meta.url);
+			}, __vite__mapDeps([0,1,2,3,4,5,6,7,8,9,10]), import.meta.url);
 			const shell = bootLoader.getShell();
 			if (!(shell && ![
 				"window",
@@ -1627,14 +1689,14 @@ var routeToTransferView = async (shareData, source, hint, pending = false) => {
 		}
 	};
 	if (silentRoute) {
-		if (currentPath !== resolved.routePath) console.log("[ViewTransfer] Silent mode: skipping navigation; delivery via channels only:", resolved.routePath);
+		if (currentPath !== destNorm) console.log("[ViewTransfer] Silent mode: skipping navigation; delivery via channels only:", destNorm);
 		else await tryNavigateLiveShell();
 		return delivered;
 	}
-	if (currentPath !== resolved.routePath) {
+	if (currentPath !== destNorm) {
 		if (!await tryNavigateLiveShell()) {
 			const nextUrl = new URL(globalThis?.location?.href);
-			nextUrl.pathname = resolved.routePath;
+			nextUrl.pathname = destPath;
 			nextUrl.search = "";
 			nextUrl.hash = "";
 			if (pending) nextUrl.searchParams.set("shared", "1");
@@ -1644,7 +1706,7 @@ var routeToTransferView = async (shareData, source, hint, pending = false) => {
 		return delivered;
 	}
 	await tryNavigateLiveShell();
-	console.log("[ViewTransfer] Already on resolved route:", resolved.routePath);
+	console.log("[ViewTransfer] Already on resolved route:", destNorm);
 	return delivered;
 };
 /**
@@ -1757,7 +1819,7 @@ var processShareTargetData = async (shareData, skipIfEmpty = false) => {
 			console.log("[ShareTarget] Processing text content, length:", content.length);
 		} else throw new Error("No processable content found");
 		console.log("[ShareTarget] Calling unified processing API");
-		const response = await fetch("/api/processing", {
+		const response = await fetch(resolveProcessApiUrl("processing"), {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({
@@ -1876,7 +1938,7 @@ var tryServerSideProcessing = async (shareData) => {
 		const { getRuntimeSettings } = await __vitePreload(async () => {
 			const { getRuntimeSettings } = await import("./RuntimeSettings.js").then((n) => n.t);
 			return { getRuntimeSettings };
-		}, __vite__mapDeps([10,1,2,3,4,5,6]), import.meta.url);
+		}, __vite__mapDeps([11,2,1,4,5,3,6,7]), import.meta.url);
 		const settings = await getRuntimeSettings().catch(() => null);
 		const apiKey = settings?.ai?.apiKey;
 		if (!apiKey) {
@@ -2166,11 +2228,35 @@ var setupLaunchQueueConsumer = async () => {
 					return;
 				}
 				if (files.length > 0) {
-					const hint = files.length === 1 && isTextLikeFile(files[0]) ? {
+					const mdForBind = files.find((file) => isTextLikeFile(file)) || files[0];
+					let hint = files.length === 1 && isTextLikeFile(files[0]) ? {
 						destination: "viewer",
 						action: "open",
 						filename: files[0]?.name
 					} : void 0;
+					/**
+					* WHY: Launch Queue drops the parent folder. Same user-activation can still
+					* open showDirectoryPicker({ startIn: fileHandle }) so relative images resolve.
+					* Abort / missing API is fine — sidecar files + viewer Assets button remain.
+					*/
+					const startHandle = $files.find((handle) => handle && typeof handle.getFile === "function");
+					try {
+						const bound = await bindDirectoryForLaunchedFiles({
+							startIn: startHandle,
+							files,
+							filename: hint?.filename || mdForBind?.name
+						});
+						if (bound) hint = {
+							...hint || {
+								destination: "viewer",
+								action: "open",
+								filename: mdForBind?.name
+							},
+							source: bound.virtualPath
+						};
+					} catch (error) {
+						console.warn("[LaunchQueue] Asset directory bind skipped:", error);
+					}
 					const timestamp = Date.now();
 					const imageCount = files?.filter?.((f) => f.type.startsWith("image/")).length;
 					const staged = await storeShareTargetPayloadToCache({
@@ -2211,7 +2297,7 @@ var setupLaunchQueueConsumer = async () => {
 							hint
 						}, "launch-queue", hint, true)) {
 							const url = new URL(globalThis?.location?.href);
-							url.pathname = "/share-target";
+							url.pathname = pathForSkuHostView("/share-target");
 							url.searchParams.set("shared", "1");
 							url.hash = "";
 							globalThis.location.href = url.toString();

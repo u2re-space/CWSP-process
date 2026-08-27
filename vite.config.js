@@ -27,8 +27,8 @@ const baseConfig = await importConfig(
 );
 
 const ALL_VIEW_IDS = ["viewer", "editor", "workcenter", "explorer", "settings", "history", "home", "print", "airpad", "network"];
-/** Process PWA / APK: WorkCenter + settings. Markdown lives on CWSP-document. */
-const PROCESS_VIEWS = ["workcenter", "settings"];
+/** Process PWA / APK: WorkCenter + settings + history. Markdown lives on CWSP-document. */
+const PROCESS_VIEWS = ["workcenter", "settings", "history"];
 const DEFAULT_VIEWS_BY_MODE = {
     default: PROCESS_VIEWS
 };
@@ -204,7 +204,7 @@ const createMarkdownSpaConfig = async (mode) => {
     };
 };
 
-const PROCESS_CAPACITOR_VIEWS = ["minimal", "workcenter", "settings"];
+const PROCESS_CAPACITOR_VIEWS = ["minimal", "workcenter", "settings", "history"];
 
 /**
  * Process Capacitor host — WorkCenter + AI settings only.

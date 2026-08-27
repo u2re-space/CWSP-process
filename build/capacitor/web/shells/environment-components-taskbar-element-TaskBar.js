@@ -1,4 +1,4 @@
-import { Gt as getBy, J as UIElement_default, Jt as H, Kt as navigationEnable, Sn as preloadStyle, Wt as makeTask, Y as __decorate, c as WORKSPACE_PAGE_EVENT, d as switchWorkspacePage, l as getActiveWorkspaceId, on as observe, qt as defineElement, rn as effect, s as installLauncherBackStack, u as listWorkspacePages } from "../com/app.js";
+import { Cn as observe, J as UIElement_default, Mn as preloadStyle, Y as __decorate, a as listWorkspacePages, an as getBy, bn as effect, cn as H, i as getActiveWorkspaceId, in as makeTask, n as installLauncherBackStack, o as switchWorkspacePage, on as navigationEnable, r as WORKSPACE_PAGE_EVENT, sn as defineElement } from "../com/app.js";
 import { t as toggleCalendarFlyout } from "./environment-components-calendar-CalendarFlyout.js";
 import { n as toggleQuickSettingsFlyout } from "./environment-components-settings-QuickSettings.js";
 import { a as formatChromeClock, i as buildShellDeviceTray } from "./environment-components-statusbar-capacitor-native-safe-area.js";

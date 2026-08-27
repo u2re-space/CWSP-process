@@ -1,13 +1,13 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./crx-control-session.js","../com/app.js","./rolldown-runtime.js","../shells/boot-index.js","../fest/core.js","../com/service.js","../fest/veela.js"])))=>i.map(i=>d[i]);
-import { Dt as resolveEcosystemToken, Et as normalizeEcosystemToken, Fn as sendMessage, G as loadSettings, H as ensureCapacitorCwspSettingsSeeded, K as noteSettingsControlSync, Q as applyAirpadRuntimeFromAppSettings, U as ensureCrxCwspSettingsSeeded, W as getLastSettingsSaveReport, _ as normalizeHexColor, an as resolveCwspUrlFields, d as applyTheme, g as isAppearanceColorSource, gn as isEnabledView, h as defaultColorSource, m as FALLBACK_BASE_COLOR, q as saveSettings, t as navigateToView, wt as BUILTIN_AI_MODELS, xn as DEFAULT_INSTRUCTION_TEMPLATES } from "../shells/boot-index.js";
-import { Cn as removeAdopted, Jt as H, cn as ref, i as StorageKeys, o as setString, on as observe, vn as __vitePreload } from "../com/app.js";
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./crx-control-session.js","../com/app.js","./rolldown-runtime.js","../shells/boot-index.js","../shells/boot-history-base.js","../fest/core.js","../com/service.js","../fest/veela.js"])))=>i.map(i=>d[i]);
+import { c as isCwspSku, i as apkManifestForSku, p as readCwspSku, r as androidPackageForSku, s as inferCwspSkuFromLocation, u as isWebHubSurface } from "../shells/boot-history-base.js";
+import { Cn as observe, Hn as __vitePreload, Nn as removeAdopted, Tn as ref, cn as H, gn as StorageKeys, vn as setString } from "../com/app.js";
+import { o as SettingsChannelAction } from "../views/viewer.js";
+import "./storage.js";
+import { A as canonicalHubSettingsSection, B as visibleHubSettingsSections, Dn as resolveCwspUrlFields, F as readSettingsAreaSection, I as rememberSettingsAreaSection, L as resolveEffectiveHubSettingsSection, M as hasBuiltInSettingsPanel, N as hubSettingsSectionPath, Nn as normalizeEcosystemToken, P as pruneBuiltInSettingsTabs, Pn as resolveEcosystemToken, R as resolveSettingsShellProfile, St as applyAirpadRuntimeFromAppSettings, Wn as sendMessage, Z as DEFAULT_INSTRUCTION_TEMPLATES, _t as ensureCrxCwspSettingsSeeded, at as isEnabledView, bt as noteSettingsControlSync, ct as applyTheme, dt as FALLBACK_BASE_COLOR, ft as defaultColorSource, gt as ensureCapacitorCwspSettingsSeeded, j as defaultSettingsTabForProfile, jn as BUILTIN_AI_MODELS, k as SIBLING_HUB_SETTINGS_SECTIONS, mt as normalizeHexColor, pt as isAppearanceColorSource, t as navigateToView, vt as getLastSettingsSaveReport, xt as saveSettings, yt as loadSettings, z as skuForHubSettingsSection } from "../shells/boot-index.js";
 import { n as isCapacitorNative } from "./capacitor-permissions.js";
 import { n as requestCapacitorSettingsPermissionsAfterSave } from "./capacitor-settings-permissions.js";
-import { i as readCwspSku, r as apkManifestForSku } from "../assets/index-TDAASpVX.js";
-import { o as SettingsChannelAction } from "../views/viewer.js";
 import { n as openAdminDoorFromCore, r as resolveAdminDoorUrls } from "./admin-doors.js";
 import { c as updateInstruction, i as deleteInstruction, n as addInstruction, o as getInstructionRegistry, r as addInstructions, s as setActiveInstruction } from "./CustomInstructions.js";
-import "./storage.js";
 //#endregion
 //#region ../../modules/views/settings-view/src/ts/settings-styles-attach.ts
 var STYLE_MARKER = "data-settings-view-css";
@@ -48,7 +48,7 @@ var attachSettingsInlineStyles = (host) => {
 	if (host && !host.classList?.contains("view-settings")) return;
 	if (typeof document === "undefined") return;
 	if (document.head?.querySelector(`style[${STYLE_MARKER}]`)) return;
-	let css = normalizeInlineSettingsCss(String("@layer settings-view{:is(html[data-theme=light] .view-settings,:host-context(html[data-theme=light]) .view-settings){color-scheme:light only;--sv-bg:var(--color-surface,--u2-color-mod(var(--base-color,#5a7fff),40));--sv-fg:var(--color-on-surface,--u2-color-mod(var(--base-color,#5a7fff),900));--sv-muted:var(--color-on-surface-variant,--u2-color-mod(var(--base-color,#5a7fff),700));--sv-outline:var(--color-outline-variant,--u2-color-mod(var(--base-color,#5a7fff),400));--sv-surface-1:var(--color-surface-container-low,--u2-color-mod(var(--base-color,#5a7fff),10));--sv-surface-2:var(--color-surface-container,--u2-color-mod(var(--base-color,#5a7fff),10))}:is(html[data-theme=dark] .view-settings,:host-context(html[data-theme=dark]) .view-settings){color-scheme:dark only;--sv-bg:var(--color-surface,--u2-color-mod(var(--base-color,#5a7fff),1000));--sv-fg:var(--color-on-surface,--u2-color-mod(var(--base-color,#5a7fff),100));--sv-muted:var(--color-on-surface-variant,--u2-color-mod(var(--base-color,#5a7fff),280));--sv-outline:var(--color-outline-variant,--u2-color-mod(var(--base-color,#5a7fff),640));--sv-surface-1:var(--color-surface-container-low,--u2-color-mod(var(--base-color,#5a7fff),900));--sv-surface-2:var(--color-surface-container,--u2-color-mod(var(--base-color,#5a7fff),960))}.view-settings{color-scheme:inherit;--base-color-neutralized:color-mix(in oklab,var(--base-color) 60%,gray);--sv-accent:light-dark(--u2-color-mod(oklch(from var(--sv-primary,#5a7fff) calc(l * 1.6) calc(c * 2) h),600),--u2-color-mod(oklch(from var(--sv-primary,#5a7fff) calc(l * 1.6) calc(c * 2) h),400));--sv-on-primary:var(\n        --color-on-primary,light-dark(--u2-color-mod(var(--sv-primary,#5a7fff),10),--u2-color-mod(var(--sv-primary,#5a7fff),990))\n    );--sv-elev:0 2px 14px color-mix(in oklab,var(--sv-fg,light-dark(#12151a,#e8edf2)) 5%,transparent);--sv-divider:color-mix(in oklab,var(--sv-outline,light-dark(#c5cdd8,#3d4755)) 35%,transparent);--sv-ring:color-mix(in oklab,var(--sv-outline,light-dark(#c5cdd8,#3d4755)) 55%,transparent);background-color:var(--sv-surface-2,light-dark(#ffffff,#171c24));block-size:100%;color:var(--sv-fg,light-dark(#12151a,#e8edf2));container-name:settings-view;container-type:inline-size;display:grid;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;gap:0;grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) auto;inline-size:100%;margin:0;max-block-size:100%;min-block-size:0;overflow:hidden;padding:clamp(.5rem,2cqi,1rem);pointer-events:auto;text-align:start;touch-action:pan-x pan-y}.view-settings,.view-settings *,.view-settings :after,.view-settings :before{box-sizing:border-box}.view-settings :where(select,input,textarea,option,button){font-family:inherit;pointer-events:auto}.view-settings textarea{container-type:inline-size;inline-size:100%;max-inline-size:100%;resize:vertical}.view-settings :is(h2,h3){color:var(--sv-fg,light-dark(#12151a,#e8edf2));margin:0;text-align:start}.view-settings h2{font-size:1.25rem;font-weight:700;letter-spacing:-.02em}.view-settings h3{font-size:.94rem;font-weight:600;letter-spacing:-.01em}.view-settings .settings-screen__top{align-items:stretch;background:var(--sv-surface-2,var(--sv-bg));border-block-end:1px solid var(--sv-divider);display:flex;flex-direction:column;flex-shrink:0;gap:.75rem;inline-size:100%;max-inline-size:100%;max-inline-size:stretch;min-inline-size:0;overflow:visible;padding-block-end:0}.view-settings .settings-screen__title{flex:0 0 auto;font-size:clamp(1.05rem,2.5cqi,1.35rem);font-weight:600;letter-spacing:-.015em;max-inline-size:stretch;overflow:visible}.view-settings .settings-screen__body{min-block-size:0;min-inline-size:0;overflow:auto;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column;gap:1rem;max-inline-size:stretch;overscroll-behavior:contain;padding-block:.75rem;scrollbar-color:var(--sv-outline,light-dark(#c5cdd8,#3d4755)) transparent;scrollbar-width:thin;touch-action:pan-y}.view-settings .settings-screen__body::-webkit-scrollbar{inline-size:6px}.view-settings .settings-screen__body::-webkit-scrollbar-thumb{background:color-mix(in oklab,var(--sv-outline,light-dark(#c5cdd8,#3d4755)) 45%,transparent);border-radius:99px}.view-settings .settings-screen__footer{align-items:center;background:transparent;display:flex;flex-shrink:0;flex-wrap:wrap;gap:.5rem;inline-size:stretch;justify-content:flex-start;max-inline-size:stretch;padding-block:.75rem;padding-inline:.25rem}.view-settings .settings-tab-actions{align-items:center;display:flex;flex:0 0 auto;flex-wrap:nowrap;gap:.375rem;inline-size:100%;max-inline-size:100%;max-inline-size:stretch;min-inline-size:0;overflow-x:auto;overflow-y:hidden;padding-block-end:.5rem;pointer-events:auto;position:relative;scrollbar-color:var(--sv-outline,light-dark(#c5cdd8,#3d4755)) transparent;scrollbar-width:thin;touch-action:pan-x;z-index:1}.view-settings .settings-tab-actions::-webkit-scrollbar{block-size:4px}.view-settings .settings-tab-actions::-webkit-scrollbar-thumb{background:color-mix(in oklab,var(--sv-accent,var(--sv-primary,#5a7fff)) 70%,transparent);border-radius:99px}.view-settings .settings-tab-btn{background:color-mix(in oklab,var(--sv-surface-1,light-dark(#f4f6fa,#1c232d)) 94%,transparent);border:none;border-radius:999px;color:var(--sv-muted,light-dark(#5c6570,#a8b0bc));cursor:pointer;font-size:.75rem;font-weight:500;max-inline-size:stretch;min-block-size:2.5rem;padding:.5rem .875rem;pointer-events:auto;transition:background-color .12s ease,color .12s ease,box-shadow .12s ease;white-space:nowrap}@supports (color:contrast-color(red)) and (color:light-dark(red,red)){.view-settings .settings-tab-btn{color:contrast-color(var(--sv-surface-1,light-dark(#f4f6fa,#1c232d)))}}.view-settings .settings-tab-btn:hover{background:color-mix(in oklab,var(--sv-surface-2,light-dark(#f4f6fa,#1c232d)) 100%,transparent);color:var(--sv-fg,light-dark(#12151a,#e8edf2))}.view-settings .settings-tab-btn.is-active{background:var(--sv-accent,var(--sv-primary,#5a7fff));color:var(--sv-on-primary)}@supports (color:contrast-color(red)){.view-settings .settings-tab-btn.is-active{color:contrast-color(var(--sv-accent,var(--sv-primary,#5a7fff)))}}.view-settings .settings-screen__body>.settings-tab-panel{max-inline-size:stretch;pointer-events:auto;scrollbar-width:none;touch-action:pan-x pan-y}.view-settings .settings-screen__body>:is(.settings-tab-panel:not(.is-active),.settings-tab-panel[hidden]){display:none!important}.view-settings .settings-screen__body>.settings-tab-panel.is-active:not([hidden]){align-items:stretch;display:flex!important;flex-direction:column;gap:.75rem;min-inline-size:0}.view-settings .card{background:var(--sv-surface-1,light-dark(#f4f6fa,#1c232d));border:none;border-radius:16px;box-shadow:none;display:flex;flex-direction:column;gap:.75rem;inline-size:stretch;max-inline-size:stretch;padding:1rem}@container settings-view (max-inline-size: 480px){.view-settings .card{border-radius:14px;padding:.875rem}}.view-settings .settings-panel-form{display:flex;flex-direction:column;gap:.75rem;inline-size:stretch;max-inline-size:stretch}.view-settings .field{display:grid;font-size:.75rem;gap:.375rem;grid-auto-flow:row;inline-size:stretch;margin:0;max-inline-size:stretch;pointer-events:auto}.view-settings .field>span{color:var(--sv-muted,light-dark(#5c6570,#a8b0bc));font-size:.75rem;font-weight:500}.view-settings .field.checkbox{align-items:center;gap:.625rem;grid-auto-columns:minmax(0,max-content) 1fr;grid-auto-flow:column;max-inline-size:stretch}.view-settings .field-hint{color:var(--sv-muted,light-dark(#5c6570,#a8b0bc));font-size:.85em;line-height:1.45;margin:0 0 .75rem;max-inline-size:stretch;opacity:.95}.view-settings .appearance-swatches{display:flex;flex-wrap:wrap;gap:.45rem}.view-settings .appearance-swatch{background:var(--color-primary,#5a9ec8);block-size:1.75rem;border:2px solid color-mix(in oklab,var(--sv-fg,#e8edf2) 18%,transparent);border-radius:999px;cursor:pointer;inline-size:1.75rem;padding:0}.view-settings .appearance-swatch[aria-selected=true]{outline:2px solid var(--sv-accent,var(--color-primary,#5a9ec8));outline-offset:2px}.view-settings .appearance-hue{display:grid;gap:.25rem}.view-settings .appearance-hue__range{accent-color:var(--color-primary,#5a9ec8);inline-size:100%}.view-settings .appearance-color-input{block-size:2rem;inline-size:3.25rem;padding:.15rem}.view-settings :is(.form-input,.form-select){background:var(--sv-surface-2,light-dark(#ffffff,#171c24));border-radius:10px;color:var(--sv-fg,light-dark(#12151a,#e8edf2));display:block;inline-size:100%;min-block-size:2.5rem;padding:.5rem .65rem;-webkit-text-fill-color:var(--sv-fg,light-dark(#12151a,#e8edf2));border:0 transparent;box-shadow:none;caret-color:var(--sv-fg,light-dark(#12151a,#e8edf2));font-size:.875rem;line-height:1.25;max-inline-size:stretch;outline:none;outline:0 none transparent;transition:border-color .12s ease,box-shadow .12s ease}.view-settings :is(select.form-input,select.form-select){background-color:var(--sv-surface-2,light-dark(#ffffff,#171c24));background-position:calc(100% - 14px) calc(50% - 2px),calc(100% - 9px) calc(50% - 2px);background-repeat:no-repeat;background-size:5px 5px;border:0 transparent;box-shadow:none;max-inline-size:stretch;outline:0 none transparent;padding-inline-end:2rem;pointer-events:auto}.view-settings .btn{align-items:center;background:color-mix(in oklab,var(--sv-surface-2,light-dark(#ffffff,#171c24)) 90%,transparent);border:none;border-radius:999px;color:var(--sv-fg,var(--color-on-surface));cursor:pointer;display:inline-flex;font-size:.8125rem;font-weight:500;gap:.35rem;justify-content:center;max-inline-size:stretch;min-block-size:2.5rem;padding:.5rem 1.125rem;transition:background-color .12s ease,filter .12s ease}@supports (color:contrast-color(red)){.view-settings .btn{color:contrast-color(var(--sv-surface-2,var(--color-surface)))}}.view-settings .btn:hover{background:color-mix(in oklab,var(--sv-fg,light-dark(#12151a,#e8edf2)) 6%,var(--sv-surface-1,light-dark(#ffffff,#171c24)))}.view-settings .btn.primary{background:var(--sv-accent,var(--sv-primary,#5a7fff));color:var(--sv-on-primary)}@supports (color:contrast-color(red)){.view-settings .btn.primary{color:contrast-color(var(--sv-accent,var(--sv-primary,#5a7fff)))}}.view-settings .btn.primary:hover{filter:brightness(1.1)}.view-settings :is(.btn.btn-sm,.btn.small){font-size:.75rem;min-block-size:2rem;padding:.35rem .65rem}.view-settings .btn.btn-danger{background:color-mix(in oklab,var(--sv-danger,#d32f2f) 92%,#000);color:var(--sv-on-primary)}.view-settings .btn.btn-danger:hover{filter:brightness(1.08)}.view-settings .btn.tiny{font-size:.72rem;min-block-size:2rem;padding:.3rem .5rem}.view-settings :is(.ext-note,.note){color:var(--sv-muted,light-dark(#5c6570,#a8b0bc));display:block;flex:1 1 auto;font-size:.75rem;max-inline-size:100%;opacity:.92;overflow:hidden;text-overflow:ellipsis;white-space:normal}.view-settings :is(.ext-note:empty,.note:empty){display:none}.view-settings :is(.ext-note,.note){line-height:1.35;max-inline-size:stretch;pointer-events:none}.view-settings :is(.ext-note.note--ok,.note.note--ok){color:color-mix(in oklab,var(--color-success,#3ecf8e) 70%,var(--sv-fg,light-dark(#12151a,#e8edf2)))}.view-settings :is(.ext-note.note--warn,.note.note--warn){color:color-mix(in oklab,var(--color-warning,#e6a700) 75%,var(--sv-fg,light-dark(#12151a,#e8edf2)))}.view-settings :is(.ext-note.note--err,.note.note--err){color:color-mix(in oklab,var(--color-error,#e05252) 80%,var(--sv-fg,light-dark(#12151a,#e8edf2)))}.view-settings .ext-note{line-height:1.4;max-inline-size:stretch}.view-settings .ext-note code{background:color-mix(in oklab,var(--sv-surface-1,light-dark(#ffffff,#171c24)) 80%,var(--sv-bg,light-dark(#eef1f6,#0f1318)));border-radius:4px;color:var(--sv-fg,light-dark(#12151a,#e8edf2));font-size:.68rem;max-inline-size:stretch;padding:2px 6px}.view-settings .form-checkbox input[type=checkbox],.view-settings label.field.checkbox input[type=checkbox]{accent-color:var(--sv-accent,var(--sv-primary,#5a7fff));block-size:1.15rem;flex-shrink:0;inline-size:1.15rem;max-inline-size:stretch}.view-settings .mcp-section{display:flex;flex-direction:column;gap:.5rem;max-inline-size:stretch}.view-settings .mcp-actions{display:flex;flex-wrap:wrap;gap:.5rem;margin-block-start:.5rem;max-inline-size:stretch}.view-settings .mcp-row{background:color-mix(in oklab,var(--sv-surface-1,light-dark(#ffffff,#171c24)) 88%,var(--sv-bg,light-dark(#eef1f6,#0f1318)));border-radius:12px;display:grid;gap:.5rem;max-inline-size:stretch;padding:.75rem}.view-settings .mcp-empty-note,.view-settings .mcp-row .field{margin:0;max-inline-size:stretch}.view-settings .mcp-empty-note{color:var(--sv-muted,light-dark(#5c6570,#a8b0bc));font-size:.75rem}.view-settings .settings-spoiler{background:color-mix(in oklab,var(--sv-surface-1,light-dark(#ffffff,#171c24)) 55%,transparent);border:1px solid color-mix(in oklab,var(--sv-outline,light-dark(#c5cdd8,#3d4755)) 22%,transparent);border-radius:12px;max-inline-size:stretch;padding:.25rem .5rem}.view-settings .settings-spoiler summary{color:var(--sv-fg,light-dark(#12151a,#e8edf2));cursor:pointer;font-size:.8rem;font-weight:600;max-inline-size:stretch;padding:.35rem .25rem}.view-settings .settings-spoiler .settings-panel-form{max-inline-size:stretch;padding-block-end:.25rem}.view-settings .view-settings__content{inline-size:100%;max-inline-size:min(clamp(640px,90%,800px),100%)}.view-settings .view-settings__section{border-block-end:1px solid var(--sv-divider);display:flex;flex-direction:column;margin-block-end:2rem;max-inline-size:stretch;padding-block-end:2rem}.view-settings .view-settings__section:last-of-type{border-block-end:none}.view-settings .view-settings__group{display:flex;flex-direction:column;gap:1rem;max-inline-size:stretch}.view-settings .view-settings__label{display:flex;flex-direction:column;gap:.375rem;max-inline-size:stretch}.view-settings .view-settings__label>span{font-size:.8125rem;font-weight:500}.view-settings :is(.view-settings__input,.view-settings__select){background:var(--sv-surface-1,light-dark(#ffffff,#171c24));border:0 transparent;border-radius:10px;box-shadow:none;color:var(--sv-fg,light-dark(#12151a,#e8edf2));font-size:.875rem;max-inline-size:stretch;min-block-size:2.5rem;outline:0 none transparent;padding:.45rem .6rem}.view-settings .view-settings__checkbox{align-items:center;display:flex;font-size:.8125rem;gap:.5rem;max-inline-size:stretch}.view-settings .view-settings__actions{display:flex;gap:.75rem;margin-block-start:1.5rem;max-inline-size:stretch}.view-settings .view-settings__btn{background:transparent;border:1px solid color-mix(in oklab,var(--sv-outline,light-dark(#c5cdd8,#3d4755)) 40%,transparent);border-radius:8px;color:var(--sv-fg,light-dark(#12151a,#e8edf2));cursor:pointer;max-inline-size:stretch;padding:.55rem 1.1rem}@supports (color:light-dark(red,red)){.view-settings .view-settings__btn{color:var(--sv-fg,light-dark(#12151a,#e8edf2))}}@supports (color:contrast-color(red)){.view-settings .view-settings__btn{color:contrast-color(var(--sv-surface-1,var(--color-surface)))}}.view-settings .view-settings__btn--primary{background:var(--sv-accent,var(--sv-primary,#5a7fff));border-color:color-mix(in oklab,var(--sv-accent,var(--sv-primary,#5a7fff)) 35%,transparent);color:var(--sv-on-primary)}@supports (color:contrast-color(red)){.view-settings .view-settings__btn--primary{color:contrast-color(var(--sv-accent,var(--sv-primary,#5a7fff)))}}.view-settings .view-settings__btn--primary:hover{filter:brightness(1.1)}.view-settings :is(.custom-instructions-editor,.custom-instructions-panel){display:flex;flex-direction:column;gap:.75rem;max-inline-size:stretch}.view-settings :is(.ci-row,.cip-select-row){display:flex;flex-direction:column;gap:.35rem;max-inline-size:stretch}.view-settings .ci-header{margin-block-end:.25rem;max-inline-size:stretch}.view-settings .ci-header h4{font-size:.88rem;margin:0 0 .25rem}.view-settings .ci-desc{color:var(--sv-muted,light-dark(#5c6570,#a8b0bc));font-size:.78rem;line-height:1.45;margin:0;max-inline-size:stretch}.view-settings .ci-active-select{display:flex;flex-direction:column;gap:.25rem;max-inline-size:stretch}.view-settings :is(.ci-select,.cip-select){background:var(--sv-surface-1,light-dark(#ffffff,#171c24));border:1px solid color-mix(in oklab,var(--sv-outline,light-dark(#c5cdd8,#3d4755)) 40%,transparent);border-radius:10px;color:var(--sv-fg,light-dark(#12151a,#e8edf2));font-size:.8rem;max-inline-size:stretch;min-block-size:2.35rem;padding:.4rem .55rem}.view-settings :is(.ci-list,.cip-list){display:flex;flex-direction:column;gap:.5rem;max-inline-size:stretch}.view-settings :is(.ci-item,.cip-item){background:var(--sv-surface-1,light-dark(#ffffff,#171c24));border:1px solid color-mix(in oklab,var(--sv-outline,light-dark(#c5cdd8,#3d4755)) 16%,transparent);border-radius:12px;max-inline-size:stretch;padding:.65rem .75rem}.view-settings :is(.ci-item.active,.ci-item.is-active,.cip-item.active,.cip-item.is-active){border-color:color-mix(in oklab,var(--sv-primary,#5a7fff) 35%,transparent)}.view-settings :is(.ci-item-header,.cip-item-header){align-items:flex-start;display:flex;gap:.5rem;justify-content:space-between;max-inline-size:stretch}.view-settings :is(.ci-item-label,.cip-item-label){font-size:.8rem;font-weight:600;max-inline-size:stretch}.view-settings :is(.ci-item-actions,.cip-item-actions){display:flex;flex-wrap:wrap;gap:.35rem;justify-content:start;max-inline-size:stretch}.view-settings :is(.ci-badge,.cip-badge){background:color-mix(in oklab,var(--sv-primary,#5a7fff) 16%,transparent);border-radius:999px;color:var(--sv-fg,light-dark(#12151a,#e8edf2));font-size:.65rem;max-inline-size:stretch;padding:.15rem .4rem}.view-settings :is(.ci-item-preview,.cip-item-preview){color:var(--sv-muted,light-dark(#5c6570,#a8b0bc));font-size:.75rem;line-height:1.45;margin-block-start:.35rem;max-inline-size:stretch}.view-settings :is(.ci-edit-form,.cip-edit-form){display:flex;flex-direction:column;gap:.5rem;margin-block-start:.5rem;max-inline-size:stretch}.view-settings :is(.ci-actions,.ci-add-actions,.ci-edit-actions,.cip-form-actions,.cip-toolbar){align-items:center;display:flex;flex-wrap:wrap;gap:.5rem;max-inline-size:stretch}.view-settings :is(.ci-input,.ci-textarea,.cip-input,.cip-textarea,.field-control){background:var(--sv-surface-1,light-dark(#ffffff,#171c24));border:0 transparent;border-radius:10px;box-shadow:none;color:var(--sv-fg,light-dark(#12151a,#e8edf2));font-size:.8125rem;inline-size:100%;max-inline-size:stretch;outline:0 none transparent;padding:.45rem .55rem}.view-settings :is(.ci-textarea,.cip-textarea){max-inline-size:stretch;min-block-size:5rem}.view-settings :is(.ci-empty,.cip-empty){font-size:.8rem;padding:.75rem;text-align:center}.view-settings .field-label,.view-settings :is(.ci-empty,.cip-empty){color:var(--sv-muted,light-dark(#5c6570,#a8b0bc));max-inline-size:stretch}.view-settings .field-label{font-size:.72rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase}@container settings-view (max-inline-size: 1024px){.view-settings{max-inline-size:stretch;padding:.65rem}}@container settings-view (max-inline-size: 560px){.view-settings .settings-tab-actions{gap:.3rem;max-inline-size:stretch}.view-settings .settings-tab-btn{max-inline-size:stretch;min-block-size:2.65rem;padding-inline:.7rem}}@container settings-view (max-inline-size: 480px){.view-settings{padding:.45rem;padding-block-end:.15rem}.view-settings .settings-screen__title{display:none;max-inline-size:stretch}.view-settings .settings-screen__body{gap:.75rem;max-inline-size:stretch;padding-block:.5rem}.view-settings .settings-screen__footer{align-items:stretch;flex-direction:column-reverse;gap:.35rem;max-inline-size:stretch;padding-block:.35rem .2rem;padding-inline-end:3.25rem}.view-settings .settings-screen__footer .btn.primary{inline-size:100%;justify-content:center;max-inline-size:stretch;min-block-size:2.75rem}.view-settings .settings-screen__footer .note{max-inline-size:stretch;text-align:center;white-space:normal}}}"));
+	let css = normalizeInlineSettingsCss(String("@layer settings-view{:is(html[data-theme=light] .view-settings,:host-context(html[data-theme=light]) .view-settings){color-scheme:light only;--sv-bg:var(--color-surface,--u2-color-mod(var(--base-color,#5a7fff),40));--sv-fg:var(--color-on-surface,--u2-color-mod(var(--base-color,#5a7fff),900));--sv-muted:var(--color-on-surface-variant,--u2-color-mod(var(--base-color,#5a7fff),700));--sv-outline:var(--color-outline-variant,--u2-color-mod(var(--base-color,#5a7fff),400));--sv-surface-1:var(--color-surface-container-low,--u2-color-mod(var(--base-color,#5a7fff),10));--sv-surface-2:var(--color-surface-container,--u2-color-mod(var(--base-color,#5a7fff),10))}:is(html[data-theme=dark] .view-settings,:host-context(html[data-theme=dark]) .view-settings){color-scheme:dark only;--sv-bg:var(--color-surface,--u2-color-mod(var(--base-color,#5a7fff),1000));--sv-fg:var(--color-on-surface,--u2-color-mod(var(--base-color,#5a7fff),100));--sv-muted:var(--color-on-surface-variant,--u2-color-mod(var(--base-color,#5a7fff),280));--sv-outline:var(--color-outline-variant,--u2-color-mod(var(--base-color,#5a7fff),640));--sv-surface-1:var(--color-surface-container-low,--u2-color-mod(var(--base-color,#5a7fff),900));--sv-surface-2:var(--color-surface-container,--u2-color-mod(var(--base-color,#5a7fff),960))}.view-settings{color-scheme:inherit;margin:0;padding:0;--base-color-neutralized:color-mix(in oklab,var(--base-color) 60%,gray);--sv-accent:light-dark(--u2-color-mod(oklch(from var(--sv-primary,#5a7fff) calc(l * 1.6) calc(c * 2) h),600),--u2-color-mod(oklch(from var(--sv-primary,#5a7fff) calc(l * 1.6) calc(c * 2) h),400));--sv-on-primary:var(\n        --color-on-primary,light-dark(--u2-color-mod(var(--sv-primary,#5a7fff),10),--u2-color-mod(var(--sv-primary,#5a7fff),990))\n    );--sv-elev:0 2px 14px color-mix(in oklab,var(--sv-fg,light-dark(#12151a,#e8edf2)) 5%,transparent);--sv-divider:color-mix(in oklab,var(--sv-outline,light-dark(#c5cdd8,#3d4755)) 35%,transparent);--sv-ring:color-mix(in oklab,var(--sv-outline,light-dark(#c5cdd8,#3d4755)) 55%,transparent);background-color:var(--sv-surface-2,light-dark(#ffffff,#171c24));block-size:100%;color:var(--sv-fg,light-dark(#12151a,#e8edf2));container-name:settings-view;container-type:inline-size;display:grid!important;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;gap:0;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,max-content) minmax(0,1fr) minmax(0,max-content);inline-size:100%;max-block-size:100%;min-block-size:0;overflow:hidden;pointer-events:auto;text-align:start;touch-action:pan-x pan-y}.view-settings,.view-settings *,.view-settings :after,.view-settings :before{box-sizing:border-box}.view-settings :where(select,input,textarea,option,button){font-family:inherit;pointer-events:auto}.view-settings textarea{container-type:inline-size;inline-size:100%;max-inline-size:100%;resize:vertical}.view-settings :is(h2,h3){color:var(--sv-fg,light-dark(#12151a,#e8edf2));margin:0;text-align:start}.view-settings h2{font-size:1.3rem;font-weight:700;letter-spacing:-.02em}.view-settings h2,.view-settings h3{margin:0;padding-block:.5rem;text-align:center}.view-settings h3{font-size:1.2rem;font-weight:600;letter-spacing:-.01em}.view-settings h4{font-size:1rem;font-weight:500;letter-spacing:-.01em;margin:0;padding-block:.5rem}.view-settings .settings-screen__top{align-items:stretch;background:var(--sv-surface-2,var(--sv-bg));border:0 transparent;border-block-end:0 none transparent;display:flex;flex-direction:column;flex-shrink:0;gap:0;inline-size:100%;max-inline-size:100%;max-inline-size:stretch;min-inline-size:0;overflow:hidden;padding-block-end:0}.view-settings .settings-screen__title{flex:0 0 auto;font-size:clamp(1.05rem,2.5cqi,1.35rem);font-weight:600;letter-spacing:-.015em;max-inline-size:stretch;overflow:visible}.view-settings .settings-screen__body{background:var(--sv-surface-1,light-dark(#f4f6fa,#1c232d));block-size:stretch;border-radius:0;max-inline-size:stretch;min-block-size:stretch;min-inline-size:0;overflow:auto;overflow:hidden;overflow-y:auto;scrollbar-color:var(--sv-outline,light-dark(#c5cdd8,#3d4755)) transparent;touch-action:pan-y;-webkit-overflow-scrolling:touch;anchor-name:--shape-anchor;display:flex;flex-direction:column;gap:1rem;max-block-size:stretch;overscroll-behavior:contain;padding-block:0;position:relative;scrollbar-gutter:stable;scrollbar-width:thin;z-index:0;--padding:0.5rem;--radius:0.5rem;--box-x:calc(var(--padding) + 0.5rem);--box-y:calc(var(--padding) + 0.5rem);--box-width:calc(100% - var(--padding) * 2 - 1rem);--box-height:calc(100% - var(--padding) * 2 - 1rem);--hole-x:calc(var(--box-x) - var(--padding));--hole-y:calc(var(--box-y) - var(--padding));--hole-width:calc(var(--box-width) + var(--padding) + var(--padding));--hole-height:calc(var(--box-height) + var(--padding) + var(--padding));--hole-radius:calc(var(--radius) + var(--padding))}@supports (color:light-dark(red,red)){.view-settings .settings-screen__body{scrollbar-color:var(--sv-outline,light-dark(#c5cdd8,#3d4755)) transparent}}.view-settings .settings-screen__body:after{background:var(--sv-surface-1,light-dark(#f4f6fa,#1c232d));block-size:anchor-size(self-block);clip-path:shape(evenodd from 0 0,line to 100% 0,line to 100% 100%,line to 0 100%,close,move to calc(var(--hole-x) + var(--hole-radius)) var(--hole-y),line to calc(var(--hole-x) + var(--hole-width) - var(--hole-radius)) var(--hole-y),arc to calc(var(--hole-x) + var(--hole-width)) calc(var(--hole-y) + var(--hole-radius)) of var(--hole-radius) cw,line to calc(var(--hole-x) + var(--hole-width)) calc(var(--hole-y) + var(--hole-height) - var(--hole-radius)),arc to calc(var(--hole-x) + var(--hole-width) - var(--hole-radius)) calc(var(--hole-y) + var(--hole-height)) of var(--hole-radius) cw,line to calc(var(--hole-x) + var(--hole-radius)) calc(var(--hole-y) + var(--hole-height)),arc to var(--hole-x) calc(var(--hole-y) + var(--hole-height) - var(--hole-radius)) of var(--hole-radius) cw,line to var(--hole-x) calc(var(--hole-y) + var(--hole-radius)),arc to calc(var(--hole-x) + var(--hole-radius)) var(--hole-y) of var(--hole-radius) cw,close);content:\"\";inline-size:calc(anchor-size(self-inline) - var(--padding));inset:auto;inset-block-end:anchor(end);inset-block-start:anchor(start);inset-inline-end:anchor(end);inset-inline-start:anchor(start);pointer-events:none;position:fixed;position-anchor:--shape-anchor;touch-action:pan-y;z-index:1}.view-settings .settings-screen__body::-webkit-scrollbar{inline-size:6px}.view-settings .settings-screen__body::-webkit-scrollbar-thumb{background:color-mix(in oklab,var(--sv-outline,light-dark(#c5cdd8,#3d4755)) 45%,transparent);border-radius:99px}.view-settings .settings-screen__footer{align-items:center;display:flex;flex-shrink:0;flex-wrap:wrap;gap:.5rem;inline-size:stretch;justify-content:flex-start;max-inline-size:stretch;padding-block:.5rem;padding-inline:.25rem;padding-inline:.5rem}.view-settings .ext-note,.view-settings .settings-screen__footer{background:var(--sv-surface-1,light-dark(#f4f6fa,#1c232d))}.view-settings .settings-tab-actions{align-items:center;background-color:var(--sv-surface-1,light-dark(#ffffff,#171c24));border-block-start:1px solid var(--sv-divider);display:flex;flex:0 0 auto;flex-wrap:nowrap;gap:.375rem;inline-size:100%;max-inline-size:100%;max-inline-size:stretch;min-inline-size:0;overflow-x:auto;overflow-y:hidden;padding-block:.25rem;padding-block-end:.25rem;padding-inline:.5rem;pointer-events:auto;position:relative;scrollbar-color:var(--sv-outline,light-dark(#c5cdd8,#3d4755)) transparent;scrollbar-width:thin;touch-action:pan-x;z-index:1}.view-settings:not(:has(.settings-sku-nav)) .settings-tab-actions{background-color:initial;border:0 transparent;border-block-end:1px solid var(--sv-divider);border-block-start:0 none transparent;margin:0}.view-settings .settings-sku-nav{align-items:center;background-color:initial;border:0 transparent;border-block-end:0 none transparent;border-block-start:0 none transparent;box-shadow:none;display:flex;flex:0 0 auto;flex-wrap:nowrap;gap:.375rem;inline-size:100%;justify-content:flex-start;margin-block-end:.125rem;margin:0;max-inline-size:stretch;max-inline-size:100%;min-inline-size:0;overflow-x:auto;overflow-y:hidden;padding-block:.5rem;padding-block:.25rem;pointer-events:auto;position:relative;scrollbar-color:var(--sv-outline,light-dark(#c5cdd8,#3d4755)) transparent;scrollbar-width:thin;touch-action:pan-x;z-index:1}.view-settings .settings-sku-nav .settings-tab-btn{align-items:center;border-radius:.5rem;display:inline-flex;gap:.4rem}.view-settings .settings-sku-nav .settings-sku-nav__icon{--icon-size:1.05rem;block-size:var(--icon-size);color:currentColor;flex:0 0 auto;font-size:var(--icon-size);inline-size:var(--icon-size);pointer-events:none}.view-settings .settings-tab-actions::-webkit-scrollbar{block-size:4px}.view-settings .settings-tab-actions::-webkit-scrollbar-thumb{background:color-mix(in oklab,var(--sv-accent,var(--sv-primary,#5a7fff)) 70%,transparent);border-radius:99px}.view-settings .settings-tab-btn{background:color-mix(in oklab,var(--sv-surface-1,light-dark(#f4f6fa,#1c232d)) 94%,transparent);border:2px solid transparent;border-radius:999px;color:var(--sv-muted,light-dark(#5c6570,#a8b0bc));cursor:pointer;font-size:.75rem;font-weight:500;max-inline-size:stretch;min-block-size:2.5rem;padding:.5rem .875rem;pointer-events:auto;transition:background-color .12s ease,color .12s ease,box-shadow .12s ease;white-space:nowrap}@supports (color:contrast-color(red)) and (color:light-dark(red,red)){.view-settings .settings-tab-btn{color:contrast-color(var(--sv-surface-1,light-dark(#f4f6fa,#1c232d)))}}.view-settings .settings-tab-btn:hover{background:color-mix(in oklab,var(--sv-surface-2,light-dark(#f4f6fa,#1c232d)) 100%,transparent);color:var(--sv-fg,light-dark(#12151a,#e8edf2))}.view-settings .settings-tab-btn.is-active{border:2px solid;border-color:var(--sv-accent,var(--sv-primary,#5a7fff))}.view-settings .settings-screen__body>.settings-tab-panel{max-inline-size:stretch;pointer-events:auto;scrollbar-width:none;touch-action:pan-x pan-y}.view-settings .settings-screen__body>:is(.settings-tab-panel:not(.is-active),.settings-tab-panel[hidden]){display:none!important}.view-settings .settings-screen__body>.settings-tab-panel.is-active:not([hidden]){align-items:stretch;display:flex!important;flex-direction:column;gap:.75rem;min-inline-size:0}.view-settings .card{background:var(--sv-surface-2,light-dark(#ffffff,#171c24));border:none;border-radius:16px;box-shadow:none;display:flex;flex-direction:column;gap:.75rem;inline-size:stretch;margin-inline:.5rem;max-inline-size:stretch;padding:1rem}@container settings-view (max-inline-size: 480px){.view-settings .card{border-radius:12px;padding:.75rem}}.view-settings .settings-panel-form{display:flex;flex-direction:column;gap:.75rem;inline-size:stretch;max-inline-size:stretch}.view-settings .field{display:grid;font-size:.75rem;gap:.375rem;grid-auto-flow:row;inline-size:stretch;margin:0;margin-block-start:.5rem;max-inline-size:stretch;pointer-events:auto}.view-settings .field>span{color:var(--sv-muted,light-dark(#5c6570,#a8b0bc));font-size:.75rem;font-weight:500;padding-block:.25rem;padding-block-end:0}.view-settings .field.checkbox{align-items:center;gap:.625rem;grid-auto-columns:minmax(0,max-content) 1fr;grid-auto-flow:column;max-inline-size:stretch}.view-settings [data-contribution]{background:var(--sv-surface-2,light-dark(#ffffff,#171c24));border:0 solid color-mix(in oklab,var(--sv-outline,light-dark(#c5cdd8,#3d4755)) 40%,transparent);border-radius:12px;display:flex;flex-direction:column;gap:.5rem;max-inline-size:stretch;padding:.5rem}.view-settings .field-hint{color:var(--sv-muted,light-dark(#5c6570,#a8b0bc));font-size:.85em;line-height:1.45;margin:0 0 .75rem;max-inline-size:stretch;opacity:.95;padding-inline:.25rem}.view-settings .apk-update-fleet-row{background:var(--sv-surface-1,light-dark(#f4f6f8,#12171e));border:1px solid color-mix(in oklab,var(--sv-outline,light-dark(#c5cdd8,#3d4755)) 45%,transparent);border-radius:10px;display:flex;flex-direction:column;gap:.35rem;margin-block:.35rem .75rem;padding:.65rem .75rem}.view-settings .apk-update-fleet-row h4{font-size:.95rem;margin:0}.view-settings .apk-update-fleet-row .field-hint{margin-block-end:.25rem}.view-settings .appearance-swatches{display:flex;flex-wrap:wrap;gap:.45rem}.view-settings .appearance-swatch{background:var(--color-primary,#5a9ec8);block-size:1.75rem;border:2px solid color-mix(in oklab,var(--sv-fg,#e8edf2) 18%,transparent);border-radius:999px;cursor:pointer;inline-size:1.75rem;padding:0}.view-settings .appearance-swatch[aria-selected=true]{outline:2px solid var(--sv-accent,var(--color-primary,#5a9ec8));outline-offset:2px}.view-settings .appearance-hue{display:grid;gap:.25rem}.view-settings .appearance-hue__range{accent-color:var(--color-primary,#5a9ec8);inline-size:100%}.view-settings .appearance-color-input{block-size:2rem;inline-size:3.25rem;padding:.15rem}.view-settings :is(.form-input,.form-select){background:var(--sv-surface-1,light-dark(#ffffff,#171c24));border-radius:10px;color:var(--sv-fg,light-dark(#12151a,#e8edf2));display:block;inline-size:100%;min-block-size:2.5rem;padding:.5rem .65rem;-webkit-text-fill-color:var(--sv-fg,light-dark(#12151a,#e8edf2));border:0 transparent;box-shadow:none;caret-color:var(--sv-fg,light-dark(#12151a,#e8edf2));font-size:.875rem;line-height:1.25;max-inline-size:stretch;outline:none;outline:0 none transparent;transition:border-color .12s ease,box-shadow .12s ease}.view-settings :is(select.form-input,select.form-select){background-color:var(--sv-surface-1,light-dark(#ffffff,#171c24));background-position:calc(100% - 14px) calc(50% - 2px),calc(100% - 9px) calc(50% - 2px);background-repeat:no-repeat;background-size:5px 5px;border:0 transparent;box-shadow:none;max-inline-size:stretch;outline:0 none transparent;padding-inline-end:2rem;pointer-events:auto}.view-settings .btn{align-items:center;background:color-mix(in oklab,var(--sv-surface-1,light-dark(#ffffff,#171c24)) 90%,transparent);border:none;border-radius:999px;color:var(--sv-fg,var(--color-on-surface));cursor:pointer;display:inline-flex;font-size:.8125rem;font-weight:500;gap:.35rem;justify-content:center;max-inline-size:stretch;min-block-size:2.5rem;padding:.5rem 1.125rem;transition:background-color .12s ease,filter .12s ease}@supports (color:contrast-color(red)){.view-settings .btn{color:contrast-color(var(--sv-surface-1,var(--color-surface)))}}.view-settings .btn:hover{background:color-mix(in oklab,var(--sv-fg,light-dark(#12151a,#e8edf2)) 6%,var(--sv-surface-1,light-dark(#ffffff,#171c24)))}.view-settings .btn.primary{background:var(--sv-accent,var(--sv-primary,#5a7fff));color:var(--sv-on-primary)}@supports (color:contrast-color(red)){.view-settings .btn.primary{color:contrast-color(var(--sv-accent,var(--sv-primary,#5a7fff)))}}.view-settings .btn.primary:hover{filter:brightness(1.1)}.view-settings :is(.btn.btn-sm,.btn.small){font-size:.75rem;min-block-size:2rem;padding:.35rem .65rem}.view-settings .btn.btn-danger{background:color-mix(in oklab,var(--sv-danger,#d32f2f) 92%,#000);color:var(--sv-on-primary)}.view-settings .btn.btn-danger:hover{filter:brightness(1.08)}.view-settings .btn.tiny{font-size:.72rem;min-block-size:2rem;padding:.3rem .5rem}.view-settings :is(.ext-note,.note){color:var(--sv-muted,light-dark(#5c6570,#a8b0bc));display:block;flex:1 1 auto;font-size:.75rem;max-inline-size:100%;opacity:.92;overflow:hidden;text-overflow:ellipsis;white-space:normal}.view-settings :is(.ext-note:empty,.note:empty){display:none}.view-settings :is(.ext-note,.note){line-height:1.35;max-inline-size:stretch;pointer-events:none}.view-settings :is(.ext-note.note--ok,.note.note--ok){color:color-mix(in oklab,var(--color-success,#3ecf8e) 70%,var(--sv-fg,light-dark(#12151a,#e8edf2)))}.view-settings :is(.ext-note.note--warn,.note.note--warn){color:color-mix(in oklab,var(--color-warning,#e6a700) 75%,var(--sv-fg,light-dark(#12151a,#e8edf2)))}.view-settings :is(.ext-note.note--err,.note.note--err){color:color-mix(in oklab,var(--color-error,#e05252) 80%,var(--sv-fg,light-dark(#12151a,#e8edf2)))}.view-settings .ext-note{line-height:1.4;max-inline-size:stretch}.view-settings .ext-note code{background:color-mix(in oklab,var(--sv-surface-1,light-dark(#ffffff,#171c24)) 80%,var(--sv-bg,light-dark(#eef1f6,#0f1318)));border-radius:4px;color:var(--sv-fg,light-dark(#12151a,#e8edf2));font-size:.68rem;max-inline-size:stretch;padding:2px 6px}.view-settings .form-checkbox input[type=checkbox],.view-settings label.field.checkbox input[type=checkbox]{accent-color:var(--sv-accent,var(--sv-primary,#5a7fff));block-size:1.15rem;flex-shrink:0;inline-size:1.15rem;max-inline-size:stretch}.view-settings .mcp-section{display:flex;flex-direction:column;gap:.5rem;max-inline-size:stretch}.view-settings .mcp-actions{display:flex;flex-wrap:wrap;gap:.5rem;margin-block-start:.5rem;max-inline-size:stretch}.view-settings .mcp-row{background:color-mix(in oklab,var(--sv-surface-1,light-dark(#ffffff,#171c24)) 88%,var(--sv-bg,light-dark(#eef1f6,#0f1318)));border-radius:12px;display:grid;gap:.5rem;max-inline-size:stretch;padding:.75rem}.view-settings .mcp-empty-note,.view-settings .mcp-row .field{margin:0;max-inline-size:stretch}.view-settings .mcp-empty-note{color:var(--sv-muted,light-dark(#5c6570,#a8b0bc));font-size:.75rem}.view-settings .settings-spoiler{background:color-mix(in oklab,var(--sv-surface-1,light-dark(#ffffff,#171c24)) 55%,transparent);border:1px solid color-mix(in oklab,var(--sv-outline,light-dark(#c5cdd8,#3d4755)) 22%,transparent);border-radius:12px;max-inline-size:stretch;padding:.25rem .5rem}.view-settings .settings-spoiler summary{color:var(--sv-fg,light-dark(#12151a,#e8edf2));cursor:pointer;font-size:.8rem;font-weight:600;max-inline-size:stretch;padding:.35rem .25rem}.view-settings .settings-spoiler .settings-panel-form{max-inline-size:stretch;padding-block-end:.25rem}.view-settings .view-settings__content{inline-size:100%;max-inline-size:min(clamp(640px,90%,800px),100%)}.view-settings .view-settings__section{border-block-end:1px solid var(--sv-divider);display:flex;flex-direction:column;margin-block-end:2rem;max-inline-size:stretch;padding-block-end:2rem}.view-settings .view-settings__section:last-of-type{border-block-end:none}.view-settings .view-settings__group{display:flex;flex-direction:column;gap:1rem;max-inline-size:stretch}.view-settings .view-settings__label{display:flex;flex-direction:column;gap:.375rem;max-inline-size:stretch}.view-settings .view-settings__label>span{font-size:.8125rem;font-weight:500}.view-settings :is(.view-settings__input,.view-settings__select){background:var(--sv-surface-1,light-dark(#ffffff,#171c24));border:0 transparent;border-radius:10px;box-shadow:none;color:var(--sv-fg,light-dark(#12151a,#e8edf2));font-size:.875rem;max-inline-size:stretch;min-block-size:2.5rem;outline:0 none transparent;padding:.45rem .6rem}.view-settings .view-settings__checkbox{align-items:center;display:flex;font-size:.8125rem;gap:.5rem;max-inline-size:stretch}.view-settings .view-settings__actions{display:flex;gap:.75rem;margin-block-start:1.5rem;max-inline-size:stretch}.view-settings .view-settings__btn{background:var(--sv-surface-1,light-dark(#ffffff,#171c24));border:0 solid color-mix(in oklab,var(--sv-outline,light-dark(#c5cdd8,#3d4755)) 40%,transparent);border-radius:8px;color:var(--sv-fg,light-dark(#12151a,#e8edf2));cursor:pointer;max-inline-size:stretch;padding:.55rem 1.1rem}@supports (color:light-dark(red,red)){.view-settings .view-settings__btn{color:var(--sv-fg,light-dark(#12151a,#e8edf2))}}@supports (color:contrast-color(red)){.view-settings .view-settings__btn{color:contrast-color(var(--sv-surface-1,var(--color-surface)))}}.view-settings .view-settings__btn--primary{background:var(--sv-accent,var(--sv-primary,#5a7fff));border-color:color-mix(in oklab,var(--sv-accent,var(--sv-primary,#5a7fff)) 35%,transparent);color:var(--sv-on-primary)}@supports (color:contrast-color(red)){.view-settings .view-settings__btn--primary{color:contrast-color(var(--sv-accent,var(--sv-primary,#5a7fff)))}}.view-settings .view-settings__btn--primary:hover{filter:brightness(1.1)}.view-settings :is(.custom-instructions-editor,.custom-instructions-panel){display:flex;flex-direction:column;gap:.75rem;max-inline-size:stretch}.view-settings :is(.ci-row,.cip-select-row){display:flex;flex-direction:column;gap:.35rem;max-inline-size:stretch}.view-settings .ci-header{margin-block-end:.25rem;max-inline-size:stretch}.view-settings .ci-header h4{font-size:.88rem;margin:0 0 .25rem}.view-settings .ci-desc{color:var(--sv-muted,light-dark(#5c6570,#a8b0bc));font-size:.78rem;line-height:1.45;margin:0;max-inline-size:stretch}.view-settings .ci-active-select{display:flex;flex-direction:column;gap:.25rem;max-inline-size:stretch}.view-settings :is(.ci-select,.cip-select){background:var(--sv-surface-1,light-dark(#ffffff,#171c24));border:1px solid color-mix(in oklab,var(--sv-outline,light-dark(#c5cdd8,#3d4755)) 40%,transparent);border-radius:10px;color:var(--sv-fg,light-dark(#12151a,#e8edf2));font-size:.8rem;max-inline-size:stretch;min-block-size:2.35rem;padding:.4rem .55rem}.view-settings :is(.ci-list,.cip-list){display:flex;flex-direction:column;gap:.5rem;max-inline-size:stretch}.view-settings :is(.ci-item,.cip-item){background:var(--sv-surface-1,light-dark(#ffffff,#171c24));border:1px solid color-mix(in oklab,var(--sv-outline,light-dark(#c5cdd8,#3d4755)) 16%,transparent);border-radius:12px;max-inline-size:stretch;padding:.65rem .75rem}.view-settings :is(.ci-item.active,.ci-item.is-active,.cip-item.active,.cip-item.is-active){border-color:color-mix(in oklab,var(--sv-primary,#5a7fff) 35%,transparent)}.view-settings :is(.ci-item-header,.cip-item-header){align-items:flex-start;display:flex;gap:.5rem;justify-content:space-between;max-inline-size:stretch}.view-settings :is(.ci-item-label,.cip-item-label){font-size:.8rem;font-weight:600;max-inline-size:stretch}.view-settings :is(.ci-item-actions,.cip-item-actions){display:flex;flex-wrap:wrap;gap:.35rem;justify-content:start;max-inline-size:stretch}.view-settings :is(.ci-badge,.cip-badge){background:color-mix(in oklab,var(--sv-primary,#5a7fff) 16%,transparent);border-radius:999px;color:var(--sv-fg,light-dark(#12151a,#e8edf2));font-size:.65rem;max-inline-size:stretch;padding:.15rem .4rem}.view-settings :is(.ci-item-preview,.cip-item-preview){color:var(--sv-muted,light-dark(#5c6570,#a8b0bc));font-size:.75rem;line-height:1.45;margin-block-start:.35rem;max-inline-size:stretch}.view-settings :is(.ci-edit-form,.cip-edit-form){display:flex;flex-direction:column;gap:.5rem;margin-block-start:.5rem;max-inline-size:stretch}.view-settings :is(.ci-actions,.ci-add-actions,.ci-edit-actions,.cip-form-actions,.cip-toolbar){align-items:center;display:flex;flex-wrap:wrap;gap:.5rem;max-inline-size:stretch}.view-settings :is(.ci-input,.ci-textarea,.cip-input,.cip-textarea,.field-control){background:var(--sv-surface-1,light-dark(#ffffff,#171c24));border:0 transparent;border-radius:10px;box-shadow:none;color:var(--sv-fg,light-dark(#12151a,#e8edf2));font-size:.8125rem;inline-size:100%;max-inline-size:stretch;outline:0 none transparent;padding:.45rem .55rem}.view-settings :is(.ci-textarea,.cip-textarea){max-inline-size:stretch;min-block-size:5rem}.view-settings :is(.ci-empty,.cip-empty){font-size:.8rem;padding:.75rem;text-align:center}.view-settings .field-label,.view-settings :is(.ci-empty,.cip-empty){color:var(--sv-muted,light-dark(#5c6570,#a8b0bc));max-inline-size:stretch}.view-settings .field-label{font-size:.72rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase}.view-settings input[type=number]::-webkit-inner-spin-button,.view-settings input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}@container settings-view (max-inline-size: 1024px){.view-settings{max-inline-size:stretch;padding:.65rem}}@container settings-view (max-inline-size: 560px){.view-settings .settings-tab-actions{gap:.3rem;max-inline-size:stretch}.view-settings .settings-tab-btn{max-inline-size:stretch;min-block-size:2.65rem;padding-inline:.7rem}}@container settings-view (max-inline-size: 480px){.view-settings{padding:.45rem;padding-block-end:.15rem}.view-settings .settings-screen__title{display:none;max-inline-size:stretch}.view-settings .settings-screen__body{gap:.75rem;max-inline-size:stretch;padding-block:.5rem}.view-settings .settings-screen__footer{align-items:stretch;flex-direction:column-reverse;gap:.35rem;max-inline-size:stretch;padding-block:.5rem;padding-inline:.5rem;padding-inline-end:3.25rem}.view-settings .settings-screen__footer .btn.primary{inline-size:100%;justify-content:center;max-inline-size:stretch;min-block-size:2.75rem}.view-settings .settings-screen__footer .note{max-inline-size:stretch;text-align:center;white-space:normal}}}"));
 	if (!css.trim()) css = CRITICAL_SETTINGS_CSS;
 	const style = document.createElement("style");
 	style.setAttribute(STYLE_MARKER, "");
@@ -1172,32 +1172,85 @@ var settingsPanel = (id, title, children) => {
 };
 //#endregion
 //#region src/shared/other/config/settings/contributions/apk-update.ts
+/** Sibling APKs the launcher may check / sideload. CRX has no package. */
+var FLEET_SKUS = [
+	{
+		sku: "explorer",
+		label: "Explorer"
+	},
+	{
+		sku: "document",
+		label: "Document"
+	},
+	{
+		sku: "process",
+		label: "Process"
+	},
+	{
+		sku: "transfer",
+		label: "Transfer"
+	}
+];
 var skuOf = (ctx) => ctx.sku || readCwspSku();
+var versionHint = (sku, text) => {
+	const p = document.createElement("p");
+	p.className = "field-hint";
+	p.setAttribute("data-apk-local-version", "1");
+	p.setAttribute("data-apk-sku", sku);
+	p.textContent = text;
+	return p;
+};
+var skuButtons = (sku) => {
+	const check = settingsButton("Check", "apk-update-check");
+	const install = settingsButton("Download & install", "apk-update-install", { primary: true });
+	check.setAttribute("data-apk-sku", sku);
+	install.setAttribute("data-apk-sku", sku);
+	return settingsButtonRow(check, install);
+};
+var fleetRow = (sku, label) => {
+	const wrap = document.createElement("div");
+	wrap.className = "apk-update-fleet-row";
+	wrap.setAttribute("data-apk-sku-row", sku);
+	const title = document.createElement("h4");
+	title.textContent = label;
+	const manifest = apkManifestForSku(sku);
+	wrap.append(title, versionHint(sku, "Not checked — tap Check"), skuButtons(sku), settingsHint(sku === "transfer" ? `Reads ${manifest} (ecosystem token). Same versionCode still sideloads.` : `Reads ${manifest}. Same versionCode still sideloads.`));
+	return wrap;
+};
 var apkUpdateFields = (ctx) => {
 	const sku = skuOf(ctx);
 	const manifest = sku ? apkManifestForSku(sku) : "";
-	const versionHint = document.createElement("p");
-	versionHint.className = "field-hint";
-	versionHint.setAttribute("data-apk-local-version", "1");
-	versionHint.textContent = "Installed version: … (tap Check to refresh)";
-	const hint = sku === "launcher" ? "This launcher APK reads latest-launcher.json. Transfer / explorer / document each update themselves." : sku === "transfer" ? "This hub APK reads latest.json (ecosystem token). Other SKUs are not installed from here." : manifest ? `This app reads ${manifest} for its own APK only.` : "Checks the gateway release that matches this installed package.";
-	return [
-		"App update (dev)",
-		versionHint,
+	const hostSku = readCwspSku();
+	const hubSection = String(ctx.hubSection || "hub");
+	const fromLauncher = hostSku === "launcher" && sku && sku !== "launcher";
+	const showFleet = hostSku === "launcher" && (!ctx.hubSection || hubSection === "hub");
+	const hint = fromLauncher ? sku === "transfer" ? "Updates CWSP-transfer (`latest.json` / space.u2re.cwsp). Needs ecosystem token." : `Updates the installed ${sku} APK (${manifest || "channel"}).` : sku === "launcher" ? "This launcher reads latest-launcher.json. Other ecosystem APKs are listed below when this is the Shell APK." : sku === "transfer" ? "This hub APK reads latest.json (ecosystem token). Other SKUs are not installed from here." : manifest ? `This app reads ${manifest} for its own APK only.` : "Checks the gateway release that matches this installed package.";
+	const fields = [
+		showFleet ? "This launcher" : "App update (dev)",
+		versionHint(sku || "launcher", "Installed version: … (tap Check to refresh)"),
 		settingsSelectField("Update source", "shell.apkUpdateSource", [
 			["wan", "WAN — https://45.147.121.152:8434"],
 			["lan", "LAN — https://192.168.0.200:8434"],
 			["relay", "Current Relay (core.endpointUrl)"]
 		]),
-		settingsButtonRow(settingsButton("Check for update", "apk-update-check"), settingsButton("Download & install", "apk-update-install", { primary: true })),
+		skuButtons(sku || "launcher"),
 		settingsHint(hint)
 	];
+	if (showFleet) {
+		fields.push("Ecosystem APKs", settingsHint("Check or install Explorer, Document, Process, and Transfer from this launcher."));
+		for (const row of FLEET_SKUS) fields.push(fleetRow(row.sku, row.label));
+	}
+	return fields;
 };
 var registerApkUpdateSettingsContribution = () => registerSettingsContribution({
 	id: "apk-update",
 	label: "Updates",
 	order: 90,
-	surfaces: ["capacitor", "native"],
+	surfaces: [
+		"capacitor",
+		"native",
+		"environment"
+	],
 	render: (ctx) => settingsPanel("apk-update", "Updates", apkUpdateFields(ctx)),
 	load: (settings, panel) => {
 		const src = panel.querySelector("[data-field=\"shell.apkUpdateSource\"]");
@@ -1784,6 +1837,62 @@ var registerBuiltinSettingsContributions = () => {
 	registerApkUpdateSettingsContribution();
 };
 //#endregion
+//#region ../../modules/views/settings-view/src/ts/settings-sibling-presence.ts
+var cachedInstalled = null;
+var inflight = null;
+var isNativeApkHost$1 = () => {
+	try {
+		const g = globalThis;
+		const platform = g.Capacitor?.getPlatform?.();
+		return Boolean(g.Capacitor?.isNativePlatform?.() || platform === "android" || platform === "ios" || g.__CWS_NATIVE__ === true);
+	} catch {
+		return false;
+	}
+};
+/** Hub URL tree, or launcher APK (sibling packages), otherwise no area nav. */
+var resolveSettingsAreaNavMode = () => {
+	const sku = inferCwspSkuFromLocation() || readCwspSku();
+	if (sku && sku !== "launcher" && sku !== "crx") return "none";
+	if (resolveEffectiveHubSettingsSection() !== null) return "hub";
+	if (isWebHubSurface()) return "hub";
+	if (sku === "launcher" && isNativeApkHost$1()) return "launcher";
+	return "none";
+};
+var peekInstalledSiblingSettingsSections = () => cachedInstalled;
+var refreshInstalledSiblingSettingsSections = async () => {
+	if (inflight) return inflight;
+	inflight = (async () => {
+		const wanted = SIBLING_HUB_SETTINGS_SECTIONS.map((section) => {
+			const sku = skuForHubSettingsSection(section);
+			return {
+				section,
+				pkg: androidPackageForSku(sku)
+			};
+		}).filter((row) => Boolean(row.pkg));
+		try {
+			const { launcherHasPackages } = await __vitePreload(async () => {
+				const { launcherHasPackages } = await import("./launcher-bridge.js");
+				return { launcherHasPackages };
+			}, [], import.meta.url);
+			const map = await launcherHasPackages(wanted.map((row) => row.pkg));
+			cachedInstalled = wanted.filter((row) => map[row.pkg] === true).map((row) => row.section);
+		} catch {
+			cachedInstalled = [];
+		}
+		return cachedInstalled;
+	})();
+	try {
+		return await inflight;
+	} finally {
+		inflight = null;
+	}
+};
+var sameSiblingSectionSet = (a, b) => {
+	const left = [...a || []].filter((s) => s !== "hub").sort();
+	const right = [...b || []].filter((s) => s !== "hub").sort();
+	return left.length === right.length && left.every((s, i) => s === right[i]);
+};
+//#endregion
 //#region ../../modules/views/settings-view/src/ts/settings-sync-adapter.ts
 var arms = {};
 var surfaceDetector = detectSurfaceDefault;
@@ -1913,117 +2022,24 @@ async function getSettingsSnapshot() {
 	}
 }
 //#endregion
-//#region src/shared/other/config/settings/settings-shell-profile.ts
-var skuFromCtx = (ctx) => {
-	if (ctx.sku) return ctx.sku;
-	return readCwspSku();
-};
-/**
-* Resolve tabs from `data-cwsp-sku` first.
-* WHY: Capacitor without desktop views used to mean transfer (cwsp-mobile). After the
-* launcher drops explorer/viewer it would incorrectly inherit the CWSP tab.
-*/
-var resolveSettingsShellProfile = (ctx) => {
-	if (ctx.isExtension || ctx.surface === "crx") return "extension";
-	const sku = skuFromCtx(ctx);
-	if (sku === "launcher") return "environment";
-	if (sku === "transfer") return "cwsp-mobile";
-	if (sku === "explorer") return "explorer";
-	if (sku === "document") return "document";
-	if (sku === "process") return "process";
-	if (sku === "crx") return "extension";
-	if (ctx.surface === "markdown") return "markdown";
-	if (ctx.surface === "environment") return "environment";
-	if (ctx.surface === "capacitor" || ctx.surface === "native") {
-		if (!(isEnabledView("workcenter") || isEnabledView("viewer") || isEnabledView("explorer"))) return "cwsp-mobile";
-	}
-	return "full";
-};
-var CWSP_MOBILE_HIDDEN_BUILTIN_TABS = [
-	"appearance",
-	"markdown",
-	"ai",
-	"mcp",
-	"server",
-	"instructions",
-	"extension"
-];
-/**
-* CRX options page: drop built-in Extension (NTP) — folded into contributed `crx`
-* tab — and Server (CWSP tab owns hub/endpoint).
-*/
-var EXTENSION_HIDDEN_BUILTIN_TABS = ["extension", "server"];
-/** VDS md.u2re.space PWA: no Server / Extension (Control/CRX own those). */
-var MARKDOWN_HIDDEN_BUILTIN_TABS = ["server", "extension"];
-/** Capacitor document: print / read / edit only — AI lives on process. */
-var DOCUMENT_HIDDEN_BUILTIN_TABS = [
-	"server",
-	"extension",
-	"cwsp",
-	"ai",
-	"mcp",
-	"instructions"
-];
-/** Process APK / WorkCenter: AI + MCP + instructions; no print Markdown / Control. */
-var PROCESS_HIDDEN_BUILTIN_TABS = [
-	"server",
-	"extension",
-	"cwsp",
-	"markdown"
-];
-/**
-* Launcher / environment desktop: Appearance + Workspace only.
-* INVARIANT: print/read/edit live on document; AI/WorkCenter on process; Control on transfer.
-* NOTE: `cwsp` is contributed (not built-in); same DOM selectors still remove the tab/panel.
-*/
-var ENVIRONMENT_HIDDEN_BUILTIN_TABS = [
-	"server",
-	"extension",
-	"cwsp",
-	"markdown",
-	"ai",
-	"mcp",
-	"instructions"
-];
-/** Explorer APK: no document/control tabs. Storage UI stays in the explorer view. */
-var EXPLORER_HIDDEN_BUILTIN_TABS = [
-	"markdown",
-	"ai",
-	"mcp",
-	"server",
-	"instructions",
-	"extension",
-	"cwsp"
-];
-/** Remove host-variant built-in tabs that the profile replaces or folds elsewhere. */
-var pruneBuiltInSettingsTabs = (root, profile) => {
-	const hidden = profile === "cwsp-mobile" ? CWSP_MOBILE_HIDDEN_BUILTIN_TABS : profile === "extension" ? EXTENSION_HIDDEN_BUILTIN_TABS : profile === "markdown" ? MARKDOWN_HIDDEN_BUILTIN_TABS : profile === "document" ? DOCUMENT_HIDDEN_BUILTIN_TABS : profile === "process" ? PROCESS_HIDDEN_BUILTIN_TABS : profile === "environment" ? ENVIRONMENT_HIDDEN_BUILTIN_TABS : profile === "explorer" ? EXPLORER_HIDDEN_BUILTIN_TABS : null;
-	if (!hidden) return;
-	for (const tab of hidden) {
-		root.querySelector(`[data-tab-panel="${tab}"]`)?.remove();
-		root.querySelector(`[data-action="switch-settings-tab"][data-tab="${tab}"]`)?.remove();
-	}
-};
-var defaultSettingsTabForProfile = (profile) => {
-	if (profile === "cwsp-mobile") return "cwsp";
-	if (profile === "extension") return "crx";
-	if (profile === "markdown" || profile === "document") return "markdown";
-	if (profile === "process") return "ai";
-	if (profile === "environment") return "appearance";
-	if (profile === "explorer") return "appearance";
-	return "ai";
-};
-var hasBuiltInSettingsPanel = (root, panelId) => Boolean(root.querySelector(`[data-tab-panel="${panelId}"]`));
-//#endregion
 //#region ../../modules/views/settings-view/src/ts/settings-contributions.ts
 var TAB_LIST_SELECTOR = "[data-settings-tabs]";
 var BODY_SELECTOR = ".settings-screen__body";
+var isNativeApkHost = () => {
+	try {
+		const g = globalThis;
+		const platform = g.Capacitor?.getPlatform?.();
+		return Boolean(g.Capacitor?.isNativePlatform?.() || platform === "android" || platform === "ios" || g.__CWS_NATIVE__ === true);
+	} catch {
+		return false;
+	}
+};
 var resolveSettingsSurface = () => {
 	try {
 		const sku = readCwspSku();
-		if (sku === "document") return "markdown";
-		if (sku === "process") return "capacitor";
-		if (sku === "launcher") return "environment";
+		if (sku === "document") return isNativeApkHost() ? "capacitor" : "markdown";
+		if (sku === "process" || sku === "explorer") return isNativeApkHost() ? "capacitor" : "web";
+		if (sku === "launcher") return isNativeApkHost() ? "capacitor" : "environment";
 		if (sku === "crx") return "crx";
 		const g = globalThis;
 		if (g?.chrome?.runtime?.id) return "crx";
@@ -2039,11 +2055,31 @@ var resolveSettingsSurface = () => {
 	} catch {}
 	return "unknown";
 };
+/** Hub `/settings/{area}` or launcher sibling section overrides SKU so contribs match that PWA. */
+var resolveSettingsContributionContext = (isExtension, hubSectionOverride) => {
+	const fromHub = resolveEffectiveHubSettingsSection();
+	const navMode = resolveSettingsAreaNavMode();
+	const fromAreaNav = navMode === "hub" || navMode === "launcher" ? hubSectionOverride || readSettingsAreaSection() || "hub" : null;
+	const hubSection = fromHub || fromAreaNav || hubSectionOverride || void 0;
+	const sku = hubSection ? skuForHubSettingsSection(hubSection) : readCwspSku();
+	let surface = resolveSettingsSurface();
+	if (hubSection === "document") surface = isNativeApkHost() ? "capacitor" : "markdown";
+	else if (hubSection === "transfer") surface = isNativeApkHost() ? "capacitor" : "web";
+	else if (hubSection === "process" || hubSection === "explorer") surface = isNativeApkHost() ? "capacitor" : "web";
+	else if (hubSection === "hub") surface = "environment";
+	return {
+		isExtension: Boolean(isExtension),
+		surface,
+		sku,
+		hubSection
+	};
+};
 var contributionVisible = (contribution, ctx) => {
 	if (contribution.requiresView && !isEnabledView(contribution.requiresView)) return false;
 	const surfaces = contribution.surfaces;
 	if (surfaces?.length && !surfaces.includes(ctx.surface)) return false;
 	if (contribution.excludeSurfaces?.includes(ctx.surface)) return false;
+	if (contribution.id === "apk-update" && !isNativeApkHost()) return false;
 	if (contribution.id === "cwsp") {
 		const sku = ctx.sku || readCwspSku();
 		if (sku === "launcher" || sku === "explorer" || sku === "document" || sku === "process") return false;
@@ -2274,23 +2310,16 @@ var persistContributionsViaSync = async (root, settings, ctx) => {
 	return patchSettingsSync(settings);
 };
 var contributedTabIds = (ctx) => visibleContributions(ctx).map((c) => c.id);
-var isCapacitorNativeShell = () => {
-	try {
-		const c = globalThis.Capacitor;
-		return typeof c?.isNativePlatform === "function" && Boolean(c.isNativePlatform());
-	} catch {
-		return false;
-	}
-};
+var isCapacitorNativeShell = () => isNativeApkHost();
 /** Resolve bare host/IP fields in `core.endpointUrl` / `core.ops.directUrl` before persist. */
 var resolveCwspSettingsBeforeSave = async (settings) => {
 	normalizeEcosystemToken(settings);
 	const core = settings.core;
 	if (!core || typeof core !== "object") return;
 	const { sanitizeFleetSelfWireNodeId } = await __vitePreload(async () => {
-		const { sanitizeFleetSelfWireNodeId } = await import("../shells/boot-index.js").then((n) => n.It);
+		const { sanitizeFleetSelfWireNodeId } = await import("../shells/boot-index.js").then((n) => n.in);
 		return { sanitizeFleetSelfWireNodeId };
-	}, __vite__mapDeps([3,2,1,4,5,6]), import.meta.url);
+	}, __vite__mapDeps([3,2,4,1,5,6,7]), import.meta.url);
 	const canonicalUserId = sanitizeFleetSelfWireNodeId(core.userId);
 	if (canonicalUserId) core.userId = canonicalUserId;
 	const isControlSpaHost = (host) => {
@@ -2340,10 +2369,44 @@ var resolveCwspSettingsBeforeSave = async (settings) => {
 //#region ../../modules/views/settings-view/src/ts/Settings.ts
 /** PERF: reuse the built tree on reopen — first createSettingsView is the expensive click. */
 var cachedSettingsViewRoot = null;
+var resetSettingsViewCache = () => {
+	cachedSettingsViewRoot = null;
+};
+var HUB_SECTION_LABELS = [
+	{
+		id: "hub",
+		label: "Shell",
+		icon: "squares-four"
+	},
+	{
+		id: "explorer",
+		label: "Explorer",
+		icon: "folder"
+	},
+	{
+		id: "document",
+		label: "Document",
+		icon: "books"
+	},
+	{
+		id: "process",
+		label: "Process",
+		icon: "lightning"
+	},
+	{
+		id: "transfer",
+		label: "Transfer",
+		icon: "arrows-left-right"
+	}
+];
 var createSettingsView = (opts) => {
+	const hubSection = opts.hubSection || resolveEffectiveHubSettingsSection() || "hub";
 	if (cachedSettingsViewRoot) {
-		if (opts.initialTab) cachedSettingsViewRoot.dispatchEvent(new CustomEvent("cwsp-settings-resync"));
-		return cachedSettingsViewRoot;
+		if (cachedSettingsViewRoot.dataset.hubSettingsSection !== hubSection) cachedSettingsViewRoot = null;
+		else {
+			if (opts.initialTab) cachedSettingsViewRoot.dispatchEvent(new CustomEvent("cwsp-settings-resync"));
+			return cachedSettingsViewRoot;
+		}
 	}
 	let note = null;
 	let noteTimer = null;
@@ -2384,19 +2447,81 @@ var createSettingsView = (opts) => {
   </div>`;
 	attachSettingsInlineStylesWhenConnected(root);
 	registerBuiltinSettingsContributions();
-	const contributionCtx = {
-		isExtension: opts.isExtension,
-		surface: resolveSettingsSurface(),
-		sku: readCwspSku()
-	};
+	const navMode = resolveSettingsAreaNavMode();
+	const installedSiblings = peekInstalledSiblingSettingsSections();
+	const visibleAreas = visibleHubSettingsSections(navMode, installedSiblings);
+	const contributionCtx = resolveSettingsContributionContext(opts.isExtension, opts.hubSection);
+	if (navMode !== "none") {
+		const wanted = opts.hubSection || contributionCtx.hubSection || "hub";
+		contributionCtx.hubSection = visibleAreas.length && !visibleAreas.includes(wanted) ? "hub" : wanted;
+	}
 	const settingsProfile = resolveSettingsShellProfile(contributionCtx);
+	root.dataset.hubSettingsSection = contributionCtx.hubSection || hubSection;
 	mountContributions(root, contributionCtx);
+	if (visibleAreas.length > 1) {
+		const header = root.querySelector(".settings-screen__top");
+		const tabList = root.querySelector("[data-settings-tabs]");
+		if (header && tabList) {
+			const nav = document.createElement("nav");
+			nav.className = "settings-tab-actions settings-sku-nav";
+			nav.setAttribute("data-settings-sku-nav", "");
+			nav.setAttribute("aria-label", "Settings area");
+			for (const item of HUB_SECTION_LABELS) {
+				if (!visibleAreas.includes(item.id)) continue;
+				const btn = document.createElement("button");
+				btn.className = "settings-tab-btn";
+				btn.type = "button";
+				btn.setAttribute("data-action", "open-settings-section");
+				btn.setAttribute("data-section", item.id);
+				btn.append(H`<ui-icon class="settings-sku-nav__icon" icon="${item.icon}" icon-style="duotone" aria-hidden="true"></ui-icon>`, H`<span>${item.label}</span>`);
+				btn.classList.toggle("is-active", item.id === (contributionCtx.hubSection || "hub"));
+				nav.appendChild(btn);
+			}
+			header.insertBefore(nav, tabList);
+		}
+	}
+	if (navMode === "launcher" && installedSiblings === null) refreshInstalledSiblingSettingsSections().then((next) => {
+		if (!next.length) return;
+		resetSettingsViewCache();
+		globalThis.dispatchEvent(new CustomEvent("cwsp-settings-section"));
+	});
 	pruneBuiltInSettingsTabs(root, settingsProfile);
 	if (settingsProfile === "full" && (contributionCtx.surface === "capacitor" || contributionCtx.surface === "native")) {
 		root.querySelector("[data-tab-panel=\"server\"]")?.remove();
 		root.querySelector("[data-action=\"switch-settings-tab\"][data-tab=\"server\"]")?.remove();
 	}
 	const hasPanel = (panelId) => hasBuiltInSettingsPanel(root, panelId);
+	/** Launcher sibling section / fleet row updates that SKU's APK — not always the launcher package. */
+	const apkSkuFromEl = (el) => {
+		const raw = String(el?.getAttribute("data-apk-sku") || el?.closest("[data-apk-sku-row]")?.getAttribute("data-apk-sku-row") || "").trim();
+		return raw && isCwspSku(raw) && raw !== "crx" ? raw : "";
+	};
+	const apkUpdateTarget = (from) => {
+		const explicit = apkSkuFromEl(from || null);
+		const section = canonicalHubSettingsSection(root.dataset.hubSettingsSection || "hub");
+		const sku = explicit || (resolveSettingsAreaNavMode() !== "none" && section !== "hub" ? skuForHubSettingsSection(section) : readCwspSku() || "launcher");
+		return {
+			sku,
+			packageName: androidPackageForSku(sku) || "",
+			manifest: apkManifestForSku(sku)
+		};
+	};
+	const paintApkVersion = (el, echo, result) => {
+		if (!el) return;
+		const anyResult = result;
+		const name = String(echo.localVersionName || echo.versionName || anyResult?.versionName || "").trim();
+		const code = echo.localVersionCode ?? echo.versionCode ?? anyResult?.versionCode;
+		const sig = String(echo.localSignatureSha256 || echo.signatureSha256 || "").slice(0, 12);
+		const remoteName = String(echo.remoteVersionName || "").trim();
+		const remoteCode = echo.remoteVersionCode;
+		const installed = echo.installed === false || anyResult?.installed === false ? false : echo.installed === true || anyResult?.installed === true || Boolean(name && code != null && code !== 0 && code !== "?");
+		const remoteBit = remoteCode != null && remoteCode !== "" ? ` · gateway ${remoteName || "?"} (${remoteCode})` : "";
+		if (!installed) {
+			el.textContent = `Not installed — Download & install to sideload.${remoteBit}`;
+			return;
+		}
+		el.textContent = `Installed: ${name || "?"} (${code ?? "?"})` + (sig ? ` · sig ${sig}…` : "") + remoteBit;
+	};
 	const field = (sel) => root.querySelector(sel);
 	note = root.querySelector("[data-note]");
 	const apiUrl = field("[data-field=\"ai.baseUrl\"]");
@@ -2565,7 +2690,21 @@ var createSettingsView = (opts) => {
 		}
 	};
 	root.addEventListener("click", (e) => {
-		const tabBtn = eventTargetElement(e)?.closest?.("[data-action=\"switch-settings-tab\"][data-tab]");
+		const t = eventTargetElement(e);
+		const sectionBtn = t?.closest?.("[data-action=\"open-settings-section\"][data-section]");
+		if (sectionBtn && root.contains(sectionBtn)) {
+			e.preventDefault();
+			e.stopPropagation();
+			const next = String(sectionBtn.getAttribute("data-section") || "hub").toLowerCase();
+			rememberSettingsAreaSection(next);
+			resetSettingsViewCache();
+			if (resolveSettingsAreaNavMode() === "hub") {
+				const pathSeg = hubSettingsSectionPath(next);
+				navigateToView("settings", pathSeg ? { section: pathSeg } : {});
+			} else globalThis.dispatchEvent(new CustomEvent("cwsp-settings-section", { detail: { section: next } }));
+			return;
+		}
+		const tabBtn = t?.closest?.("[data-action=\"switch-settings-tab\"][data-tab]");
 		if (!tabBtn || !root.contains(tabBtn)) return;
 		e.preventDefault();
 		e.stopPropagation();
@@ -2753,14 +2892,14 @@ var createSettingsView = (opts) => {
 		applyTheme(s);
 		applyContributions(root, s, contributionCtx);
 		opts.onTheme?.(s?.appearance?.theme || "auto");
-		if (isCapacitorNative()) __vitePreload(() => import("../shells/boot-index.js").then((n) => n.kt).then((m) => m.invokeCwsNative("app:info", {})), __vite__mapDeps([3,2,1,4,5,6]), import.meta.url).then((result) => {
-			const echo = result?.echo || {};
-			const el = root.querySelector("[data-apk-local-version]");
-			if (!el) return;
-			const sig = String(echo?.signatureSha256 || "").slice(0, 12);
-			const anyResult = result;
-			el.textContent = `Installed: ${echo?.versionName || anyResult?.versionName || "?"} (${echo?.versionCode ?? anyResult?.versionCode ?? "?"})` + (sig ? ` · sig ${sig}…` : "");
-		}).catch(() => {});
+		if (isCapacitorNative()) __vitePreload(() => import("../shells/boot-index.js").then((n) => n.Yt).then(async (m) => {
+			const hints = [...root.querySelectorAll("[data-apk-local-version]")];
+			if (!hints.length) return;
+			await Promise.all(hints.map(async (el) => {
+				const result = await m.invokeCwsNative("app:info", apkUpdateTarget(el));
+				paintApkVersion(el, result?.echo || {}, result);
+			}));
+		}), __vite__mapDeps([3,2,4,1,5,6,7]), import.meta.url).catch(() => {});
 	}).catch(() => {
 		renderMcpConfigurations(mcpSection, []);
 	});
@@ -2892,11 +3031,11 @@ var createSettingsView = (opts) => {
 			return;
 		}
 		if (t?.closest?.("button[data-action=\"open-native-app-settings\"]")) {
-			__vitePreload(() => import("../shells/boot-index.js").then((n) => n.D).then((m) => m.openAppClipboardRelatedSettings()), __vite__mapDeps([3,2,1,4,5,6]), import.meta.url).then(() => setNote("App settings opened (native shell only).")).catch(() => setNote("Native settings unavailable in this context."));
+			__vitePreload(() => import("../shells/boot-index.js").then((n) => n._).then((m) => m.openAppClipboardRelatedSettings()), __vite__mapDeps([3,2,4,1,5,6,7]), import.meta.url).then(() => setNote("App settings opened (native shell only).")).catch(() => setNote("Native settings unavailable in this context."));
 			return;
 		}
 		if (t?.closest?.("button[data-action=\"open-native-notification-settings\"]")) {
-			__vitePreload(() => import("../shells/boot-index.js").then((n) => n.D).then((m) => m.openNativeNotificationSettings?.()), __vite__mapDeps([3,2,1,4,5,6]), import.meta.url).then(() => setNote("Notification settings opened (native shell only).")).catch(() => setNote("Native settings unavailable in this context."));
+			__vitePreload(() => import("../shells/boot-index.js").then((n) => n._).then((m) => m.openNativeNotificationSettings?.()), __vite__mapDeps([3,2,4,1,5,6,7]), import.meta.url).then(() => setNote("Notification settings opened (native shell only).")).catch(() => setNote("Native settings unavailable in this context."));
 			return;
 		}
 		const crxPairBtn = t?.closest?.("button[data-action=\"crx-control-pair\"]");
@@ -2973,9 +3112,9 @@ var createSettingsView = (opts) => {
 					if (userClicked) setNote(pairRegenBtn ? "Regenerating public token…" : "Refreshing pairing code…", { tone: "warn" });
 					try {
 						const { invokeCwsNative } = await __vitePreload(async () => {
-							const { invokeCwsNative } = await import("../shells/boot-index.js").then((n) => n.kt);
+							const { invokeCwsNative } = await import("../shells/boot-index.js").then((n) => n.Yt);
 							return { invokeCwsNative };
-						}, __vite__mapDeps([3,2,1,4,5,6]), import.meta.url);
+						}, __vite__mapDeps([3,2,4,1,5,6,7]), import.meta.url);
 						const result = await invokeCwsNative(pairRegenBtn ? "control:public-token:regenerate" : "control:pairing:status", {});
 						const echo = result?.controlPairing || result?.echo || {};
 						if (echo?.deviceCode || echo?.publicToken) {
@@ -3017,9 +3156,9 @@ var createSettingsView = (opts) => {
 			(async () => {
 				try {
 					const { invokeCwsNative } = await __vitePreload(async () => {
-						const { invokeCwsNative } = await import("../shells/boot-index.js").then((n) => n.kt);
+						const { invokeCwsNative } = await import("../shells/boot-index.js").then((n) => n.Yt);
 						return { invokeCwsNative };
-					}, __vite__mapDeps([3,2,1,4,5,6]), import.meta.url);
+					}, __vite__mapDeps([3,2,4,1,5,6,7]), import.meta.url);
 					const s = await loadSettings();
 					const safEl = root.querySelector("[data-files-saf-uri]");
 					const pathsEl = root.querySelector("[data-files-storage-paths]");
@@ -3098,10 +3237,13 @@ var createSettingsView = (opts) => {
 					const token = (tokenEl?.value || "").trim() || resolveEcosystemToken(s);
 					const allowInsecureTls = insecureEl?.checked ?? Boolean(s.core?.allowInsecureTls);
 					const { invokeCwsNative } = await __vitePreload(async () => {
-						const { invokeCwsNative } = await import("../shells/boot-index.js").then((n) => n.kt);
+						const { invokeCwsNative } = await import("../shells/boot-index.js").then((n) => n.Yt);
 						return { invokeCwsNative };
-					}, __vite__mapDeps([3,2,1,4,5,6]), import.meta.url);
+					}, __vite__mapDeps([3,2,4,1,5,6,7]), import.meta.url);
+					const clicked = apkInstallBtn || apkCheckBtn;
+					const target = apkUpdateTarget(clicked);
 					const result = await invokeCwsNative(channel, {
+						...target,
 						source,
 						endpointUrl,
 						token,
@@ -3114,10 +3256,8 @@ var createSettingsView = (opts) => {
 						setNote(String(err), { tone: "err" });
 						return;
 					}
-					if (versionEl && (echo?.localVersionCode != null || echo?.localVersionName)) {
-						const sig = String(echo?.localSignatureSha256 || "").slice(0, 12);
-						versionEl.textContent = `Installed: ${echo.localVersionName || "?"} (${echo.localVersionCode ?? "?"})` + (sig ? ` · sig ${sig}…` : "");
-					}
+					const hint = clicked.closest("[data-apk-sku-row]")?.querySelector("[data-apk-local-version]") || versionEl;
+					if (hint && (echo?.localVersionCode != null || echo?.localVersionName || echo?.versionName)) paintApkVersion(hint, echo, result);
 					if (apkInstallBtn) {
 						setNote(echo?.launchedInstaller ? "Installer launched — confirm on the system prompt." : "Install request sent.", { tone: "ok" });
 						return;
@@ -3125,11 +3265,17 @@ var createSettingsView = (opts) => {
 					const local = echo?.localVersionCode ?? "?";
 					const remote = echo?.remoteVersionCode ?? "?";
 					const avail = echo?.updateAvailable === true;
-					if (!(echo?.signatureCompatible !== false)) {
+					const sigOk = echo?.signatureCompatible !== false;
+					const installed = echo?.installed === true;
+					if (!sigOk) {
 						setNote(`Signature mismatch — remote APK not signed like this install (local ${local}, remote ${remote}).`, { tone: "err" });
 						return;
 					}
-					setNote(avail ? `Update available: ${local} → ${remote} (${echo?.remoteVersionName || "?"}).` : `Up to date (local ${local}, remote ${remote}).`, { tone: avail ? "warn" : "ok" });
+					if (!installed) {
+						setNote(`${target.sku}: not installed — remote ${remote} (${echo?.remoteVersionName || "?"}). Download & install to sideload.`, { tone: "warn" });
+						return;
+					}
+					setNote(avail ? `${target.sku}: update available ${local} → ${remote} (${echo?.remoteVersionName || "?"}).` : `${target.sku}: same version (local ${local}, remote ${remote}) — Download & install will sideload.`, { tone: avail ? "warn" : "ok" });
 				} catch (e) {
 					setNote(String(e?.message || e), { tone: "err" });
 				}
@@ -3334,7 +3480,7 @@ var createSettingsView = (opts) => {
 			const permReport = await permPromise;
 			const permLines = permReport.lines;
 			const permDenied = permReport.results.some((r) => r.granted === false);
-			__vitePreload(() => import("../shells/boot-index.js").then((n) => n.n).then(async (m) => {
+			__vitePreload(() => import("../shells/boot-index.js").then((n) => n.r).then(async (m) => {
 				if (publicControlSpa) {
 					try {
 						if (!Boolean(globalThis.__CWSP_CONTROL_BRIDGE_LIVE__)) console.warn("[Settings] Control not paired — settings saved locally only; pair to push to device");
@@ -3378,9 +3524,9 @@ var createSettingsView = (opts) => {
 				if (typeof m.nativeShellOwnsExclusiveHubWebsocket === "function" && m.nativeShellOwnsExclusiveHubWebsocket()) {
 					try {
 						const { invokeCwsNative } = await __vitePreload(async () => {
-							const { invokeCwsNative } = await import("../shells/boot-index.js").then((n) => n.kt);
+							const { invokeCwsNative } = await import("../shells/boot-index.js").then((n) => n.Yt);
 							return { invokeCwsNative };
-						}, __vite__mapDeps([3,2,1,4,5,6]), import.meta.url);
+						}, __vite__mapDeps([3,2,4,1,5,6,7]), import.meta.url);
 						await invokeCwsNative("runtime:reload-settings", {});
 					} catch (e) {
 						console.warn("[Settings] Java /ws reload skipped", e);
@@ -3388,10 +3534,10 @@ var createSettingsView = (opts) => {
 					return;
 				}
 				await m.applyHubSocketFromSettings(saved);
-				__vitePreload(() => import("../shells/boot-index.js").then((n) => n.c).then((ws) => {
+				__vitePreload(() => import("../shells/boot-index.js").then((n) => n.l).then((ws) => {
 					if (typeof ws.reconnectTransportAfterLifecycleResume === "function") ws.reconnectTransportAfterLifecycleResume("settings-save");
-				}), __vite__mapDeps([3,2,1,4,5,6]), import.meta.url).catch(() => void 0);
-			}), __vite__mapDeps([3,2,1,4,5,6]), import.meta.url);
+				}), __vite__mapDeps([3,2,4,1,5,6,7]), import.meta.url).catch(() => void 0);
+			}), __vite__mapDeps([3,2,4,1,5,6,7]), import.meta.url);
 			applyTheme(saved);
 			opts.onTheme?.(saved.appearance?.theme || "auto");
 			const parts = ["Saved locally"];
@@ -3482,6 +3628,8 @@ var SettingsView = class {
 		},
 		onShow: () => {
 			this.applySettingsStylesheet();
+			this.syncHubSectionFromLocation();
+			this.refreshLauncherSiblingNav();
 			this.element?.dispatchEvent(new CustomEvent("cwsp-settings-resync", { bubbles: false }));
 		},
 		onHide: () => {}
@@ -3489,7 +3637,15 @@ var SettingsView = class {
 	constructor(options = {}) {
 		this.options = options;
 		this.shellContext = options.shellContext;
+		try {
+			globalThis.addEventListener("route-change", this.onHubSettingsRoute);
+			globalThis.addEventListener("popstate", this.onHubSettingsRoute);
+			globalThis.addEventListener("cwsp-settings-section", this.onHubSettingsRoute);
+		} catch {}
 	}
+	onHubSettingsRoute = () => {
+		this.syncHubSectionFromLocation();
+	};
 	render(options) {
 		if (options) {
 			this.options = {
@@ -3499,11 +3655,17 @@ var SettingsView = class {
 			this.shellContext = options.shellContext || this.shellContext;
 		}
 		this.loadSettings();
-		const isExtensionRuntime = typeof globalThis.chrome !== "undefined" && Boolean(globalThis.chrome?.runtime?.id);
+		const isExtensionRuntime = this.isExtensionRuntime();
+		const hubSection = this.resolveAreaSection(options?.params?.section);
+		if (hubSection && this.element && this.element.dataset.hubSettingsSection !== hubSection) {
+			resetSettingsViewCache();
+			this.element = null;
+		}
 		if (this.element) return this.element;
 		this.element = createSettingsView({
 			isExtension: isExtensionRuntime,
 			initialTab: options?.params?.tab || options?.params?.focus,
+			hubSection,
 			onTheme: (theme) => {
 				this.options.onThemeChange?.(theme);
 			}
@@ -3513,6 +3675,43 @@ var SettingsView = class {
 	}
 	getToolbar() {
 		return null;
+	}
+	isExtensionRuntime() {
+		return typeof globalThis.chrome !== "undefined" && Boolean(globalThis.chrome?.runtime?.id);
+	}
+	resolveAreaSection(explicit) {
+		const fromHub = resolveEffectiveHubSettingsSection();
+		if (fromHub) return canonicalHubSettingsSection(explicit || fromHub);
+		if (resolveSettingsAreaNavMode() === "launcher") return canonicalHubSettingsSection(explicit || readSettingsAreaSection() || "hub");
+	}
+	async refreshLauncherSiblingNav() {
+		if (resolveSettingsAreaNavMode() !== "launcher") return;
+		if (sameSiblingSectionSet(peekInstalledSiblingSettingsSections(), await refreshInstalledSiblingSettingsSections())) return;
+		this.remountSettings(this.resolveAreaSection() || "hub");
+	}
+	remountSettings(section) {
+		if (!this.element) return;
+		const parent = this.element.parentNode;
+		resetSettingsViewCache();
+		const nextEl = createSettingsView({
+			isExtension: this.isExtensionRuntime(),
+			hubSection: section,
+			initialTab: this.options.params?.tab || this.options.params?.focus,
+			onTheme: (theme) => {
+				this.options.onThemeChange?.(theme);
+			}
+		});
+		parent?.replaceChild(nextEl, this.element);
+		this.element = nextEl;
+		queueMicrotask(() => attachSettingsInlineStylesWhenConnected(this.element));
+	}
+	/** Hub `/settings/{area}` or launcher sibling section changed — rebuild contribs. */
+	syncHubSectionFromLocation() {
+		if (!this.element) return;
+		const next = this.resolveAreaSection();
+		if (!next) return;
+		if (this.element.dataset.hubSettingsSection === next) return;
+		this.remountSettings(next);
 	}
 	setupEventHandlers() {}
 	loadSettings() {
@@ -3577,7 +3776,7 @@ var SettingsView = class {
 			this.handleMessage({ data: payload });
 			(async () => {
 				try {
-					const [{ loadSettings }, { applyTheme }] = await Promise.all([__vitePreload(() => import("../shells/boot-index.js").then((n) => n.V), __vite__mapDeps([3,2,1,4,5,6]), import.meta.url), __vitePreload(() => import("../shells/boot-index.js").then((n) => n.u), __vite__mapDeps([3,2,1,4,5,6]), import.meta.url)]);
+					const [{ loadSettings }, { applyTheme }] = await Promise.all([__vitePreload(() => import("../shells/boot-index.js").then((n) => n.ht), __vite__mapDeps([3,2,4,1,5,6,7]), import.meta.url), __vitePreload(() => import("../shells/boot-index.js").then((n) => n.st), __vite__mapDeps([3,2,4,1,5,6,7]), import.meta.url)]);
 					const cur = await loadSettings();
 					const patch = payload;
 					applyTheme({
@@ -3600,4 +3799,4 @@ function createView(options) {
 	return new SettingsView(options);
 }
 //#endregion
-export { SettingsView, applyContributions, clearSettingsSyncArms, collectContributions, createMemorySettingsSyncArm, createSettingsView, createView, createView as default, detectSettingsSurface, getSettingsContributions, getSettingsDefaults, getSettingsSnapshot, getSettingsSync, hydrateContributionsFromSync, mergeSettingsPatch, mountContributions, patchSettingsSync, persistContributionsViaSync, registerBuiltinSettingsContributions, registerCwspSettingsContribution, registerDeviceSettingsContribution, registerReaderSettingsContribution, registerSettingsContribution, registerSettingsSyncArm, registerWorkcenterSettingsContribution, resolveSettingsSurface, resolveSettingsSyncArm, setSurfaceDetector, unregisterSettingsSyncArm };
+export { SettingsView, applyContributions, clearSettingsSyncArms, collectContributions, createMemorySettingsSyncArm, createSettingsView, createView, createView as default, detectSettingsSurface, getSettingsContributions, getSettingsDefaults, getSettingsSnapshot, getSettingsSync, hydrateContributionsFromSync, mergeSettingsPatch, mountContributions, patchSettingsSync, persistContributionsViaSync, refreshInstalledSiblingSettingsSections, registerBuiltinSettingsContributions, registerCwspSettingsContribution, registerDeviceSettingsContribution, registerReaderSettingsContribution, registerSettingsContribution, registerSettingsSyncArm, registerWorkcenterSettingsContribution, resetSettingsViewCache, resolveSettingsSurface, resolveSettingsSyncArm, setSurfaceDetector, unregisterSettingsSyncArm };
