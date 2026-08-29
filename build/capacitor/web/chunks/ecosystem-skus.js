@@ -168,9 +168,18 @@ var isCwspNativeHost = () => {
 		return false;
 	}
 };
+var CWSP_SKU_HANDOFF_KEY = "cwsp-sku-handoff";
+var stashSkuHandoff = (payload) => {
+	try {
+		globalThis.sessionStorage?.setItem?.(CWSP_SKU_HANDOFF_KEY, JSON.stringify({
+			...payload,
+			ts: Date.now()
+		}));
+	} catch {}
+};
 try {
 	ensureCwspSkuFromLocation();
 } catch {}
 var androidPackageForSku = (sku) => ECOSYSTEM_SKUS[sku]?.androidPackage ?? null;
 //#endregion
-export { androidPackageForSku, isCwspNativeHost, isCwspSku, readCwspSku, siblingSkuForView };
+export { androidPackageForSku, isCwspNativeHost, isCwspSku, readCwspSku, siblingSkuForView, stashSkuHandoff };

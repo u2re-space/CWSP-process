@@ -1,4 +1,4 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../shells/boot-index.js","../chunks/rolldown-runtime.js","../shells/boot-history-base.js","../fest/core.js","./service.js","../fest/veela.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../chunks/launcher-bridge.js","../shells/boot-index.js","../chunks/rolldown-runtime.js","../shells/boot-history-base.js","../fest/core.js","./service.js","../fest/veela.js"])))=>i.map(i=>d[i]);
 import { n as __exportAll } from "../chunks/rolldown-runtime.js";
 //#region \0vite/preload-helper.js
 var scriptRel = "modulepreload";
@@ -22694,6 +22694,15 @@ function createChromeBookmarksBackend$1(api) {
 		if (!id) return;
 		await bookmarks.update(id, { title: newName });
 	};
+	const update = async (path, patch) => {
+		const id = lastId$1(path);
+		if (!id) return;
+		const body = {};
+		if (patch.title != null) body.title = String(patch.title || "").trim();
+		if (patch.url != null && !isFolderPath$1(path)) body.url = String(patch.url || "").trim();
+		if (!Object.keys(body).length) return;
+		await bookmarks.update(id, body);
+	};
 	const move = async (fromPath, toDirPath) => {
 		const id = lastId$1(fromPath);
 		const parentId = lastId$1(toDirPath) || "0";
@@ -22733,6 +22742,7 @@ function createChromeBookmarksBackend$1(api) {
 		mkdir,
 		createUrl,
 		rename,
+		update,
 		move,
 		remove,
 		writeFile,
@@ -22796,6 +22806,31 @@ var listNativeStorage$1 = async (root, path = "/") => {
 	const rows = echo.entries || echo.files;
 	return Array.isArray(rows) ? rows : [];
 };
+var dataUrlToFile$1 = async (dataUrl, name, mime) => {
+	const src = String(dataUrl || "").trim();
+	if (!src) return null;
+	try {
+		const blob = await (await fetch(src)).blob();
+		return new File([blob], name || "file", { type: blob.type || mime || "application/octet-stream" });
+	} catch {
+		return null;
+	}
+};
+/** Read one `/sdcard/` or `/saf/` file through CwsBridge (`storage:read`). */
+var readNativeStorageFile$1 = async (virtualPath) => {
+	const raw = String(virtualPath || "").trim();
+	if (!raw) return null;
+	const root = raw === "/saf" || raw.startsWith("/saf/") ? "saf" : raw === "/sdcard" || raw.startsWith("/sdcard/") ? "sdcard" : "";
+	if (!root) return null;
+	const prefix = root === "saf" ? "/saf/" : "/sdcard/";
+	const echo = await capacitorInvoke$1("storage:read", {
+		root,
+		path: (raw.startsWith(prefix) ? raw.slice(prefix.length - 1) : raw) || "/"
+	});
+	const data = String(echo.data || echo.dataUrl || "");
+	if (!data) return null;
+	return dataUrlToFile$1(data, String(echo.name || raw.split("/").filter(Boolean).pop() || "file"), String(echo.mime || echo.mimeType || "application/octet-stream"));
+};
 var pickSafTree = async () => {
 	if (api$1?.pickSaf) return api$1.pickSaf();
 	const echo = await capacitorInvoke$1("storage:pick-saf", {});
@@ -22845,6 +22880,9 @@ var createNativeFsBackend$1 = (root) => ({
 	async list(path) {
 		const rel = normalizeVirtualPath$1(path, true).slice(root.length - 1) || "/";
 		return toEntries$1(path, await listNativeStorage$1(root === "/saf/" ? "saf" : "sdcard", rel));
+	},
+	async readFile(path) {
+		return readNativeStorageFile$1(path);
 	}
 });
 //#endregion
@@ -23287,6 +23325,3660 @@ var observeUserFileSystem$1 = () => {
 	});
 };
 ensureDefaultFsBackends$1();
+//#endregion
+//#region ../../modules/projects/fl.ui/src/ui/speed-dial/toast.ts
+/**
+* Lightweight toasts for home-view / SpeedDial (no CWSP-shell core).
+* Shells may listen for `view:toast` on `window` and render FL-UI / status UI.
+*/
+function showSuccess(message) {
+	globalThis.dispatchEvent?.(new CustomEvent("view:toast", { detail: {
+		type: "success",
+		message: String(message || "")
+	} }));
+}
+function showError(message) {
+	globalThis.dispatchEvent?.(new CustomEvent("view:toast", { detail: {
+		type: "error",
+		message: String(message || "")
+	} }));
+}
+//#endregion
+//#region ../../modules/projects/fl.ui/src/ui/speed-dial/app-launch.ts
+var STORAGE_KEY$4 = "cwsp-app-launch-spec-v1";
+var cache$1 = null;
+var launchKey = (packageName) => `app:${String(packageName || "").trim()}`;
+function readAll$1() {
+	if (cache$1) return cache$1;
+	try {
+		const raw = localStorage.getItem(STORAGE_KEY$4);
+		if (!raw) {
+			cache$1 = {};
+			return cache$1;
+		}
+		const parsed = JSON.parse(raw);
+		cache$1 = parsed && typeof parsed === "object" ? parsed : {};
+	} catch {
+		cache$1 = {};
+	}
+	return cache$1;
+}
+function writeAll(map) {
+	cache$1 = map;
+	try {
+		localStorage.setItem(STORAGE_KEY$4, JSON.stringify(map));
+	} catch {}
+}
+var sanitizeDataUri = (raw) => {
+	const data = String(raw || "").trim();
+	if (!data) return "";
+	if (/^javascript:/i.test(data)) return "";
+	return data;
+};
+function normalizeLauncherLaunchSpec(raw) {
+	const src = raw && typeof raw === "object" ? raw : {};
+	const extrasIn = src.extras && typeof src.extras === "object" ? src.extras : {};
+	const extras = {};
+	for (const [k, v] of Object.entries(extrasIn)) {
+		const key = String(k || "").trim();
+		if (!key) continue;
+		if (typeof v === "boolean" || typeof v === "number" || typeof v === "string") extras[key] = v;
+	}
+	const flags = Array.isArray(src.flags) ? src.flags.map((f) => String(f || "").trim().toUpperCase()).filter(Boolean) : [];
+	const categories = Array.isArray(src.categories) ? src.categories.map((c) => String(c || "").trim()).filter(Boolean) : [];
+	return {
+		action: String(src.action || "").trim(),
+		data: sanitizeDataUri(String(src.data || "")),
+		mimeType: String(src.mimeType || "").trim(),
+		extras,
+		flags,
+		categories,
+		componentName: String(src.componentName || "").trim()
+	};
+}
+function isLauncherLaunchSpecEmpty(spec) {
+	if (!spec) return true;
+	return !spec.action && !spec.data && !spec.mimeType && !spec.componentName && (!spec.flags || spec.flags.length === 0) && (!spec.categories || spec.categories.length === 0) && (!spec.extras || Object.keys(spec.extras).length === 0);
+}
+function getAppLaunchSpec(packageName) {
+	const key = launchKey(packageName);
+	if (!key || key === "app:") return {};
+	return normalizeLauncherLaunchSpec(readAll$1()[key]);
+}
+function setAppLaunchSpec(packageName, spec) {
+	const key = launchKey(packageName);
+	if (!key || key === "app:") return {};
+	const next = normalizeLauncherLaunchSpec(spec);
+	const all = { ...readAll$1() };
+	if (isLauncherLaunchSpecEmpty(next)) delete all[key];
+	else all[key] = next;
+	writeAll(all);
+	return next;
+}
+function clearAppLaunchSpec(packageName) {
+	const key = launchKey(packageName);
+	if (!key || key === "app:") return;
+	const all = { ...readAll$1() };
+	delete all[key];
+	writeAll(all);
+}
+/** Stock MAIN/LAUNCHER when nothing is stored. */
+function resolveAppLaunchSpec(packageName) {
+	return getAppLaunchSpec(packageName);
+}
+//#endregion
+//#region ../../modules/projects/fl.ui/src/ui/speed-dial/layout.ts
+var DEFAULT_LAYOUT = [4, 8];
+var clamp$2 = (value, min, max) => {
+	return Math.max(min, Math.min(max, value));
+};
+var positiveInteger = (value, fallback) => {
+	const number = Number(value);
+	return Number.isFinite(number) && number > 0 ? Math.max(1, Math.floor(number)) : fallback;
+};
+var normalizeLayout = (layout) => {
+	return [positiveInteger(layout?.[0], DEFAULT_LAYOUT[0]), positiveInteger(layout?.[1], DEFAULT_LAYOUT[1])];
+};
+/**
+* Normalize numeric orientation values without allowing invalid strings to
+* silently select a different layout.
+*/
+var normalizeOrient = (value) => {
+	if (typeof value === "string" && !/^-?\d+(?:\.\d+)?$/.test(value.trim())) return 0;
+	const number = Number(value);
+	if (!Number.isFinite(number)) return 0;
+	return (Math.trunc(number) % 4 + 4) % 4;
+};
+/** Return the visible `[columns, rows]` for a logical grid and orientation. */
+var visualLayout = (layout, orient) => {
+	const [columns, rows] = normalizeLayout(layout);
+	return normalizeOrient(orient) % 2 ? [rows, columns] : [columns, rows];
+};
+var clampVisualCell = (cell, layout, orient) => {
+	const [columns, rows] = visualLayout(layout, orient);
+	return [clamp$2(Math.floor(Number(cell?.[0]) || 0), 0, columns - 1), clamp$2(Math.floor(Number(cell?.[1]) || 0), 0, rows - 1)];
+};
+/** Convert visible CSS-grid coordinates back to persisted logical coordinates. */
+var visualToLogicalCell = (cell, layout, orient) => {
+	const [columns, rows] = normalizeLayout(layout);
+	const normalizedOrient = normalizeOrient(orient);
+	const [x, y] = clampVisualCell(cell, [columns, rows], normalizedOrient);
+	switch (normalizedOrient) {
+		case 1: return [columns - 1 - y, x];
+		case 2: return [columns - 1 - x, rows - 1 - y];
+		case 3: return [y, rows - 1 - x];
+		default: return [x, y];
+	}
+};
+/**
+* Resolve a local point in the visible grid content box to a logical cell.
+* The caller is responsible for subtracting CSS padding from the point and
+* passing the content-box size.
+*/
+var pointToLogicalCell = (point, size, layout, orient, mode = "floor") => {
+	const visible = visualLayout(layout, orient);
+	const width = Math.max(1, Number(size?.[0]) || 1);
+	const height = Math.max(1, Number(size?.[1]) || 1);
+	const xRatio = clamp$2((Number(point?.[0]) || 0) / width, 0, 1);
+	const yRatio = clamp$2((Number(point?.[1]) || 0) / height, 0, 1);
+	const project = (ratio, count) => {
+		const value = ratio * count;
+		return mode === "round" ? Math.round(value - .5) : Math.floor(value);
+	};
+	return visualToLogicalCell([clamp$2(project(xRatio, visible[0]), 0, visible[0] - 1), clamp$2(project(yRatio, visible[1]), 0, visible[1] - 1)], layout, orient);
+};
+var cellKey = (cell) => `${cell[0]}:${cell[1]}`;
+var normalizeSpan = (span) => [Math.max(1, Math.min(8, Math.floor(Number(span?.[0]) || 1))), Math.max(1, Math.min(8, Math.floor(Number(span?.[1]) || 1)))];
+var cellsForSpan = (origin, span) => {
+	const [sx, sy] = normalizeSpan(span);
+	const x0 = Math.floor(Number(origin?.[0]) || 0);
+	const y0 = Math.floor(Number(origin?.[1]) || 0);
+	const cells = [];
+	for (let y = 0; y < sy; y += 1) for (let x = 0; x < sx; x += 1) cells.push([x0 + x, y0 + y]);
+	return cells;
+};
+var markOccupiedSpan = (occupied, origin, span) => {
+	for (const cell of cellsForSpan(origin, span)) occupied.add(cellKey(cell));
+};
+var spanFits = (origin, span, layout) => {
+	const [columns, rows] = normalizeLayout(layout);
+	const [sx, sy] = normalizeSpan(span);
+	const x = Math.floor(Number(origin?.[0]) || 0);
+	const y = Math.floor(Number(origin?.[1]) || 0);
+	return x >= 0 && y >= 0 && x + sx <= columns && y + sy <= rows;
+};
+var rectConflicts = (origin, span, occupied) => cellsForSpan(origin, span).some((cell) => occupied.has(cellKey(cell)));
+/**
+* Nearest logical origin where `span` fits and none of its cells are occupied.
+* INVARIANT: origin is the top-left of the rectangle in logical space.
+*/
+var findNearestFreeRect = (preferred, span, occupied, layout, maxSearchRadius) => {
+	const normalizedLayout = normalizeLayout(layout);
+	const [sx, sy] = normalizeSpan(span);
+	const [columns, rows] = normalizedLayout;
+	const maxX = Math.max(0, columns - sx);
+	const maxY = Math.max(0, rows - sy);
+	const start = [clamp$2(Math.floor(Number(preferred?.[0]) || 0), 0, maxX), clamp$2(Math.floor(Number(preferred?.[1]) || 0), 0, maxY)];
+	if (spanFits(start, [sx, sy], normalizedLayout) && !rectConflicts(start, [sx, sy], occupied)) return start;
+	const maxRadius = Math.min(Math.max(columns, rows), Number.isFinite(Number(maxSearchRadius)) ? Math.max(0, Math.floor(Number(maxSearchRadius))) : Math.max(columns, rows));
+	for (let radius = 1; radius <= maxRadius; radius += 1) for (let y = Math.max(0, start[1] - radius); y <= Math.min(maxY, start[1] + radius); y += 1) for (let x = Math.max(0, start[0] - radius); x <= Math.min(maxX, start[0] + radius); x += 1) {
+		if (Math.abs(x - start[0]) !== radius && Math.abs(y - start[1]) !== radius) continue;
+		const candidate = [x, y];
+		if (spanFits(candidate, [sx, sy], normalizedLayout) && !rectConflicts(candidate, [sx, sy], occupied)) return candidate;
+	}
+	return start;
+};
+/** Clamp a logical cell to the supplied grid. */
+var clampLogicalCell = (cell, layout) => {
+	const [columns, rows] = normalizeLayout(layout);
+	return [clamp$2(Math.floor(Number(cell?.[0]) || 0), 0, columns - 1), clamp$2(Math.floor(Number(cell?.[1]) || 0), 0, rows - 1)];
+};
+var readCell = (item) => [Math.floor(Number(item?.cell?.[0]) || 0), Math.floor(Number(item?.cell?.[1]) || 0)];
+var writeCell = (item, cell) => {
+	const prev = readCell(item);
+	if (prev[0] === cell[0] && prev[1] === cell[1]) return false;
+	if (!item.cell) return false;
+	item.cell[0] = cell[0];
+	item.cell[1] = cell[1];
+	return true;
+};
+/**
+* Keep tiles inside a new `[columns, rows]` without stacking everyone on the
+* last track. In-bounds items keep their cells (collisions resolved); overflow
+* items take the nearest free cell.
+*/
+var relocateItemsToLayout = (items, layout, getSpan) => {
+	const normalized = normalizeLayout(layout);
+	const [columns, rows] = normalized;
+	const inBounds = [];
+	const overflow = [];
+	for (const item of items) {
+		if (!item?.cell) continue;
+		const [x, y] = readCell(item);
+		const span = normalizeSpan(getSpan?.(item));
+		if (x >= 0 && y >= 0 && x + span[0] <= columns && y + span[1] <= rows) inBounds.push(item);
+		else overflow.push(item);
+	}
+	const occupied = /* @__PURE__ */ new Set();
+	let changed = false;
+	const place = (item, preferred) => {
+		const span = normalizeSpan(getSpan?.(item));
+		const cell = findNearestFreeRect(preferred, span, occupied, normalized);
+		markOccupiedSpan(occupied, cell, span);
+		if (writeCell(item, cell)) changed = true;
+	};
+	for (const item of inBounds) place(item, readCell(item));
+	for (const item of overflow) place(item, clampLogicalCell(readCell(item), normalized));
+	return changed;
+};
+//#endregion
+//#region ../../modules/projects/fl.ui/src/ui/speed-dial/link-store.ts
+/**
+* Virtual directory holding curated speed-dial files. Matches the PathRouter
+* `/user/` OpfsBackend root so Explorer can browse the same tree.
+*/
+var LINKS_DIR = "/user/links/";
+/** Legacy aggregate file — still read on boot, then split into per-item JSON. */
+var LINKS_JSON = "/user/links/links.json";
+var META_JSON = "/user/links/meta.json";
+var RESERVED_LINK_FILES = /* @__PURE__ */ new Set(["links.json", "meta.json"]);
+/**
+* Safe leaf name for a curated item. Ids are UUID / `shortcut-*` / `sd-*`;
+* strip path separators so Explorer + OPFS can treat each tile as one file.
+*/
+function itemFileName(id) {
+	return `${String(id || "").trim().replace(/[\\/:*?"<>|\s]+/g, "_").replace(/^\.+/, "_") || "item"}.json`;
+}
+function itemJsonPath(id) {
+	return `${LINKS_DIR}${itemFileName(id)}`;
+}
+var isItemJsonPath = (path) => {
+	const name = String(path || "").split("/").filter(Boolean).pop() || "";
+	if (!name.endsWith(".json")) return false;
+	return !RESERVED_LINK_FILES.has(name);
+};
+/**
+* localStorage keys mirror `launcher-state.ts` so a one-time migration can copy
+* the existing grid into OPFS without a schema change.
+*/
+var LS_ITEMS_KEY = "cw::workspace::speed-dial";
+var LS_META_KEY = "cw::workspace::speed-dial::meta";
+/**
+* Marker written to LS after a successful migration so we never re-import and
+* overwrite user edits. Kept in LS (not OPFS) so it survives OPFS wipe.
+*/
+var LS_MIGRATED_KEY = "cw::workspace::speed-dial::migrated-opfs-v1";
+/**
+* Accept JSOX (unquoted keys, what `launcher-state.ts` writes today) or JSON on read.
+* WHY: `makeUIState` packs via `JSOX.stringify`; existing LS payloads are JSOX. OPFS
+* files we write are JSON, so this stays forward-compatible too.
+*/
+var parseLoose = (raw) => {
+	if (raw == null || !String(raw).trim()) return null;
+	try {
+		return JSON.parse(raw);
+	} catch {
+		try {
+			return JSOX.parse(raw);
+		} catch {
+			return null;
+		}
+	}
+};
+/** Unwrap observe/stringRef proxies into plain values for OPFS serialization. */
+var unwrapRef$1 = (value, fallback) => {
+	if (value && typeof value === "object" && "value" in value) return String(value.value ?? fallback ?? "");
+	return String(value ?? fallback ?? "");
+};
+/**
+* Pack existing `SpeedDialPersistedItem`-shaped items (cell may be `[x,y]` or an
+* observe proxy; meta may live on the item or in a side registry) into plain
+* `LinkStoreItem` POJOs for OPFS.
+*
+* WHY: keeps the OPFS file free of reactive proxies (which break roundtrips and
+* hand-editing) while preserving `href`/`path`/`iconAsset` for open-link/path tiles.
+*/
+function packLinksFromSpeedDial(items) {
+	if (!Array.isArray(items)) return [];
+	return items.map((entry) => {
+		const cell = entry?.cell;
+		const meta = entry?.meta && typeof entry.meta === "object" ? entry.meta : null;
+		const item = {
+			id: String(entry?.id || ""),
+			label: unwrapRef$1(entry?.label, "Shortcut"),
+			action: String(entry?.action || "open-view"),
+			icon: unwrapRef$1(entry?.icon, "sparkle")
+		};
+		if (cell != null) item.cell = [Number(Array.isArray(cell) ? cell[0] : cell?.[0]) || 0, Number(Array.isArray(cell) ? cell[1] : cell?.[1]) || 0];
+		const href = unwrapRef$1(meta?.href ?? entry?.href, "") || (meta?.href ?? entry?.href);
+		if (href) item.href = String(href);
+		const path = unwrapRef$1(meta?.path ?? entry?.path, "") || (meta?.path ?? entry?.path);
+		if (path) item.path = String(path);
+		const iconAsset = meta?.iconAsset ?? entry?.iconAsset;
+		if (iconAsset) item.iconAsset = String(iconAsset);
+		return item;
+	});
+}
+var emptyMeta = () => ({
+	version: 1,
+	mirrorPath: null,
+	items: {}
+});
+/**
+* One-time migration of legacy localStorage speed-dial into OPFS.
+*
+* Returns:
+* - `"migrated"` — LS had data and OPFS was empty; we copied it.
+* - `"skipped"`  — OPFS already had curated item JSON (or legacy `links.json`);
+*   we just ensure the LS marker so we never re-import even if LS still holds
+*   the old payload.
+* - `"already"`  — LS marker already set; nothing to do.
+*
+* WHY: idempotent — running twice never overwrites OPFS edits. We never delete LS
+* (one-release backup window); we only set `LS_MIGRATED_KEY = "1"`.
+*/
+async function migrateLocalStorageToOpfsIfNeeded(io, ls) {
+	const lsReader = toLsReader(ls);
+	if (lsReader.getItem("cw::workspace::speed-dial::migrated-opfs-v1")) return "already";
+	if (await hasCuratedOpfsData(io)) {
+		safeSet(ls, LS_MIGRATED_KEY, "1");
+		return "skipped";
+	}
+	const rawItems = lsReader.getItem(LS_ITEMS_KEY);
+	const rawMeta = lsReader.getItem(LS_META_KEY);
+	if (!rawItems && !rawMeta) {
+		safeSet(ls, LS_MIGRATED_KEY, "1");
+		return "skipped";
+	}
+	const items = normalizeLegacyItems(parseLoose(rawItems));
+	await writeLinkStore(io, items, normalizeLegacyMeta(parseLoose(rawMeta), items));
+	safeSet(ls, LS_MIGRATED_KEY, "1");
+	return "migrated";
+}
+var toLsReader = (ls) => {
+	if (ls instanceof Map) return {
+		getItem(key) {
+			return ls.has(key) ? ls.get(key) : null;
+		},
+		setItem(key, value) {
+			ls.set(key, value);
+		}
+	};
+	return ls;
+};
+var safeSet = (ls, key, value) => {
+	try {
+		if (ls instanceof Map) ls.set(key, value);
+		else ls.setItem(key, value);
+	} catch {}
+};
+var normalizeLegacyItems = (raw) => {
+	if (!Array.isArray(raw)) return [];
+	return raw.map((entry) => {
+		const item = {
+			id: String(entry?.id || ""),
+			label: unwrapRef$1(entry?.label, "Shortcut"),
+			action: String(entry?.action || "open-view"),
+			icon: unwrapRef$1(entry?.icon, "sparkle")
+		};
+		if (entry?.href) item.href = String(entry.href);
+		if (entry?.path) item.path = String(entry.path);
+		if (entry?.iconAsset) item.iconAsset = String(entry.iconAsset);
+		if (Array.isArray(entry?.cell)) item.cell = [Number(entry.cell[0]) || 0, Number(entry.cell[1]) || 0];
+		return item;
+	}).filter((item) => item.id);
+};
+var normalizeLegacyMeta = (raw, items) => {
+	const meta = emptyMeta();
+	const knownTopKeys = /* @__PURE__ */ new Set([
+		"version",
+		"mirrorPath",
+		"grid",
+		"items",
+		"curatedEmpty"
+	]);
+	if (raw && typeof raw === "object") {
+		if (raw.mirrorPath != null) meta.mirrorPath = String(raw.mirrorPath);
+		if (raw.grid != null) meta.grid = raw.grid;
+		if (raw.curatedEmpty === true) meta.curatedEmpty = true;
+		const itemsMap = raw.items;
+		let entries;
+		if (itemsMap instanceof Map) entries = Array.from(itemsMap.entries());
+		else if (Array.isArray(itemsMap)) entries = itemsMap.map((e) => e && typeof e === "object" && "id" in e ? [e.id, e.meta || e] : null).filter((e) => e !== null);
+		else if (itemsMap && typeof itemsMap === "object") entries = Object.entries(itemsMap);
+		else entries = Object.entries(raw).filter(([k]) => !knownTopKeys.has(k));
+		for (const [id, m] of entries) {
+			if (!id || !m || typeof m !== "object") continue;
+			const entry = { ...m };
+			if (Array.isArray(m.cell)) entry.cell = [Number(m.cell[0]) || 0, Number(m.cell[1]) || 0];
+			meta.items[String(id)] = entry;
+		}
+	}
+	for (const item of items) {
+		const slot = meta.items[item.id] || {};
+		if (item.cell && !Array.isArray(slot.cell)) slot.cell = item.cell;
+		meta.items[item.id] = slot;
+	}
+	return meta;
+};
+var listItemJsonPaths = async (io) => {
+	if (typeof io.list !== "function") return [];
+	try {
+		return (await io.list("/user/links/") || []).filter(isItemJsonPath);
+	} catch {
+		return [];
+	}
+};
+var hasCuratedOpfsData = async (io) => {
+	if (await io.exists("/user/links/links.json")) return true;
+	return (await listItemJsonPaths(io)).length > 0;
+};
+var parseItemFile = (raw, fallbackId) => {
+	const parsed = parseLoose(raw);
+	if (!parsed || Array.isArray(parsed) || typeof parsed !== "object") return null;
+	const id = String(parsed.id || fallbackId || "").trim();
+	if (!id) return null;
+	const [item] = normalizeLegacyItems([{
+		...parsed,
+		id
+	}]);
+	return item || null;
+};
+/**
+* Read curated items + meta from OPFS. Prefers per-item `/user/links/<id>.json`.
+* Falls back to legacy `links.json` (array) when no item files exist.
+* Returns `null` when neither is present (caller should fall back to defaults / LS).
+* `meta.json` missing is non-fatal — we return an empty meta shell so callers can
+* overlay cells later.
+*/
+async function readLinkStore(io) {
+	const itemPaths = await listItemJsonPaths(io);
+	let items = [];
+	if (itemPaths.length) {
+		const loaded = [];
+		for (const path of itemPaths) {
+			const item = parseItemFile(await io.readText(path), (path.split("/").filter(Boolean).pop() || "").replace(/\.json$/i, ""));
+			if (item) loaded.push(item);
+		}
+		items = loaded;
+	}
+	if (!items.length) {
+		const itemsRaw = await io.readText(LINKS_JSON);
+		if (itemsRaw != null && String(itemsRaw).trim()) {
+			const parsed = parseLoose(itemsRaw);
+			if (Array.isArray(parsed)) items = normalizeLegacyItems(parsed);
+		}
+	}
+	const metaParsed = parseLoose(await io.readText(META_JSON));
+	if (metaParsed && typeof metaParsed === "object" && metaParsed.curatedEmpty === true) {
+		const meta = normalizeLegacyMeta({
+			...metaParsed,
+			items: {}
+		}, []);
+		meta.curatedEmpty = true;
+		return {
+			items: [],
+			meta
+		};
+	}
+	if (!items.length) {
+		const recovered = itemsFromMetaSlots(metaParsed);
+		if (!recovered.length) return null;
+		return {
+			items: recovered,
+			meta: normalizeLegacyMeta(metaParsed, recovered)
+		};
+	}
+	const meta = normalizeLegacyMeta(metaParsed, items);
+	return {
+		items,
+		meta
+	};
+}
+var itemsFromMetaSlots = (raw) => {
+	if (!raw || typeof raw !== "object") return [];
+	const map = raw.items && typeof raw.items === "object" && !Array.isArray(raw.items) ? raw.items : raw;
+	const knownTop = /* @__PURE__ */ new Set([
+		"version",
+		"mirrorPath",
+		"grid",
+		"items",
+		"curatedEmpty"
+	]);
+	const out = [];
+	for (const [id, slot] of Object.entries(map || {})) {
+		if (!id || knownTop.has(id) || id.startsWith("mirror:")) continue;
+		if (!slot || typeof slot !== "object") continue;
+		const rec = slot;
+		const href = rec.href != null ? String(rec.href) : "";
+		const view = rec.view != null ? String(rec.view) : "";
+		const path = rec.path != null ? String(rec.path) : "";
+		const action = String(rec.action || (href ? "open-link" : view || path ? "open-view" : "") || "");
+		if (!action && !href && !view && !path) continue;
+		const item = {
+			id,
+			label: String(rec.label || id),
+			action: action || "open-view",
+			icon: String(rec.icon || (href ? "link" : "sparkle"))
+		};
+		if (href) item.href = href;
+		if (path) item.path = path;
+		if (Array.isArray(rec.cell)) item.cell = [Number(rec.cell[0]) || 0, Number(rec.cell[1]) || 0];
+		out.push(item);
+	}
+	return out;
+};
+/**
+* Default column count for auto-placing mirror tiles below the curated grid.
+* WHY: matches `gridLayoutState.columns` default (4). Auto-placement only kicks
+* in when meta has no per-id `cell` override; an explicit override always wins.
+*/
+var MIRROR_AUTO_PLACE_COLUMNS = 4;
+/**
+* Build speed-dial display items from a PathRouter directory listing merged
+* with per-id meta overrides (`cell`, `hidden`, `shape`, …).
+*
+* WHY: in mirror mode the speed-dial grid is driven by a virtual directory
+* (OPFS folder or CRX `/bookmarks/…`) instead of curated `links.json`. The
+* meta registry still holds per-id overrides so users can pin a mirror tile to
+* a specific cell or hide it without mutating the source tree.
+*
+* INVARIANT: ids are `mirror:${path}` so they never collide with curated ids.
+* Directories and `.md`/`.markdown`/`.txt`/image files map to `open-path`
+* (Explorer / viewer). Entries carrying an `href` (e.g. Chrome bookmark URLs)
+* map to `open-link`. Anything else falls back to `open-path` so the Explorer
+* can decide how to render it.
+*
+* Task 3 fix — auto-placement: when meta has no `cell` override for a mirror
+* item, the item is auto-placed on the next free cell below the curated grid's
+* max Y (so mirror tiles never overlap curated tiles at `[0,0]` anymore).
+* Meta `cell` overrides are always honored. `curatedItems` is optional; when
+* omitted, `maxY` is treated as -1 so the first auto-placed tile lands at
+* `[0,0]` (preserves the old default for callers that don't pass curated state).
+*
+* COMPAT: `meta.items[id].hidden === true` drops the entry.
+*/
+function buildMirrorSpeedDialItems(listing, meta, _mirrorPath, curatedItems) {
+	if (!Array.isArray(listing)) return [];
+	const metaItems = meta?.items || {};
+	let maxCuratedY = -1;
+	if (Array.isArray(curatedItems)) for (const entry of curatedItems) {
+		const cell = entry?.cell;
+		if (!Array.isArray(cell) || cell.length < 2) continue;
+		const y = Number(cell[1]) || 0;
+		if (y > maxCuratedY) maxCuratedY = y;
+	}
+	const startY = maxCuratedY + 1;
+	const occupied = /* @__PURE__ */ new Set();
+	if (Array.isArray(curatedItems)) for (const entry of curatedItems) {
+		const cell = entry?.cell;
+		if (!Array.isArray(cell) || cell.length < 2) continue;
+		occupied.add(`${Number(cell[0]) || 0}:${Number(cell[1]) || 0}`);
+	}
+	const pending = [];
+	for (const entry of listing) {
+		if (!entry || !entry.name) continue;
+		const path = String(entry.path || "");
+		const id = `mirror:${path}`;
+		const perId = metaItems[id] || {};
+		if (perId.hidden === true) continue;
+		const isDirectory = entry.kind === "directory" || path.endsWith("/");
+		const href = entry.href ? String(entry.href) : "";
+		const mimeType = String(entry.type || "").toLowerCase();
+		const isMarkdown = /\.(md|markdown|txt)$/i.test(path) || mimeType.startsWith("text/");
+		const isImage = /\.(png|jpe?g|gif|webp|svg|avif|bmp)$/i.test(path) || mimeType.startsWith("image/");
+		let action;
+		let icon;
+		if (href) {
+			action = "open-link";
+			icon = "link";
+		} else if (isDirectory) {
+			action = "open-path";
+			icon = "folder";
+		} else if (isMarkdown) {
+			action = "open-path";
+			icon = "article";
+		} else if (isImage) {
+			action = "open-path";
+			icon = "image";
+		} else {
+			action = "open-path";
+			icon = "file-text";
+		}
+		const item = {
+			id,
+			label: String(entry.name),
+			action,
+			icon,
+			cell: [0, 0]
+		};
+		if (path) item.path = path;
+		if (href) {
+			item.href = href;
+			const fav = resolveEntryIcon(entry);
+			if (fav) item.iconUrl = fav;
+		}
+		const hasOverride = Array.isArray(perId.cell);
+		if (hasOverride) {
+			const overrideCell = perId.cell;
+			const x = Number(overrideCell[0]) || 0;
+			const y = Number(overrideCell[1]) || 0;
+			item.cell = [x, y];
+			occupied.add(`${x}:${y}`);
+		}
+		pending.push({
+			item,
+			hasOverride
+		});
+	}
+	let cursorX = 0;
+	let cursorY = startY;
+	const nextFreeCell = () => {
+		for (;;) {
+			const key = `${cursorX}:${cursorY}`;
+			if (!occupied.has(key)) {
+				occupied.add(key);
+				return [cursorX, cursorY];
+			}
+			cursorX += 1;
+			if (cursorX >= MIRROR_AUTO_PLACE_COLUMNS) {
+				cursorX = 0;
+				cursorY += 1;
+			}
+		}
+	};
+	const items = [];
+	for (const { item, hasOverride } of pending) {
+		if (!hasOverride) item.cell = nextFreeCell();
+		items.push(item);
+	}
+	return items;
+}
+/**
+* Write curated items + meta to OPFS as JSON. Each item is `/user/links/<id>.json`;
+* `meta.json` holds grid overlays. Stale item files and legacy `links.json` are
+* removed after a successful write so Explorer shows one file per tile.
+*/
+async function writeLinkStore(io, items, meta, options) {
+	const list = Array.isArray(items) ? items.filter((item) => item?.id) : [];
+	if (!list.length && !options?.allowEmpty) {
+		if (await hasCuratedOpfsData(io)) {
+			console.warn("[link-store] skip empty write; keeping existing curated OPFS files");
+			return;
+		}
+	}
+	const keep = /* @__PURE__ */ new Set();
+	for (const item of list) {
+		const path = itemJsonPath(item.id);
+		keep.add(path);
+		await io.writeText(path, JSON.stringify(item, null, 2));
+	}
+	const metaFile = {
+		version: 1,
+		mirrorPath: meta?.mirrorPath ?? null,
+		items: list.length ? meta?.items ?? {} : {},
+		grid: meta?.grid,
+		...list.length ? {} : { curatedEmpty: true }
+	};
+	await io.writeText(META_JSON, JSON.stringify(metaFile, null, 2));
+	const existing = await listItemJsonPaths(io);
+	if (typeof io.remove === "function") {
+		for (const path of existing) if (!keep.has(path)) try {
+			await io.remove(path);
+		} catch {}
+		if (await io.exists("/user/links/links.json")) try {
+			await io.remove(LINKS_JSON);
+		} catch {}
+	}
+}
+/**
+* Browser-only OPFS IO helper. Walks/creates `/user/links/` via
+* `navigator.storage.getDirectory()` and reads/writes leaf files.
+*
+* WHY: throws on failure — `launcher-state.ts` catches and falls back to LS with
+* `console.warn("[link-store] OPFS unavailable; using localStorage")`.
+*
+* NOTE: virtual paths (`/user/links/<id>.json`) are mapped to OPFS by stripping
+* the `/user/` prefix — the PathRouter `/user/` OpfsBackend uses the same root.
+*/
+async function createOpfsLinkStoreIo() {
+	if (typeof navigator === "undefined" || !navigator.storage?.getDirectory) throw new Error("[link-store] OPFS not available");
+	const root = await navigator.storage.getDirectory();
+	const segmentsFor = (path) => {
+		const vpath = String(path || "").replace(/^\/+/, "");
+		if (vpath.startsWith("user/")) return vpath.slice(5).split("/").filter(Boolean);
+		return vpath.split("/").filter(Boolean);
+	};
+	const resolveDir = async (dirPath, create) => {
+		const segments = segmentsFor(dirPath);
+		let dir = root;
+		for (const seg of segments) dir = await dir.getDirectoryHandle(seg, { create });
+		return dir;
+	};
+	const resolveHandle = async (path, create) => {
+		const segments = segmentsFor(path);
+		if (!segments.length) throw new Error(`[link-store] invalid path: ${path}`);
+		let dir = root;
+		for (let i = 0; i < segments.length - 1; i += 1) dir = await dir.getDirectoryHandle(segments[i], { create });
+		return dir.getFileHandle(segments[segments.length - 1], { create });
+	};
+	const toVirtualPath = (dirPath, name) => {
+		return `${String(dirPath || "/").replace(/\/+$/, "") || ""}/${name}`;
+	};
+	return {
+		async readText(path) {
+			try {
+				return (await (await resolveHandle(path, false)).getFile()).text();
+			} catch (e) {
+				if (e?.name === "NotFoundError" || e?.name === "TypeMismatchError") return null;
+				throw e;
+			}
+		},
+		async writeText(path, text) {
+			const writable = await (await resolveHandle(path, true)).createWritable();
+			await writable.write(text);
+			await writable.close();
+		},
+		async exists(path) {
+			try {
+				await resolveHandle(path, false);
+				return true;
+			} catch {
+				return false;
+			}
+		},
+		async list(dirPath) {
+			try {
+				const dir = await resolveDir(dirPath, false);
+				const out = [];
+				for await (const [name, handle] of dir.entries()) {
+					if (handle?.kind === "directory") continue;
+					out.push(toVirtualPath(dirPath, name));
+				}
+				return out;
+			} catch (e) {
+				if (e?.name === "NotFoundError") return [];
+				throw e;
+			}
+		},
+		async remove(path) {
+			const segments = segmentsFor(path);
+			if (segments.length < 1) return;
+			let dir = root;
+			for (let i = 0; i < segments.length - 1; i += 1) dir = await dir.getDirectoryHandle(segments[i], { create: false });
+			await dir.removeEntry(segments[segments.length - 1]);
+		}
+	};
+}
+//#endregion
+//#region ../../modules/projects/fl.ui/src/ui/speed-dial/tile-icon.ts
+var ICON_DISPLAY_OPTIONS = [
+	{
+		value: "glyph",
+		label: "Glyph (Phosphor)"
+	},
+	{
+		value: "masked",
+		label: "Masked"
+	},
+	{
+		value: "masked-inverse",
+		label: "Masked inverse"
+	},
+	{
+		value: "colored",
+		label: "Colored"
+	}
+];
+var TILE_SHAPE_OPTIONS = [
+	{
+		value: "circle",
+		label: "Circle"
+	},
+	{
+		value: "squircle",
+		label: "Squircle"
+	},
+	{
+		value: "square",
+		label: "Rounded square"
+	},
+	{
+		value: "wavy",
+		label: "Wavy"
+	},
+	{
+		value: "shapeless",
+		label: "Shapeless"
+	}
+];
+var isTileShapeValue = (raw) => {
+	const v = String(raw || "").trim().toLowerCase();
+	return v === "circle" || v === "squircle" || v === "square" || v === "wavy" || v === "shapeless";
+};
+function isShapelessTileShape(raw) {
+	return String(raw || "").trim().toLowerCase() === "shapeless";
+}
+/**
+* WHY: shapeless has no plate — a black blurred clone of the bitmap/glyph
+* sits under the real icon so the shadow follows the icon silhouette.
+*/
+function syncShapelessIconShadow(host) {
+	if (!host) return;
+	host.querySelectorAll(".sd-icon-silhouette").forEach((node) => node.remove());
+	if (!isShapelessTileShape(host.getAttribute("data-shape"))) return;
+	const img = host.querySelector("img:not(.sd-icon-silhouette)");
+	if (img) {
+		if (img.src) {
+			const clone = img.cloneNode(true);
+			clone.className = "sd-icon-silhouette";
+			clone.removeAttribute("data-launcher-icon");
+			clone.removeAttribute("data-bookmark-favicon");
+			clone.removeAttribute("data-icon-pending");
+			clone.removeAttribute("data-icon-pack");
+			clone.alt = "";
+			clone.setAttribute("aria-hidden", "true");
+			img.before(clone);
+		}
+		if (!img.complete) img.addEventListener("load", () => syncShapelessIconShadow(host), { once: true });
+		return;
+	}
+	const icon = host.querySelector("ui-icon:not(.sd-icon-silhouette)");
+	if (!icon) return;
+	const clone = icon.cloneNode(true);
+	clone.classList.add("sd-icon-silhouette");
+	clone.setAttribute("aria-hidden", "true");
+	icon.before(clone);
+}
+function normalizeIconDisplay(raw) {
+	const v = String(raw || "").trim().toLowerCase();
+	if (v === "glyph" || v === "phosphor" || v === "name") return "glyph";
+	if (v === "masked" || v === "mask") return "masked";
+	if (v === "masked-inverse" || v === "mask-invert" || v === "invert") return "masked-inverse";
+	if (v === "colored" || v === "color" || v === "bitmap" || v === "resource") return "colored";
+	return "";
+}
+function normalizeTileShape$1(raw, fallback = "squircle") {
+	const v = String(raw || "").trim().toLowerCase();
+	if (isTileShapeValue(v)) return v;
+	return fallback;
+}
+/** Bitmap CSS mode for `ui-icon` (glyph has no bitmap mode). */
+function iconDisplayToBitmapMode(display) {
+	if (display === "glyph") return null;
+	return display;
+}
+/** Build a `ui-icon` host for a tile; applies resource + locked bitmap mode when needed. */
+function createTileUiIconElement(opts) {
+	const host = document.createElement("ui-icon");
+	const glyph = String(opts.glyph || "sparkle").trim() || "sparkle";
+	const resource = String(opts.resourceUrl || "").trim();
+	const display = normalizeIconDisplay(opts.display) || (resource ? "colored" : "glyph");
+	const className = String(opts.className || "ui-ws-item-icon-native").trim();
+	if (className) host.className = className;
+	host.setAttribute("aria-hidden", "true");
+	host.setAttribute("icon-style", "duotone");
+	if (opts.launcher || display !== "glyph") {
+		host.toggleAttribute("data-launcher-icon", true);
+		host.setAttribute("icon-padding", "0");
+		host.style.setProperty("--icon-padding", "0px");
+		host.style.setProperty("--icon-size", "100%");
+	}
+	if (display === "glyph") {
+		host.setAttribute("icon", glyph);
+		host.setAttribute("icon-source", "phosphor");
+		host.removeAttribute("resource");
+		host.removeAttribute("data-icon-bitmap");
+		host.removeAttribute("data-icon-bitmap-mode");
+		host.removeAttribute("data-icon-bitmap-locked");
+		host.removeAttribute("data-icon-pending");
+		return host;
+	}
+	if (!resource) {
+		host.removeAttribute("icon");
+		host.setAttribute("icon-source", "resource");
+		host.removeAttribute("resource");
+		host.toggleAttribute("data-icon-pending", true);
+		host.removeAttribute("data-icon-bitmap");
+		host.removeAttribute("data-icon-bitmap-mode");
+		host.removeAttribute("data-icon-bitmap-locked");
+		return host;
+	}
+	host.removeAttribute("icon");
+	host.setAttribute("icon-source", "resource");
+	const bitmapMode = iconDisplayToBitmapMode(display) || "colored";
+	host.setAttribute("data-icon-bitmap-mode", bitmapMode);
+	host.toggleAttribute("data-icon-bitmap-locked", true);
+	host.setAttribute("resource", resource);
+	const apply = () => {
+		const icon = host;
+		if (typeof icon.setResourceIcon === "function") {
+			icon.setResourceIcon(resource, bitmapMode);
+			icon.setBitmapPresentationMode?.(bitmapMode, true);
+		}
+	};
+	apply();
+	customElements.whenDefined("ui-icon").then(() => {
+		if (!host.isConnected) {
+			queueMicrotask(() => {
+				if (host.isConnected) apply();
+			});
+			return;
+		}
+		apply();
+	});
+	return host;
+}
+/** Auto-attached on URL paste — not a user-chosen bitmap. */
+function isAutoLinkFaviconUrl(raw) {
+	return String(raw || "").trim().toLowerCase().includes("google.com/s2/favicons");
+}
+/**
+* Glyph tiles appear at compact (0.78). Explicit per-tile scale always wins;
+* bitmaps keep `auto` → workspace fill.
+*/
+function defaultIconScaleForDisplay(display, rawItemScale) {
+	const raw = String(rawItemScale || "").trim().toLowerCase();
+	if (raw && raw !== "auto" && raw !== "default" && raw !== "inherit") return String(rawItemScale || raw).trim();
+	return normalizeIconDisplay(display) === "glyph" ? "compact" : raw || "auto";
+}
+/** Infer default display when meta.iconDisplay is unset. */
+function inferIconDisplay(input) {
+	const explicit = normalizeIconDisplay(input.iconDisplay);
+	if (explicit) return explicit;
+	if (input.isLauncherApp) return "colored";
+	if (input.isBookmarkFavicon) return "colored";
+	const url = String(input.iconUrl || "").trim();
+	if (url && !isAutoLinkFaviconUrl(url)) return "colored";
+	return "glyph";
+}
+//#endregion
+//#region ../../modules/projects/fl.ui/src/ui/speed-dial/launcher-state.ts
+var launcher_state_exports = /* @__PURE__ */ __exportAll({
+	ICON_BITMAP_SCALE_OPTIONS: () => ICON_BITMAP_SCALE_OPTIONS,
+	NAVIGATION_SHORTCUTS: () => NAVIGATION_SHORTCUTS,
+	SPEED_DIAL_CLIP_KIND: () => SPEED_DIAL_CLIP_KIND,
+	SPEED_DIAL_MUTATION_EVENT: () => SPEED_DIAL_MUTATION_EVENT,
+	addClonedSpeedDialItem: () => addClonedSpeedDialItem,
+	addSpeedDialItem: () => addSpeedDialItem,
+	androidShortcutDismissedAt: () => androidShortcutDismissedAt,
+	applyGridSettings: () => applyGridSettings,
+	applyIconBitmapScaleCss: () => applyIconBitmapScaleCss,
+	applyIconScaleToPaintedNodes: () => applyIconScaleToPaintedNodes,
+	applyItemIconScaleToElement: () => applyItemIconScaleToElement,
+	applySpeedDialSnapshot: () => applySpeedDialSnapshot,
+	buildLauncherAppDragEnvelope: () => buildLauncherAppDragEnvelope,
+	buildSpeedDialViewPathHref: () => buildSpeedDialViewPathHref,
+	canUseNativeOpenUri: () => canUseNativeOpenUri,
+	captureSpeedDialSnapshot: () => captureSpeedDialSnapshot,
+	cloneSpeedDialItemPacked: () => cloneSpeedDialItemPacked,
+	copySpeedDialItemToClipboard: () => copySpeedDialItemToClipboard,
+	createEmptySpeedDialItem: () => createEmptySpeedDialItem,
+	createSpeedDialItemFromClipboard: () => createSpeedDialItemFromClipboard,
+	createWidgetSpeedDialItem: () => createWidgetSpeedDialItem,
+	defaultOpenLinkTargetForHref: () => defaultOpenLinkTargetForHref,
+	defaultWidgetSpan: () => defaultWidgetSpan,
+	emitSpeedDialMutation: () => emitSpeedDialMutation,
+	ensureSpeedDialMeta: () => ensureSpeedDialMeta,
+	findNextFreeCellInSnapshot: () => findNextFreeCellInSnapshot,
+	findNextFreeSpeedDialCell: () => findNextFreeSpeedDialCell,
+	findSpeedDialItem: () => findSpeedDialItem,
+	findSpeedDialShortcutItem: () => findSpeedDialShortcutItem,
+	flushSpeedDialLinkStore: () => flushSpeedDialLinkStore,
+	forgetDismissedAndroidShortcut: () => forgetDismissedAndroidShortcut,
+	forgetSpeedDialIconBlob: () => forgetSpeedDialIconBlob,
+	getDefaultOpenLinkTarget: () => getDefaultOpenLinkTarget,
+	getDefaultSpeedDialAction: () => getDefaultSpeedDialAction,
+	getDefaultTileShape: () => getDefaultTileShape,
+	getIconBitmapScale: () => getIconBitmapScale,
+	getItemSpan: () => getItemSpan,
+	getSpeedDialMeta: () => getSpeedDialMeta,
+	getSpeedDialMirrorPath: () => getSpeedDialMirrorPath,
+	gridLayoutState: () => gridLayoutState,
+	hasCopiedSpeedDialItem: () => hasCopiedSpeedDialItem,
+	hasSpeedDialItemId: () => hasSpeedDialItemId,
+	iconBitmapScaleCss: () => iconBitmapScaleCss,
+	isAndroidShortcutDismissed: () => isAndroidShortcutDismissed,
+	isClientPointOverSpeedDial: () => isClientPointOverSpeedDial,
+	isCoreRailGridTile: () => isCoreRailGridTile,
+	isExternalWebHref: () => isExternalWebHref,
+	isInstalledPwaDisplayContext: () => isInstalledPwaDisplayContext,
+	isMirrorMode: () => isMirrorMode,
+	isSpeedDialVirtualPath: () => isSpeedDialVirtualPath,
+	linkStoreReady: () => linkStoreReady,
+	looksLikeSpeedDialShortcutJson: () => looksLikeSpeedDialShortcutJson,
+	markSpeedDialUserEditBeforeHydrate: () => markSpeedDialUserEditBeforeHydrate,
+	mirrorPathState: () => mirrorPathState,
+	mirrorSpeedDialItems: () => mirrorSpeedDialItems,
+	normalizeExternalWebHref: () => normalizeExternalWebHref,
+	normalizeIconBitmapScale: () => normalizeIconBitmapScale,
+	normalizeItemIconBitmapScale: () => normalizeItemIconBitmapScale,
+	normalizeOpenLinkTarget: () => normalizeOpenLinkTarget,
+	normalizeTileShape: () => normalizeTileShape,
+	openInDetachedBrowserWindow: () => openInDetachedBrowserWindow,
+	openInNewBrowserTab: () => openInNewBrowserTab,
+	openInNewBrowserWindow: () => openInNewBrowserWindow,
+	packIconBitmapScaleCss: () => packIconBitmapScaleCss,
+	packSpeedDialItem: () => packSpeedDialItem,
+	packSpeedDialMetaPlain: () => packSpeedDialMetaPlain,
+	parseSpeedDialItemFromJSON: () => parseSpeedDialItemFromJSON,
+	parseSpeedDialItemFromSmartText: () => parseSpeedDialItemFromSmartText,
+	parseSpeedDialItemFromURL: () => parseSpeedDialItemFromURL,
+	parseSpeedDialItemFromVirtualPath: () => parseSpeedDialItemFromVirtualPath,
+	parseSpeedDialViewFromHref: () => parseSpeedDialViewFromHref,
+	persistGridLayout: () => persistGridLayout,
+	persistSpeedDialIconBlob: () => persistSpeedDialIconBlob,
+	persistSpeedDialItems: () => persistSpeedDialItems,
+	persistSpeedDialMeta: () => persistSpeedDialMeta,
+	persistWallpaper: () => persistWallpaper,
+	pinLauncherAppEntry: () => pinLauncherAppEntry,
+	pinSpeedDialLinkFromIntent: () => pinSpeedDialLinkFromIntent,
+	refreshSpeedDialMirror: () => refreshSpeedDialMirror,
+	rememberDismissedAndroidShortcut: () => rememberDismissedAndroidShortcut,
+	removeSpeedDialItem: () => removeSpeedDialItem,
+	removeSpeedDialMeta: () => removeSpeedDialMeta,
+	resolveIconScaleFactor: () => resolveIconScaleFactor,
+	resolveItemOpenLinkTarget: () => resolveItemOpenLinkTarget,
+	resolveSpeedDialCellFromClientPoint: () => resolveSpeedDialCellFromClientPoint,
+	resolveSpeedDialIconUrl: () => resolveSpeedDialIconUrl,
+	resolveSpeedDialItemHref: () => resolveSpeedDialItemHref,
+	setDefaultOpenLinkTarget: () => setDefaultOpenLinkTarget,
+	setDefaultSpeedDialAction: () => setDefaultSpeedDialAction,
+	setDefaultTileShape: () => setDefaultTileShape,
+	setIconBitmapScale: () => setIconBitmapScale,
+	setItemSpan: () => setItemSpan,
+	setSpeedDialMirrorPath: () => setSpeedDialMirrorPath,
+	setSpeedDialViewEnabledCheck: () => setSpeedDialViewEnabledCheck,
+	snapshotSpeedDialItem: () => snapshotSpeedDialItem,
+	speedDialItems: () => speedDialItems,
+	speedDialMeta: () => speedDialMeta,
+	stripCoreRailTilesFromGrid: () => stripCoreRailTilesFromGrid,
+	tileIconFetchSize: () => tileIconFetchSize,
+	upsertSpeedDialItem: () => upsertSpeedDialItem,
+	wallpaperState: () => wallpaperState,
+	wasSpeedDialUserEdited: () => wasSpeedDialUserEdited
+});
+var viewEnabledCheck = null;
+/** Hosts (CWSP/CrossWord) may register build-time view enablement. Default: allow all. */
+function setSpeedDialViewEnabledCheck(fn) {
+	viewEnabledCheck = typeof fn === "function" ? fn : null;
+}
+var isEnabledView = (view) => viewEnabledCheck ? viewEnabledCheck(String(view || "").trim()) : true;
+var OPEN_LINK_TARGET_KEY = "rs-open-link-target";
+var normalizeOpenLinkTarget = (raw) => {
+	const v = String(raw || "").trim().toLowerCase();
+	if (!v) return "inline";
+	if (v === "inline" || v === "in-shell" || v === "env" || v === "shell") return "inline";
+	if (v === "new-tab" || v === "newtab" || v === "tab" || v === "browser" || v === "browser-tab" || v === "external-tab") return "new-tab";
+	if (v === "external-app" || v === "app" || v === "chooser" || v === "open-with" || v === "open-in-app" || v === "intent") return "external-app";
+	if (v === "viewer" || v === "markdown") return "viewer";
+	if (v === "document" || v === "cwsp-document") return "document";
+	if (v === "explorer" || v === "files") return "explorer";
+	if (v === "workcenter" || v === "process" || v === "cwsp-process") return "workcenter";
+	if (v === "transfer" || v === "cwsp" || v === "cwsp-transfer" || v === "network") return "transfer";
+	if (v === "native-window" || v === "native" || v === "window" || v === "app-window") return "native-window";
+	return "inline";
+};
+/** True for http(s), protocol-relative, or bare `www.` hosts (not app view paths). */
+var isExternalWebHref = (raw) => {
+	const s = String(raw || "").trim();
+	if (!s || /^(mailto:|blob:|data:|javascript:)/i.test(s)) return false;
+	if (/^https?:\/\//i.test(s) || /^\/\//.test(s)) return true;
+	if (/^www\./i.test(s)) return true;
+	if (/^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}([/:?#]|$)/i.test(s) && !s.startsWith("/") && !s.startsWith("#")) return true;
+	return false;
+};
+/** Normalize `www…` / `//…` / bare host into an absolute http(s) URL. */
+var normalizeExternalWebHref = (raw) => {
+	const s = String(raw || "").trim();
+	if (!s) return "";
+	try {
+		if (/^https?:\/\//i.test(s)) return new URL(s).href;
+		if (/^\/\//.test(s)) return new URL(`https:${s}`).href;
+		if (/^www\./i.test(s) || /^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}([/:?#]|$)/i.test(s)) return new URL(`https://${s.replace(/^\/+/, "")}`).href;
+	} catch {
+		return "";
+	}
+	return "";
+};
+/** Global default (Settings / localStorage); per-tile meta.openLinkTarget wins. */
+var getDefaultOpenLinkTarget = () => {
+	try {
+		const stored = localStorage.getItem(OPEN_LINK_TARGET_KEY);
+		if (stored == null || !String(stored).trim()) return prefersExternalAppOpenLink() ? "external-app" : "inline";
+		return normalizeOpenLinkTarget(stored);
+	} catch {
+		return prefersExternalAppOpenLink() ? "external-app" : "inline";
+	}
+};
+/** http(s) tiles open in a new tab (or Cap chooser). App views stay inline unless set. */
+var defaultOpenLinkTargetForHref = (href) => {
+	if (prefersExternalAppOpenLink()) return "external-app";
+	if (isExternalWebHref(href)) return "new-tab";
+	return getDefaultOpenLinkTarget();
+};
+/** Capacitor / coarse launcher — Open in app (chooser) beats inline iframe. */
+var prefersExternalAppOpenLink = () => {
+	try {
+		const c = globalThis.Capacitor;
+		if (typeof c?.isNativePlatform === "function" && c.isNativePlatform()) return true;
+	} catch {}
+	try {
+		if (!(document.documentElement.dataset.cwspShellRole === "launcher" || globalThis.__RS_SHELL_ROLE__ === "launcher")) return false;
+		return typeof matchMedia === "function" && matchMedia("(pointer: coarse)").matches;
+	} catch {
+		return false;
+	}
+};
+var setDefaultOpenLinkTarget = (target) => {
+	try {
+		localStorage.setItem(OPEN_LINK_TARGET_KEY, normalizeOpenLinkTarget(target));
+	} catch {}
+};
+var resolveItemOpenLinkTarget = (meta) => {
+	const raw = meta?.openLinkTarget != null ? String(meta.openLinkTarget).trim() : "";
+	if (raw) return normalizeOpenLinkTarget(raw);
+	return defaultOpenLinkTargetForHref(meta?.href);
+};
+/** True only on Capacitor native — web must not await the bridge before window.open. */
+var canUseNativeOpenUri = () => {
+	try {
+		const c = globalThis.Capacitor;
+		return typeof c?.isNativePlatform === "function" && !!c.isNativePlatform();
+	} catch {
+		return false;
+	}
+};
+/** WHY: document PWA disables Network at build time — hide it from add-shortcut menus too. */
+var NAVIGATION_SHORTCUTS = [
+	{
+		view: "home",
+		label: "Home",
+		icon: "house-line"
+	},
+	{
+		view: "network",
+		label: "Network",
+		icon: "wifi-high"
+	},
+	{
+		view: "viewer",
+		label: "Markdown",
+		icon: "books"
+	},
+	{
+		view: "explorer",
+		label: "Explorer",
+		icon: "folder"
+	},
+	{
+		view: "workcenter",
+		label: "Work Center",
+		icon: "briefcase"
+	},
+	{
+		view: "history",
+		label: "History",
+		icon: "clock-counter-clockwise"
+	},
+	{
+		view: "settings",
+		label: "Settings",
+		icon: "gear-six"
+	},
+	{
+		view: "apps",
+		label: "Apps",
+		icon: "squares-four"
+	}
+].filter((shortcut) => isEnabledView(shortcut.view));
+var STORAGE_KEY$3 = "cw::workspace::speed-dial";
+var META_STORAGE_KEY = `${STORAGE_KEY$3}::meta`;
+/** User mutations use this to keep the active workspace snapshot authoritative. */
+var SPEED_DIAL_MUTATION_EVENT = "cwsp:speed-dial-mutation";
+var emitSpeedDialMutation = (kind, id) => {
+	try {
+		window.dispatchEvent(new CustomEvent(SPEED_DIAL_MUTATION_EVENT, { detail: {
+			kind,
+			id
+		} }));
+	} catch {}
+};
+var fallbackClone = (value) => {
+	if (typeof structuredClone === "function") try {
+		return structuredClone(safe(value));
+	} catch {}
+	try {
+		return JSON.parse(JSON.stringify(safe(value)));
+	} catch {
+		return value;
+	}
+};
+var ICON_BLOB_LS = "cw::speed-dial::icon-blob::";
+var ICON_PTR = "sd-icon:";
+var APPEARANCE_META_KEYS = [
+	"shape",
+	"iconDisplay",
+	"iconUrl",
+	"iconScale",
+	"iconCacheKey"
+];
+var isInlineIconUrl = (url) => /^data:/i.test(url);
+var isEphemeralIconUrl = (url) => /^blob:/i.test(url);
+/** Plain meta for persist/snapshots — observe proxies must not leak into LS/catalog. */
+var packSpeedDialMetaPlain = (meta) => {
+	const src = (meta ? safe(meta) : {}) || {};
+	const out = {};
+	for (const [key, raw] of Object.entries(src)) {
+		if (raw == null || raw === "") continue;
+		let value = raw;
+		if (typeof raw === "object" && raw && "value" in raw) {
+			value = raw.value;
+			if (value == null || value === "") continue;
+		}
+		out[key] = value;
+	}
+	if (isEphemeralIconUrl(String(out.iconUrl || ""))) delete out.iconUrl;
+	return out;
+};
+var persistSpeedDialIconBlob = (id, iconUrl) => {
+	const itemId = String(id || "").trim();
+	const url = String(iconUrl || "").trim();
+	if (!itemId || !isInlineIconUrl(url)) return url;
+	try {
+		localStorage.setItem(ICON_BLOB_LS + itemId, url);
+		return ICON_PTR + itemId;
+	} catch {
+		return ICON_PTR + itemId;
+	}
+};
+var resolveSpeedDialIconUrl = (id, iconUrl) => {
+	const url = String(iconUrl || "").trim();
+	const itemId = (url.startsWith(ICON_PTR) ? url.slice(8) : String(id || "")).trim();
+	if (url.startsWith(ICON_PTR) || !url && itemId) try {
+		const stored = localStorage.getItem(ICON_BLOB_LS + itemId);
+		if (stored) return stored;
+	} catch {}
+	return url;
+};
+var forgetSpeedDialIconBlob = (id) => {
+	const itemId = String(id || "").trim();
+	if (!itemId) return;
+	try {
+		localStorage.removeItem(ICON_BLOB_LS + itemId);
+	} catch {}
+};
+var mergeMetaKeepingAppearance = (existing, incoming) => {
+	const prev = packSpeedDialMetaPlain(existing);
+	const next = packSpeedDialMetaPlain(incoming);
+	const out = {
+		...prev,
+		...next
+	};
+	for (const key of APPEARANCE_META_KEYS) {
+		const keep = String(prev[key] || "").trim();
+		if (!String(next[key] || "").trim() && keep) out[key] = keep;
+	}
+	const prevUrl = String(prev.iconUrl || "");
+	const nextUrl = String(next.iconUrl || "");
+	if (prevUrl && (!nextUrl || nextUrl.startsWith(ICON_PTR)) && !nextUrl.startsWith("android-icon:")) {
+		if (isInlineIconUrl(prevUrl) || prevUrl.startsWith(ICON_PTR)) out.iconUrl = prevUrl;
+	}
+	return out;
+};
+var durableMetaForPersist = (id, meta) => {
+	const packed = packSpeedDialMetaPlain(meta);
+	const url = String(packed.iconUrl || "");
+	if (isInlineIconUrl(url)) packed.iconUrl = persistSpeedDialIconBlob(id, url);
+	return packed;
+};
+var generateItemId = () => {
+	if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") return crypto.randomUUID();
+	return `sd-${Date.now().toString(36)}-${Math.floor(Math.random() * 1e3)}`;
+};
+var EXTERNAL_SHORTCUTS = [];
+var DEFAULT_SPEED_DIAL_DATA_ALL = [...EXTERNAL_SHORTCUTS];
+/** Drop view shortcuts that this host build disabled (e.g. Network on CWSP-document). */
+var isSpeedDialViewAllowed = (meta, id) => {
+	if (id === "shortcut-network" && !isEnabledView("network")) return false;
+	const view = String(meta?.view || "").trim();
+	if (!view) return true;
+	return isEnabledView(view);
+};
+var DEFAULT_SPEED_DIAL_DATA = DEFAULT_SPEED_DIAL_DATA_ALL.filter((entry) => isSpeedDialViewAllowed(entry.meta, entry.id));
+var splitDefaultEntries = (entries) => {
+	const records = [];
+	const metaEntries = [];
+	entries.forEach((entry) => {
+		const { meta, ...record } = entry;
+		records.push(record);
+		const normalizedMeta = {
+			action: entry.action,
+			...meta || {}
+		};
+		metaEntries.push([entry.id, normalizedMeta]);
+	});
+	return {
+		records,
+		metaEntries
+	};
+};
+var { records: DEFAULT_SPEED_DIAL_RECORDS, metaEntries: DEFAULT_META_ENTRIES } = splitDefaultEntries(DEFAULT_SPEED_DIAL_DATA);
+var legacyMetaBuffer = [];
+/** Ids historically injected onto the Speed Dial grid (now Core Rail only). */
+var CORE_RAIL_GRID_IDS = /* @__PURE__ */ new Set([
+	"shortcut-explorer",
+	"shortcut-settings",
+	"shortcut-viewer",
+	"shortcut-markdown",
+	"shortcut-apps",
+	"apps",
+	"explorer",
+	"settings",
+	"viewer",
+	"markdown"
+]);
+var CORE_RAIL_GRID_VIEWS = /* @__PURE__ */ new Set([
+	"apps",
+	"explorer",
+	"settings",
+	"viewer",
+	"markdown",
+	"reader"
+]);
+var CORE_RAIL_GRID_LABELS = /* @__PURE__ */ new Set([
+	"apps",
+	"explorer",
+	"settings",
+	"markdown",
+	"viewer"
+]);
+var unwrapPersistedLabel = (label) => {
+	if (label && typeof label === "object" && "value" in label) return String(label.value || "").trim().toLowerCase();
+	return String(label || "").trim().toLowerCase();
+};
+/**
+* True when a curated / persisted tile belongs on the Core Rail only
+* (Explorer / Settings / Markdown) — never on the freeform Speed Dial grid.
+*/
+var isCoreRailGridTile = (item, meta) => {
+	if (!item?.id) return false;
+	const id = String(item.id || "").trim().toLowerCase();
+	if (CORE_RAIL_GRID_IDS.has(id)) return true;
+	const action = String(meta?.action || item.action || "open-view").trim().toLowerCase();
+	if (action && action !== "open-view") return false;
+	const view = String(meta?.view || "").trim().toLowerCase();
+	if (view && CORE_RAIL_GRID_VIEWS.has(view)) return true;
+	const label = unwrapPersistedLabel(item.label);
+	return Boolean(label) && CORE_RAIL_GRID_LABELS.has(label);
+};
+var isCoreRailPersistedEntry = (entry) => isCoreRailGridTile({
+	id: entry.id,
+	action: entry.action,
+	label: entry.label
+}, {
+	action: entry.action,
+	...entry.meta || {}
+});
+var ensureCell = (cell) => {
+	if (cell && Array.isArray(cell) && cell.length >= 2) return observe([Number(cell[0]) || 0, Number(cell[1]) || 0]);
+	return observe([0, 0]);
+};
+var createMetaState = (meta = {}) => {
+	return makeObjectAssignable(observe({
+		action: meta.action || "open-view",
+		view: meta.view || "",
+		href: meta.href || "",
+		description: meta.description || "",
+		entityType: meta.entityType || "",
+		tags: Array.isArray(meta.tags) ? [...meta.tags] : [],
+		...meta
+	}));
+};
+var registryFromEntries = (entries) => {
+	const registry = /* @__PURE__ */ new Map();
+	for (const [id, meta] of entries) registry.set(id, createMetaState(meta));
+	return registry;
+};
+var normalizeMetaEntries = (raw) => {
+	if (!raw) return [];
+	if (raw instanceof Map) return Array.from(raw.entries());
+	if (Array.isArray(raw)) return raw.map((entry) => {
+		if (entry && typeof entry === "object" && "id" in entry) return [entry.id, entry.meta || entry];
+		return null;
+	}).filter(Boolean);
+	if (typeof raw === "object") return Object.entries(raw);
+	return [];
+};
+var packMetaRegistry = (registry) => {
+	const payload = {};
+	registry?.forEach((meta, id) => {
+		payload[id] = durableMetaForPersist(id, meta);
+	});
+	return payload;
+};
+var createInitialMetaRegistry = () => registryFromEntries(DEFAULT_META_ENTRIES);
+var unpackMetaRegistry = (raw) => {
+	const entries = normalizeMetaEntries(raw);
+	return registryFromEntries(entries.length ? entries : DEFAULT_META_ENTRIES);
+};
+var unwrapRef = (value, fallback) => {
+	if (value && typeof value === "object" && "value" in value) return value.value ?? fallback;
+	return value ?? fallback;
+};
+var serializeItemState = (item) => {
+	return {
+		id: item.id,
+		cell: [Number(item.cell?.[0]) || 0, Number(item.cell?.[1]) || 0],
+		icon: unwrapRef(item.icon, "sparkle"),
+		label: unwrapRef(item.label, "Shortcut"),
+		action: item.action
+	};
+};
+var createStatefulItem = (config) => {
+	return observe({
+		id: config.id || generateItemId(),
+		cell: observe(ensureCell(config.cell)),
+		icon: stringRef(config.icon || "sparkle"),
+		label: stringRef(config.label || "Shortcut"),
+		action: config.action || "open-view"
+	});
+};
+var createInitialState = () => observe(DEFAULT_SPEED_DIAL_RECORDS.map(createStatefulItem));
+var unpackState = (raw) => {
+	return observe((Array.isArray(raw) && raw.length ? raw : DEFAULT_SPEED_DIAL_DATA).filter((entry) => isSpeedDialViewAllowed(entry.meta, entry.id) && !isCoreRailPersistedEntry(entry)).map((entry) => {
+		const { meta, ...record } = entry;
+		if (meta) legacyMetaBuffer.push([entry.id, {
+			action: entry.action,
+			...meta
+		}]);
+		else legacyMetaBuffer.push([entry.id, { action: entry.action }]);
+		return record;
+	}).map(createStatefulItem));
+};
+var packState = (collection) => collection.filter((item) => {
+	try {
+		return !isCoreRailGridTile(item, speedDialMeta?.get?.(item.id) ?? null);
+	} catch {
+		return !isCoreRailGridTile(item, null);
+	}
+}).map(serializeItemState);
+/**
+* WHY: Vite `preserveSymlinks` can load this file via fl.ui and home-view paths as
+* two module graphs. Without a process singleton, idle-save from the stale copy
+* overwrites user shortcuts with defaults after refresh.
+*/
+var SPEED_DIAL_ITEMS_BOOT = "__CWSP_SPEED_DIAL_ITEMS_V1__";
+var SPEED_DIAL_META_BOOT = "__CWSP_SPEED_DIAL_META_V1__";
+var bootSpeedDialMeta = () => {
+	const g = globalThis;
+	if (g[SPEED_DIAL_META_BOOT]) return g[SPEED_DIAL_META_BOOT];
+	const state = makeUIState(META_STORAGE_KEY, createInitialMetaRegistry, unpackMetaRegistry, packMetaRegistry);
+	g[SPEED_DIAL_META_BOOT] = state;
+	return state;
+};
+var bootSpeedDialItems = () => {
+	const g = globalThis;
+	if (g[SPEED_DIAL_ITEMS_BOOT]) return g[SPEED_DIAL_ITEMS_BOOT];
+	const state = makeUIState(STORAGE_KEY$3, createInitialState, unpackState, packState);
+	g[SPEED_DIAL_ITEMS_BOOT] = state;
+	return state;
+};
+var speedDialMeta = bootSpeedDialMeta();
+var speedDialItems = bootSpeedDialItems();
+var LINK_STORE_BOOT = "__CWSP_LINK_STORE_BOOT_V1__";
+var linkStoreBoot = () => {
+	const g = globalThis;
+	if (!g[LINK_STORE_BOOT]) g[LINK_STORE_BOOT] = {
+		opfsIo: null,
+		opfsReady: null,
+		opfsFlushTimer: null,
+		opfsHydrated: false,
+		userEditedBeforeHydrate: false,
+		editGen: 0,
+		allowEmptyOpfsWrite: false
+	};
+	return g[LINK_STORE_BOOT];
+};
+var markIntentionalEmptyGrid = () => {
+	const boot = linkStoreBoot();
+	boot.allowEmptyOpfsWrite = true;
+};
+var MIRROR_PATH_LS_KEY = "cw::workspace::speed-dial::mirror-path";
+var mirrorPathState = stringRef("");
+var mirrorSpeedDialItems = observe([]);
+var isMirrorMode = () => Boolean(String(mirrorPathState.value || "").trim());
+function getSpeedDialMirrorPath() {
+	const v = String(mirrorPathState.value || "").trim();
+	return v ? v : null;
+}
+/**
+* Persist `mirrorPath` into OPFS `meta.json` (canonical) and an LS backup key.
+* WHY: OPFS is async + durable; LS keeps the value when OPFS is unavailable
+* (private mode / quota) so the mode survives reloads on hosts without OPFS.
+*/
+function setSpeedDialMirrorPath(path) {
+	const normalized = path ? String(path).trim() : "";
+	if (normalized === String(mirrorPathState.value || "").trim()) return;
+	markUserEditedBeforeHydrate();
+	mirrorPathState.value = normalized;
+	try {
+		if (typeof localStorage !== "undefined") {
+			if (normalized) localStorage.setItem(MIRROR_PATH_LS_KEY, normalized);
+			else localStorage.removeItem(MIRROR_PATH_LS_KEY);
+		}
+	} catch {}
+	persistSpeedDialMeta();
+	refreshSpeedDialMirror();
+}
+/**
+* Rebuild `mirrorSpeedDialItems` from the current `mirrorPath` via PathRouter.
+*
+* WHY: SpeedDial calls this on mount and whenever the mirror path changes. If
+* no backend is registered for the path (e.g. tests without OPFS/Chrome), we
+* surface a soft warning and keep an empty listing so the grid stays usable.
+*
+* Task 3 fix: pass curated `speedDialItems` cells to `buildMirrorSpeedDialItems`
+* so mirror tiles auto-place below the curated grid's max Y instead of
+* stacking at `[0,0]`. Meta per-id `cell` overrides still win.
+*/
+async function refreshSpeedDialMirror() {
+	const path = getSpeedDialMirrorPath();
+	if (!path) {
+		mirrorSpeedDialItems.splice(0, mirrorSpeedDialItems.length);
+		return;
+	}
+	try {
+		const backend = resolveFsBackend$1(path);
+		if (!backend) {
+			console.warn(`[link-store] no fs backend for mirror path: ${path}`);
+			mirrorSpeedDialItems.splice(0, mirrorSpeedDialItems.length);
+			return;
+		}
+		const items = buildMirrorSpeedDialItems(await backend.list(path), packMetaFileFromState(), path, (speedDialItems || []).map((item) => ({ cell: Array.isArray(item?.cell) ? item.cell : void 0 })));
+		mirrorSpeedDialItems.splice(0, mirrorSpeedDialItems.length);
+		for (const item of items) mirrorSpeedDialItems.push(item);
+	} catch (e) {
+		console.warn(`[link-store] mirror list failed for ${path}`, e);
+		mirrorSpeedDialItems.splice(0, mirrorSpeedDialItems.length);
+	}
+}
+if (typeof globalThis !== "undefined") subscribeFsBackendRegister((root) => {
+	const path = getSpeedDialMirrorPath();
+	if (!path) return;
+	if (path === root || path.startsWith(root === "/" ? "/" : root)) refreshSpeedDialMirror();
+});
+/**
+* WHY: always stamp dirty — even after hydrate flipped true mid-hydrate.
+* Pin/Share can land between the dirty re-check and the `splice`. Dirty is on
+* globalThis so dual Vite module graphs share the same signal.
+*/
+var markUserEditedBeforeHydrate = () => {
+	const boot = linkStoreBoot();
+	boot.userEditedBeforeHydrate = true;
+	boot.editGen = (boot.editGen || 0) + 1;
+};
+/** True when pin/share/edit landed this session — Side snapshots must not splice over it. */
+var wasSpeedDialUserEdited = () => {
+	const boot = linkStoreBoot();
+	return boot.userEditedBeforeHydrate === true || (boot.editGen || 0) > 0;
+};
+var getLsLike = () => {
+	try {
+		if (typeof localStorage === "undefined") return null;
+		return localStorage;
+	} catch {
+		return null;
+	}
+};
+/**
+* Pack the current in-memory state into a `LinkStoreMetaFile` for OPFS.
+* WHY: cells live in `speedDialItems` (state) while href/view/shape live in
+* `speedDialMeta` (registry); OPFS `meta.json` merges both per id.
+*/
+var packMetaFileFromState = () => {
+	const perId = {};
+	speedDialMeta?.forEach((meta, id) => {
+		perId[id] = durableMetaForPersist(id, meta);
+	});
+	(speedDialItems || []).forEach((item) => {
+		const id = String(item?.id || "");
+		if (!id) return;
+		const cell = item?.cell;
+		const x = Number(Array.isArray(cell) ? cell[0] : cell?.[0]) || 0;
+		const y = Number(Array.isArray(cell) ? cell[1] : cell?.[1]) || 0;
+		perId[id] = {
+			...perId[id] || {},
+			cell: [x, y]
+		};
+	});
+	return {
+		version: 1,
+		mirrorPath: getSpeedDialMirrorPath(),
+		items: perId
+	};
+};
+var flushLinkStoreToOpfs = async () => {
+	const boot = linkStoreBoot();
+	if (!boot.opfsIo) return;
+	try {
+		await boot.opfsReady;
+	} catch {
+		return;
+	}
+	if (!boot.opfsIo) return;
+	try {
+		const items = packLinksFromSpeedDial(speedDialItems);
+		for (const item of items) {
+			const meta = speedDialMeta?.get?.(item.id);
+			if (!meta) continue;
+			if (!item.href && meta.href) item.href = String(meta.href);
+			if (!item.path && meta.path) item.path = String(meta.path);
+			if (!item.action && meta.action) item.action = String(meta.action);
+		}
+		const meta = packMetaFileFromState();
+		const allowEmpty = boot.allowEmptyOpfsWrite === true && !speedDialItems?.length;
+		await writeLinkStore(boot.opfsIo, items, meta, { allowEmpty });
+		if (allowEmpty) boot.allowEmptyOpfsWrite = false;
+	} catch (e) {
+		console.warn("[link-store] OPFS write failed; localStorage remains primary", e);
+	}
+};
+var scheduleOpfsFlush = () => {
+	const boot = linkStoreBoot();
+	if (boot.opfsFlushTimer) clearTimeout(boot.opfsFlushTimer);
+	boot.opfsFlushTimer = setTimeout(() => {
+		boot.opfsFlushTimer = null;
+		flushLinkStoreToOpfs();
+	}, 150);
+};
+/**
+* Hydrate the in-memory state from OPFS after migration. Only runs when no
+* user edit has fired yet (module-load race window) and OPFS has data.
+*
+* WHY: if `persistSpeedDialItems` / `persistSpeedDialMeta` already ran before
+* hydrate completed, the in-memory state is newer than the just-migrated OPFS
+* snapshot. Splicing OPFS back in would clobber the edit, so we mark hydrated
+* and bail — the pending OPFS flush (awaiting `opfsReady`) will persist the
+* newer state instead.
+*/
+var hydrateFromOpfs = async (io) => {
+	const boot = linkStoreBoot();
+	if (boot.opfsHydrated) return;
+	if (boot.userEditedBeforeHydrate) {
+		boot.opfsHydrated = true;
+		return;
+	}
+	const editGenAtStart = boot.editGen || 0;
+	try {
+		const got = await readLinkStore(io);
+		if (!got || !got.items.length) {
+			boot.opfsHydrated = true;
+			return;
+		}
+		if (boot.userEditedBeforeHydrate || boot.editGen !== editGenAtStart) {
+			boot.opfsHydrated = true;
+			return;
+		}
+		const nextItems = [];
+		const nextMeta = /* @__PURE__ */ new Map();
+		for (const raw of got.items) {
+			const metaEntry = got.meta.items[raw.id] || {};
+			const cell = Array.isArray(metaEntry.cell) ? [metaEntry.cell[0], metaEntry.cell[1]] : Array.isArray(raw.cell) ? [raw.cell[0], raw.cell[1]] : [0, 0];
+			const item = createStatefulItem({
+				id: raw.id,
+				cell: observe([Number(cell[0]) || 0, Number(cell[1]) || 0]),
+				icon: raw.icon || "sparkle",
+				label: raw.label || "Shortcut",
+				action: raw.action || "open-view"
+			});
+			const meta = {
+				action: raw.action || "open-view",
+				...metaEntry,
+				...raw.href ? { href: raw.href } : {},
+				...raw.path ? { path: raw.path } : {}
+			};
+			if (isCoreRailGridTile(item, meta)) continue;
+			nextItems.push(observe(item));
+			nextMeta.set(item.id, meta);
+		}
+		if (!nextItems.length) {
+			boot.opfsHydrated = true;
+			stripCoreRailTilesFromGrid({ markDirty: true });
+			return;
+		}
+		if (boot.userEditedBeforeHydrate || boot.editGen !== editGenAtStart) {
+			boot.opfsHydrated = true;
+			return;
+		}
+		boot.opfsHydrated = true;
+		if (got.meta.mirrorPath != null) mirrorPathState.value = String(got.meta.mirrorPath || "");
+		if (speedDialItems?.length) {
+			for (const [id, meta] of nextMeta) if (!getSpeedDialMeta(id)) ensureSpeedDialMeta(id, packSpeedDialMetaPlain(meta));
+			stripCoreRailTilesFromGrid({ markDirty: true });
+			return;
+		}
+		speedDialItems.splice(0, speedDialItems.length, ...nextItems);
+		for (const [id, meta] of nextMeta) ensureSpeedDialMeta(id, mergeMetaKeepingAppearance(getSpeedDialMeta(id), meta));
+		stripCoreRailTilesFromGrid({ markDirty: true });
+	} catch (e) {
+		console.warn("[link-store] OPFS hydration failed; using localStorage boot state", e);
+		linkStoreBoot().opfsHydrated = true;
+		stripCoreRailTilesFromGrid({ markDirty: true });
+	}
+};
+var skipLinkStoreOpfs = () => {
+	try {
+		if (String(document.documentElement?.dataset?.cwspSku || "").toLowerCase() === "document") return true;
+		const host = String(location.hostname || "").toLowerCase();
+		if (/(^|\.)md\.u2re\.space$/.test(host)) return true;
+	} catch {}
+	return false;
+};
+var initLinkStore = () => {
+	const boot = linkStoreBoot();
+	if (boot.opfsReady) return boot.opfsReady;
+	boot.opfsReady = (async () => {
+		const ls = getLsLike();
+		if (skipLinkStoreOpfs()) {
+			boot.opfsIo = null;
+			boot.opfsHydrated = true;
+			return;
+		}
+		try {
+			boot.opfsIo = await Promise.race([createOpfsLinkStoreIo(), new Promise((_, reject) => {
+				setTimeout(() => reject(/* @__PURE__ */ new Error("[link-store] OPFS getDirectory timeout")), 800);
+			})]);
+		} catch (e) {
+			console.warn("[link-store] OPFS unavailable; using localStorage", e);
+			boot.opfsIo = null;
+			boot.opfsHydrated = true;
+			return;
+		}
+		if (!boot.opfsIo) return;
+		try {
+			if (ls) await migrateLocalStorageToOpfsIfNeeded(boot.opfsIo, ls);
+			await hydrateFromOpfs(boot.opfsIo);
+			stripCoreRailTilesFromGrid({ markDirty: true });
+			if (boot.userEditedBeforeHydrate) await flushLinkStoreToOpfs();
+		} catch (e) {
+			console.warn("[link-store] OPFS init failed; using localStorage boot state", e);
+			boot.opfsHydrated = true;
+		}
+	})();
+	return boot.opfsReady;
+};
+/**
+* Hosts may await this to know when OPFS migration/hydration is done. The grid
+* renders immediately from LS; this resolves after the async OPFS step.
+*/
+var linkStoreReady = () => initLinkStore();
+/** Force durable OPFS write (Cap pin / Share) — do not wait for the 150ms debounce. */
+var flushSpeedDialLinkStore = () => flushLinkStoreToOpfs();
+/** True when `id` is still in the shared Speed Dial array (post-hydrate race check). */
+var hasSpeedDialItemId = (id) => Boolean(id && speedDialItems?.some?.((item) => String(item?.id) === id));
+/** Live tile that already represents this Android pinned shortcut. */
+var findSpeedDialShortcutItem = (pkg, shortcutId) => {
+	const packageName = String(pkg || "").trim();
+	const id = String(shortcutId || "").trim();
+	if (!packageName || !id) return null;
+	for (const item of speedDialItems || []) {
+		const meta = getSpeedDialMeta(item.id);
+		if (String(meta?.packageName || "").trim() === packageName && String(meta?.shortcutId || "").trim() === id) return item;
+	}
+	return null;
+};
+var DISMISSED_PINS_KEY = "cw::launcher::dismissed-pins";
+var DISMISSED_PINS_BOOT = "__CWSP_DISMISSED_PINS_V1__";
+var dismissedPinKey = (pkg, sid) => `${String(pkg || "").trim()}::${String(sid || "").trim()}`;
+var dismissedPinsSlot = () => {
+	const g = globalThis;
+	if (g[DISMISSED_PINS_BOOT]) return g[DISMISSED_PINS_BOOT];
+	const at = /* @__PURE__ */ new Map();
+	try {
+		const raw = localStorage.getItem(DISMISSED_PINS_KEY);
+		const parsed = raw ? JSON.parse(raw) : [];
+		if (Array.isArray(parsed)) for (const row of parsed) {
+			if (typeof row === "string") {
+				const k = row.trim();
+				if (k && k !== "::") at.set(k, 1);
+				continue;
+			}
+			const k = String(row?.k || "").trim();
+			const t = Number(row?.t || 0);
+			if (k && k !== "::") at.set(k, t || 1);
+		}
+	} catch {}
+	g[DISMISSED_PINS_BOOT] = { at };
+	return g[DISMISSED_PINS_BOOT];
+};
+var persistDismissedPins = () => {
+	try {
+		const rows = [...dismissedPinsSlot().at.entries()].map(([k, t]) => ({
+			k,
+			t
+		}));
+		localStorage.setItem(DISMISSED_PINS_KEY, JSON.stringify(rows));
+	} catch {}
+};
+var isAndroidShortcutDismissed = (pkg, sid) => androidShortcutDismissedAt(pkg, sid) > 0;
+var androidShortcutDismissedAt = (pkg, sid) => {
+	const key = dismissedPinKey(pkg, sid);
+	if (key === "::") return 0;
+	return Number(dismissedPinsSlot().at.get(key) || 0);
+};
+var rememberDismissedAndroidShortcut = (pkg, sid) => {
+	const key = dismissedPinKey(pkg, sid);
+	if (key === "::") return;
+	dismissedPinsSlot().at.set(key, Date.now());
+	persistDismissedPins();
+	globalThis.__CWSP_ACK_PIN_AFTER_REMOVE__ = true;
+};
+var forgetDismissedAndroidShortcut = (pkg, sid) => {
+	const key = dismissedPinKey(pkg, sid);
+	if (key === "::") return;
+	if (!dismissedPinsSlot().at.delete(key)) return;
+	persistDismissedPins();
+};
+if (typeof globalThis !== "undefined") {
+	try {
+		if (typeof localStorage !== "undefined") {
+			const lsMirror = localStorage.getItem(MIRROR_PATH_LS_KEY);
+			if (lsMirror && !mirrorPathState.value) mirrorPathState.value = lsMirror;
+		}
+	} catch {}
+	initLinkStore().then(() => {
+		refreshSpeedDialMirror();
+	});
+}
+var persistSpeedDialItems = () => {
+	scheduleOpfsFlush();
+	try {
+		saveUIState(STORAGE_KEY$3);
+		return;
+	} catch {}
+	try {
+		if (typeof localStorage === "undefined") return;
+		localStorage.setItem(STORAGE_KEY$3, JSOX.stringify(packState(speedDialItems)));
+	} catch {}
+};
+var persistSpeedDialMeta = () => {
+	scheduleOpfsFlush();
+	try {
+		saveUIState(META_STORAGE_KEY);
+		return;
+	} catch {}
+	try {
+		if (typeof localStorage === "undefined") return;
+		localStorage.setItem(META_STORAGE_KEY, JSOX.stringify(packMetaRegistry(speedDialMeta)));
+	} catch {}
+};
+var packSpeedDialItem = (item) => {
+	const packed = serializeItemState(item);
+	const meta = getSpeedDialMeta(item.id);
+	return {
+		...packed,
+		...meta ? { meta: durableMetaForPersist(item.id, meta) } : {}
+	};
+};
+var captureSpeedDialSnapshot = () => ({ items: (speedDialItems || []).map((item) => packSpeedDialItem(item)) });
+var applySpeedDialSnapshot = (snapshot) => {
+	markUserEditedBeforeHydrate();
+	const rows = Array.isArray(snapshot?.items) ? snapshot.items : [];
+	const nextItems = [];
+	for (const raw of rows) {
+		if (!raw?.id) continue;
+		const item = createStatefulItem({
+			id: raw.id,
+			cell: observe([Number(raw.cell?.[0]) || 0, Number(raw.cell?.[1]) || 0]),
+			icon: raw.icon || "sparkle",
+			label: raw.label || "Shortcut",
+			action: raw.action || "open-link"
+		});
+		nextItems.push(observe(item));
+	}
+	speedDialItems.splice(0, speedDialItems.length, ...nextItems);
+	if (!nextItems.length) markIntentionalEmptyGrid();
+	for (const raw of rows) {
+		if (!raw?.id) continue;
+		const incoming = {
+			action: raw.action,
+			...packSpeedDialMetaPlain(raw.meta)
+		};
+		incoming.iconUrl = persistSpeedDialIconBlob(raw.id, String(incoming.iconUrl || ""));
+		const merged = mergeMetaKeepingAppearance(getSpeedDialMeta(raw.id), incoming);
+		ensureSpeedDialMeta(raw.id, merged);
+	}
+	persistSpeedDialItems();
+	persistSpeedDialMeta();
+};
+var metaNumber = (value, fallback) => {
+	let cur = value;
+	if (cur && typeof cur === "object" && "value" in cur) cur = cur.value;
+	const n = Number(cur);
+	return Number.isFinite(n) && n >= 1 ? n : fallback;
+};
+var defaultWidgetSpan = (kind) => {
+	const id = String(kind || "").toLowerCase();
+	if (id === "search") return [2, 1];
+	if (id === "clock") return [2, 1];
+	if (id === "android") return [2, 2];
+	return [1, 1];
+};
+var getItemSpan = (id) => {
+	const meta = id ? getSpeedDialMeta(id) : null;
+	const kind = String(meta?.action || "").toLowerCase() === "widget" ? String(meta?.widgetKind || "").toLowerCase() : "";
+	const fallback = kind ? defaultWidgetSpan(kind) : [1, 1];
+	return normalizeSpan([metaNumber(meta?.spanCols, fallback[0]), metaNumber(meta?.spanRows, fallback[1])]);
+};
+var setItemSpan = (id, span) => {
+	const next = normalizeSpan(span);
+	const meta = ensureSpeedDialMeta(id);
+	meta.spanCols = next[0];
+	meta.spanRows = next[1];
+	persistSpeedDialMeta();
+	emitSpeedDialMutation("update", id);
+	return next;
+};
+var createWidgetSpeedDialItem = (kind, cell, extra) => {
+	const span = normalizeSpan([extra?.spanCols ?? defaultWidgetSpan(kind)[0], extra?.spanRows ?? defaultWidgetSpan(kind)[1]]);
+	const item = createStatefulItem({
+		id: generateItemId(),
+		cell: cell || findNextFreeSpeedDialCell(span),
+		icon: kind === "clock" ? "clock" : kind === "search" ? "magnifying-glass" : "squares-four",
+		label: String(extra?.description || "").trim() || (kind === "clock" ? "Clock" : kind === "search" ? "Search" : "Widget"),
+		action: "widget"
+	});
+	ensureSpeedDialMeta(item.id, {
+		action: "widget",
+		widgetKind: kind,
+		shape: getDefaultTileShape(),
+		spanCols: span[0],
+		spanRows: span[1],
+		...extra || {}
+	});
+	return item;
+};
+var getSpeedDialMeta = (id) => {
+	if (!id) return null;
+	return speedDialMeta?.get?.(id) ?? null;
+};
+var ensureSpeedDialMeta = (id, defaults = {}) => {
+	let meta = speedDialMeta?.get?.(id);
+	if (!meta) {
+		meta = createMetaState(defaults);
+		speedDialMeta?.set?.(id, meta);
+		persistSpeedDialMeta();
+		return meta;
+	}
+	let changed = false;
+	for (const [key, value] of Object.entries(defaults)) {
+		if (value == null || value === "") continue;
+		if (meta[key] !== value) {
+			meta[key] = value;
+			changed = true;
+		}
+	}
+	if (changed) persistSpeedDialMeta();
+	return meta;
+};
+var removeSpeedDialMeta = (id) => {
+	const removed = speedDialMeta?.delete?.(id);
+	if (removed) {
+		forgetSpeedDialIconBlob(id);
+		persistSpeedDialMeta();
+	}
+	return removed;
+};
+var syncMetaActionFromItem = (item) => {
+	if (!item) return false;
+	const desiredAction = item.action || "open-view";
+	const meta = ensureSpeedDialMeta(item.id, { action: desiredAction });
+	if (meta.action !== desiredAction) {
+		meta.action = desiredAction;
+		return true;
+	}
+	return false;
+};
+var syncMetaActionsForAllItems = () => {
+	let changed = false;
+	speedDialItems?.forEach?.((item) => {
+		if (syncMetaActionFromItem(item)) changed = true;
+	});
+	if (changed) persistSpeedDialMeta();
+};
+var flushLegacyMetaBuffer = () => {
+	if (!legacyMetaBuffer.length) return;
+	legacyMetaBuffer.forEach(([id, meta]) => {
+		const target = ensureSpeedDialMeta(id, meta);
+		Object.assign(target, meta);
+	});
+	legacyMetaBuffer.length = 0;
+	persistSpeedDialMeta();
+};
+flushLegacyMetaBuffer();
+syncMetaActionsForAllItems();
+var ensureExternalShortcuts = () => {
+	let changed = false;
+	EXTERNAL_SHORTCUTS.forEach((shortcut) => {
+		if (!speedDialItems?.find?.((item) => item?.id === shortcut.id)) {
+			const item = createStatefulItem(shortcut);
+			if (shortcut.label && item.label && typeof item.label === "object" && "value" in item.label) item.label.value = shortcut.label;
+			if (shortcut.icon && item.icon && typeof item.icon === "object" && "value" in item.icon) item.icon.value = shortcut.icon;
+			speedDialItems.push(observe(item));
+			ensureSpeedDialMeta(item.id, shortcut.meta);
+			changed = true;
+		} else {
+			const currentMeta = getSpeedDialMeta(shortcut.id);
+			if (shortcut.meta && currentMeta) {
+				const nextHref = String(shortcut.meta.href ?? "");
+				if (nextHref !== String(currentMeta.href ?? "")) {
+					currentMeta.href = nextHref;
+					changed = true;
+				}
+				const nextDesc = String(shortcut.meta.description ?? "");
+				if (nextDesc !== String(currentMeta.description ?? "")) {
+					currentMeta.description = nextDesc;
+					changed = true;
+				}
+			} else if (shortcut.meta && !currentMeta) {
+				ensureSpeedDialMeta(shortcut.id, shortcut.meta);
+				changed = true;
+			}
+		}
+	});
+	if (changed) {
+		persistSpeedDialItems();
+		persistSpeedDialMeta();
+	}
+};
+ensureExternalShortcuts();
+/**
+* WHY: Explorer / Settings / Markdown live on the Core Rail only.
+* Strip them from the curated grid and persist — including after OPFS hydrate,
+* which otherwise re-injects the legacy OPFS snapshot.
+*/
+var stripCoreRailTilesFromGrid = (opts) => {
+	try {
+		let changed = false;
+		const matches = (speedDialItems || []).filter((item) => isCoreRailGridTile(item, getSpeedDialMeta(item?.id)));
+		for (const item of matches) {
+			const idx = speedDialItems.findIndex((it) => it?.id === item.id);
+			if (idx >= 0) {
+				speedDialItems.splice(idx, 1);
+				removeSpeedDialMeta(item.id);
+				changed = true;
+			}
+		}
+		if (changed) {
+			if (opts?.markDirty !== false) markUserEditedBeforeHydrate();
+			persistSpeedDialItems();
+			persistSpeedDialMeta();
+		}
+		return changed;
+	} catch (e) {
+		console.warn("[speed-dial] core rail strip failed", e);
+		return false;
+	}
+};
+/** Boot: remove legacy Core Rail tiles from LS-backed grid before/around hydrate. */
+var ensureCoreViewShortcuts = () => {
+	stripCoreRailTilesFromGrid({ markDirty: true });
+};
+ensureCoreViewShortcuts();
+try {
+	if (typeof chrome !== "undefined" && !!chrome?.storage?.local) {
+		const rewrite = () => {
+			stripCoreRailTilesFromGrid({ markDirty: true });
+			persistSpeedDialItems();
+			persistSpeedDialMeta();
+		};
+		queueMicrotask(rewrite);
+		setTimeout(rewrite, 0);
+		setTimeout(rewrite, 300);
+		setTimeout(rewrite, 1200);
+	}
+} catch {}
+/**
+* WHY: Past merges left both legacy `settings` and `shortcut-settings` (same view) on disk.
+* Keep the preferred default id when present; otherwise keep the first match.
+*/
+var dedupeCoreOpenViewTiles = () => {
+	let changed = false;
+	const core = DEFAULT_SPEED_DIAL_DATA_ALL.filter((entry) => entry.action === "open-view" && isSpeedDialViewAllowed(entry.meta, entry.id));
+	const getItemLabel = (item) => {
+		const raw = item?.label;
+		if (raw && typeof raw === "object" && "value" in raw) return String(raw.value || "").trim().toLowerCase();
+		return String(raw || "").trim().toLowerCase();
+	};
+	for (const shortcut of core) {
+		const view = String(shortcut.meta?.view || "").trim().toLowerCase();
+		const label = String(shortcut.label || "").trim().toLowerCase();
+		if (!view && !label) continue;
+		const matches = (speedDialItems || []).filter((item) => {
+			const metaView = String(getSpeedDialMeta(item.id)?.view || "").trim().toLowerCase();
+			if (String(getSpeedDialMeta(item.id)?.action || item?.action || "open-view").toLowerCase() !== "open-view") return false;
+			if (view && metaView === view) return true;
+			return Boolean(label) && getItemLabel(item) === label;
+		});
+		if (matches.length <= 1) continue;
+		const keep = matches.find((item) => item.id === shortcut.id) || matches[0];
+		for (const item of matches) {
+			if (item === keep) continue;
+			const idx = speedDialItems.findIndex((row) => row?.id === item.id);
+			if (idx >= 0) {
+				speedDialItems.splice(idx, 1);
+				changed = true;
+			}
+		}
+	}
+	if (changed) {
+		persistSpeedDialItems();
+		persistSpeedDialMeta();
+	}
+};
+dedupeCoreOpenViewTiles();
+/** Router mount prefix (`/cwsp`, `/markdown`, …) when present on `<html>`. */
+var getSpeedDialRouterBase = () => {
+	try {
+		return String(document.documentElement?.dataset?.cwspRouterBase || "").trim().replace(/\/+$/, "");
+	} catch {
+		return "";
+	}
+};
+/**
+* Entry URL for a view deep link: `/settings?shell=environment[&native=1]&view=settings`
+* WHY: address-bar readable path; environment keeps `/${view}` (not root `/?view=`).
+* INVARIANT: open with this path; `preserveNativeDeepLink` must not strip it to `/`.
+*/
+var buildSpeedDialViewPathHref = (viewId, absolute = false, opts) => {
+	const id = String(viewId || "").trim().replace(/^#/, "").replace(/^\/+/, "").split(/[/?#]/)[0].toLowerCase();
+	if (!id) return "";
+	const useNative = opts?.native === true;
+	const path = `${getSpeedDialRouterBase().replace(/\/+$/, "") || ""}/${id}`.replace(/\/{2,}/g, "/") || `/${id}`;
+	const normalized = path.startsWith("/") ? path : `/${path}`;
+	const withQuery = useNative ? `${normalized}?shell=environment&native=1&view=${encodeURIComponent(id)}` : `${normalized}?shell=environment&view=${encodeURIComponent(id)}`;
+	if (!absolute || typeof location === "undefined") return withQuery;
+	try {
+		const url = new URL(location.href);
+		url.pathname = normalized;
+		url.hash = "";
+		url.search = "";
+		url.searchParams.set("shell", "environment");
+		url.searchParams.set("view", id);
+		if (useNative) url.searchParams.set("native", "1");
+		else url.searchParams.delete("native");
+		return url.href;
+	} catch {
+		return withQuery;
+	}
+};
+/**
+* Open `href` in a **new browser tab** without navigating the current tab.
+* WHY: `window.open(url, "_blank", "noopener")` returns `null` by spec even when the
+* window opened — our old `if (!opened) location.assign(href)` hijacked the desktop.
+* INVARIANT: never `location.assign` / `location.href =` from native/open-link paths.
+*/
+var openInNewBrowserTab = (href) => {
+	const url = String(href || "").trim();
+	if (!url || typeof window === "undefined") return false;
+	try {
+		let target = "_blank";
+		try {
+			if (typeof window.fence === "object") target = "_unfencedTop";
+		} catch {
+			target = "_blank";
+		}
+		window.open(url, target, "noreferrer,noopener");
+		return true;
+	} catch (e) {
+		console.warn("[home-view] openInNewBrowserTab failed", e);
+		return false;
+	}
+};
+/** @deprecated alias — prefer {@link openInNewBrowserTab} or {@link openInDetachedBrowserWindow}. */
+var openInNewBrowserWindow = openInNewBrowserTab;
+/** True when this browsing context is an installed-like PWA (WCO / standalone / …). */
+var isInstalledPwaDisplayContext = () => {
+	if (typeof globalThis === "undefined") return false;
+	try {
+		if (globalThis.navigator?.windowControlsOverlay?.visible) return true;
+	} catch {}
+	if (typeof globalThis.matchMedia !== "function") return false;
+	try {
+		for (const q of [
+			"(display-mode: window-controls-overlay)",
+			"(display-mode: standalone)",
+			"(display-mode: fullscreen)",
+			"(display-mode: minimal-ui)"
+		]) if (globalThis.matchMedia(q).matches) return true;
+	} catch {}
+	return false;
+};
+/**
+* Open a **detached window** for native-window mode (never a browser tab).
+*
+* INVARIANT:
+* - Do **not** use bare `window.open(url, "_blank")` — Chromium/Edge treat that as a **tab**.
+* - Do **not** fall back to {@link openInNewBrowserTab} (that is the `new-tab` mode).
+* - Do **not** request `menubar`/`toolbar`/`location` — those force full browser chrome
+*   and break PWA/WCO when the window is captured as an app window.
+* - Use a unique window name + `popup=yes,width,height` so each Native open is a
+*   separate window. From an installed PWA, size features still open another app window.
+*
+* Never hijack the opener via `location.assign`.
+*/
+var windowOpenThrottled = Date.now();
+var openInDetachedBrowserWindow = (href) => {
+	const url = String(href || "").trim();
+	if (!url || typeof window === "undefined") return false;
+	try {
+		const name = `cwsp-native-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+		const opened = Date.now() - windowOpenThrottled > 200 ? window.open(url, name, "popup,menubar=false,toolbar=false,location=false,width=1280,height=800") : null;
+		windowOpenThrottled = Date.now();
+		if (opened) {
+			try {
+				opened.opener = null;
+			} catch {}
+			return true;
+		}
+	} catch (e) {
+		console.warn("[home-view] openInDetachedBrowserWindow failed", e);
+	}
+	return false;
+};
+/** True when href is (or resolves to) a same-origin app view path / bare view token. */
+var parseSpeedDialViewFromHref = (raw) => {
+	const input = String(raw || "").trim();
+	if (!input || /^(mailto:|blob:|data:)/i.test(input)) return "";
+	try {
+		if (/^https?:\/\//i.test(input)) {
+			const u = new URL(input);
+			if (typeof location !== "undefined" && u.origin !== location.origin) return "";
+			const id = (u.pathname.replace(/\/+$/, "").split("/").filter(Boolean).pop() || "").toLowerCase();
+			if (!id || id === "home") return "";
+			return id === "markdown" ? "viewer" : id;
+		}
+	} catch {
+		return "";
+	}
+	if (input.startsWith("/")) {
+		const seg = input.replace(/^\//, "").split(/[/?#]/)[0].toLowerCase();
+		if (!seg || seg === "home") return "";
+		return seg === "markdown" ? "viewer" : seg;
+	}
+	const token = input.replace(/^#/, "").split(/[/?#]/)[0].trim().toLowerCase();
+	if (!token || token === "home" || /[.:]/.test(token)) return "";
+	return token === "markdown" ? "viewer" : token;
+};
+/**
+* Prefer explicit `meta.href`; for view tiles synthesize path deep links
+* (`/settings`, `/workcenter`, …) for Open link → new tab / native window.
+*/
+var resolveSpeedDialItemHref = (item) => {
+	if (!item?.id) return "";
+	const meta = getSpeedDialMeta(item.id);
+	const explicit = String(meta?.href || item?.href || "").trim();
+	if (explicit) return explicit;
+	const view = String(meta?.view || "").trim().replace(/^#/, "");
+	if (!view) return "";
+	return buildSpeedDialViewPathHref(view, true);
+};
+var findSpeedDialItem = (id) => {
+	if (!id) return null;
+	return speedDialItems?.find?.((item) => item?.id === id) || null;
+};
+var createEmptySpeedDialItem = (cell = observe([0, 0])) => {
+	const action = getDefaultSpeedDialAction();
+	const item = createStatefulItem({
+		id: generateItemId(),
+		cell,
+		icon: "sparkle",
+		label: "New shortcut",
+		action
+	});
+	ensureSpeedDialMeta(item.id, {
+		action,
+		href: "",
+		description: "",
+		shape: getDefaultTileShape(),
+		iconDisplay: "glyph",
+		iconScale: "compact",
+		openLinkTarget: getDefaultOpenLinkTarget()
+	});
+	return item;
+};
+var addSpeedDialItem = (item) => {
+	markUserEditedBeforeHydrate();
+	speedDialItems?.push?.(observe(item));
+	syncMetaActionFromItem(item);
+	persistSpeedDialItems();
+	persistSpeedDialMeta();
+	emitSpeedDialMutation("add", item.id);
+	return item;
+};
+/** JSON drag envelope for AppMenu → SpeedDial (launcher design spec). */
+function buildLauncherAppDragEnvelope(app) {
+	return JSON.stringify({
+		state: {
+			icon: "device-mobile",
+			label: app.label
+		},
+		desc: {
+			action: "launch-app",
+			meta: {
+				packageName: app.packageName,
+				componentName: app.componentName,
+				entityType: "android-app",
+				iconCacheKey: app.iconCacheKey || app.packageName
+			}
+		}
+	});
+}
+/** First unoccupied logical origin that fits `span`. */
+function findNextFreeSpeedDialCell(span = [1, 1]) {
+	const columns = Math.max(1, Math.min(16, Number(gridLayoutState?.columns) || 4));
+	const rows = Math.max(1, Math.min(16, Number(gridLayoutState?.rows) || 8));
+	const occupied = /* @__PURE__ */ new Set();
+	for (const item of speedDialItems || []) {
+		if (!item?.id) continue;
+		markOccupiedSpan(occupied, [Number(item?.cell?.[0]) || 0, Number(item?.cell?.[1]) || 0], getItemSpan(item.id));
+	}
+	return findNearestFreeRect([0, 0], span, occupied, [columns, rows]);
+}
+/** First free cell inside a packed workspace snapshot (Side B/C while A is live). */
+function findNextFreeCellInSnapshot(snapshot, prefer, span = [1, 1]) {
+	const columns = Math.max(1, Math.min(16, Number(gridLayoutState?.columns) || 4));
+	const rows = Math.max(1, Math.min(16, Number(gridLayoutState?.rows) || 8));
+	const occupied = /* @__PURE__ */ new Set();
+	for (const raw of snapshot?.items || []) {
+		if (!raw) continue;
+		markOccupiedSpan(occupied, [Number(raw.cell?.[0]) || 0, Number(raw.cell?.[1]) || 0], normalizeSpan([Number(raw.meta?.spanCols) || 1, Number(raw.meta?.spanRows) || 1]));
+	}
+	return findNearestFreeRect(prefer || [0, 0], span, occupied, [columns, rows]);
+}
+var querySpeedDialGridElement = () => document.querySelector("#home .speed-dial-grid[data-grid-layer=\"icons\"]") || document.querySelector("#home .speed-dial-grid:last-of-type") || document.querySelector("#home .speed-dial-grid");
+var readSpeedDialGridLayout = () => [Math.max(1, Math.min(16, Number(gridLayoutState?.columns) || 4)), Math.max(1, Math.min(16, Number(gridLayoutState?.rows) || 8))];
+/** Map viewport coordinates to a logical SpeedDial cell (null when grid is absent). */
+function resolveSpeedDialCellFromClientPoint(clientX, clientY) {
+	const grid = querySpeedDialGridElement();
+	if (!grid) return null;
+	const rect = grid.getBoundingClientRect();
+	const styles = getComputedStyle(grid);
+	const paddingLeft = Number.parseFloat(styles.paddingLeft) || 0;
+	const paddingRight = Number.parseFloat(styles.paddingRight) || 0;
+	const paddingTop = Number.parseFloat(styles.paddingTop) || 0;
+	const paddingBottom = Number.parseFloat(styles.paddingBottom) || 0;
+	const size = [Math.max(1, rect.width - paddingLeft - paddingRight), Math.max(1, rect.height - paddingTop - paddingBottom)];
+	const point = [clientX - rect.left - paddingLeft, clientY - rect.top - paddingTop];
+	const root = grid.closest(".speed-dial-root") || document.getElementById("home");
+	const orientRaw = root?.getAttribute?.("data-orient") ?? root?.dataset?.orient ?? "0";
+	return pointToLogicalCell(point, size, readSpeedDialGridLayout(), normalizeOrient(orientRaw));
+}
+function isClientPointOverSpeedDial(clientX, clientY) {
+	return !!document.elementFromPoint(clientX, clientY)?.closest?.("#home, .speed-dial-root");
+}
+/** Create a persisted `launch-app` tile from an AppMenu entry. */
+function pinLauncherAppEntry(app, cell) {
+	const targetCell = cell ?? findNextFreeSpeedDialCell();
+	const item = parseSpeedDialItemFromJSON(buildLauncherAppDragEnvelope(app), targetCell);
+	if (!item) return null;
+	addSpeedDialItem(item);
+	return item;
+}
+var upsertSpeedDialItem = (item) => {
+	markUserEditedBeforeHydrate();
+	const existingIndex = speedDialItems?.findIndex?.((entry) => entry?.id === item?.id) ?? -1;
+	if (existingIndex === -1) speedDialItems?.push?.(observe(item));
+	else if (speedDialItems[existingIndex] !== item) speedDialItems.splice(existingIndex, 1, observe(item));
+	syncMetaActionFromItem(item);
+	persistSpeedDialItems();
+	persistSpeedDialMeta();
+	emitSpeedDialMutation("update", item.id);
+	return item;
+};
+var removeSpeedDialItem = (id) => {
+	markUserEditedBeforeHydrate();
+	const index = speedDialItems?.findIndex?.((entry) => entry?.id === id) ?? -1;
+	if (index === -1) return false;
+	const meta = getSpeedDialMeta(id);
+	const dismissPkg = String(meta?.packageName || "").trim();
+	const dismissSid = String(meta?.shortcutId || "").trim();
+	const dismissAction = String(meta?.action || speedDialItems[index]?.action || "").trim();
+	speedDialItems.splice(index, 1);
+	if (!speedDialItems.length) markIntentionalEmptyGrid();
+	if ((dismissAction === "launch-shortcut" || Boolean(dismissSid)) && dismissPkg && dismissSid) rememberDismissedAndroidShortcut(dismissPkg, dismissSid);
+	removeSpeedDialMeta(id);
+	persistSpeedDialItems();
+	emitSpeedDialMutation("remove", id);
+	return true;
+};
+/** WHY: cell drag in SpeedDial calls `persistSpeedDialItems` directly — mark the hydrate race. */
+var markSpeedDialUserEditBeforeHydrate = markUserEditedBeforeHydrate;
+var snapshotSpeedDialItem = (item) => {
+	const meta = getSpeedDialMeta(item.id);
+	const resolvedAction = meta?.action || item.action;
+	const metaSnapshot = packSpeedDialMetaPlain(meta ?? {});
+	if (!metaSnapshot.action) metaSnapshot.action = resolvedAction;
+	return {
+		state: {
+			id: item.id,
+			cell: [Number(item.cell?.[0]) || 0, Number(item.cell?.[1]) || 0],
+			icon: unwrapRef(item.icon, ""),
+			label: unwrapRef(item.label, "")
+		},
+		desc: {
+			action: resolvedAction,
+			meta: metaSnapshot
+		}
+	};
+};
+/** Clone a tile without keeping the source id (paste / Side B/C must not collide). */
+var cloneSpeedDialItemPacked = (item, cell) => {
+	const snap = snapshotSpeedDialItem(item);
+	const meta = packSpeedDialMetaPlain(snap.desc?.meta || {});
+	const action = String(snap.desc?.action || item.action || "open-view");
+	meta.action = action;
+	const nextId = generateItemId();
+	const resolved = resolveSpeedDialIconUrl(item.id, String(meta.iconUrl || ""));
+	if (isInlineIconUrl(resolved)) meta.iconUrl = persistSpeedDialIconBlob(nextId, resolved);
+	return {
+		id: nextId,
+		cell: cell ? [Number(cell[0]) || 0, Number(cell[1]) || 0] : [Number(item.cell?.[0]) || 0, Number(item.cell?.[1]) || 0],
+		icon: String(snap.state?.icon || unwrapRef(item.icon, "sparkle") || "sparkle"),
+		label: String(snap.state?.label || unwrapRef(item.label, "Shortcut") || "Shortcut"),
+		action,
+		meta
+	};
+};
+var addClonedSpeedDialItem = (source, cell) => {
+	const packed = cloneSpeedDialItemPacked(source, cell);
+	const item = createStatefulItem(packed);
+	ensureSpeedDialMeta(item.id, {
+		action: packed.action,
+		...packed.meta || {}
+	});
+	if (!cell) {
+		const free = findNextFreeSpeedDialCell(getItemSpan(item.id));
+		item.cell[0] = free[0];
+		item.cell[1] = free[1];
+	}
+	addSpeedDialItem(item);
+	return item;
+};
+var wallpaperState = makeUIState("cw::workspace::wallpaper", () => observe({
+	src: "/assets/wallpaper.jpg",
+	opacity: 1,
+	blur: 0
+}), (raw) => observe(raw || {
+	src: "/assets/wallpaper.jpg",
+	opacity: 1,
+	blur: 0
+}), (state) => ({ ...state }));
+var persistWallpaper = () => wallpaperState?.$save?.();
+var ICON_SCALE_VALUES = {
+	compact: "0.78",
+	fit: "1",
+	fill: "1.28",
+	zoom: "1.5",
+	max: "1.75"
+};
+var ICON_BITMAP_SCALE_OPTIONS = [
+	{
+		value: "auto",
+		label: "Auto (workspace default)"
+	},
+	{
+		value: "compact",
+		label: "Compact (0.78)"
+	},
+	{
+		value: "fit",
+		label: "Fit (1.0 — no zoom)"
+	},
+	{
+		value: "fill",
+		label: "Fill (1.28 — adaptive)"
+	},
+	{
+		value: "zoom",
+		label: "Zoom (1.5)"
+	},
+	{
+		value: "max",
+		label: "Max (1.75)"
+	}
+];
+function normalizeIconBitmapScale(raw, fallback = "fill") {
+	const v = String(raw || "").trim().toLowerCase();
+	if (v === "compact" || v === "small" || v === "0.78") return "compact";
+	if (v === "fit" || v === "1" || v === "contain") return "fit";
+	if (v === "fill" || v === "adaptive" || v === "1.28") return "fill";
+	if (v === "zoom" || v === "1.5") return "zoom";
+	if (v === "max" || v === "large" || v === "1.75") return "max";
+	return fallback;
+}
+/** Empty / auto → inherit workspace; otherwise a concrete scale. */
+function normalizeItemIconBitmapScale(raw) {
+	const v = String(raw || "").trim().toLowerCase();
+	if (!v || v === "auto" || v === "default" || v === "inherit") return "auto";
+	return normalizeIconBitmapScale(v, "fill");
+}
+function iconBitmapScaleCss(raw) {
+	return ICON_SCALE_VALUES[normalizeIconBitmapScale(raw)];
+}
+function packIconBitmapScaleCss(raw) {
+	return iconBitmapScaleCss(raw);
+}
+/** Resolve item (`auto`) → concrete workspace/id scale factor string. */
+function resolveIconScaleFactor(rawItemScale) {
+	const item = normalizeItemIconBitmapScale(rawItemScale);
+	return ICON_SCALE_VALUES[item === "auto" ? normalizeIconBitmapScale(gridLayoutState?.iconScale, "fill") : item];
+}
+/**
+* Set scale CSS vars on the plate AND inline `transform` on painted icon nodes.
+* WHY: Cap WebView often ignores `transform: scale(var(--x))` — inline scale is reliable.
+*/
+function applyItemIconScaleToElement(el, raw) {
+	if (!el) return;
+	const item = normalizeItemIconBitmapScale(raw);
+	const factor = resolveIconScaleFactor(raw);
+	el.dataset.iconScale = item === "auto" ? "auto" : item;
+	el.style.setProperty("--sd-item-icon-scale", factor);
+	el.style.setProperty("--sd-item-pack-icon-scale", factor);
+}
+/** Inline transform on current icon children (call again after replacing img/ui-icon). */
+function applyIconScaleToPaintedNodes(el, factor) {
+	if (!el) return;
+	const t = `scale(${String(factor || el.style.getPropertyValue("--sd-item-icon-scale") || "").trim() || "1.28"})`;
+	el.querySelectorAll("img.ui-ws-item-icon-img, img[data-launcher-icon], img[data-bookmark-favicon], ui-icon, .ui-ws-item-icon-mask").forEach((node) => {
+		node.style.setProperty("transform", t, "important");
+		node.style.setProperty("transform-origin", "center center", "important");
+	});
+}
+/**
+* Native decode size so CSS zoom (scale × DPR) does not upscale a tiny bitmap.
+* WHY: tiles used to always fetch 96px then scale(1.5–1.75) → pixelation on retina.
+*/
+function tileIconFetchSize(rawItemScale, layoutCssPx = 96) {
+	const factor = Number(resolveIconScaleFactor(rawItemScale)) || 1.28;
+	let dpr = 1;
+	try {
+		dpr = Math.min(3, Math.max(1, Number(globalThis.devicePixelRatio) || 1));
+	} catch {
+		dpr = 1;
+	}
+	const base = Math.max(64, Math.round(Number(layoutCssPx) || 96));
+	return Math.max(128, Math.min(512, Math.round(base * factor * dpr)));
+}
+var GRID_LAYOUT_KEY = "cw::workspace::grid-layout";
+var WORKSPACE_GRID_EVENT = "cwsp:workspace-grid";
+var TILE_SHAPES = /* @__PURE__ */ new Set([
+	"square",
+	"squircle",
+	"circle",
+	"rounded",
+	"hexagon",
+	"diamond",
+	"wavy",
+	"shapeless"
+]);
+var normalizeTileShape = (raw, fallback = "squircle") => {
+	const v = String(raw || "").trim().toLowerCase();
+	return TILE_SHAPES.has(v) ? v : fallback;
+};
+var gridLayoutState = makeUIState(GRID_LAYOUT_KEY, () => observe({
+	columns: 4,
+	rows: 8,
+	shape: "squircle",
+	defaultAction: "open-link",
+	iconScale: "fill"
+}), (raw) => observe(raw || {
+	columns: 4,
+	rows: 8,
+	shape: "squircle",
+	defaultAction: "open-link",
+	iconScale: "fill"
+}), (state) => ({ ...state }));
+var persistGridLayout = () => gridLayoutState?.$save?.();
+function getDefaultTileShape() {
+	return normalizeTileShape(gridLayoutState?.shape, "squircle");
+}
+function setDefaultTileShape(shape) {
+	gridLayoutState.shape = normalizeTileShape(shape, "squircle");
+	persistGridLayout();
+}
+function normalizeDefaultAction(raw, fallback = "open-link") {
+	const v = String(raw || "").trim().toLowerCase();
+	if (v === "open-view" || v === "view") return "open-view";
+	if (v === "open-link" || v === "link") return "open-link";
+	return fallback;
+}
+/** Default action id for newly created shortcuts (Settings → Workspace). */
+function getDefaultSpeedDialAction() {
+	return normalizeDefaultAction(gridLayoutState?.defaultAction, "open-link");
+}
+function setDefaultSpeedDialAction(action) {
+	gridLayoutState.defaultAction = normalizeDefaultAction(action, "open-link");
+	persistGridLayout();
+}
+function getIconBitmapScale() {
+	return normalizeIconBitmapScale(gridLayoutState?.iconScale, "fill");
+}
+function setIconBitmapScale(scale) {
+	gridLayoutState.iconScale = normalizeIconBitmapScale(scale, "fill");
+	persistGridLayout();
+	applyIconBitmapScaleCss(gridLayoutState.iconScale);
+}
+function applyIconBitmapScaleCss(scale) {
+	if (typeof document === "undefined") return;
+	const id = normalizeIconBitmapScale(scale ?? gridLayoutState?.iconScale, "fill");
+	const factor = iconBitmapScaleCss(id);
+	document.documentElement.dataset.iconScale = id;
+	document.documentElement.style.setProperty("--sd-launcher-icon-scale", factor);
+	document.documentElement.style.setProperty("--sd-pack-icon-scale", factor);
+}
+var hasStoredValue = (key) => {
+	try {
+		return typeof localStorage !== "undefined" && localStorage.getItem(key) !== null;
+	} catch {
+		return false;
+	}
+};
+/**
+* Import the former orient-layer storage once. The renderer now has one state
+* model, but old users must not lose shortcuts when the new entrypoint mounts.
+*/
+var migrateLegacyDesktopState = () => {
+	const legacy = loadDesktopRaw();
+	const decoded = legacy ? decodeDesktopState(legacy) : null;
+	if (!decoded?.items?.length) return;
+	if (hasStoredValue(STORAGE_KEY$3)) return;
+	const columns = Math.max(1, Math.min(32, Number(decoded.columns) || 4));
+	const rows = Math.max(1, Math.min(32, Number(decoded.rows) || 8));
+	const nextItems = [];
+	speedDialItems.splice(0, speedDialItems.length);
+	speedDialMeta.clear();
+	for (const raw of decoded.items) {
+		const action = raw?.action === "open-link" ? "open-link" : "open-view";
+		const item = createStatefulItem({
+			id: String(raw?.id || generateItemId()),
+			cell: observe([Number(raw?.cell?.[0]) || 0, Number(raw?.cell?.[1]) || 0]),
+			icon: String(raw?.icon || (action === "open-link" ? "link" : "sparkle")),
+			label: String(raw?.label || "Shortcut"),
+			action
+		});
+		const meta = {
+			action,
+			view: action === "open-view" ? String(raw?.viewId || "") : "",
+			href: action === "open-link" ? String(raw?.href || "") : "",
+			description: String(raw?.description || ""),
+			shape: String(raw?.shape || "squircle"),
+			iconSrc: String(raw?.iconSrc || "")
+		};
+		speedDialItems.push(item);
+		ensureSpeedDialMeta(item.id, meta);
+		nextItems.push(item);
+	}
+	if (!nextItems.length) return;
+	gridLayoutState.columns = columns;
+	gridLayoutState.rows = rows;
+	gridLayoutState.shape = "square";
+	persistSpeedDialItems();
+	persistSpeedDialMeta();
+	persistGridLayout();
+};
+migrateLegacyDesktopState();
+var applyGridSettings = (settings) => {
+	const gridConfig = settings?.grid || gridLayoutState;
+	const columns = Math.max(1, Math.min(16, Number(gridConfig?.columns) || gridLayoutState.columns || 4));
+	const rows = Math.max(1, Math.min(16, Number(gridConfig?.rows) || gridLayoutState.rows || 8));
+	const shape = normalizeTileShape(gridConfig?.shape ?? gridLayoutState.shape, "squircle");
+	const defaultAction = normalizeDefaultAction(gridConfig?.defaultAction ?? gridLayoutState.defaultAction, "open-link");
+	const iconScale = normalizeIconBitmapScale(gridConfig?.iconScale ?? gridLayoutState.iconScale, "fill");
+	if (relocateItemsToLayout(speedDialItems, [columns, rows], (item) => getItemSpan(item.id))) persistSpeedDialItems();
+	if (gridLayoutState) {
+		gridLayoutState.columns = columns;
+		gridLayoutState.rows = rows;
+		gridLayoutState.shape = shape;
+		gridLayoutState.defaultAction = defaultAction;
+		gridLayoutState.iconScale = iconScale;
+		persistGridLayout();
+	}
+	const openTarget = gridConfig?.defaultOpenLinkTarget;
+	if (openTarget != null && String(openTarget).trim()) setDefaultOpenLinkTarget(normalizeOpenLinkTarget(openTarget));
+	if (typeof document === "undefined") return;
+	document.documentElement.dataset.gridColumns = String(columns);
+	document.documentElement.dataset.gridRows = String(rows);
+	document.documentElement.dataset.gridShape = shape;
+	applyIconBitmapScaleCss(iconScale);
+	try {
+		document.querySelectorAll(".speed-dial-grid [data-speed-dial-item][data-layer='icons']").forEach((tile) => {
+			const id = tile.getAttribute("data-id") || "";
+			const meta = id ? getSpeedDialMeta(id) : null;
+			applyItemIconScaleToElement(tile, defaultIconScaleForDisplay(tile.getAttribute("data-icon-display"), meta?.iconScale));
+			applyIconScaleToPaintedNodes(tile);
+			tile.dispatchEvent(new CustomEvent("cwsp:icon-bitmap-refresh"));
+		});
+	} catch {}
+};
+if (typeof window !== "undefined") window.addEventListener(WORKSPACE_GRID_EVENT, (ev) => {
+	const detail = ev.detail;
+	if (!detail) return;
+	if (detail.query && typeof detail.receive === "function") {
+		detail.receive({
+			columns: gridLayoutState.columns,
+			rows: gridLayoutState.rows,
+			shape: gridLayoutState.shape,
+			defaultAction: getDefaultSpeedDialAction(),
+			iconScale: getIconBitmapScale(),
+			defaultOpenLinkTarget: getDefaultOpenLinkTarget()
+		});
+		return;
+	}
+	applyGridSettings({ grid: detail });
+	detail.ack?.();
+});
+if (typeof globalThis !== "undefined" && typeof document !== "undefined") {
+	const run = () => applyGridSettings();
+	if (typeof requestAnimationFrame === "function") requestAnimationFrame(run);
+	else queueMicrotask(run);
+}
+var looksLikeJsonObject = (raw) => {
+	const t = String(raw || "").trim();
+	return t.startsWith("{") && t.endsWith("}") || t.startsWith("[") && t.endsWith("]");
+};
+var SPEED_DIAL_CLIP_KIND = "cwsp.speed-dial.shortcut";
+/** Pretty or compact shortcut JSON — not a single `{` line from stringify(..., 2). */
+var looksLikeSpeedDialShortcutJson = (raw) => {
+	const t = String(raw || "").trim();
+	if (!t.startsWith("{") || !t.endsWith("}")) return false;
+	return /"kind"\s*:\s*"cwsp\.speed-dial\.shortcut"/.test(t) || /"state"\s*:/.test(t) || /"desc"\s*:/.test(t);
+};
+/**
+* Explorer virtual paths (`/bookmarks/…`, `/user/…`, `/assets/…`).
+* WHY: drag from Explorer used to put these in `text/plain`; they are not JSON.
+*/
+var isSpeedDialVirtualPath = (raw) => {
+	const p = String(raw || "").trim();
+	if (!p.startsWith("/") || p.includes("://") || /\s/.test(p)) return false;
+	return p === "/" || p === "/bookmarks" || p.startsWith("/bookmarks/") || p === "/user" || p.startsWith("/user/") || p === "/assets" || p.startsWith("/assets/");
+};
+var parseSpeedDialItemFromVirtualPath = (pathText, suggestedCell, extras) => {
+	const path = String(pathText || "").trim();
+	if (!isSpeedDialVirtualPath(path)) return null;
+	const href = String(extras?.href || "").trim();
+	const isUrl = /^https?:\/\//i.test(href);
+	const isDir = path.endsWith("/") || extras?.kind === "directory";
+	const labelFromPath = path.split("/").filter(Boolean).pop() || path;
+	const item = createStatefulItem({
+		id: generateItemId(),
+		cell: suggestedCell || [0, 0],
+		icon: isUrl ? "link" : isDir ? "folder" : "file",
+		label: String(extras?.label || "").trim() || labelFromPath,
+		action: isUrl ? "open-link" : "open-path"
+	});
+	const meta = {
+		action: isUrl ? "open-link" : "open-path",
+		path,
+		...isUrl ? { href } : {},
+		kind: extras?.kind || (isDir ? "directory" : "file"),
+		iconDisplay: "glyph",
+		iconScale: "compact"
+	};
+	ensureSpeedDialMeta(item.id, meta);
+	return item;
+};
+var parseSpeedDialItemFromJSON = (jsonText, suggestedCell) => {
+	const raw = String(jsonText || "").trim();
+	if (!raw) return null;
+	if (isSpeedDialVirtualPath(raw)) return parseSpeedDialItemFromVirtualPath(raw, suggestedCell);
+	if (!looksLikeJsonObject(raw)) return null;
+	try {
+		const parsedRaw = JSON.parse(raw);
+		if (!parsedRaw || typeof parsedRaw !== "object") return null;
+		const parsed = parsedRaw.kind === "cwsp.speed-dial.shortcut" && parsedRaw.snapshot ? parsedRaw.snapshot : parsedRaw;
+		const state = parsed.state || parsed;
+		const desc = parsed.desc || parsed.meta || {};
+		if (!state || typeof state !== "object") return null;
+		const cellValue = suggestedCell ? [Number(suggestedCell[0]) || 0, Number(suggestedCell[1]) || 0] : state.cell && Array.isArray(state.cell) && state.cell.length >= 2 ? [Number(state.cell[0]) || 0, Number(state.cell[1]) || 0] : [0, 0];
+		const href = String(desc.href || desc.meta?.href || state.href || "").trim();
+		const path = String(desc.path || desc.meta?.path || state.path || "").trim();
+		const action = desc.action || state.action || (href ? "open-link" : path ? "open-path" : "open-view");
+		const item = createStatefulItem({
+			id: generateItemId(),
+			cell: cellValue,
+			icon: state.icon || desc.icon || (action === "launch-app" ? "device-mobile" : href ? "link" : path ? "folder" : "sparkle"),
+			label: state.label || desc.label || "Shortcut",
+			action
+		});
+		const meta = {
+			action,
+			...desc.meta || desc || {},
+			...state.meta || {},
+			...href ? { href } : {},
+			...path ? { path } : {}
+		};
+		meta.action = action;
+		ensureSpeedDialMeta(item.id, meta);
+		return item;
+	} catch (e) {
+		console.warn("Failed to parse JSON for speed dial item:", e);
+		return null;
+	}
+};
+/** Digits-only length for phone heuristics (E.164-ish). */
+var PHONE_DIGIT_MIN = 7;
+var PHONE_DIGIT_MAX = 15;
+var digitsOnly = (s) => String(s || "").replace(/\D+/g, "");
+var looksLikePhoneNumber = (raw) => {
+	const t = String(raw || "").trim();
+	if (!t || /\s{3,}/.test(t)) return false;
+	if (/^tel:/i.test(t)) return true;
+	if (/[@/]|https?:/i.test(t) && !/^tel:/i.test(t)) return false;
+	const digits = digitsOnly(t);
+	if (digits.length < PHONE_DIGIT_MIN || digits.length > PHONE_DIGIT_MAX) return false;
+	return /^[+]?[\d\s().-]{7,24}$/.test(t);
+};
+var looksLikeEmail = (raw) => {
+	const t = String(raw || "").trim();
+	if (!t) return false;
+	if (/^mailto:/i.test(t)) return true;
+	if (/\s/.test(t)) return false;
+	return /^[^\s@]+@[^\s@]+\.[^\s@]+$/i.test(t);
+};
+var looksLikeTelegramHandle = (raw) => {
+	const t = String(raw || "").trim();
+	if (!t) return false;
+	if (/^(tg:|telegram:)/i.test(t)) return true;
+	if (/^(https?:\/\/)?(t\.me|telegram\.me)\//i.test(t)) return true;
+	return /^@[a-zA-Z][a-zA-Z0-9_]{3,31}$/.test(t);
+};
+/**
+* Parse common calendar-ish fragments → Android calendar time URI when possible.
+* WHY: Cap openUri(ACTION_VIEW) on content://com.android.calendar/time/<ms> opens the day.
+*/
+var parseCalendarHref = (raw) => {
+	const t = String(raw || "").trim();
+	if (!t) return null;
+	if (/^content:\/\/com\.android\.calendar\//i.test(t)) return {
+		href: t,
+		label: "Calendar"
+	};
+	const iso = t.match(/^(\d{4}-\d{2}-\d{2})(?:[T\s](\d{1,2}:\d{2}(?::\d{2})?))?(?:Z|[+-]\d{2}:?\d{2})?$/);
+	if (iso) {
+		const d = /* @__PURE__ */ new Date(iso[2] ? `${iso[1]}T${iso[2]}` : `${iso[1]}T12:00:00`);
+		if (!Number.isNaN(d.getTime())) return {
+			href: `content://com.android.calendar/time/${d.getTime()}`,
+			label: iso[1]
+		};
+	}
+	const dmy = t.match(/^(\d{1,2})[./](\d{1,2})[./](\d{4})(?:\s+(\d{1,2}):(\d{2}))?$/);
+	if (dmy) {
+		const day = Number(dmy[1]);
+		const month = Number(dmy[2]) - 1;
+		const year = Number(dmy[3]);
+		const hh = dmy[4] != null ? Number(dmy[4]) : 12;
+		const mm = dmy[5] != null ? Number(dmy[5]) : 0;
+		const d = new Date(year, month, day, hh, mm, 0, 0);
+		if (!Number.isNaN(d.getTime()) && d.getFullYear() === year && d.getMonth() === month) return {
+			href: `content://com.android.calendar/time/${d.getTime()}`,
+			label: `${String(day).padStart(2, "0")}.${String(month + 1).padStart(2, "0")}.${year}`
+		};
+	}
+	return null;
+};
+var normalizeTelegramHref = (raw) => {
+	const t = String(raw || "").trim();
+	if (!t) return null;
+	if (/^tg:/i.test(t) || /^telegram:/i.test(t)) return {
+		href: t,
+		label: "Telegram"
+	};
+	const at = t.match(/^@([a-zA-Z][a-zA-Z0-9_]{3,31})$/);
+	if (at) return {
+		href: `https://t.me/${at[1]}`,
+		label: `@${at[1]}`
+	};
+	try {
+		const u = new URL(t.startsWith("http") ? t : `https://${t.replace(/^\/+/, "")}`);
+		if (/^(t\.me|telegram\.me)$/i.test(u.hostname.replace(/^www\./, ""))) {
+			const user = u.pathname.replace(/^\/+/, "").split("/")[0] || "Telegram";
+			return {
+				href: u.href,
+				label: user.startsWith("+") ? user : `@${user}`
+			};
+		}
+	} catch {}
+	return null;
+};
+/**
+* Build a Speed Dial open-link tile for tel / mailto / telegram / calendar / smart text.
+* Prefer this before plain http(s) parsing when the clipboard is not a web URL.
+*/
+var parseSpeedDialItemFromSmartText = (rawText, suggestedCell) => {
+	const text = String(rawText || "").trim();
+	if (!text) return null;
+	let candidate = text.split(/\r?\n/).map((l) => l.trim()).find((l) => l && !l.startsWith("#")) || text;
+	if (candidate.startsWith("<") && candidate.endsWith(">")) candidate = candidate.slice(1, -1).trim();
+	const makeLinkItem = (opts) => {
+		const item = createStatefulItem({
+			id: generateItemId(),
+			cell: suggestedCell || [0, 0],
+			icon: opts.icon,
+			label: opts.label,
+			action: "open-link"
+		});
+		ensureSpeedDialMeta(item.id, {
+			action: "open-link",
+			href: opts.href,
+			description: opts.description || opts.label,
+			iconDisplay: "glyph",
+			iconScale: "compact",
+			openLinkTarget: defaultOpenLinkTargetForHref(opts.href)
+		});
+		return item;
+	};
+	try {
+		const u = new URL(candidate);
+		const proto = (u.protocol || "").toLowerCase();
+		if (proto === "tel:") {
+			const num = decodeURIComponent(u.pathname || u.href.replace(/^tel:/i, "")).trim() || candidate;
+			return makeLinkItem({
+				href: `tel:${digitsOnly(num) ? num.startsWith("+") ? `+${digitsOnly(num)}` : digitsOnly(num) : num}`,
+				label: num,
+				icon: "phone",
+				description: `Call ${num}`
+			});
+		}
+		if (proto === "mailto:") {
+			const addr = decodeURIComponent(u.pathname || u.username || "").trim() || candidate.replace(/^mailto:/i, "");
+			return makeLinkItem({
+				href: `mailto:${addr}`,
+				label: addr,
+				icon: "at",
+				description: `Email ${addr}`
+			});
+		}
+		if (proto === "tg:" || proto === "telegram:") return makeLinkItem({
+			href: u.href,
+			label: "Telegram",
+			icon: "telegram-logo",
+			description: u.href
+		});
+		if (proto === "content:" && /calendar/i.test(u.href)) return makeLinkItem({
+			href: u.href,
+			label: "Calendar",
+			icon: "calendar",
+			description: u.href
+		});
+	} catch {}
+	if (looksLikePhoneNumber(candidate)) {
+		const digits = digitsOnly(candidate);
+		return makeLinkItem({
+			href: `tel:${candidate.trim().startsWith("+") ? `+${digits}` : digits}`,
+			label: candidate.trim(),
+			icon: "phone",
+			description: `Call ${candidate.trim()}`
+		});
+	}
+	if (looksLikeEmail(candidate)) {
+		const addr = candidate.replace(/^mailto:/i, "").trim();
+		return makeLinkItem({
+			href: `mailto:${addr}`,
+			label: addr,
+			icon: "at",
+			description: `Email ${addr}`
+		});
+	}
+	if (looksLikeTelegramHandle(candidate)) {
+		const tg = normalizeTelegramHref(candidate);
+		if (tg) return makeLinkItem({
+			href: tg.href,
+			label: tg.label,
+			icon: "telegram-logo",
+			description: `Telegram ${tg.label}`
+		});
+	}
+	const cal = parseCalendarHref(candidate);
+	if (cal) return makeLinkItem({
+		href: cal.href,
+		label: cal.label,
+		icon: "calendar",
+		description: `Calendar ${cal.label}`
+	});
+	return null;
+};
+var parseSpeedDialItemFromURL = (urlText, suggestedCell) => {
+	try {
+		const trimmed = urlText.trim();
+		if (!trimmed) return null;
+		const smart = parseSpeedDialItemFromSmartText(trimmed, suggestedCell);
+		if (smart) {
+			try {
+				const u = new URL(trimmed);
+				if (/^https?:$/i.test(u.protocol) && !looksLikeTelegramHandle(trimmed)) {} else return smart;
+			} catch {
+				return smart;
+			}
+			if (looksLikeTelegramHandle(trimmed)) return smart;
+		}
+		let url;
+		try {
+			url = new URL(trimmed);
+		} catch {
+			try {
+				url = new URL(trimmed, globalThis?.location?.href);
+			} catch {
+				return parseSpeedDialItemFromSmartText(trimmed, suggestedCell);
+			}
+		}
+		if (!/^https?:$/i.test(url.protocol)) return parseSpeedDialItemFromSmartText(trimmed, suggestedCell);
+		if (/^(t\.me|telegram\.me)$/i.test(url.hostname.replace(/^www\./, ""))) return parseSpeedDialItemFromSmartText(trimmed, suggestedCell);
+		const hostname = url.hostname || "";
+		const domain = hostname.replace(/^www\./, "");
+		const pathname = url.pathname || "";
+		const label = domain || url.host || "Link";
+		let favicon = "";
+		try {
+			if (hostname) favicon = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(hostname)}&sz=256`;
+		} catch {
+			favicon = "";
+		}
+		const item = createStatefulItem({
+			id: generateItemId(),
+			cell: suggestedCell || [0, 0],
+			icon: "link",
+			label,
+			action: "open-link"
+		});
+		const meta = {
+			action: "open-link",
+			href: url.href,
+			description: `${label}${pathname ? ` - ${pathname}` : ""}`,
+			iconDisplay: "glyph",
+			iconScale: "compact",
+			openLinkTarget: defaultOpenLinkTargetForHref(url.href),
+			...favicon ? { iconUrl: favicon } : {}
+		};
+		ensureSpeedDialMeta(item.id, meta);
+		return item;
+	} catch (e) {
+		console.warn("Failed to parse URL for speed dial item:", e);
+		return null;
+	}
+};
+/** Pin an http(s) / content / file / app shortcut from Android Share / pin-shortcut. */
+function pinSpeedDialLinkFromIntent(raw, cell) {
+	const targetCell = cell ?? findNextFreeSpeedDialCell();
+	const label = String(raw?.label || "").trim();
+	const pkg = String(raw?.packageName || "").trim();
+	const component = String(raw?.componentName || "").trim();
+	const intentUri = String(raw?.intentUri || "").trim();
+	const href = String(raw?.url || raw?.href || intentUri || "").trim();
+	const actionHint = String(raw?.action || "").trim().toLowerCase();
+	const shortcutId = String(raw?.shortcutId || "").trim();
+	const mimeType = String(raw?.mimeType || "").trim() || guessMimeFromLabelOrHref(label, href);
+	const rawIconUrl = String(raw?.iconUrl || "").trim();
+	const iconUrl = rawIconUrl && !/^(data:|blob:)/i.test(rawIconUrl) ? rawIconUrl : "";
+	const iconDisplay = String(raw?.iconDisplay || "").trim() || (rawIconUrl || iconUrl ? "colored" : "");
+	if (actionHint === "launch-shortcut" || shortcutId && pkg && actionHint !== "launch-app") {
+		if (!pkg || !shortcutId) return null;
+		const existing = findSpeedDialShortcutItem(pkg, shortcutId);
+		if (existing) return existing;
+		const item = createStatefulItem({
+			id: generateItemId(),
+			cell: targetCell,
+			icon: "folder",
+			label: label || shortcutId,
+			action: "launch-shortcut"
+		});
+		ensureSpeedDialMeta(item.id, {
+			action: "launch-shortcut",
+			packageName: pkg,
+			shortcutId,
+			entityType: "android-shortcut",
+			description: label || shortcutId,
+			iconDisplay: iconDisplay || "colored",
+			...mimeType ? { mimeType } : {},
+			...iconUrl ? { iconUrl } : {}
+		});
+		addSpeedDialItem(item);
+		return item;
+	}
+	if (actionHint === "launch-app" || pkg && !href && !shortcutId) {
+		if (!pkg) return null;
+		const item = createStatefulItem({
+			id: generateItemId(),
+			cell: targetCell,
+			icon: "device-mobile",
+			label: label || pkg,
+			action: "launch-app"
+		});
+		ensureSpeedDialMeta(item.id, {
+			action: "launch-app",
+			packageName: pkg,
+			componentName: component || void 0,
+			entityType: "android-app",
+			iconCacheKey: pkg,
+			description: label || pkg
+		});
+		addSpeedDialItem(item);
+		return item;
+	}
+	if (!href) return null;
+	if (isSpeedDialVirtualPath(href)) {
+		const item = parseSpeedDialItemFromVirtualPath(href, targetCell, { label: label || void 0 });
+		if (!item) return null;
+		addSpeedDialItem(item);
+		return item;
+	}
+	if (/^https?:\/\//i.test(href) || /^www\./i.test(href)) {
+		const item = parseSpeedDialItemFromURL(href, targetCell);
+		if (!item) return null;
+		if (label) {
+			try {
+				item.label.value = label;
+			} catch {}
+			const meta = ensureSpeedDialMeta(item.id);
+			if (meta) meta.description = label;
+		}
+		addSpeedDialItem(item);
+		return item;
+	}
+	const dataHref = href;
+	const openHref = /^(content:|file:|https?:)/i.test(dataHref) ? dataHref : intentUri || dataHref;
+	const item = createStatefulItem({
+		id: generateItemId(),
+		cell: targetCell,
+		icon: /^content:|^file:/i.test(href) ? "folder" : "link",
+		label: label || href.replace(/^[a-z][a-z0-9+.-]*:/i, "").split("/").filter(Boolean).pop() || "Shortcut",
+		action: "open-link"
+	});
+	ensureSpeedDialMeta(item.id, {
+		action: "open-link",
+		href: openHref,
+		description: label || href,
+		openLinkTarget: "external-app",
+		...intentUri && intentUri !== openHref ? { intentUri } : {},
+		...mimeType ? { mimeType } : {},
+		...shortcutId ? { shortcutId } : {},
+		...pkg ? { publisherPackage: pkg } : {},
+		...iconDisplay ? { iconDisplay } : {},
+		...iconUrl ? { iconUrl } : {}
+	});
+	addSpeedDialItem(item);
+	return item;
+}
+var guessMimeFromLabelOrHref = (label, href) => {
+	const name = `${label} ${href}`.toLowerCase();
+	if (/\.txt(\b|$)/i.test(name) || /\.log(\b|$)/i.test(name) || /\.csv(\b|$)/i.test(name)) return "text/plain";
+	if (/\.md(\b|$)/i.test(name) || /\.markdown(\b|$)/i.test(name)) return "text/markdown";
+	if (/\.pdf(\b|$)/i.test(name)) return "application/pdf";
+	if (/\.png(\b|$)/i.test(name)) return "image/png";
+	if (/\.jpe?g(\b|$)/i.test(name)) return "image/jpeg";
+	if (/\.gif(\b|$)/i.test(name)) return "image/gif";
+	if (/\.webp(\b|$)/i.test(name)) return "image/webp";
+	if (/\.mp4(\b|$)/i.test(name)) return "video/mp4";
+	if (/\.mp3(\b|$)/i.test(name)) return "audio/mpeg";
+	if (/\.html?(\b|$)/i.test(name)) return "text/html";
+	if (/\.json(\b|$)/i.test(name)) return "application/json";
+	if (/\.zip(\b|$)/i.test(name)) return "application/zip";
+	return "";
+};
+var CLIPBOARD_READ_HOOK = "__CWSP_READ_CLIPBOARD_TEXT__";
+var CLIPBOARD_WRITE_HOOK = "__CWSP_WRITE_CLIPBOARD_TEXT__";
+var CAP_CLIPBOARD_PKGS = ["@capacitor/clipboard", "@supernotes/capacitor-clipboard"];
+var CLIP_TEXT_MAX = 8e4;
+var lastCopiedSpeedDial = null;
+var isCapacitorNativeHost = () => {
+	try {
+		const c = globalThis.Capacitor;
+		return typeof c?.isNativePlatform === "function" && Boolean(c.isNativePlatform());
+	} catch {
+		return false;
+	}
+};
+/** Cap WebView: navigator.clipboard is unreliable; prefer host hook / @capacitor/clipboard. */
+var readClipboardTextNative = async () => {
+	const hook = globalThis[CLIPBOARD_READ_HOOK];
+	if (typeof hook === "function") try {
+		const value = await hook();
+		if (typeof value === "string" && value.trim()) return value;
+	} catch {}
+	if (!isCapacitorNativeHost()) return "";
+	for (const pkg of CAP_CLIPBOARD_PKGS) try {
+		const mod = await __vitePreload(() => import(
+			/* @vite-ignore */
+			pkg
+), [], import.meta.url);
+		if (!mod?.Clipboard?.read) continue;
+		const value = (await mod.Clipboard.read())?.value;
+		if (typeof value === "string" && value.trim()) return value;
+	} catch {}
+	return "";
+};
+var writeClipboardTextNative = async (text) => {
+	const hook = globalThis[CLIPBOARD_WRITE_HOOK];
+	if (typeof hook === "function") try {
+		await hook(text);
+		return true;
+	} catch {}
+	if (!isCapacitorNativeHost()) return false;
+	for (const pkg of CAP_CLIPBOARD_PKGS) try {
+		const mod = await __vitePreload(() => import(
+			/* @vite-ignore */
+			pkg
+), [], import.meta.url);
+		if (!mod?.Clipboard?.write) continue;
+		await mod.Clipboard.write({ string: text });
+		return true;
+	} catch {}
+	return false;
+};
+var writeClipboardTextBrowser = async (text) => {
+	if (await writeClipboardTextNative(text)) return;
+	if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+		await navigator.clipboard.writeText(text);
+		return;
+	}
+	if (typeof document === "undefined") throw new Error("clipboard write unavailable");
+	const ta = document.createElement("textarea");
+	ta.value = text;
+	ta.style.position = "fixed";
+	ta.style.left = "-9999px";
+	document.body.appendChild(ta);
+	ta.select();
+	document.execCommand("copy");
+	ta.remove();
+};
+var copySpeedDialItemToClipboard = async (item) => {
+	const snapshot = snapshotSpeedDialItem(item);
+	if (!snapshot) throw new Error("empty");
+	const envelope = {
+		kind: SPEED_DIAL_CLIP_KIND,
+		v: 1,
+		snapshot
+	};
+	lastCopiedSpeedDial = envelope;
+	let text = JSON.stringify(envelope);
+	if (text.length > CLIP_TEXT_MAX) {
+		const slim = fallbackClone(envelope);
+		const meta = slim.snapshot?.desc?.meta;
+		if (meta && typeof meta.iconUrl === "string" && /^(data:|blob:)/i.test(meta.iconUrl)) delete meta.iconUrl;
+		text = JSON.stringify(slim);
+	}
+	try {
+		await writeClipboardTextBrowser(text);
+	} catch (e) {
+		console.warn("OS clipboard write failed; in-session paste still works", e);
+	}
+};
+var hasCopiedSpeedDialItem = () => lastCopiedSpeedDial != null;
+var materializeCopiedSpeedDial = (suggestedCell) => {
+	if (!lastCopiedSpeedDial) return null;
+	return parseSpeedDialItemFromJSON(JSON.stringify(lastCopiedSpeedDial), suggestedCell);
+};
+var readClipboardTextBrowser = async () => {
+	try {
+		const native = await readClipboardTextNative();
+		if (native.trim()) return {
+			ok: true,
+			data: native
+		};
+		if (!navigator.clipboard?.readText) return {
+			ok: false,
+			error: "clipboard.readText unavailable"
+		};
+		const data = await navigator.clipboard.readText();
+		return {
+			ok: true,
+			data: String(data ?? "")
+		};
+	} catch (e) {
+		return {
+			ok: false,
+			error: String(e?.message || e)
+		};
+	}
+};
+var createSpeedDialItemFromClipboard = async (suggestedCell) => {
+	const clipboardResult = await readClipboardTextBrowser();
+	const clipboardText = clipboardResult.ok ? String(clipboardResult.data ?? "") : "";
+	try {
+		if (looksLikeSpeedDialShortcutJson(clipboardText)) {
+			const parsed = parseSpeedDialItemFromJSON(clipboardText, suggestedCell);
+			if (parsed) return parsed;
+		}
+		if (!clipboardResult.ok) {
+			const fromMemory = materializeCopiedSpeedDial(suggestedCell);
+			if (fromMemory) return fromMemory;
+			console.warn("Failed to read clipboard text:", clipboardResult.error);
+			throw new Error(clipboardResult.error || "clipboard read failed");
+		}
+		if (!clipboardText.trim()) {
+			const fromMemory = materializeCopiedSpeedDial(suggestedCell);
+			if (fromMemory) return fromMemory;
+			throw new Error("clipboard empty");
+		}
+		let trimmed = clipboardText.split(/\r?\n/).map((l) => l.trim()).find((l) => l && !l.startsWith("#")) || clipboardText.trim();
+		if (trimmed.startsWith("<") && trimmed.endsWith(">")) trimmed = trimmed.slice(1, -1).trim();
+		const smart = parseSpeedDialItemFromSmartText(clipboardText, suggestedCell);
+		if (smart) return smart;
+		const absolute = extractHttpUrlFromClipboardText(clipboardText);
+		if (absolute) return parseSpeedDialItemFromURL(absolute, suggestedCell);
+		if (isSpeedDialVirtualPath(trimmed)) return parseSpeedDialItemFromVirtualPath(trimmed, suggestedCell);
+		if (looksLikeJsonObject(clipboardText.trim()) || looksLikeJsonObject(trimmed)) {
+			const parsed = parseSpeedDialItemFromJSON(looksLikeJsonObject(clipboardText.trim()) ? clipboardText : trimmed, suggestedCell);
+			if (parsed) return parsed;
+		}
+		return materializeCopiedSpeedDial(suggestedCell);
+	} catch (e) {
+		console.warn("Failed to create speed dial item from clipboard:", e);
+		if (/empty|failed|unavailable|denied|permission/i.test(String(e?.message || e || ""))) throw e;
+		return materializeCopiedSpeedDial(suggestedCell);
+	}
+};
+/** Mobile Chrome/Samsung often paste title+URL, HTML, or URI-list — find first usable http(s). */
+var extractHttpUrlFromClipboardText = (raw) => {
+	const text = String(raw || "");
+	if (!text.trim()) return null;
+	const hrefMatch = text.match(/href\s*=\s*["'](https?:\/\/[^"']+)["']/i);
+	if (hrefMatch?.[1]) {
+		const n = normalizeExternalWebHref(hrefMatch[1]);
+		if (n) return n;
+	}
+	for (const line of text.split(/\r?\n/)) {
+		let trimmed = line.trim();
+		if (!trimmed || trimmed.startsWith("#")) continue;
+		if (trimmed.startsWith("<") && trimmed.endsWith(">")) trimmed = trimmed.slice(1, -1).trim();
+		const asUrl = normalizeExternalWebHref(trimmed);
+		if (asUrl) return asUrl;
+		try {
+			const parsed = new URL(trimmed);
+			if (/^https?:$/i.test(parsed.protocol)) return parsed.href;
+		} catch {}
+	}
+	const embedded = text.match(/https?:\/\/[^\s<>"')\]]+/i);
+	if (embedded?.[0]) {
+		const n = normalizeExternalWebHref(embedded[0].replace(/[.,;:]+$/u, ""));
+		if (n) return n;
+	}
+	return null;
+};
+//#endregion
+//#region ../../modules/projects/fl.ui/src/ui/navigation/app-menu/bookmarks-menu.ts
+/** Local copy — avoid relative `../../explorer/fs-backend` (breaks when this file is hardlinked under home-view). */
+function faviconForHref(href, size = 64) {
+	const raw = String(href || "").trim();
+	if (!raw || !/^https?:\/\//i.test(raw)) return "";
+	try {
+		const host = new URL(raw).hostname;
+		if (!host) return "";
+		return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(host)}&sz=${size}`;
+	} catch {
+		return "";
+	}
+}
+/** Accept http(s) and other schemes; bare hosts become `https://…`. */
+function normalizeBookmarkHref(raw) {
+	const text = String(raw || "").trim();
+	if (!text) return "";
+	if (/^[a-z][a-z0-9+.-]*:/i.test(text)) return text;
+	return `https://${text}`;
+}
+var registeredBookmarksApi = null;
+var chromeErr = () => {
+	try {
+		const err = globalThis.chrome?.runtime?.lastError;
+		return err ? new Error(String(err.message || err)) : null;
+	} catch {
+		return null;
+	}
+};
+var callChrome = (api, method, ...args) => {
+	const fn = api[method];
+	if (typeof fn !== "function") return Promise.reject(/* @__PURE__ */ new Error(`chrome.bookmarks.${String(method)} missing`));
+	try {
+		const result = fn.apply(api, args);
+		if (result != null && typeof result.then === "function") return result;
+	} catch (e) {
+		return Promise.reject(e);
+	}
+	return new Promise((resolve, reject) => {
+		try {
+			fn.apply(api, [...args, (res) => {
+				const err = chromeErr();
+				if (err) reject(err);
+				else resolve(res);
+			}]);
+		} catch (e) {
+			reject(e);
+		}
+	});
+};
+var nodeToEntry = (node) => {
+	const url = typeof node.url === "string" && node.url ? node.url : void 0;
+	return {
+		id: String(node.id),
+		title: String(node.title || node.url || node.id || "Bookmark"),
+		url,
+		folder: !url,
+		parentId: node.parentId
+	};
+};
+/** Build BookmarksMenuApi from `chrome.bookmarks` (CRX extension pages). */
+function createChromeBookmarksMenuApi(raw) {
+	const api = raw || (globalThis.chrome?.bookmarks ?? null);
+	if (!api?.getTree || !api?.getChildren) return null;
+	const resolveIconUrl = (href, size = 128) => {
+		const page = String(href || "").trim();
+		if (!/^https?:\/\//i.test(page)) return "";
+		const s2 = faviconForHref(page, size);
+		if (s2) return s2;
+		try {
+			const chromeRt = globalThis.chrome?.runtime;
+			if (typeof chromeRt?.getURL === "function") {
+				const u = new URL(chromeRt.getURL("/_favicon/"));
+				u.searchParams.set("pageUrl", page);
+				u.searchParams.set("size", String(size));
+				return u.toString();
+			}
+		} catch {}
+		return "";
+	};
+	return {
+		resolveIconUrl,
+		async listChildren(folderId) {
+			if (folderId) return (await callChrome(api, "getChildren", folderId) || []).map(nodeToEntry);
+			const roots = await callChrome(api, "getTree") || [];
+			const out = [];
+			for (const root of roots) for (const child of root.children || []) out.push(nodeToEntry(child));
+			return out;
+		},
+		async search(query) {
+			const q = String(query || "").trim();
+			if (!q) return this.listChildren();
+			if (typeof api.search !== "function") {
+				const all = await this.listChildren();
+				const lower = q.toLowerCase();
+				return all.filter((e) => e.title.toLowerCase().includes(lower) || String(e.url || "").toLowerCase().includes(lower));
+			}
+			return (await callChrome(api, "search", q) || []).map(nodeToEntry);
+		},
+		async open(entry) {
+			if (entry.folder) return;
+			const href = String(entry.url || "").trim();
+			if (!href) return;
+			try {
+				const tabs = globalThis.chrome?.tabs;
+				if (typeof tabs?.create === "function") {
+					await Promise.resolve(tabs.create({ url: href }));
+					return;
+				}
+			} catch {}
+			globalThis.open?.(href, "_blank", "noopener,noreferrer");
+		},
+		async remove(entry) {
+			const id = String(entry?.id || "").trim();
+			if (!id) return false;
+			try {
+				if (entry.folder) {
+					if (typeof api.removeTree !== "function") return false;
+					await callChrome(api, "removeTree", id);
+				} else {
+					if (typeof api.remove !== "function") return false;
+					await callChrome(api, "remove", id);
+				}
+				return true;
+			} catch {
+				return false;
+			}
+		},
+		async update(id, patch) {
+			const key = String(id || "").trim();
+			if (!key || typeof api.update !== "function") return null;
+			const body = {};
+			if (patch.title != null) body.title = String(patch.title || "").trim();
+			if (patch.url != null) {
+				const href = normalizeBookmarkHref(patch.url);
+				if (href) body.url = href;
+			}
+			try {
+				const node = await callChrome(api, "update", key, body);
+				return node ? nodeToEntry(node) : null;
+			} catch {
+				return null;
+			}
+		},
+		async create(parentId, spec) {
+			if (typeof api.create !== "function") return null;
+			const title = String(spec.title || "").trim();
+			if (!title) return null;
+			const body = {
+				parentId: String(parentId || "0"),
+				title
+			};
+			if (spec.url != null) {
+				const href = normalizeBookmarkHref(spec.url);
+				if (!href) return null;
+				body.url = href;
+			}
+			const attempt = async (pid) => {
+				const node = await callChrome(api, "create", {
+					...body,
+					parentId: pid
+				});
+				return node ? nodeToEntry(node) : null;
+			};
+			try {
+				return await attempt(body.parentId);
+			} catch {
+				if (body.parentId === "0") try {
+					return await attempt("1");
+				} catch {
+					return null;
+				}
+				return null;
+			}
+		}
+	};
+}
+function resolveBookmarksMenuApi() {
+	if (registeredBookmarksApi) return registeredBookmarksApi;
+	return createChromeBookmarksMenuApi();
+}
+//#endregion
+//#region ../../modules/projects/fl.ui/src/ui/navigation/app-menu/app-actions.ts
+var esc = (value) => String(value ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+var openEditorDialog = (inner) => {
+	const modal = document.createElement("dialog");
+	modal.className = "speed-dial-editor env-shell-app-menu__chrome-editor";
+	modal.innerHTML = inner;
+	const close = () => {
+		try {
+			if (modal.open) modal.close();
+		} catch {}
+		modal.remove();
+	};
+	modal.addEventListener("cancel", (ev) => {
+		ev.preventDefault();
+		close();
+	});
+	modal.__cwspClose = close;
+	document.body.append(modal);
+	try {
+		modal.showModal();
+	} catch {
+		modal.setAttribute("open", "");
+	}
+	return modal;
+};
+function openBookmarkFieldsDialog(opts) {
+	const showUrl = opts.showUrl !== false;
+	return new Promise((resolve) => {
+		let settled = false;
+		const modal = openEditorDialog(`
+        <form class="speed-dial-editor__form" autocomplete="off">
+            <header class="modal-header">
+                <h2 class="modal-title">${esc(opts.heading)}</h2>
+                ${opts.description ? `<p class="modal-description">${esc(opts.description)}</p>` : ""}
+            </header>
+            <div class="modal-fields">
+                <div class="modal-field">
+                    <label for="am-bm-title">Title</label>
+                    <input id="am-bm-title" name="title" type="text" value="${esc(opts.initialTitle || "")}" />
+                </div>
+                ${showUrl ? `<div class="modal-field">
+                    <label for="am-bm-url">URL</label>
+                    <input id="am-bm-url" name="url" type="url" value="${esc(opts.initialUrl || "")}" placeholder="https://" />
+                </div>` : ""}
+            </div>
+            <div class="modal-actions" role="group">
+                <span></span>
+                <button type="button" data-action="cancel" class="btn secondary">Cancel</button>
+                <button type="submit" class="btn save">${esc(opts.submitLabel || "Save")}</button>
+            </div>
+        </form>
+    `);
+		const close = modal.__cwspClose;
+		const finish = (value) => {
+			if (settled) return;
+			settled = true;
+			close?.();
+			resolve(value);
+		};
+		const form = modal.querySelector("form");
+		form?.addEventListener("click", (ev) => {
+			if (ev.target?.closest?.("[data-action]")?.getAttribute("data-action") === "cancel") {
+				ev.preventDefault();
+				finish(null);
+			}
+		});
+		modal.addEventListener("cancel", () => finish(null));
+		form?.addEventListener("submit", (ev) => {
+			ev.preventDefault();
+			const title = String(modal.querySelector("[name=\"title\"]")?.value || "").trim();
+			if (!title) {
+				showError("Title is required");
+				return;
+			}
+			if (!showUrl) {
+				finish({ title });
+				return;
+			}
+			const href = normalizeBookmarkHref(modal.querySelector("[name=\"url\"]")?.value || "");
+			if (!href) {
+				showError("URL is required");
+				return;
+			}
+			finish({
+				title,
+				url: href
+			});
+		});
+	});
+}
 //#endregion
 //#region ../../modules/projects/fl.ui/src/ui/explorer/Operative.ts
 var handleCache = /* @__PURE__ */ new WeakMap();
@@ -23872,14 +27564,15 @@ var FileOperative = class {
 			composed: true
 		}));
 	}
-	async itemAction(item) {
+	async itemAction(item, how = "click") {
 		const self = this;
 		const itemPath = item?.path || "";
 		const detailPath = itemPath || (self.path || "/") + (item?.name || "");
 		const detail = {
 			path: detailPath,
 			item,
-			originalEvent: null
+			originalEvent: null,
+			how
 		};
 		const event = new CustomEvent("open-item", {
 			detail,
@@ -23914,7 +27607,10 @@ var FileOperative = class {
 			}
 			const abs = (self.path || "/") + (item?.name || "");
 			if (!item?.file) {
-				item.file = await provide(itemPath || abs).catch(() => null);
+				const loadPath = itemPath || abs;
+				const backend = resolveFsBackend$1(loadPath);
+				if (typeof backend?.readFile === "function") item.file = await backend.readFile(loadPath).catch(() => null);
+				if (!item.file) item.file = await provide(loadPath).catch(() => null);
 				if (item.file) {
 					item.size = item.file.size;
 					item.lastModified = item.file.lastModified;
@@ -24011,11 +27707,11 @@ var FileOperative = class {
 	}
 	onRowClick = (item, ev) => {
 		ev.preventDefault();
-		this.itemAction(item);
+		this.itemAction(item, "click");
 	};
 	onRowDblClick = (item, ev) => {
 		ev.preventDefault();
-		this.itemAction(item);
+		this.itemAction(item, "dblclick");
 	};
 	onRowDragStart = (item, ev) => {
 		if (!ev.dataTransfer) return;
@@ -24034,6 +27730,9 @@ var FileOperative = class {
 			ev.dataTransfer.items.add(item?.file);
 		}
 	};
+	async runMenuAction(item, actionId, ev) {
+		await this.onMenuAction(item, actionId, ev ?? new MouseEvent("contextmenu"));
+	}
 	async onMenuAction(item, actionId, ev) {
 		try {
 			const itemName = item?.name;
@@ -24057,8 +27756,10 @@ var FileOperative = class {
 						break;
 					}
 					if (actionId === "delete") {
-						if (bmBackend?.remove) await bmBackend.remove(bmPath, true);
-						else if (isUserPath(abs)) await this.removeUserEntry(abs, true);
+						if (bmBackend?.remove) {
+							if (globalThis.confirm?.(`Delete “${itemName || "bookmark"}”?`) !== true) break;
+							await bmBackend.remove(bmPath, true);
+						} else if (isUserPath(abs)) await this.removeUserEntry(abs, true);
 						else await remove(this.#fsRoot, abs);
 						await this.refreshList(this.path);
 						break;
@@ -24100,11 +27801,56 @@ var FileOperative = class {
 						}));
 						break;
 					}
-					const name = prompt("Folder name:", "New folder");
-					if (!name) break;
 					const destBackend = this.bookmarksBackendFor(this.path);
-					if (destBackend?.mkdir) await destBackend.mkdir(this.path, name);
-					else if (isUserPath(this.path)) await this.getUserDirHandle(this.path, true);
+					if (destBackend?.mkdir) {
+						const fields = await openBookmarkFieldsDialog({
+							heading: "New folder",
+							description: "Chrome bookmarks folder",
+							showUrl: false,
+							initialTitle: "New folder",
+							submitLabel: "Create"
+						});
+						if (!fields?.title) break;
+						await destBackend.mkdir(this.path, fields.title);
+					} else {
+						if (!prompt("Folder name:", "New folder")) break;
+						if (isUserPath(this.path)) await this.getUserDirHandle(this.path, true);
+					}
+					await this.refreshList(this.path);
+					break;
+				}
+				case "new-bookmark": {
+					const destBackend = this.bookmarksBackendFor(this.path);
+					if (!destBackend?.createUrl) break;
+					const fields = await openBookmarkFieldsDialog({
+						heading: "New bookmark",
+						description: "Saved to Chrome bookmarks",
+						showUrl: true,
+						initialUrl: "https://",
+						submitLabel: "Create"
+					});
+					if (!fields?.url) break;
+					await destBackend.createUrl(this.path, fields.title || fields.url, fields.url);
+					await this.refreshList(this.path);
+					break;
+				}
+				case "edit-bookmark": {
+					if (!item || !bmBackend) break;
+					const isFolder = item.kind === "directory";
+					const fields = await openBookmarkFieldsDialog({
+						heading: isFolder ? "Rename folder" : "Edit bookmark",
+						description: "Chrome bookmarks",
+						showUrl: !isFolder,
+						initialTitle: item.name,
+						initialUrl: item.href || "",
+						submitLabel: "Save"
+					});
+					if (!fields) break;
+					if (bmBackend.update) await bmBackend.update(bmPath, isFolder ? { title: fields.title } : {
+						title: fields.title,
+						url: fields.url
+					});
+					else if (bmBackend.rename && fields.title && fields.title !== itemName) await bmBackend.rename(bmPath, fields.title);
 					await this.refreshList(this.path);
 					break;
 				}
@@ -25090,8 +28836,79 @@ var makeDirectoryOps = () => {
 	]);
 	return [...makeFileActionOps(), ...makeFileSystemOps()].filter((item) => allowed.has(item.id));
 };
+var makeBookmarkFileOps = () => [
+	{
+		id: "open",
+		label: "Open",
+		icon: "arrow-square-out"
+	},
+	{
+		id: "edit-bookmark",
+		label: "Edit bookmark…",
+		icon: "pencil"
+	},
+	{
+		id: "delete",
+		label: "Delete",
+		icon: "trash"
+	},
+	{
+		id: "copyPath",
+		label: "Copy Path",
+		icon: "copy"
+	},
+	{
+		id: "movePath",
+		label: "Move",
+		icon: "hand-withdraw"
+	}
+];
+var makeBookmarkDirOps = () => [
+	{
+		id: "open",
+		label: "Open",
+		icon: "folder-open"
+	},
+	{
+		id: "edit-bookmark",
+		label: "Rename folder…",
+		icon: "pencil"
+	},
+	{
+		id: "delete",
+		label: "Delete folder",
+		icon: "trash"
+	},
+	{
+		id: "copyPath",
+		label: "Copy Path",
+		icon: "copy"
+	},
+	{
+		id: "movePath",
+		label: "Move",
+		icon: "hand-withdraw"
+	}
+];
 var makeEmptyOps = (path) => {
 	if (!canReceiveIncomingPath(path)) return [];
+	if (isBookmarksPath(path)) return [
+		{
+			id: "new-bookmark",
+			label: "New bookmark…",
+			icon: "bookmark-simple"
+		},
+		{
+			id: "new-folder",
+			label: "New folder…",
+			icon: "folder-plus"
+		},
+		{
+			id: "paste",
+			label: "Paste",
+			icon: "clipboard"
+		}
+	];
 	return [{
 		id: "paste",
 		label: "Paste",
@@ -25108,7 +28925,8 @@ var createItemCtxMenu = (fileManager, onMenuAction, entries) => {
 		const item = (entries?.value ?? entries).find((entry) => rowKey ? entryKey(entry) === rowKey : entry?.name === rowName) ?? null;
 		const operative = getExplorerOperative(fileManager);
 		const currentPath = String(operative?.path || "/");
-		const baseItems = item ? entryKind(item) === "directory" ? makeDirectoryOps() : [...makeFileActionOps(), ...makeFileSystemOps()] : makeEmptyOps(currentPath);
+		const bookmarkItem = Boolean(item && (isBookmarksPath(item.path) || isBookmarksPath(currentPath)));
+		const baseItems = item ? bookmarkItem ? entryKind(item) === "directory" ? makeBookmarkDirOps() : makeBookmarkFileOps() : entryKind(item) === "directory" ? makeDirectoryOps() : [...makeFileActionOps(), ...makeFileSystemOps()] : makeEmptyOps(currentPath);
 		if (baseItems.length === 0) return;
 		ev.preventDefault();
 		ev.stopPropagation();
@@ -28669,6 +32487,105 @@ var UIElement_default = UIElement;
 //#region ../../modules/projects/fl.ui/src/ui/explorer/FileManagerContent.scss?inline
 var FileManagerContent_default$1 = "@function --u2-color-mod(--base-color <color>, --index <number> : 550) returns <color>{--i:clamp(0,var(--index),1000);--pivot:550;--white-distance:clamp(0,calc((var(--pivot) - var(--i)) / var(--pivot)),1);--black-distance:clamp(0,calc((var(--i) - var(--pivot)) / (1000 - var(--pivot))),1);--to-white:pow(var(--white-distance),1.15);--to-black:pow(var(--black-distance),1.08);--center-left:clamp(0,calc(var(--i) / var(--pivot)),1);--center-right:clamp(0,calc((1000 - var(--i)) / (1000 - var(--pivot))),1);--chroma-shape:sqrt(min(var(--center-left),var(--center-right)));--chroma-scale:calc(0.08 + 0.92 * var(--chroma-shape));result:oklch(from var(--base-color) calc(l + (.985 - l) * var(--to-white) + (.16 - l) * var(--to-black)) calc(c * var(--chroma-scale)) h)}@layer tokens{:root{--fl-ui-radius:var(--radius-md,0.5rem);--fl-ui-gap:var(--space-md,0.75rem);--color-primary:#5a9ec8;--base-color:var(--color-primary);--color-surface:--u2-color-mod(var(--base-color),920);--color-on-surface:--u2-color-mod(var(--base-color),100);--color-on-surface-variant:--u2-color-mod(var(--base-color),280);--error-color:var(--color-error,#f87171);--surface-color:var(--color-surface);--on-surface-color:var(--color-on-surface);--fl-surface:var(--color-surface);--fl-on-surface:var(--color-on-surface);--ui-icon-size:1.25rem;--ui-icon-padding:0px;--ui-icon-tile-padding:0.45rem;--ui-window-icon-size:0.95rem;--ui-explorer-icon-size:1.5rem;--ui-explorer-icon-track:2rem;--ui-explorer-action-icon-size:1.15rem;--ui-explorer-row-height:2.875rem}}@layer ux-file-manager-content{:host(ui-file-manager-content),:host(ui-file-manager-content) :where(*){overflow:hidden;scrollbar-color:transparent transparent;scrollbar-gutter:auto;scrollbar-width:none}:host(ui-file-manager-content){background-color:var(--color-surface);block-size:100%;border:0 transparent;border-radius:0;color:var(--color-on-surface);contain:none;container-type:size;display:flex;flex:1 1 auto;flex-direction:column;grid-column:1/-1;inline-size:100%;isolation:isolate;margin:0;min-block-size:0;min-inline-size:0;outline:0 none transparent;overflow:hidden;perspective:1000;pointer-events:auto;position:relative;scrollbar-color:transparent transparent;scrollbar-gutter:auto;scrollbar-width:none;touch-action:manipulation;z-index:1}:host(ui-file-manager-content) .fm-grid{align-content:start;block-size:100%;border:0 transparent;display:grid;flex:1 1 auto;grid-template-columns:[icon] var(--ui-explorer-icon-track,2rem) [name] minmax(0,1fr) [size] minmax(4.5rem,6rem) [date] minmax(0,7.5rem) [actions] minmax(6.75rem,max-content);grid-template-rows:auto minmax(0,1fr);inline-size:stretch;min-block-size:0;min-inline-size:0;outline:0 none transparent;overflow:hidden;pointer-events:none;row-gap:0;scrollbar-color:transparent transparent;scrollbar-gutter:auto;scrollbar-width:none;touch-action:manipulation}@container (inline-size <= 600px){:host(ui-file-manager-content) .fm-grid{grid-template-columns:[icon] var(--ui-explorer-icon-track,2rem) [name] minmax(0,1fr) [size] minmax(4.5rem,6rem) [date] minmax(0,0) [actions] minmax(6.75rem,max-content)}}:host(ui-file-manager-content) .fm-grid-rows{align-content:start;block-size:100%;contain:none;contain-intrinsic-size:1px var(--ui-explorer-row-height,2.625rem);content-visibility:visible;display:grid;gap:.25rem;grid-auto-rows:var(--ui-explorer-row-height,2.625rem);grid-column:1/-1;grid-template-columns:subgrid;inline-size:100%;min-block-size:0;min-inline-size:0;overflow:auto;pointer-events:auto;scrollbar-color:color-mix(in oklab,var(--color-on-surface) 22%,transparent) transparent;scrollbar-gutter:stable;scrollbar-width:thin;touch-action:manipulation;z-index:1}:host(ui-file-manager-content) .fm-grid-rows slot{display:contents!important}:host(ui-file-manager-content) :where(.row){background-color:color-mix(in oklab,var(--color-on-surface,#fff) 3%,transparent);block-size:var(--ui-explorer-row-height,2.625rem);border:none;border-radius:.625rem;color:var(--color-on-surface);cursor:pointer;display:grid;grid-column:1/-1;grid-template-rows:minmax(0,var(--ui-explorer-row-height,2.625rem))!important;inline-size:stretch;min-block-size:0;order:var(--order,1)!important;place-content:center;place-items:center;justify-items:start;padding:0 .65rem;place-self:stretch;pointer-events:auto;touch-action:manipulation;user-drag:none;-webkit-user-drag:none;flex-wrap:nowrap;gap:.35rem;letter-spacing:normal;overflow:hidden;text-align:start;text-overflow:ellipsis;text-wrap:nowrap;white-space:nowrap}@media (hover:hover) and (pointer:fine){:host(ui-file-manager-content) :where(.row){user-drag:element;-webkit-user-drag:element}}:host(ui-file-manager-content) :where(.row) ui-icon{--ui-icon-size:var(--ui-explorer-icon-size,1.5rem);--ui-icon-padding:0px;block-size:var(--ui-icon-size);flex-shrink:0;inline-size:var(--ui-icon-size);min-block-size:var(--ui-icon-size);min-inline-size:var(--ui-icon-size);place-content:center;place-items:center}:host(ui-file-manager-content) :where(.row) :is(a,span){background-color:initial!important}:host(ui-file-manager-content) :where(.row)>*{background-color:initial!important;block-size:auto;min-block-size:0}:host(ui-file-manager-content) .row:hover{background-color:color-mix(in oklab,var(--color-on-surface) 8%,transparent)}:host(ui-file-manager-content) .row:active{background-color:color-mix(in oklab,var(--color-on-surface) 11%,transparent)}:host(ui-file-manager-content) .row:focus-visible{outline:2px solid var(--color-primary,#5a7fff);outline-offset:-2px}:host(ui-file-manager-content) .c:not(.icon){block-size:auto;color:inherit;display:flex;flex-direction:row;inline-size:auto;min-inline-size:0;overflow:hidden;place-content:center;justify-content:start;min-block-size:0;place-items:center;text-align:start;text-overflow:ellipsis;text-wrap:nowrap;white-space:nowrap}:host(ui-file-manager-content) .icon{aspect-ratio:1;block-size:1.5rem;display:flex;flex-shrink:0;grid-column:icon;inline-size:1.5rem;min-block-size:1.5rem;min-inline-size:1.5rem;overflow:visible;place-content:center;place-items:center}:host(ui-file-manager-content) .icon :is(img,ui-icon){--ui-icon-size:var(--ui-explorer-icon-size,1.5rem);--ui-icon-padding:0px;block-size:var(--ui-icon-size)!important;flex-shrink:0;inline-size:var(--ui-icon-size)!important;max-block-size:var(--ui-icon-size)!important;max-inline-size:var(--ui-icon-size)!important;min-block-size:var(--ui-icon-size)!important;min-inline-size:var(--ui-icon-size)!important;object-fit:contain}:host(ui-file-manager-content) .name{grid-column:name;inline-size:stretch}:host(ui-file-manager-content) .size{grid-column:size;justify-content:end;text-align:end}:host(ui-file-manager-content) .date{grid-column:date;justify-content:end;text-align:end}:host(ui-file-manager-content) .actions{grid-column:actions}:host(ui-file-manager-content) .fm-grid,:host(ui-file-manager-content) .fm-grid-header,:host(ui-file-manager-content) .row,:host(ui-file-manager-content) ::slotted(.row){grid-template-columns:[icon] var(--ui-explorer-icon-track,2rem) [name] minmax(0,1fr) [size] minmax(4.5rem,6rem) [date] minmax(0,7.5rem) [actions] minmax(6.75rem,max-content)}@container (inline-size <= 600px){:host(ui-file-manager-content) .fm-grid,:host(ui-file-manager-content) .fm-grid-header,:host(ui-file-manager-content) .row,:host(ui-file-manager-content) ::slotted(.row){grid-template-columns:[icon] var(--ui-explorer-icon-track,2rem) [name] minmax(0,1fr) [size] minmax(4.5rem,6rem) [date] minmax(0,0) [actions] minmax(6.75rem,max-content)}:host(ui-file-manager-content) .date{display:none!important}}:host(ui-file-manager-content) .actions{background-color:color-mix(in oklab,var(--color-on-surface,#fff) 5%,transparent);block-size:2.125rem;border:none;border-radius:999px;color:var(--color-on-surface);display:flex;flex-direction:row;flex-wrap:nowrap;gap:.15rem;inline-size:max-content;max-inline-size:stretch;padding:.2rem;place-content:center;justify-content:flex-end;place-items:center;place-self:center;justify-self:end;overflow:visible;pointer-events:none}:host(ui-file-manager-content) .action-btn{appearance:none;aspect-ratio:1;background-color:initial;block-size:1.85rem;border:none;border-radius:999px;box-shadow:none;color:var(--color-on-surface);cursor:pointer;display:inline-flex;flex-shrink:0;inline-size:1.85rem;min-block-size:1.85rem;min-inline-size:1.85rem;overflow:hidden;padding:0;place-content:center;place-items:center;pointer-events:auto;position:relative;transition:background .14s ease,transform .1s ease}:host(ui-file-manager-content) .action-btn:hover{background-color:color-mix(in oklab,var(--color-on-surface) 12%,transparent)}:host(ui-file-manager-content) .action-btn:active{transform:scale(.94)}:host(ui-file-manager-content) .action-btn:focus-visible{outline:2px solid color-mix(in oklab,var(--color-primary,#5a7fff) 55%,transparent);outline-offset:1px}:host(ui-file-manager-content) .action-btn ui-icon{--ui-icon-size:var(--ui-explorer-action-icon-size,1.15rem);--ui-icon-padding:0px;block-size:var(--ui-icon-size)!important;inline-size:var(--ui-icon-size)!important;max-block-size:var(--ui-icon-size)!important;max-inline-size:var(--ui-icon-size)!important;min-block-size:var(--ui-icon-size)!important;min-inline-size:var(--ui-icon-size)!important}:host(ui-file-manager-content) .fm-grid-header{background:color-mix(in oklab,var(--color-on-surface,#fff) 3.5%,transparent);border:none;border-radius:0;box-shadow:0 1px 0 color-mix(in oklab,var(--color-on-surface,#fff) 6%,transparent);color:var(--color-on-surface-variant);display:grid;font-size:.6875rem;font-weight:600;gap:.35rem;grid-column:1/-1;inset-block-start:0;letter-spacing:.04em;min-block-size:2rem;opacity:1;padding:.4rem .65rem;place-content:center;justify-content:start;place-items:center;justify-items:start;pointer-events:auto;position:sticky!important;text-align:start;text-transform:uppercase;touch-action:manipulation;z-index:2}:host(ui-file-manager-content) .fm-grid-header>*{inline-size:auto}:host(ui-file-manager-content) .fm-grid-header .c{font-weight:600}:host(ui-file-manager-content) .fm-grid-header .icon{grid-column:icon}:host(ui-file-manager-content) .fm-grid-header .name{grid-column:name;inline-size:stretch}:host(ui-file-manager-content) .fm-grid-header .size{grid-column:size;justify-content:end;text-align:end}:host(ui-file-manager-content) .fm-grid-header .date{grid-column:date;justify-content:end;text-align:end}:host(ui-file-manager-content) .fm-grid-header .actions{block-size:fit-content;border-radius:0;box-shadow:none;display:flex;flex-direction:row;flex-wrap:nowrap;gap:.25rem;grid-column:actions;inline-size:stretch;max-inline-size:stretch;overflow:hidden;padding:0;place-content:center;justify-content:flex-end;place-items:center;justify-items:end;justify-self:end;text-align:end;text-overflow:ellipsis;text-wrap:nowrap;white-space:nowrap}}";
 //#endregion
+//#region ../../modules/projects/fl.ui/src/ui/explorer/entry-sort.ts
+var EXPLORER_SORT_EVENT = "cwsp:explorer-sort-change";
+var STORAGE_KEY$2 = "cwsp-explorer-sort";
+var SORT_SET$1 = new Set([
+	["name", "Name"],
+	["date", "Date modified"],
+	["type", "Type"],
+	["size", "Size"],
+	["kind", "Kind (file / folder)"]
+].map(([v]) => v));
+var normalizeExplorerSortBy = (raw, fallback = "name") => {
+	const v = String(raw || "").trim().toLowerCase();
+	if (v === "modified" || v === "mtime" || v === "updated") return "date";
+	if (v === "mime" || v === "ext" || v === "extension") return "type";
+	if (v === "bytes" || v === "length") return "size";
+	if (v === "folder" || v === "folders") return "kind";
+	return SORT_SET$1.has(v) ? v : fallback;
+};
+var normalizeSortDir$1 = (raw, fallback = "asc") => {
+	const v = String(raw || "").trim().toLowerCase();
+	if (v === "desc" || v === "descending" || v === "newest" || v === "z-a") return "desc";
+	if (v === "asc" || v === "ascending" || v === "oldest" || v === "a-z") return "asc";
+	return fallback;
+};
+var defaultDirForExplorerSort = (sortBy) => sortBy === "date" || sortBy === "size" ? "desc" : "asc";
+var peekExplorerSort = () => {
+	try {
+		const raw = localStorage.getItem(STORAGE_KEY$2);
+		if (raw) {
+			const parsed = JSON.parse(raw);
+			const sortBy = normalizeExplorerSortBy(parsed.sortBy);
+			return {
+				sortBy,
+				sortDir: normalizeSortDir$1(parsed.sortDir, defaultDirForExplorerSort(sortBy)),
+				foldersFirst: parsed.foldersFirst !== false
+			};
+		}
+	} catch {}
+	return {
+		sortBy: "name",
+		sortDir: "asc",
+		foldersFirst: true
+	};
+};
+var writeExplorerSort = (prefs) => {
+	const cur = peekExplorerSort();
+	const sortBy = prefs.sortBy != null ? normalizeExplorerSortBy(prefs.sortBy, cur.sortBy) : cur.sortBy;
+	const next = {
+		sortBy,
+		sortDir: prefs.sortDir != null ? normalizeSortDir$1(prefs.sortDir, defaultDirForExplorerSort(sortBy)) : cur.sortDir,
+		foldersFirst: prefs.foldersFirst != null ? Boolean(prefs.foldersFirst) : cur.foldersFirst
+	};
+	try {
+		localStorage.setItem(STORAGE_KEY$2, JSON.stringify(next));
+	} catch {}
+	try {
+		window.dispatchEvent(new CustomEvent(EXPLORER_SORT_EVENT, { detail: next }));
+	} catch {}
+	return next;
+};
+var cmpStr$1 = (a, b) => a.localeCompare(b, void 0, {
+	numeric: true,
+	sensitivity: "base"
+}) || a.localeCompare(b);
+var cmpNum$1 = (a, b) => a === b ? 0 : a < b ? -1 : 1;
+var extOf = (name) => {
+	const n = String(name || "").trim();
+	const cut = n.lastIndexOf(".");
+	return cut > 0 ? n.slice(cut + 1).toLowerCase() : "";
+};
+var typeOf = (item) => {
+	const mime = String(item.type || item.file?.type || "").trim().toLowerCase();
+	if (mime) return mime;
+	return extOf(String(item.name || ""));
+};
+var kindOf = (item) => {
+	const k = String(item.kind || "").toLowerCase();
+	return k === "directory" || k === "folder" ? "directory" : "file";
+};
+var mtimeOf = (item) => Number(item.lastModified || item.file?.lastModified || 0) || 0;
+var sizeOf = (item) => Number(item.size ?? item.file?.size ?? 0) || 0;
+var sortExplorerEntries = (entries, prefs) => {
+	const dir = prefs.sortDir === "desc" ? -1 : 1;
+	return [...entries].sort((left, right) => {
+		if (prefs.foldersFirst) {
+			const folders = Number(kindOf(left) === "file") - Number(kindOf(right) === "file");
+			if (folders) return folders;
+		}
+		let n = 0;
+		if (prefs.sortBy === "date") n = cmpNum$1(mtimeOf(left), mtimeOf(right));
+		else if (prefs.sortBy === "type") n = cmpStr$1(typeOf(left), typeOf(right));
+		else if (prefs.sortBy === "size") n = cmpNum$1(sizeOf(left), sizeOf(right));
+		else if (prefs.sortBy === "kind") n = cmpStr$1(kindOf(left), kindOf(right));
+		else n = cmpStr$1(String(left.name || ""), String(right.name || ""));
+		if (!n) n = cmpStr$1(String(left.name || ""), String(right.name || ""));
+		return n * dir;
+	});
+};
+//#endregion
 //#region ../../modules/projects/fl.ui/src/ui/explorer/FileManagerContent.ts
 initGlobalClipboard();
 var styled$9 = preloadStyle$1(FileManagerContent_default$1);
@@ -28769,6 +32686,7 @@ var FileManagerContent = class FileManagerContent extends UIElement {
 		this.operativeInstance ??= new FileOperative();
 		this.operativeInstance.host = this;
 		this.addEventListener("entries-updated", () => this.syncRows());
+		addEvent(window, EXPLORER_SORT_EVENT, () => this.syncRows());
 		this.addEventListener("bookmarks-reject", (ev) => {
 			const detail = ev?.detail || {};
 			const reason = String(detail?.reason || "bookmarks reject");
@@ -28831,12 +32749,7 @@ var FileManagerContent = class FileManagerContent extends UIElement {
 			const key = entryKey(item);
 			if (!uniqueEntries.has(key)) uniqueEntries.set(key, item);
 		}
-		const safeEntries = Array.from(uniqueEntries.values()).sort((left, right) => {
-			return Number(entryKind(left) === "file") - Number(entryKind(right) === "file") || left.name.localeCompare(right.name, void 0, {
-				numeric: true,
-				sensitivity: "base"
-			}) || left.name.localeCompare(right.name);
-		});
+		const safeEntries = sortExplorerEntries(Array.from(uniqueEntries.values()), peekExplorerSort());
 		rows.replaceChildren();
 		const fragment = document.createDocumentFragment();
 		safeEntries.forEach((item, index) => {
@@ -28942,7 +32855,7 @@ FileManagerContent = __decorate([defineElement("ui-file-manager-content")], File
 var FileManagerContent_default = FileManagerContent;
 //#endregion
 //#region ../../modules/projects/fl.ui/src/ui/explorer/ExplorerSettings.ts
-var styled$8 = preloadStyle$1(":host{background:light-dark(#f4f0f7,#141218);color-scheme:light dark;display:block;inset:3rem 0 0 0;overflow:auto;position:absolute;z-index:1}.explorer-settings{color:light-dark(#1c1b1f,#e6e1e5);display:grid;gap:1rem;padding:1rem 1.1rem 1.25rem}.explorer-settings__head h2{font:600 1.15rem/1.3 system-ui,sans-serif;margin:0 0 .35rem}.explorer-settings__card p,.explorer-settings__head p{font-size:.88rem;margin:0;opacity:.78}.explorer-settings__card{background:light-dark(color-mix(in srgb,#fff 86%,#c8c5d0),color-mix(in srgb,#2b2930 88%,#000));border-radius:.85rem;display:grid;gap:.65rem;padding:.85rem .9rem}.explorer-settings__card h3{font:600 .95rem/1.3 system-ui,sans-serif;margin:0}.explorer-settings__status{font:.78rem/1.4 ui-monospace,monospace;margin:0;white-space:pre-wrap}.explorer-settings__actions{display:flex;flex-wrap:wrap;gap:.5rem}.explorer-settings__mounts{display:grid;font-size:.85rem;gap:.4rem}.explorer-settings__mount{align-items:center;display:flex;flex-wrap:wrap;gap:.45rem .7rem}.explorer-settings__mount code{opacity:.7}");
+var styled$8 = preloadStyle$1(":host{background:light-dark(#f4f0f7,#141218);color-scheme:light dark;display:block;inset:3rem 0 0 0;overflow:auto;position:absolute;z-index:1}.explorer-settings{color:light-dark(#1c1b1f,#e6e1e5);display:grid;gap:1rem;padding:1rem 1.1rem 1.25rem}.explorer-settings__head h2{font:600 1.15rem/1.3 system-ui,sans-serif;margin:0 0 .35rem}.explorer-settings__card p,.explorer-settings__head p{font-size:.88rem;margin:0;opacity:.78}.explorer-settings__card{background:light-dark(color-mix(in srgb,#fff 86%,#c8c5d0),color-mix(in srgb,#2b2930 88%,#000));border-radius:.85rem;display:grid;gap:.65rem;padding:.85rem .9rem}.explorer-settings__card h3{font:600 .95rem/1.3 system-ui,sans-serif;margin:0}.explorer-settings__status{font:.78rem/1.4 ui-monospace,monospace;margin:0;white-space:pre-wrap}.explorer-settings__field{display:grid;font-size:.88rem;gap:.25rem}.explorer-settings__field select{background:inherit;border:1px solid color-mix(in srgb,currentColor 18%,transparent);border-radius:.5rem;color:inherit;padding:.4rem .5rem}.explorer-settings__check{align-items:center;display:flex;font-size:.88rem;gap:.45rem}.explorer-settings__actions{display:flex;flex-wrap:wrap;gap:.5rem}.explorer-settings__mounts{display:grid;font-size:.85rem;gap:.4rem}.explorer-settings__mount{align-items:center;display:flex;flex-wrap:wrap;gap:.45rem .7rem}.explorer-settings__mount code{opacity:.7}");
 var paintMounts = (host) => {
 	const list = host.querySelector("[data-explorer-mounts]");
 	if (!list) return;
@@ -28969,6 +32882,15 @@ var paintMounts = (host) => {
 		list.append(row);
 	}
 };
+var paintSort = (host) => {
+	const prefs = peekExplorerSort();
+	const by = host.querySelector("[data-explorer-sort-by]");
+	const dir = host.querySelector("[data-explorer-sort-dir]");
+	const folders = host.querySelector("[data-explorer-folders-first]");
+	if (by) by.value = prefs.sortBy;
+	if (dir) dir.value = prefs.sortDir;
+	if (folders) folders.checked = prefs.foldersFirst;
+};
 var paintStatus = (host, status, note = "") => {
 	const el = host.querySelector("[data-explorer-status]");
 	if (!el) return;
@@ -28983,6 +32905,7 @@ var ExplorerSettings = class ExplorerSettings extends UIElement {
 	onInitialize() {
 		const result = super.onInitialize();
 		queueMicrotask(() => {
+			paintSort(this);
 			paintMounts(this);
 			if (isNativeStorageAvailable$1()) getAllFilesStatus().then((s) => paintStatus(this, s));
 			else paintStatus(this, null, "Browser / PWA: use Mount folder (showDirectoryPicker).");
@@ -28998,6 +32921,38 @@ var ExplorerSettings = class ExplorerSettings extends UIElement {
                 <h2>Explorer</h2>
                 <p>Mounts sit beside <code>/user/</code> and <code>/assets/</code>. Android all-files is <code>/sdcard/</code>; SAF trees are <code>/saf/</code>.</p>
             </header>
+            <section class="explorer-settings__card">
+                <h3>List sort</h3>
+                <p>Name, date, type, size, or kind. Folders can stay on top.</p>
+                <label class="explorer-settings__field">
+                    <span>Sort by</span>
+                    <select data-explorer-sort-by on:change=${(ev) => {
+			const v = ev.currentTarget.value;
+			writeExplorerSort({ sortBy: v });
+		}}>
+                        <option value="name">Name</option>
+                        <option value="date">Date modified</option>
+                        <option value="type">Type</option>
+                        <option value="size">Size</option>
+                        <option value="kind">Kind (file / folder)</option>
+                    </select>
+                </label>
+                <label class="explorer-settings__field">
+                    <span>Order</span>
+                    <select data-explorer-sort-dir on:change=${(ev) => {
+			writeExplorerSort({ sortDir: ev.currentTarget.value === "desc" ? "desc" : "asc" });
+		}}>
+                        <option value="asc">Ascending</option>
+                        <option value="desc">Descending</option>
+                    </select>
+                </label>
+                <label class="explorer-settings__check">
+                    <input type="checkbox" data-explorer-folders-first on:change=${(ev) => {
+			writeExplorerSort({ foldersFirst: ev.currentTarget.checked });
+		}} />
+                    <span>Folders first</span>
+                </label>
+            </section>
             <section class="explorer-settings__card">
                 <h3>Android storage</h3>
                 <pre data-explorer-status class="explorer-settings__status">Checking…</pre>
@@ -29061,6 +33016,8 @@ var FileManager = class FileManager extends UIElement {
 	inlineSize;
 	styles = () => styled$7;
 	#pathWatcherDisposer = null;
+	/** WHY: `wireExplorerSubtree` sets `path` before `onInitialize` creates the operative. */
+	#pendingPath = null;
 	constructor() {
 		super();
 	}
@@ -29074,11 +33031,13 @@ var FileManager = class FileManager extends UIElement {
 		return this.operative?.pathRef;
 	}
 	get path() {
-		return this.content?.path || this.operative?.path || "/";
+		return this.content?.path || this.operative?.path || this.#pendingPath || "/";
 	}
 	set path(value) {
-		if (this.content) this.content.path = value || "/";
-		if (this.operative) this.operative.path = value || "/";
+		const next = value || "/";
+		if (this.content) this.content.path = next;
+		if (this.operative) this.operative.path = next;
+		else this.#pendingPath = next;
 	}
 	get input() {
 		return this?.shadowRoot?.querySelector?.("input[name=\"address\"]");
@@ -29095,6 +33054,11 @@ var FileManager = class FileManager extends UIElement {
 		const primaryContent = existingContents[0] ?? document.createElement("ui-file-manager-content");
 		if (!existingContents.length) self.append(primaryContent);
 		if (existingContents.length > 1) for (const extra of existingContents.slice(1)) extra?.remove?.();
+		if (this.#pendingPath) {
+			const staged = this.#pendingPath;
+			this.#pendingPath = null;
+			this.path = staged;
+		}
 		queueMicrotask(() => {
 			this.#pathWatcherDisposer?.();
 			this.#pathWatcherDisposer = null;
@@ -32244,8 +36208,8 @@ var definition = {
 		}
 	}
 };
-var clamp$2 = (value) => Math.max(0, Math.min(1, value || 0));
-var fixup = (value) => Math.round(clamp$2(value) * 255);
+var clamp$1 = (value) => Math.max(0, Math.min(1, value || 0));
+var fixup = (value) => Math.round(clamp$1(value) * 255);
 var rgb$1 = converter("rgb");
 var serializeHex = (color) => {
 	if (color === void 0) return;
@@ -32434,7 +36398,7 @@ var SEED_PROPS = [
 	["--secondary", "secondary"],
 	["--tertiary", "tertiary"]
 ];
-var clamp$1 = (n, lo, hi) => Math.min(hi, Math.max(lo, n));
+var clamp = (n, lo, hi) => Math.min(hi, Math.max(lo, n));
 var hexOklch = (l, c, h, fallback) => formatHex({
 	mode: "oklch",
 	l,
@@ -32488,7 +36452,7 @@ var deriveWallpaperPaperTokensFromSamples = (samples, pixelLuma) => {
 	const ls = samples.map((s) => s.l).sort((a, b) => a - b);
 	const meanL = samples.length ? samples.reduce((sum, s) => sum + s.l, 0) / samples.length : pixelLuma;
 	const medianL = ls.length ? ls[Math.floor(ls.length / 2)] : meanL;
-	const paperL = clamp$1(pixelLuma != null && isUsablePaperLuma(pixelLuma) ? pixelLuma : Math.max(meanL, medianL), .08, .94);
+	const paperL = clamp(pixelLuma != null && isUsablePaperLuma(pixelLuma) ? pixelLuma : Math.max(meanL, medianL), .08, .94);
 	const paper = samples.length ? [...samples].sort((a, b) => a.c - b.c || Math.abs(a.l - paperL) - Math.abs(b.l - paperL))[0] : null;
 	const paperC = paper ? Math.min(PAPER_CHROMA_CAP, Math.max(0, paper.c * .2)) : 0;
 	const h = paper?.h || 0;
@@ -32961,6 +36925,8 @@ try {
 * swallowed, paint updated in-memory only — reload restored the previous URL.
 * INVARIANT: durable custom wallpapers live in IndexedDB; `localStorage` holds
 * either a short URL (`/assets/…`) or the {@link WALLPAPER_IDB_MARKER} pointer.
+* INVARIANT: `blob:` object URLs are session-only. Never persist them; never
+* pass a stored `blob:` to `fetch` / KMeans (`ERR_FILE_NOT_FOUND` after reload).
 */
 var WALLPAPER_STORAGE_KEY = "rs-wallpaper-image";
 var DEFAULT_WALLPAPER_URL = "/assets/wallpaper.jpg";
@@ -32972,12 +36938,25 @@ var IDB_KEY = "current";
 /** Prefer IDB when payload is larger than this (or always for data:/blob:). */
 var LOCAL_STORAGE_SAFE_CHARS = 512e3;
 var liveObjectUrl = null;
+/** Bumped on revoke so an in-flight IDB restore cannot resurrect a dead object URL. */
+var wallpaperEpoch = 0;
 var currentOrientNumber = () => orientationNumberMap?.[getCorrectOrientation()] ?? 0;
+var isIdbPointer = (pointer) => pointer === "idb:rs-wallpaper" || pointer.startsWith("idb:");
+/** Stored `blob:` is always dead after reload; oversized `data:` is a quota leftover. */
+var isUnusableStoredUrl = (pointer) => pointer.startsWith("blob:") || pointer.startsWith("data:") && pointer.length > LOCAL_STORAGE_SAFE_CHARS;
 var revokeLiveObjectUrl = () => {
+	wallpaperEpoch += 1;
 	if (liveObjectUrl && liveObjectUrl.startsWith("blob:")) try {
 		URL.revokeObjectURL(liveObjectUrl);
 	} catch {}
 	liveObjectUrl = null;
+};
+/** Reuse this session's object URL so a second resolve cannot revoke mid-theme-fetch. */
+var adoptWallpaperBlob = (blob, epoch) => {
+	if (epoch !== wallpaperEpoch) return liveObjectUrl;
+	if (liveObjectUrl) return liveObjectUrl;
+	liveObjectUrl = URL.createObjectURL(blob);
+	return liveObjectUrl;
 };
 var openWallpaperDb = () => new Promise((resolve, reject) => {
 	if (typeof indexedDB === "undefined") {
@@ -33044,11 +37023,24 @@ var readStoragePointer = () => {
 	}
 };
 var writeStoragePointer = (value) => {
+	if (value.startsWith("blob:")) return false;
 	try {
 		localStorage.setItem(WALLPAPER_STORAGE_KEY, value);
 		return true;
 	} catch {
 		return false;
+	}
+};
+var restoreWallpaperBlobUrl = async () => {
+	if (liveObjectUrl) return liveObjectUrl;
+	const epoch = wallpaperEpoch;
+	try {
+		const blob = await idbGetWallpaper();
+		if (!blob) return null;
+		return adoptWallpaperBlob(blob, epoch);
+	} catch (err) {
+		console.warn("[fest/image] wallpaper IDB restore failed", err);
+		return null;
 	}
 };
 var isInlinePayload = (url) => url.startsWith("data:") || url.startsWith("blob:");
@@ -33058,28 +37050,14 @@ var isInlinePayload = (url) => url.startsWith("data:") || url.startsWith("blob:"
 */
 var resolveAppWallpaperUrl = async () => {
 	const pointer = readStoragePointer();
-	if (pointer === "idb:rs-wallpaper" || pointer.startsWith("idb:")) {
-		try {
-			const blob = await idbGetWallpaper();
-			if (blob) {
-				revokeLiveObjectUrl();
-				liveObjectUrl = URL.createObjectURL(blob);
-				return liveObjectUrl;
-			}
-		} catch (err) {
-			console.warn("[fest/image] wallpaper IDB restore failed", err);
+	if (isIdbPointer(pointer) || isUnusableStoredUrl(pointer)) {
+		const url = await restoreWallpaperBlobUrl();
+		if (url) {
+			if (!isIdbPointer(pointer)) writeStoragePointer(WALLPAPER_IDB_MARKER);
+			return url;
 		}
 		return DEFAULT_WALLPAPER_URL;
 	}
-	if (pointer.startsWith("data:") && pointer.length > LOCAL_STORAGE_SAFE_CHARS) try {
-		const blob = await idbGetWallpaper();
-		if (blob) {
-			revokeLiveObjectUrl();
-			liveObjectUrl = URL.createObjectURL(blob);
-			writeStoragePointer(WALLPAPER_IDB_MARKER);
-			return liveObjectUrl;
-		}
-	} catch {}
 	return pointer || DEFAULT_WALLPAPER_URL;
 };
 /** Durable pointer currently stored (`/assets/…` or {@link WALLPAPER_IDB_MARKER}). */
@@ -33148,7 +37126,7 @@ var setAppWallpaperFromBlob = async (blob) => {
 	revokeLiveObjectUrl();
 	liveObjectUrl = URL.createObjectURL(blob);
 	paintWallpaperOnCanvases(liveObjectUrl);
-	applyThemeFromWallpaper(liveObjectUrl, { force: true }).then(() => {
+	applyThemeFromWallpaper(blob, { force: true }).then(() => {
 		document.querySelectorAll(".app-canvas__glow").forEach(syncGlowToTheme);
 	});
 	try {
@@ -33209,16 +37187,18 @@ var initializeAppCanvasLayer = (container) => {
 	canvas.style.setProperty("opacity", "1", "important");
 	root.append(glow, canvas);
 	const pointer = readStoragePointer();
-	const coldUrl = pointer === "idb:rs-wallpaper" || pointer.startsWith("idb:") || pointer.startsWith("data:") ? DEFAULT_WALLPAPER_URL : pointer;
+	const coldUrl = isIdbPointer(pointer) || pointer.startsWith("data:") || pointer.startsWith("blob:") ? DEFAULT_WALLPAPER_URL : pointer;
 	canvas.setAttribute("data-src", coldUrl);
 	const disposeOrient = syncCanvasOrient(canvas);
 	restoreWallpaperThemeCache();
 	syncGlowToTheme(glow);
-	resolveAppWallpaperUrl().then((wallpaper) => {
+	(async () => {
+		const wallpaper = await resolveAppWallpaperUrl();
 		canvas.setAttribute("data-src", wallpaper);
 		syncCanvasOrient(canvas);
-		return applyThemeFromWallpaper(wallpaper).then(() => syncGlowToTheme(glow));
-	});
+		await applyThemeFromWallpaper(wallpaper.startsWith("blob:") ? await idbGetWallpaper() || wallpaper : wallpaper);
+		syncGlowToTheme(glow);
+	})();
 	return {
 		root,
 		canvas,
@@ -33238,8 +37218,9 @@ var setAppWallpaper = (wallpaperUrl) => {
 				await setAppWallpaperFromBlob(value.startsWith("blob:") ? await (await fetch(value)).blob() : await dataUrlToBlob(value));
 			} catch (err) {
 				console.warn("[fest/image] setAppWallpaper inline persist failed", err);
-				paintWallpaperOnCanvases(value);
-				applyThemeFromWallpaper(value, { force: true }).then(() => {
+				const fallback = value.startsWith("blob:") ? DEFAULT_WALLPAPER_URL : value;
+				paintWallpaperOnCanvases(fallback);
+				applyThemeFromWallpaper(fallback, { force: true }).then(() => {
 					document.querySelectorAll(".app-canvas__glow").forEach(syncGlowToTheme);
 				});
 			}
@@ -34259,6 +38240,15 @@ function createChromeBookmarksBackend(api) {
 		if (!id) return;
 		await bookmarks.update(id, { title: newName });
 	};
+	const update = async (path, patch) => {
+		const id = lastId(path);
+		if (!id) return;
+		const body = {};
+		if (patch.title != null) body.title = String(patch.title || "").trim();
+		if (patch.url != null && !isFolderPath(path)) body.url = String(patch.url || "").trim();
+		if (!Object.keys(body).length) return;
+		await bookmarks.update(id, body);
+	};
 	const move = async (fromPath, toDirPath) => {
 		const id = lastId(fromPath);
 		const parentId = lastId(toDirPath) || "0";
@@ -34298,6 +38288,7 @@ function createChromeBookmarksBackend(api) {
 		mkdir,
 		createUrl,
 		rename,
+		update,
 		move,
 		remove,
 		writeFile,
@@ -34361,6 +38352,31 @@ var listNativeStorage = async (root, path = "/") => {
 	const rows = echo.entries || echo.files;
 	return Array.isArray(rows) ? rows : [];
 };
+var dataUrlToFile = async (dataUrl, name, mime) => {
+	const src = String(dataUrl || "").trim();
+	if (!src) return null;
+	try {
+		const blob = await (await fetch(src)).blob();
+		return new File([blob], name || "file", { type: blob.type || mime || "application/octet-stream" });
+	} catch {
+		return null;
+	}
+};
+/** Read one `/sdcard/` or `/saf/` file through CwsBridge (`storage:read`). */
+var readNativeStorageFile = async (virtualPath) => {
+	const raw = String(virtualPath || "").trim();
+	if (!raw) return null;
+	const root = raw === "/saf" || raw.startsWith("/saf/") ? "saf" : raw === "/sdcard" || raw.startsWith("/sdcard/") ? "sdcard" : "";
+	if (!root) return null;
+	const prefix = root === "saf" ? "/saf/" : "/sdcard/";
+	const echo = await capacitorInvoke("storage:read", {
+		root,
+		path: (raw.startsWith(prefix) ? raw.slice(prefix.length - 1) : raw) || "/"
+	});
+	const data = String(echo.data || echo.dataUrl || "");
+	if (!data) return null;
+	return dataUrlToFile(data, String(echo.name || raw.split("/").filter(Boolean).pop() || "file"), String(echo.mime || echo.mimeType || "application/octet-stream"));
+};
 //#endregion
 //#region ../../modules/projects/fl.ui/src/ui/navigation/explorer/backends/native-fs-backend.ts
 var toEntries = (path, rows) => {
@@ -34381,6 +38397,9 @@ var createNativeFsBackend = (root) => ({
 	async list(path) {
 		const rel = normalizeVirtualPath(path, true).slice(root.length - 1) || "/";
 		return toEntries(path, await listNativeStorage(root === "/saf/" ? "saf" : "sdcard", rel));
+	},
+	async readFile(path) {
+		return readNativeStorageFile(path);
 	}
 });
 //#endregion
@@ -34750,2619 +38769,6 @@ var observeUserFileSystem = () => {
 };
 ensureDefaultFsBackends();
 //#endregion
-//#region ../../modules/projects/fl.ui/src/ui/speed-dial/layout.ts
-var DEFAULT_LAYOUT = [4, 8];
-var clamp = (value, min, max) => {
-	return Math.max(min, Math.min(max, value));
-};
-var positiveInteger = (value, fallback) => {
-	const number = Number(value);
-	return Number.isFinite(number) && number > 0 ? Math.max(1, Math.floor(number)) : fallback;
-};
-var normalizeLayout = (layout) => {
-	return [positiveInteger(layout?.[0], DEFAULT_LAYOUT[0]), positiveInteger(layout?.[1], DEFAULT_LAYOUT[1])];
-};
-/**
-* Normalize numeric orientation values without allowing invalid strings to
-* silently select a different layout.
-*/
-var normalizeOrient = (value) => {
-	if (typeof value === "string" && !/^-?\d+(?:\.\d+)?$/.test(value.trim())) return 0;
-	const number = Number(value);
-	if (!Number.isFinite(number)) return 0;
-	return (Math.trunc(number) % 4 + 4) % 4;
-};
-/** Return the visible `[columns, rows]` for a logical grid and orientation. */
-var visualLayout = (layout, orient) => {
-	const [columns, rows] = normalizeLayout(layout);
-	return normalizeOrient(orient) % 2 ? [rows, columns] : [columns, rows];
-};
-var clampVisualCell = (cell, layout, orient) => {
-	const [columns, rows] = visualLayout(layout, orient);
-	return [clamp(Math.floor(Number(cell?.[0]) || 0), 0, columns - 1), clamp(Math.floor(Number(cell?.[1]) || 0), 0, rows - 1)];
-};
-/** Convert visible CSS-grid coordinates back to persisted logical coordinates. */
-var visualToLogicalCell = (cell, layout, orient) => {
-	const [columns, rows] = normalizeLayout(layout);
-	const normalizedOrient = normalizeOrient(orient);
-	const [x, y] = clampVisualCell(cell, [columns, rows], normalizedOrient);
-	switch (normalizedOrient) {
-		case 1: return [columns - 1 - y, x];
-		case 2: return [columns - 1 - x, rows - 1 - y];
-		case 3: return [y, rows - 1 - x];
-		default: return [x, y];
-	}
-};
-/**
-* Resolve a local point in the visible grid content box to a logical cell.
-* The caller is responsible for subtracting CSS padding from the point and
-* passing the content-box size.
-*/
-var pointToLogicalCell = (point, size, layout, orient, mode = "floor") => {
-	const visible = visualLayout(layout, orient);
-	const width = Math.max(1, Number(size?.[0]) || 1);
-	const height = Math.max(1, Number(size?.[1]) || 1);
-	const xRatio = clamp((Number(point?.[0]) || 0) / width, 0, 1);
-	const yRatio = clamp((Number(point?.[1]) || 0) / height, 0, 1);
-	const project = (ratio, count) => {
-		const value = ratio * count;
-		return mode === "round" ? Math.round(value - .5) : Math.floor(value);
-	};
-	return visualToLogicalCell([clamp(project(xRatio, visible[0]), 0, visible[0] - 1), clamp(project(yRatio, visible[1]), 0, visible[1] - 1)], layout, orient);
-};
-var cellKey = (cell) => `${cell[0]}:${cell[1]}`;
-var normalizeSpan = (span) => [Math.max(1, Math.min(8, Math.floor(Number(span?.[0]) || 1))), Math.max(1, Math.min(8, Math.floor(Number(span?.[1]) || 1)))];
-var cellsForSpan = (origin, span) => {
-	const [sx, sy] = normalizeSpan(span);
-	const x0 = Math.floor(Number(origin?.[0]) || 0);
-	const y0 = Math.floor(Number(origin?.[1]) || 0);
-	const cells = [];
-	for (let y = 0; y < sy; y += 1) for (let x = 0; x < sx; x += 1) cells.push([x0 + x, y0 + y]);
-	return cells;
-};
-var markOccupiedSpan = (occupied, origin, span) => {
-	for (const cell of cellsForSpan(origin, span)) occupied.add(cellKey(cell));
-};
-var spanFits = (origin, span, layout) => {
-	const [columns, rows] = normalizeLayout(layout);
-	const [sx, sy] = normalizeSpan(span);
-	const x = Math.floor(Number(origin?.[0]) || 0);
-	const y = Math.floor(Number(origin?.[1]) || 0);
-	return x >= 0 && y >= 0 && x + sx <= columns && y + sy <= rows;
-};
-var rectConflicts = (origin, span, occupied) => cellsForSpan(origin, span).some((cell) => occupied.has(cellKey(cell)));
-/**
-* Nearest logical origin where `span` fits and none of its cells are occupied.
-* INVARIANT: origin is the top-left of the rectangle in logical space.
-*/
-var findNearestFreeRect = (preferred, span, occupied, layout, maxSearchRadius) => {
-	const normalizedLayout = normalizeLayout(layout);
-	const [sx, sy] = normalizeSpan(span);
-	const [columns, rows] = normalizedLayout;
-	const maxX = Math.max(0, columns - sx);
-	const maxY = Math.max(0, rows - sy);
-	const start = [clamp(Math.floor(Number(preferred?.[0]) || 0), 0, maxX), clamp(Math.floor(Number(preferred?.[1]) || 0), 0, maxY)];
-	if (spanFits(start, [sx, sy], normalizedLayout) && !rectConflicts(start, [sx, sy], occupied)) return start;
-	const maxRadius = Math.min(Math.max(columns, rows), Number.isFinite(Number(maxSearchRadius)) ? Math.max(0, Math.floor(Number(maxSearchRadius))) : Math.max(columns, rows));
-	for (let radius = 1; radius <= maxRadius; radius += 1) for (let y = Math.max(0, start[1] - radius); y <= Math.min(maxY, start[1] + radius); y += 1) for (let x = Math.max(0, start[0] - radius); x <= Math.min(maxX, start[0] + radius); x += 1) {
-		if (Math.abs(x - start[0]) !== radius && Math.abs(y - start[1]) !== radius) continue;
-		const candidate = [x, y];
-		if (spanFits(candidate, [sx, sy], normalizedLayout) && !rectConflicts(candidate, [sx, sy], occupied)) return candidate;
-	}
-	return start;
-};
-/** Clamp a logical cell to the supplied grid. */
-var clampLogicalCell = (cell, layout) => {
-	const [columns, rows] = normalizeLayout(layout);
-	return [clamp(Math.floor(Number(cell?.[0]) || 0), 0, columns - 1), clamp(Math.floor(Number(cell?.[1]) || 0), 0, rows - 1)];
-};
-var readCell = (item) => [Math.floor(Number(item?.cell?.[0]) || 0), Math.floor(Number(item?.cell?.[1]) || 0)];
-var writeCell = (item, cell) => {
-	const prev = readCell(item);
-	if (prev[0] === cell[0] && prev[1] === cell[1]) return false;
-	if (!item.cell) return false;
-	item.cell[0] = cell[0];
-	item.cell[1] = cell[1];
-	return true;
-};
-/**
-* Keep tiles inside a new `[columns, rows]` without stacking everyone on the
-* last track. In-bounds items keep their cells (collisions resolved); overflow
-* items take the nearest free cell.
-*/
-var relocateItemsToLayout = (items, layout, getSpan) => {
-	const normalized = normalizeLayout(layout);
-	const [columns, rows] = normalized;
-	const inBounds = [];
-	const overflow = [];
-	for (const item of items) {
-		if (!item?.cell) continue;
-		const [x, y] = readCell(item);
-		const span = normalizeSpan(getSpan?.(item));
-		if (x >= 0 && y >= 0 && x + span[0] <= columns && y + span[1] <= rows) inBounds.push(item);
-		else overflow.push(item);
-	}
-	const occupied = /* @__PURE__ */ new Set();
-	let changed = false;
-	const place = (item, preferred) => {
-		const span = normalizeSpan(getSpan?.(item));
-		const cell = findNearestFreeRect(preferred, span, occupied, normalized);
-		markOccupiedSpan(occupied, cell, span);
-		if (writeCell(item, cell)) changed = true;
-	};
-	for (const item of inBounds) place(item, readCell(item));
-	for (const item of overflow) place(item, clampLogicalCell(readCell(item), normalized));
-	return changed;
-};
-//#endregion
-//#region ../../modules/projects/fl.ui/src/ui/speed-dial/link-store.ts
-/**
-* Virtual directory holding curated speed-dial files. Matches the PathRouter
-* `/user/` OpfsBackend root so Explorer can browse the same tree.
-*/
-var LINKS_DIR = "/user/links/";
-/** Legacy aggregate file — still read on boot, then split into per-item JSON. */
-var LINKS_JSON = "/user/links/links.json";
-var META_JSON = "/user/links/meta.json";
-var RESERVED_LINK_FILES = /* @__PURE__ */ new Set(["links.json", "meta.json"]);
-/**
-* Safe leaf name for a curated item. Ids are UUID / `shortcut-*` / `sd-*`;
-* strip path separators so Explorer + OPFS can treat each tile as one file.
-*/
-function itemFileName(id) {
-	return `${String(id || "").trim().replace(/[\\/:*?"<>|\s]+/g, "_").replace(/^\.+/, "_") || "item"}.json`;
-}
-function itemJsonPath(id) {
-	return `${LINKS_DIR}${itemFileName(id)}`;
-}
-var isItemJsonPath = (path) => {
-	const name = String(path || "").split("/").filter(Boolean).pop() || "";
-	if (!name.endsWith(".json")) return false;
-	return !RESERVED_LINK_FILES.has(name);
-};
-/**
-* localStorage keys mirror `launcher-state.ts` so a one-time migration can copy
-* the existing grid into OPFS without a schema change.
-*/
-var LS_ITEMS_KEY = "cw::workspace::speed-dial";
-var LS_META_KEY = "cw::workspace::speed-dial::meta";
-/**
-* Marker written to LS after a successful migration so we never re-import and
-* overwrite user edits. Kept in LS (not OPFS) so it survives OPFS wipe.
-*/
-var LS_MIGRATED_KEY = "cw::workspace::speed-dial::migrated-opfs-v1";
-/**
-* Accept JSOX (unquoted keys, what `launcher-state.ts` writes today) or JSON on read.
-* WHY: `makeUIState` packs via `JSOX.stringify`; existing LS payloads are JSOX. OPFS
-* files we write are JSON, so this stays forward-compatible too.
-*/
-var parseLoose = (raw) => {
-	if (raw == null || !String(raw).trim()) return null;
-	try {
-		return JSON.parse(raw);
-	} catch {
-		try {
-			return JSOX.parse(raw);
-		} catch {
-			return null;
-		}
-	}
-};
-/** Unwrap observe/stringRef proxies into plain values for OPFS serialization. */
-var unwrapRef$1 = (value, fallback) => {
-	if (value && typeof value === "object" && "value" in value) return String(value.value ?? fallback ?? "");
-	return String(value ?? fallback ?? "");
-};
-/**
-* Pack existing `SpeedDialPersistedItem`-shaped items (cell may be `[x,y]` or an
-* observe proxy; meta may live on the item or in a side registry) into plain
-* `LinkStoreItem` POJOs for OPFS.
-*
-* WHY: keeps the OPFS file free of reactive proxies (which break roundtrips and
-* hand-editing) while preserving `href`/`path`/`iconAsset` for open-link/path tiles.
-*/
-function packLinksFromSpeedDial(items) {
-	if (!Array.isArray(items)) return [];
-	return items.map((entry) => {
-		const cell = entry?.cell;
-		const meta = entry?.meta && typeof entry.meta === "object" ? entry.meta : null;
-		const item = {
-			id: String(entry?.id || ""),
-			label: unwrapRef$1(entry?.label, "Shortcut"),
-			action: String(entry?.action || "open-view"),
-			icon: unwrapRef$1(entry?.icon, "sparkle")
-		};
-		if (cell != null) item.cell = [Number(Array.isArray(cell) ? cell[0] : cell?.[0]) || 0, Number(Array.isArray(cell) ? cell[1] : cell?.[1]) || 0];
-		const href = unwrapRef$1(meta?.href ?? entry?.href, "") || (meta?.href ?? entry?.href);
-		if (href) item.href = String(href);
-		const path = unwrapRef$1(meta?.path ?? entry?.path, "") || (meta?.path ?? entry?.path);
-		if (path) item.path = String(path);
-		const iconAsset = meta?.iconAsset ?? entry?.iconAsset;
-		if (iconAsset) item.iconAsset = String(iconAsset);
-		return item;
-	});
-}
-var emptyMeta = () => ({
-	version: 1,
-	mirrorPath: null,
-	items: {}
-});
-/**
-* One-time migration of legacy localStorage speed-dial into OPFS.
-*
-* Returns:
-* - `"migrated"` — LS had data and OPFS was empty; we copied it.
-* - `"skipped"`  — OPFS already had curated item JSON (or legacy `links.json`);
-*   we just ensure the LS marker so we never re-import even if LS still holds
-*   the old payload.
-* - `"already"`  — LS marker already set; nothing to do.
-*
-* WHY: idempotent — running twice never overwrites OPFS edits. We never delete LS
-* (one-release backup window); we only set `LS_MIGRATED_KEY = "1"`.
-*/
-async function migrateLocalStorageToOpfsIfNeeded(io, ls) {
-	const lsReader = toLsReader(ls);
-	if (lsReader.getItem("cw::workspace::speed-dial::migrated-opfs-v1")) return "already";
-	if (await hasCuratedOpfsData(io)) {
-		safeSet(ls, LS_MIGRATED_KEY, "1");
-		return "skipped";
-	}
-	const rawItems = lsReader.getItem(LS_ITEMS_KEY);
-	const rawMeta = lsReader.getItem(LS_META_KEY);
-	if (!rawItems && !rawMeta) {
-		safeSet(ls, LS_MIGRATED_KEY, "1");
-		return "skipped";
-	}
-	const items = normalizeLegacyItems(parseLoose(rawItems));
-	await writeLinkStore(io, items, normalizeLegacyMeta(parseLoose(rawMeta), items));
-	safeSet(ls, LS_MIGRATED_KEY, "1");
-	return "migrated";
-}
-var toLsReader = (ls) => {
-	if (ls instanceof Map) return {
-		getItem(key) {
-			return ls.has(key) ? ls.get(key) : null;
-		},
-		setItem(key, value) {
-			ls.set(key, value);
-		}
-	};
-	return ls;
-};
-var safeSet = (ls, key, value) => {
-	try {
-		if (ls instanceof Map) ls.set(key, value);
-		else ls.setItem(key, value);
-	} catch {}
-};
-var normalizeLegacyItems = (raw) => {
-	if (!Array.isArray(raw)) return [];
-	return raw.map((entry) => {
-		const item = {
-			id: String(entry?.id || ""),
-			label: unwrapRef$1(entry?.label, "Shortcut"),
-			action: String(entry?.action || "open-view"),
-			icon: unwrapRef$1(entry?.icon, "sparkle")
-		};
-		if (entry?.href) item.href = String(entry.href);
-		if (entry?.path) item.path = String(entry.path);
-		if (entry?.iconAsset) item.iconAsset = String(entry.iconAsset);
-		if (Array.isArray(entry?.cell)) item.cell = [Number(entry.cell[0]) || 0, Number(entry.cell[1]) || 0];
-		return item;
-	}).filter((item) => item.id);
-};
-var normalizeLegacyMeta = (raw, items) => {
-	const meta = emptyMeta();
-	const knownTopKeys = /* @__PURE__ */ new Set([
-		"version",
-		"mirrorPath",
-		"grid",
-		"items",
-		"curatedEmpty"
-	]);
-	if (raw && typeof raw === "object") {
-		if (raw.mirrorPath != null) meta.mirrorPath = String(raw.mirrorPath);
-		if (raw.grid != null) meta.grid = raw.grid;
-		if (raw.curatedEmpty === true) meta.curatedEmpty = true;
-		const itemsMap = raw.items;
-		let entries;
-		if (itemsMap instanceof Map) entries = Array.from(itemsMap.entries());
-		else if (Array.isArray(itemsMap)) entries = itemsMap.map((e) => e && typeof e === "object" && "id" in e ? [e.id, e.meta || e] : null).filter((e) => e !== null);
-		else if (itemsMap && typeof itemsMap === "object") entries = Object.entries(itemsMap);
-		else entries = Object.entries(raw).filter(([k]) => !knownTopKeys.has(k));
-		for (const [id, m] of entries) {
-			if (!id || !m || typeof m !== "object") continue;
-			const entry = { ...m };
-			if (Array.isArray(m.cell)) entry.cell = [Number(m.cell[0]) || 0, Number(m.cell[1]) || 0];
-			meta.items[String(id)] = entry;
-		}
-	}
-	for (const item of items) {
-		const slot = meta.items[item.id] || {};
-		if (item.cell && !Array.isArray(slot.cell)) slot.cell = item.cell;
-		meta.items[item.id] = slot;
-	}
-	return meta;
-};
-var listItemJsonPaths = async (io) => {
-	if (typeof io.list !== "function") return [];
-	try {
-		return (await io.list("/user/links/") || []).filter(isItemJsonPath);
-	} catch {
-		return [];
-	}
-};
-var hasCuratedOpfsData = async (io) => {
-	if (await io.exists("/user/links/links.json")) return true;
-	return (await listItemJsonPaths(io)).length > 0;
-};
-var parseItemFile = (raw, fallbackId) => {
-	const parsed = parseLoose(raw);
-	if (!parsed || Array.isArray(parsed) || typeof parsed !== "object") return null;
-	const id = String(parsed.id || fallbackId || "").trim();
-	if (!id) return null;
-	const [item] = normalizeLegacyItems([{
-		...parsed,
-		id
-	}]);
-	return item || null;
-};
-/**
-* Read curated items + meta from OPFS. Prefers per-item `/user/links/<id>.json`.
-* Falls back to legacy `links.json` (array) when no item files exist.
-* Returns `null` when neither is present (caller should fall back to defaults / LS).
-* `meta.json` missing is non-fatal — we return an empty meta shell so callers can
-* overlay cells later.
-*/
-async function readLinkStore(io) {
-	const itemPaths = await listItemJsonPaths(io);
-	let items = [];
-	if (itemPaths.length) {
-		const loaded = [];
-		for (const path of itemPaths) {
-			const item = parseItemFile(await io.readText(path), (path.split("/").filter(Boolean).pop() || "").replace(/\.json$/i, ""));
-			if (item) loaded.push(item);
-		}
-		items = loaded;
-	}
-	if (!items.length) {
-		const itemsRaw = await io.readText(LINKS_JSON);
-		if (itemsRaw != null && String(itemsRaw).trim()) {
-			const parsed = parseLoose(itemsRaw);
-			if (Array.isArray(parsed)) items = normalizeLegacyItems(parsed);
-		}
-	}
-	const metaParsed = parseLoose(await io.readText(META_JSON));
-	if (metaParsed && typeof metaParsed === "object" && metaParsed.curatedEmpty === true) {
-		const meta = normalizeLegacyMeta({
-			...metaParsed,
-			items: {}
-		}, []);
-		meta.curatedEmpty = true;
-		return {
-			items: [],
-			meta
-		};
-	}
-	if (!items.length) {
-		const recovered = itemsFromMetaSlots(metaParsed);
-		if (!recovered.length) return null;
-		return {
-			items: recovered,
-			meta: normalizeLegacyMeta(metaParsed, recovered)
-		};
-	}
-	const meta = normalizeLegacyMeta(metaParsed, items);
-	return {
-		items,
-		meta
-	};
-}
-var itemsFromMetaSlots = (raw) => {
-	if (!raw || typeof raw !== "object") return [];
-	const map = raw.items && typeof raw.items === "object" && !Array.isArray(raw.items) ? raw.items : raw;
-	const knownTop = /* @__PURE__ */ new Set([
-		"version",
-		"mirrorPath",
-		"grid",
-		"items",
-		"curatedEmpty"
-	]);
-	const out = [];
-	for (const [id, slot] of Object.entries(map || {})) {
-		if (!id || knownTop.has(id) || id.startsWith("mirror:")) continue;
-		if (!slot || typeof slot !== "object") continue;
-		const rec = slot;
-		const href = rec.href != null ? String(rec.href) : "";
-		const view = rec.view != null ? String(rec.view) : "";
-		const path = rec.path != null ? String(rec.path) : "";
-		const action = String(rec.action || (href ? "open-link" : view || path ? "open-view" : "") || "");
-		if (!action && !href && !view && !path) continue;
-		const item = {
-			id,
-			label: String(rec.label || id),
-			action: action || "open-view",
-			icon: String(rec.icon || (href ? "link" : "sparkle"))
-		};
-		if (href) item.href = href;
-		if (path) item.path = path;
-		if (Array.isArray(rec.cell)) item.cell = [Number(rec.cell[0]) || 0, Number(rec.cell[1]) || 0];
-		out.push(item);
-	}
-	return out;
-};
-/**
-* Default column count for auto-placing mirror tiles below the curated grid.
-* WHY: matches `gridLayoutState.columns` default (4). Auto-placement only kicks
-* in when meta has no per-id `cell` override; an explicit override always wins.
-*/
-var MIRROR_AUTO_PLACE_COLUMNS = 4;
-/**
-* Build speed-dial display items from a PathRouter directory listing merged
-* with per-id meta overrides (`cell`, `hidden`, `shape`, …).
-*
-* WHY: in mirror mode the speed-dial grid is driven by a virtual directory
-* (OPFS folder or CRX `/bookmarks/…`) instead of curated `links.json`. The
-* meta registry still holds per-id overrides so users can pin a mirror tile to
-* a specific cell or hide it without mutating the source tree.
-*
-* INVARIANT: ids are `mirror:${path}` so they never collide with curated ids.
-* Directories and `.md`/`.markdown`/`.txt`/image files map to `open-path`
-* (Explorer / viewer). Entries carrying an `href` (e.g. Chrome bookmark URLs)
-* map to `open-link`. Anything else falls back to `open-path` so the Explorer
-* can decide how to render it.
-*
-* Task 3 fix — auto-placement: when meta has no `cell` override for a mirror
-* item, the item is auto-placed on the next free cell below the curated grid's
-* max Y (so mirror tiles never overlap curated tiles at `[0,0]` anymore).
-* Meta `cell` overrides are always honored. `curatedItems` is optional; when
-* omitted, `maxY` is treated as -1 so the first auto-placed tile lands at
-* `[0,0]` (preserves the old default for callers that don't pass curated state).
-*
-* COMPAT: `meta.items[id].hidden === true` drops the entry.
-*/
-function buildMirrorSpeedDialItems(listing, meta, _mirrorPath, curatedItems) {
-	if (!Array.isArray(listing)) return [];
-	const metaItems = meta?.items || {};
-	let maxCuratedY = -1;
-	if (Array.isArray(curatedItems)) for (const entry of curatedItems) {
-		const cell = entry?.cell;
-		if (!Array.isArray(cell) || cell.length < 2) continue;
-		const y = Number(cell[1]) || 0;
-		if (y > maxCuratedY) maxCuratedY = y;
-	}
-	const startY = maxCuratedY + 1;
-	const occupied = /* @__PURE__ */ new Set();
-	if (Array.isArray(curatedItems)) for (const entry of curatedItems) {
-		const cell = entry?.cell;
-		if (!Array.isArray(cell) || cell.length < 2) continue;
-		occupied.add(`${Number(cell[0]) || 0}:${Number(cell[1]) || 0}`);
-	}
-	const pending = [];
-	for (const entry of listing) {
-		if (!entry || !entry.name) continue;
-		const path = String(entry.path || "");
-		const id = `mirror:${path}`;
-		const perId = metaItems[id] || {};
-		if (perId.hidden === true) continue;
-		const isDirectory = entry.kind === "directory" || path.endsWith("/");
-		const href = entry.href ? String(entry.href) : "";
-		const mimeType = String(entry.type || "").toLowerCase();
-		const isMarkdown = /\.(md|markdown|txt)$/i.test(path) || mimeType.startsWith("text/");
-		const isImage = /\.(png|jpe?g|gif|webp|svg|avif|bmp)$/i.test(path) || mimeType.startsWith("image/");
-		let action;
-		let icon;
-		if (href) {
-			action = "open-link";
-			icon = "link";
-		} else if (isDirectory) {
-			action = "open-path";
-			icon = "folder";
-		} else if (isMarkdown) {
-			action = "open-path";
-			icon = "article";
-		} else if (isImage) {
-			action = "open-path";
-			icon = "image";
-		} else {
-			action = "open-path";
-			icon = "file-text";
-		}
-		const item = {
-			id,
-			label: String(entry.name),
-			action,
-			icon,
-			cell: [0, 0]
-		};
-		if (path) item.path = path;
-		if (href) {
-			item.href = href;
-			const fav = resolveEntryIcon(entry);
-			if (fav) item.iconUrl = fav;
-		}
-		const hasOverride = Array.isArray(perId.cell);
-		if (hasOverride) {
-			const overrideCell = perId.cell;
-			const x = Number(overrideCell[0]) || 0;
-			const y = Number(overrideCell[1]) || 0;
-			item.cell = [x, y];
-			occupied.add(`${x}:${y}`);
-		}
-		pending.push({
-			item,
-			hasOverride
-		});
-	}
-	let cursorX = 0;
-	let cursorY = startY;
-	const nextFreeCell = () => {
-		for (;;) {
-			const key = `${cursorX}:${cursorY}`;
-			if (!occupied.has(key)) {
-				occupied.add(key);
-				return [cursorX, cursorY];
-			}
-			cursorX += 1;
-			if (cursorX >= MIRROR_AUTO_PLACE_COLUMNS) {
-				cursorX = 0;
-				cursorY += 1;
-			}
-		}
-	};
-	const items = [];
-	for (const { item, hasOverride } of pending) {
-		if (!hasOverride) item.cell = nextFreeCell();
-		items.push(item);
-	}
-	return items;
-}
-/**
-* Write curated items + meta to OPFS as JSON. Each item is `/user/links/<id>.json`;
-* `meta.json` holds grid overlays. Stale item files and legacy `links.json` are
-* removed after a successful write so Explorer shows one file per tile.
-*/
-async function writeLinkStore(io, items, meta, options) {
-	const list = Array.isArray(items) ? items.filter((item) => item?.id) : [];
-	if (!list.length && !options?.allowEmpty) {
-		if (await hasCuratedOpfsData(io)) {
-			console.warn("[link-store] skip empty write; keeping existing curated OPFS files");
-			return;
-		}
-	}
-	const keep = /* @__PURE__ */ new Set();
-	for (const item of list) {
-		const path = itemJsonPath(item.id);
-		keep.add(path);
-		await io.writeText(path, JSON.stringify(item, null, 2));
-	}
-	const metaFile = {
-		version: 1,
-		mirrorPath: meta?.mirrorPath ?? null,
-		items: list.length ? meta?.items ?? {} : {},
-		grid: meta?.grid,
-		...list.length ? {} : { curatedEmpty: true }
-	};
-	await io.writeText(META_JSON, JSON.stringify(metaFile, null, 2));
-	const existing = await listItemJsonPaths(io);
-	if (typeof io.remove === "function") {
-		for (const path of existing) if (!keep.has(path)) try {
-			await io.remove(path);
-		} catch {}
-		if (await io.exists("/user/links/links.json")) try {
-			await io.remove(LINKS_JSON);
-		} catch {}
-	}
-}
-/**
-* Browser-only OPFS IO helper. Walks/creates `/user/links/` via
-* `navigator.storage.getDirectory()` and reads/writes leaf files.
-*
-* WHY: throws on failure — `launcher-state.ts` catches and falls back to LS with
-* `console.warn("[link-store] OPFS unavailable; using localStorage")`.
-*
-* NOTE: virtual paths (`/user/links/<id>.json`) are mapped to OPFS by stripping
-* the `/user/` prefix — the PathRouter `/user/` OpfsBackend uses the same root.
-*/
-async function createOpfsLinkStoreIo() {
-	if (typeof navigator === "undefined" || !navigator.storage?.getDirectory) throw new Error("[link-store] OPFS not available");
-	const root = await navigator.storage.getDirectory();
-	const segmentsFor = (path) => {
-		const vpath = String(path || "").replace(/^\/+/, "");
-		if (vpath.startsWith("user/")) return vpath.slice(5).split("/").filter(Boolean);
-		return vpath.split("/").filter(Boolean);
-	};
-	const resolveDir = async (dirPath, create) => {
-		const segments = segmentsFor(dirPath);
-		let dir = root;
-		for (const seg of segments) dir = await dir.getDirectoryHandle(seg, { create });
-		return dir;
-	};
-	const resolveHandle = async (path, create) => {
-		const segments = segmentsFor(path);
-		if (!segments.length) throw new Error(`[link-store] invalid path: ${path}`);
-		let dir = root;
-		for (let i = 0; i < segments.length - 1; i += 1) dir = await dir.getDirectoryHandle(segments[i], { create });
-		return dir.getFileHandle(segments[segments.length - 1], { create });
-	};
-	const toVirtualPath = (dirPath, name) => {
-		return `${String(dirPath || "/").replace(/\/+$/, "") || ""}/${name}`;
-	};
-	return {
-		async readText(path) {
-			try {
-				return (await (await resolveHandle(path, false)).getFile()).text();
-			} catch (e) {
-				if (e?.name === "NotFoundError" || e?.name === "TypeMismatchError") return null;
-				throw e;
-			}
-		},
-		async writeText(path, text) {
-			const writable = await (await resolveHandle(path, true)).createWritable();
-			await writable.write(text);
-			await writable.close();
-		},
-		async exists(path) {
-			try {
-				await resolveHandle(path, false);
-				return true;
-			} catch {
-				return false;
-			}
-		},
-		async list(dirPath) {
-			try {
-				const dir = await resolveDir(dirPath, false);
-				const out = [];
-				for await (const [name, handle] of dir.entries()) {
-					if (handle?.kind === "directory") continue;
-					out.push(toVirtualPath(dirPath, name));
-				}
-				return out;
-			} catch (e) {
-				if (e?.name === "NotFoundError") return [];
-				throw e;
-			}
-		},
-		async remove(path) {
-			const segments = segmentsFor(path);
-			if (segments.length < 1) return;
-			let dir = root;
-			for (let i = 0; i < segments.length - 1; i += 1) dir = await dir.getDirectoryHandle(segments[i], { create: false });
-			await dir.removeEntry(segments[segments.length - 1]);
-		}
-	};
-}
-//#endregion
-//#region ../../modules/projects/fl.ui/src/ui/speed-dial/tile-icon.ts
-var ICON_DISPLAY_OPTIONS = [
-	{
-		value: "glyph",
-		label: "Glyph (Phosphor)"
-	},
-	{
-		value: "masked",
-		label: "Masked"
-	},
-	{
-		value: "masked-inverse",
-		label: "Masked inverse"
-	},
-	{
-		value: "colored",
-		label: "Colored"
-	}
-];
-var TILE_SHAPE_OPTIONS = [
-	{
-		value: "circle",
-		label: "Circle"
-	},
-	{
-		value: "squircle",
-		label: "Squircle"
-	},
-	{
-		value: "square",
-		label: "Rounded square"
-	},
-	{
-		value: "wavy",
-		label: "Wavy"
-	},
-	{
-		value: "shapeless",
-		label: "Shapeless"
-	}
-];
-var isTileShapeValue = (raw) => {
-	const v = String(raw || "").trim().toLowerCase();
-	return v === "circle" || v === "squircle" || v === "square" || v === "wavy" || v === "shapeless";
-};
-function isShapelessTileShape(raw) {
-	return String(raw || "").trim().toLowerCase() === "shapeless";
-}
-/**
-* WHY: shapeless has no plate — a black blurred clone of the bitmap/glyph
-* sits under the real icon so the shadow follows the icon silhouette.
-*/
-function syncShapelessIconShadow(host) {
-	if (!host) return;
-	host.querySelectorAll(".sd-icon-silhouette").forEach((node) => node.remove());
-	if (!isShapelessTileShape(host.getAttribute("data-shape"))) return;
-	const img = host.querySelector("img:not(.sd-icon-silhouette)");
-	if (img) {
-		if (img.src) {
-			const clone = img.cloneNode(true);
-			clone.className = "sd-icon-silhouette";
-			clone.removeAttribute("data-launcher-icon");
-			clone.removeAttribute("data-bookmark-favicon");
-			clone.removeAttribute("data-icon-pending");
-			clone.removeAttribute("data-icon-pack");
-			clone.alt = "";
-			clone.setAttribute("aria-hidden", "true");
-			img.before(clone);
-		}
-		if (!img.complete) img.addEventListener("load", () => syncShapelessIconShadow(host), { once: true });
-		return;
-	}
-	const icon = host.querySelector("ui-icon:not(.sd-icon-silhouette)");
-	if (!icon) return;
-	const clone = icon.cloneNode(true);
-	clone.classList.add("sd-icon-silhouette");
-	clone.setAttribute("aria-hidden", "true");
-	icon.before(clone);
-}
-function normalizeIconDisplay(raw) {
-	const v = String(raw || "").trim().toLowerCase();
-	if (v === "glyph" || v === "phosphor" || v === "name") return "glyph";
-	if (v === "masked" || v === "mask") return "masked";
-	if (v === "masked-inverse" || v === "mask-invert" || v === "invert") return "masked-inverse";
-	if (v === "colored" || v === "color" || v === "bitmap" || v === "resource") return "colored";
-	return "";
-}
-function normalizeTileShape$1(raw, fallback = "squircle") {
-	const v = String(raw || "").trim().toLowerCase();
-	if (isTileShapeValue(v)) return v;
-	return fallback;
-}
-/** Bitmap CSS mode for `ui-icon` (glyph has no bitmap mode). */
-function iconDisplayToBitmapMode(display) {
-	if (display === "glyph") return null;
-	return display;
-}
-/** Build a `ui-icon` host for a tile; applies resource + locked bitmap mode when needed. */
-function createTileUiIconElement(opts) {
-	const host = document.createElement("ui-icon");
-	const glyph = String(opts.glyph || "sparkle").trim() || "sparkle";
-	const resource = String(opts.resourceUrl || "").trim();
-	const display = normalizeIconDisplay(opts.display) || (resource ? "colored" : "glyph");
-	const className = String(opts.className || "ui-ws-item-icon-native").trim();
-	if (className) host.className = className;
-	host.setAttribute("aria-hidden", "true");
-	host.setAttribute("icon-style", "duotone");
-	if (opts.launcher || display !== "glyph") {
-		host.toggleAttribute("data-launcher-icon", true);
-		host.setAttribute("icon-padding", "0");
-		host.style.setProperty("--icon-padding", "0px");
-		host.style.setProperty("--icon-size", "100%");
-	}
-	if (display === "glyph") {
-		host.setAttribute("icon", glyph);
-		host.setAttribute("icon-source", "phosphor");
-		host.removeAttribute("resource");
-		host.removeAttribute("data-icon-bitmap");
-		host.removeAttribute("data-icon-bitmap-mode");
-		host.removeAttribute("data-icon-bitmap-locked");
-		host.removeAttribute("data-icon-pending");
-		return host;
-	}
-	if (!resource) {
-		host.removeAttribute("icon");
-		host.setAttribute("icon-source", "resource");
-		host.removeAttribute("resource");
-		host.toggleAttribute("data-icon-pending", true);
-		host.removeAttribute("data-icon-bitmap");
-		host.removeAttribute("data-icon-bitmap-mode");
-		host.removeAttribute("data-icon-bitmap-locked");
-		return host;
-	}
-	host.removeAttribute("icon");
-	host.setAttribute("icon-source", "resource");
-	const bitmapMode = iconDisplayToBitmapMode(display) || "colored";
-	host.setAttribute("data-icon-bitmap-mode", bitmapMode);
-	host.toggleAttribute("data-icon-bitmap-locked", true);
-	host.setAttribute("resource", resource);
-	const apply = () => {
-		const icon = host;
-		if (typeof icon.setResourceIcon === "function") {
-			icon.setResourceIcon(resource, bitmapMode);
-			icon.setBitmapPresentationMode?.(bitmapMode, true);
-		}
-	};
-	apply();
-	customElements.whenDefined("ui-icon").then(() => {
-		if (!host.isConnected) {
-			queueMicrotask(() => {
-				if (host.isConnected) apply();
-			});
-			return;
-		}
-		apply();
-	});
-	return host;
-}
-/** Auto-attached on URL paste — not a user-chosen bitmap. */
-function isAutoLinkFaviconUrl(raw) {
-	return String(raw || "").trim().toLowerCase().includes("google.com/s2/favicons");
-}
-/**
-* Glyph tiles appear at compact (0.78). Explicit per-tile scale always wins;
-* bitmaps keep `auto` → workspace fill.
-*/
-function defaultIconScaleForDisplay(display, rawItemScale) {
-	const raw = String(rawItemScale || "").trim().toLowerCase();
-	if (raw && raw !== "auto" && raw !== "default" && raw !== "inherit") return String(rawItemScale || raw).trim();
-	return normalizeIconDisplay(display) === "glyph" ? "compact" : raw || "auto";
-}
-/** Infer default display when meta.iconDisplay is unset. */
-function inferIconDisplay(input) {
-	const explicit = normalizeIconDisplay(input.iconDisplay);
-	if (explicit) return explicit;
-	if (input.isLauncherApp) return "colored";
-	if (input.isBookmarkFavicon) return "colored";
-	const url = String(input.iconUrl || "").trim();
-	if (url && !isAutoLinkFaviconUrl(url)) return "colored";
-	return "glyph";
-}
-//#endregion
-//#region ../../modules/projects/fl.ui/src/ui/speed-dial/launcher-state.ts
-var launcher_state_exports = /* @__PURE__ */ __exportAll({
-	ICON_BITMAP_SCALE_OPTIONS: () => ICON_BITMAP_SCALE_OPTIONS,
-	SPEED_DIAL_CLIP_KIND: () => SPEED_DIAL_CLIP_KIND,
-	SPEED_DIAL_MUTATION_EVENT: () => SPEED_DIAL_MUTATION_EVENT,
-	addSpeedDialItem: () => addSpeedDialItem,
-	applyGridSettings: () => applyGridSettings,
-	applyIconBitmapScaleCss: () => applyIconBitmapScaleCss,
-	applyIconScaleToPaintedNodes: () => applyIconScaleToPaintedNodes,
-	applyItemIconScaleToElement: () => applyItemIconScaleToElement,
-	applySpeedDialSnapshot: () => applySpeedDialSnapshot,
-	buildLauncherAppDragEnvelope: () => buildLauncherAppDragEnvelope,
-	captureSpeedDialSnapshot: () => captureSpeedDialSnapshot,
-	defaultOpenLinkTargetForHref: () => defaultOpenLinkTargetForHref,
-	defaultWidgetSpan: () => defaultWidgetSpan,
-	emitSpeedDialMutation: () => emitSpeedDialMutation,
-	ensureSpeedDialMeta: () => ensureSpeedDialMeta,
-	findNextFreeSpeedDialCell: () => findNextFreeSpeedDialCell,
-	findSpeedDialShortcutItem: () => findSpeedDialShortcutItem,
-	forgetSpeedDialIconBlob: () => forgetSpeedDialIconBlob,
-	getDefaultOpenLinkTarget: () => getDefaultOpenLinkTarget,
-	getDefaultSpeedDialAction: () => getDefaultSpeedDialAction,
-	getIconBitmapScale: () => getIconBitmapScale,
-	getItemSpan: () => getItemSpan,
-	getSpeedDialMeta: () => getSpeedDialMeta,
-	getSpeedDialMirrorPath: () => getSpeedDialMirrorPath,
-	gridLayoutState: () => gridLayoutState,
-	iconBitmapScaleCss: () => iconBitmapScaleCss,
-	isClientPointOverSpeedDial: () => isClientPointOverSpeedDial,
-	isCoreRailGridTile: () => isCoreRailGridTile,
-	isExternalWebHref: () => isExternalWebHref,
-	isSpeedDialVirtualPath: () => isSpeedDialVirtualPath,
-	mirrorPathState: () => mirrorPathState,
-	mirrorSpeedDialItems: () => mirrorSpeedDialItems,
-	normalizeIconBitmapScale: () => normalizeIconBitmapScale,
-	normalizeItemIconBitmapScale: () => normalizeItemIconBitmapScale,
-	normalizeOpenLinkTarget: () => normalizeOpenLinkTarget,
-	normalizeTileShape: () => normalizeTileShape,
-	packSpeedDialItem: () => packSpeedDialItem,
-	packSpeedDialMetaPlain: () => packSpeedDialMetaPlain,
-	parseSpeedDialItemFromJSON: () => parseSpeedDialItemFromJSON,
-	parseSpeedDialItemFromSmartText: () => parseSpeedDialItemFromSmartText,
-	parseSpeedDialItemFromURL: () => parseSpeedDialItemFromURL,
-	parseSpeedDialItemFromVirtualPath: () => parseSpeedDialItemFromVirtualPath,
-	persistGridLayout: () => persistGridLayout,
-	persistSpeedDialIconBlob: () => persistSpeedDialIconBlob,
-	persistSpeedDialItems: () => persistSpeedDialItems,
-	persistSpeedDialMeta: () => persistSpeedDialMeta,
-	persistWallpaper: () => persistWallpaper,
-	pinLauncherAppEntry: () => pinLauncherAppEntry,
-	pinSpeedDialLinkFromIntent: () => pinSpeedDialLinkFromIntent,
-	refreshSpeedDialMirror: () => refreshSpeedDialMirror,
-	removeSpeedDialMeta: () => removeSpeedDialMeta,
-	resolveIconScaleFactor: () => resolveIconScaleFactor,
-	resolveSpeedDialCellFromClientPoint: () => resolveSpeedDialCellFromClientPoint,
-	setDefaultOpenLinkTarget: () => setDefaultOpenLinkTarget,
-	speedDialItems: () => speedDialItems,
-	speedDialMeta: () => speedDialMeta,
-	stripCoreRailTilesFromGrid: () => stripCoreRailTilesFromGrid,
-	tileIconFetchSize: () => tileIconFetchSize,
-	wallpaperState: () => wallpaperState
-});
-var viewEnabledCheck = null;
-var isEnabledView = (view) => viewEnabledCheck ? viewEnabledCheck(String(view || "").trim()) : true;
-var OPEN_LINK_TARGET_KEY = "rs-open-link-target";
-var normalizeOpenLinkTarget = (raw) => {
-	const v = String(raw || "").trim().toLowerCase();
-	if (!v) return "inline";
-	if (v === "inline" || v === "in-shell" || v === "env" || v === "shell") return "inline";
-	if (v === "new-tab" || v === "newtab" || v === "tab" || v === "browser" || v === "browser-tab" || v === "external-tab") return "new-tab";
-	if (v === "external-app" || v === "app" || v === "chooser" || v === "open-with" || v === "open-in-app" || v === "intent") return "external-app";
-	if (v === "native-window" || v === "native" || v === "window" || v === "app-window") return "native-window";
-	return "inline";
-};
-/** True for http(s), protocol-relative, or bare `www.` hosts (not app view paths). */
-var isExternalWebHref = (raw) => {
-	const s = String(raw || "").trim();
-	if (!s || /^(mailto:|blob:|data:|javascript:)/i.test(s)) return false;
-	if (/^https?:\/\//i.test(s) || /^\/\//.test(s)) return true;
-	if (/^www\./i.test(s)) return true;
-	if (/^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}([/:?#]|$)/i.test(s) && !s.startsWith("/") && !s.startsWith("#")) return true;
-	return false;
-};
-/** Global default (Settings / localStorage); per-tile meta.openLinkTarget wins. */
-var getDefaultOpenLinkTarget = () => {
-	try {
-		const stored = localStorage.getItem(OPEN_LINK_TARGET_KEY);
-		if (stored == null || !String(stored).trim()) return prefersExternalAppOpenLink() ? "external-app" : "inline";
-		return normalizeOpenLinkTarget(stored);
-	} catch {
-		return prefersExternalAppOpenLink() ? "external-app" : "inline";
-	}
-};
-/** http(s) tiles open in a new tab (or Cap chooser). App views stay inline unless set. */
-var defaultOpenLinkTargetForHref = (href) => {
-	if (prefersExternalAppOpenLink()) return "external-app";
-	if (isExternalWebHref(href)) return "new-tab";
-	return getDefaultOpenLinkTarget();
-};
-/** Capacitor / coarse launcher — Open in app (chooser) beats inline iframe. */
-var prefersExternalAppOpenLink = () => {
-	try {
-		const c = globalThis.Capacitor;
-		if (typeof c?.isNativePlatform === "function" && c.isNativePlatform()) return true;
-	} catch {}
-	try {
-		if (!(document.documentElement.dataset.cwspShellRole === "launcher" || globalThis.__RS_SHELL_ROLE__ === "launcher")) return false;
-		return typeof matchMedia === "function" && matchMedia("(pointer: coarse)").matches;
-	} catch {
-		return false;
-	}
-};
-var setDefaultOpenLinkTarget = (target) => {
-	try {
-		localStorage.setItem(OPEN_LINK_TARGET_KEY, normalizeOpenLinkTarget(target));
-	} catch {}
-};
-[
-	{
-		view: "home",
-		label: "Home",
-		icon: "house-line"
-	},
-	{
-		view: "network",
-		label: "Network",
-		icon: "wifi-high"
-	},
-	{
-		view: "viewer",
-		label: "Markdown",
-		icon: "books"
-	},
-	{
-		view: "explorer",
-		label: "Explorer",
-		icon: "folder"
-	},
-	{
-		view: "workcenter",
-		label: "Work Center",
-		icon: "briefcase"
-	},
-	{
-		view: "history",
-		label: "History",
-		icon: "clock-counter-clockwise"
-	},
-	{
-		view: "settings",
-		label: "Settings",
-		icon: "gear-six"
-	},
-	{
-		view: "apps",
-		label: "Apps",
-		icon: "squares-four"
-	}
-].filter((shortcut) => isEnabledView(shortcut.view));
-var STORAGE_KEY = "cw::workspace::speed-dial";
-var META_STORAGE_KEY = `${STORAGE_KEY}::meta`;
-/** User mutations use this to keep the active workspace snapshot authoritative. */
-var SPEED_DIAL_MUTATION_EVENT = "cwsp:speed-dial-mutation";
-var emitSpeedDialMutation = (kind, id) => {
-	try {
-		window.dispatchEvent(new CustomEvent(SPEED_DIAL_MUTATION_EVENT, { detail: {
-			kind,
-			id
-		} }));
-	} catch {}
-};
-var ICON_BLOB_LS = "cw::speed-dial::icon-blob::";
-var ICON_PTR = "sd-icon:";
-var APPEARANCE_META_KEYS = [
-	"shape",
-	"iconDisplay",
-	"iconUrl",
-	"iconScale",
-	"iconCacheKey"
-];
-var isInlineIconUrl = (url) => /^data:/i.test(url);
-var isEphemeralIconUrl = (url) => /^blob:/i.test(url);
-/** Plain meta for persist/snapshots — observe proxies must not leak into LS/catalog. */
-var packSpeedDialMetaPlain = (meta) => {
-	const src = (meta ? safe(meta) : {}) || {};
-	const out = {};
-	for (const [key, raw] of Object.entries(src)) {
-		if (raw == null || raw === "") continue;
-		let value = raw;
-		if (typeof raw === "object" && raw && "value" in raw) {
-			value = raw.value;
-			if (value == null || value === "") continue;
-		}
-		out[key] = value;
-	}
-	if (isEphemeralIconUrl(String(out.iconUrl || ""))) delete out.iconUrl;
-	return out;
-};
-var persistSpeedDialIconBlob = (id, iconUrl) => {
-	const itemId = String(id || "").trim();
-	const url = String(iconUrl || "").trim();
-	if (!itemId || !isInlineIconUrl(url)) return url;
-	try {
-		localStorage.setItem(ICON_BLOB_LS + itemId, url);
-		return ICON_PTR + itemId;
-	} catch {
-		return ICON_PTR + itemId;
-	}
-};
-var forgetSpeedDialIconBlob = (id) => {
-	const itemId = String(id || "").trim();
-	if (!itemId) return;
-	try {
-		localStorage.removeItem(ICON_BLOB_LS + itemId);
-	} catch {}
-};
-var mergeMetaKeepingAppearance = (existing, incoming) => {
-	const prev = packSpeedDialMetaPlain(existing);
-	const next = packSpeedDialMetaPlain(incoming);
-	const out = {
-		...prev,
-		...next
-	};
-	for (const key of APPEARANCE_META_KEYS) {
-		const keep = String(prev[key] || "").trim();
-		if (!String(next[key] || "").trim() && keep) out[key] = keep;
-	}
-	const prevUrl = String(prev.iconUrl || "");
-	const nextUrl = String(next.iconUrl || "");
-	if (prevUrl && (!nextUrl || nextUrl.startsWith(ICON_PTR)) && !nextUrl.startsWith("android-icon:")) {
-		if (isInlineIconUrl(prevUrl) || prevUrl.startsWith(ICON_PTR)) out.iconUrl = prevUrl;
-	}
-	return out;
-};
-var durableMetaForPersist = (id, meta) => {
-	const packed = packSpeedDialMetaPlain(meta);
-	const url = String(packed.iconUrl || "");
-	if (isInlineIconUrl(url)) packed.iconUrl = persistSpeedDialIconBlob(id, url);
-	return packed;
-};
-var generateItemId = () => {
-	if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") return crypto.randomUUID();
-	return `sd-${Date.now().toString(36)}-${Math.floor(Math.random() * 1e3)}`;
-};
-var EXTERNAL_SHORTCUTS = [];
-var DEFAULT_SPEED_DIAL_DATA_ALL = [...EXTERNAL_SHORTCUTS];
-/** Drop view shortcuts that this host build disabled (e.g. Network on CWSP-document). */
-var isSpeedDialViewAllowed = (meta, id) => {
-	if (id === "shortcut-network" && !isEnabledView("network")) return false;
-	const view = String(meta?.view || "").trim();
-	if (!view) return true;
-	return isEnabledView(view);
-};
-var DEFAULT_SPEED_DIAL_DATA = DEFAULT_SPEED_DIAL_DATA_ALL.filter((entry) => isSpeedDialViewAllowed(entry.meta, entry.id));
-var splitDefaultEntries = (entries) => {
-	const records = [];
-	const metaEntries = [];
-	entries.forEach((entry) => {
-		const { meta, ...record } = entry;
-		records.push(record);
-		const normalizedMeta = {
-			action: entry.action,
-			...meta || {}
-		};
-		metaEntries.push([entry.id, normalizedMeta]);
-	});
-	return {
-		records,
-		metaEntries
-	};
-};
-var { records: DEFAULT_SPEED_DIAL_RECORDS, metaEntries: DEFAULT_META_ENTRIES } = splitDefaultEntries(DEFAULT_SPEED_DIAL_DATA);
-var legacyMetaBuffer = [];
-/** Ids historically injected onto the Speed Dial grid (now Core Rail only). */
-var CORE_RAIL_GRID_IDS = /* @__PURE__ */ new Set([
-	"shortcut-explorer",
-	"shortcut-settings",
-	"shortcut-viewer",
-	"shortcut-markdown",
-	"shortcut-apps",
-	"apps",
-	"explorer",
-	"settings",
-	"viewer",
-	"markdown"
-]);
-var CORE_RAIL_GRID_VIEWS = /* @__PURE__ */ new Set([
-	"apps",
-	"explorer",
-	"settings",
-	"viewer",
-	"markdown",
-	"reader"
-]);
-var CORE_RAIL_GRID_LABELS = /* @__PURE__ */ new Set([
-	"apps",
-	"explorer",
-	"settings",
-	"markdown",
-	"viewer"
-]);
-var unwrapPersistedLabel = (label) => {
-	if (label && typeof label === "object" && "value" in label) return String(label.value || "").trim().toLowerCase();
-	return String(label || "").trim().toLowerCase();
-};
-/**
-* True when a curated / persisted tile belongs on the Core Rail only
-* (Explorer / Settings / Markdown) — never on the freeform Speed Dial grid.
-*/
-var isCoreRailGridTile = (item, meta) => {
-	if (!item?.id) return false;
-	const id = String(item.id || "").trim().toLowerCase();
-	if (CORE_RAIL_GRID_IDS.has(id)) return true;
-	const action = String(meta?.action || item.action || "open-view").trim().toLowerCase();
-	if (action && action !== "open-view") return false;
-	const view = String(meta?.view || "").trim().toLowerCase();
-	if (view && CORE_RAIL_GRID_VIEWS.has(view)) return true;
-	const label = unwrapPersistedLabel(item.label);
-	return Boolean(label) && CORE_RAIL_GRID_LABELS.has(label);
-};
-var isCoreRailPersistedEntry = (entry) => isCoreRailGridTile({
-	id: entry.id,
-	action: entry.action,
-	label: entry.label
-}, {
-	action: entry.action,
-	...entry.meta || {}
-});
-var ensureCell = (cell) => {
-	if (cell && Array.isArray(cell) && cell.length >= 2) return observe([Number(cell[0]) || 0, Number(cell[1]) || 0]);
-	return observe([0, 0]);
-};
-var createMetaState = (meta = {}) => {
-	return makeObjectAssignable(observe({
-		action: meta.action || "open-view",
-		view: meta.view || "",
-		href: meta.href || "",
-		description: meta.description || "",
-		entityType: meta.entityType || "",
-		tags: Array.isArray(meta.tags) ? [...meta.tags] : [],
-		...meta
-	}));
-};
-var registryFromEntries = (entries) => {
-	const registry = /* @__PURE__ */ new Map();
-	for (const [id, meta] of entries) registry.set(id, createMetaState(meta));
-	return registry;
-};
-var normalizeMetaEntries = (raw) => {
-	if (!raw) return [];
-	if (raw instanceof Map) return Array.from(raw.entries());
-	if (Array.isArray(raw)) return raw.map((entry) => {
-		if (entry && typeof entry === "object" && "id" in entry) return [entry.id, entry.meta || entry];
-		return null;
-	}).filter(Boolean);
-	if (typeof raw === "object") return Object.entries(raw);
-	return [];
-};
-var packMetaRegistry = (registry) => {
-	const payload = {};
-	registry?.forEach((meta, id) => {
-		payload[id] = durableMetaForPersist(id, meta);
-	});
-	return payload;
-};
-var createInitialMetaRegistry = () => registryFromEntries(DEFAULT_META_ENTRIES);
-var unpackMetaRegistry = (raw) => {
-	const entries = normalizeMetaEntries(raw);
-	return registryFromEntries(entries.length ? entries : DEFAULT_META_ENTRIES);
-};
-var unwrapRef = (value, fallback) => {
-	if (value && typeof value === "object" && "value" in value) return value.value ?? fallback;
-	return value ?? fallback;
-};
-var serializeItemState = (item) => {
-	return {
-		id: item.id,
-		cell: [Number(item.cell?.[0]) || 0, Number(item.cell?.[1]) || 0],
-		icon: unwrapRef(item.icon, "sparkle"),
-		label: unwrapRef(item.label, "Shortcut"),
-		action: item.action
-	};
-};
-var createStatefulItem = (config) => {
-	return observe({
-		id: config.id || generateItemId(),
-		cell: observe(ensureCell(config.cell)),
-		icon: stringRef(config.icon || "sparkle"),
-		label: stringRef(config.label || "Shortcut"),
-		action: config.action || "open-view"
-	});
-};
-var createInitialState = () => observe(DEFAULT_SPEED_DIAL_RECORDS.map(createStatefulItem));
-var unpackState = (raw) => {
-	return observe((Array.isArray(raw) && raw.length ? raw : DEFAULT_SPEED_DIAL_DATA).filter((entry) => isSpeedDialViewAllowed(entry.meta, entry.id) && !isCoreRailPersistedEntry(entry)).map((entry) => {
-		const { meta, ...record } = entry;
-		if (meta) legacyMetaBuffer.push([entry.id, {
-			action: entry.action,
-			...meta
-		}]);
-		else legacyMetaBuffer.push([entry.id, { action: entry.action }]);
-		return record;
-	}).map(createStatefulItem));
-};
-var packState = (collection) => collection.filter((item) => {
-	try {
-		return !isCoreRailGridTile(item, speedDialMeta?.get?.(item.id) ?? null);
-	} catch {
-		return !isCoreRailGridTile(item, null);
-	}
-}).map(serializeItemState);
-/**
-* WHY: Vite `preserveSymlinks` can load this file via fl.ui and home-view paths as
-* two module graphs. Without a process singleton, idle-save from the stale copy
-* overwrites user shortcuts with defaults after refresh.
-*/
-var SPEED_DIAL_ITEMS_BOOT = "__CWSP_SPEED_DIAL_ITEMS_V1__";
-var SPEED_DIAL_META_BOOT = "__CWSP_SPEED_DIAL_META_V1__";
-var bootSpeedDialMeta = () => {
-	const g = globalThis;
-	if (g[SPEED_DIAL_META_BOOT]) return g[SPEED_DIAL_META_BOOT];
-	const state = makeUIState(META_STORAGE_KEY, createInitialMetaRegistry, unpackMetaRegistry, packMetaRegistry);
-	g[SPEED_DIAL_META_BOOT] = state;
-	return state;
-};
-var bootSpeedDialItems = () => {
-	const g = globalThis;
-	if (g[SPEED_DIAL_ITEMS_BOOT]) return g[SPEED_DIAL_ITEMS_BOOT];
-	const state = makeUIState(STORAGE_KEY, createInitialState, unpackState, packState);
-	g[SPEED_DIAL_ITEMS_BOOT] = state;
-	return state;
-};
-var speedDialMeta = bootSpeedDialMeta();
-var speedDialItems = bootSpeedDialItems();
-var LINK_STORE_BOOT = "__CWSP_LINK_STORE_BOOT_V1__";
-var linkStoreBoot = () => {
-	const g = globalThis;
-	if (!g[LINK_STORE_BOOT]) g[LINK_STORE_BOOT] = {
-		opfsIo: null,
-		opfsReady: null,
-		opfsFlushTimer: null,
-		opfsHydrated: false,
-		userEditedBeforeHydrate: false,
-		editGen: 0,
-		allowEmptyOpfsWrite: false
-	};
-	return g[LINK_STORE_BOOT];
-};
-var markIntentionalEmptyGrid = () => {
-	const boot = linkStoreBoot();
-	boot.allowEmptyOpfsWrite = true;
-};
-var MIRROR_PATH_LS_KEY = "cw::workspace::speed-dial::mirror-path";
-var mirrorPathState = stringRef("");
-var mirrorSpeedDialItems = observe([]);
-function getSpeedDialMirrorPath() {
-	const v = String(mirrorPathState.value || "").trim();
-	return v ? v : null;
-}
-/**
-* Rebuild `mirrorSpeedDialItems` from the current `mirrorPath` via PathRouter.
-*
-* WHY: SpeedDial calls this on mount and whenever the mirror path changes. If
-* no backend is registered for the path (e.g. tests without OPFS/Chrome), we
-* surface a soft warning and keep an empty listing so the grid stays usable.
-*
-* Task 3 fix: pass curated `speedDialItems` cells to `buildMirrorSpeedDialItems`
-* so mirror tiles auto-place below the curated grid's max Y instead of
-* stacking at `[0,0]`. Meta per-id `cell` overrides still win.
-*/
-async function refreshSpeedDialMirror() {
-	const path = getSpeedDialMirrorPath();
-	if (!path) {
-		mirrorSpeedDialItems.splice(0, mirrorSpeedDialItems.length);
-		return;
-	}
-	try {
-		const backend = resolveFsBackend$1(path);
-		if (!backend) {
-			console.warn(`[link-store] no fs backend for mirror path: ${path}`);
-			mirrorSpeedDialItems.splice(0, mirrorSpeedDialItems.length);
-			return;
-		}
-		const items = buildMirrorSpeedDialItems(await backend.list(path), packMetaFileFromState(), path, (speedDialItems || []).map((item) => ({ cell: Array.isArray(item?.cell) ? item.cell : void 0 })));
-		mirrorSpeedDialItems.splice(0, mirrorSpeedDialItems.length);
-		for (const item of items) mirrorSpeedDialItems.push(item);
-	} catch (e) {
-		console.warn(`[link-store] mirror list failed for ${path}`, e);
-		mirrorSpeedDialItems.splice(0, mirrorSpeedDialItems.length);
-	}
-}
-if (typeof globalThis !== "undefined") subscribeFsBackendRegister((root) => {
-	const path = getSpeedDialMirrorPath();
-	if (!path) return;
-	if (path === root || path.startsWith(root === "/" ? "/" : root)) refreshSpeedDialMirror();
-});
-/**
-* WHY: always stamp dirty — even after hydrate flipped true mid-hydrate.
-* Pin/Share can land between the dirty re-check and the `splice`. Dirty is on
-* globalThis so dual Vite module graphs share the same signal.
-*/
-var markUserEditedBeforeHydrate = () => {
-	const boot = linkStoreBoot();
-	boot.userEditedBeforeHydrate = true;
-	boot.editGen = (boot.editGen || 0) + 1;
-};
-var getLsLike = () => {
-	try {
-		if (typeof localStorage === "undefined") return null;
-		return localStorage;
-	} catch {
-		return null;
-	}
-};
-/**
-* Pack the current in-memory state into a `LinkStoreMetaFile` for OPFS.
-* WHY: cells live in `speedDialItems` (state) while href/view/shape live in
-* `speedDialMeta` (registry); OPFS `meta.json` merges both per id.
-*/
-var packMetaFileFromState = () => {
-	const perId = {};
-	speedDialMeta?.forEach((meta, id) => {
-		perId[id] = durableMetaForPersist(id, meta);
-	});
-	(speedDialItems || []).forEach((item) => {
-		const id = String(item?.id || "");
-		if (!id) return;
-		const cell = item?.cell;
-		const x = Number(Array.isArray(cell) ? cell[0] : cell?.[0]) || 0;
-		const y = Number(Array.isArray(cell) ? cell[1] : cell?.[1]) || 0;
-		perId[id] = {
-			...perId[id] || {},
-			cell: [x, y]
-		};
-	});
-	return {
-		version: 1,
-		mirrorPath: getSpeedDialMirrorPath(),
-		items: perId
-	};
-};
-var flushLinkStoreToOpfs = async () => {
-	const boot = linkStoreBoot();
-	if (!boot.opfsIo) return;
-	try {
-		await boot.opfsReady;
-	} catch {
-		return;
-	}
-	if (!boot.opfsIo) return;
-	try {
-		const items = packLinksFromSpeedDial(speedDialItems);
-		for (const item of items) {
-			const meta = speedDialMeta?.get?.(item.id);
-			if (!meta) continue;
-			if (!item.href && meta.href) item.href = String(meta.href);
-			if (!item.path && meta.path) item.path = String(meta.path);
-			if (!item.action && meta.action) item.action = String(meta.action);
-		}
-		const meta = packMetaFileFromState();
-		const allowEmpty = boot.allowEmptyOpfsWrite === true && !speedDialItems?.length;
-		await writeLinkStore(boot.opfsIo, items, meta, { allowEmpty });
-		if (allowEmpty) boot.allowEmptyOpfsWrite = false;
-	} catch (e) {
-		console.warn("[link-store] OPFS write failed; localStorage remains primary", e);
-	}
-};
-var scheduleOpfsFlush = () => {
-	const boot = linkStoreBoot();
-	if (boot.opfsFlushTimer) clearTimeout(boot.opfsFlushTimer);
-	boot.opfsFlushTimer = setTimeout(() => {
-		boot.opfsFlushTimer = null;
-		flushLinkStoreToOpfs();
-	}, 150);
-};
-/**
-* Hydrate the in-memory state from OPFS after migration. Only runs when no
-* user edit has fired yet (module-load race window) and OPFS has data.
-*
-* WHY: if `persistSpeedDialItems` / `persistSpeedDialMeta` already ran before
-* hydrate completed, the in-memory state is newer than the just-migrated OPFS
-* snapshot. Splicing OPFS back in would clobber the edit, so we mark hydrated
-* and bail — the pending OPFS flush (awaiting `opfsReady`) will persist the
-* newer state instead.
-*/
-var hydrateFromOpfs = async (io) => {
-	const boot = linkStoreBoot();
-	if (boot.opfsHydrated) return;
-	if (boot.userEditedBeforeHydrate) {
-		boot.opfsHydrated = true;
-		return;
-	}
-	const editGenAtStart = boot.editGen || 0;
-	try {
-		const got = await readLinkStore(io);
-		if (!got || !got.items.length) {
-			boot.opfsHydrated = true;
-			return;
-		}
-		if (boot.userEditedBeforeHydrate || boot.editGen !== editGenAtStart) {
-			boot.opfsHydrated = true;
-			return;
-		}
-		const nextItems = [];
-		const nextMeta = /* @__PURE__ */ new Map();
-		for (const raw of got.items) {
-			const metaEntry = got.meta.items[raw.id] || {};
-			const cell = Array.isArray(metaEntry.cell) ? [metaEntry.cell[0], metaEntry.cell[1]] : Array.isArray(raw.cell) ? [raw.cell[0], raw.cell[1]] : [0, 0];
-			const item = createStatefulItem({
-				id: raw.id,
-				cell: observe([Number(cell[0]) || 0, Number(cell[1]) || 0]),
-				icon: raw.icon || "sparkle",
-				label: raw.label || "Shortcut",
-				action: raw.action || "open-view"
-			});
-			const meta = {
-				action: raw.action || "open-view",
-				...metaEntry,
-				...raw.href ? { href: raw.href } : {},
-				...raw.path ? { path: raw.path } : {}
-			};
-			if (isCoreRailGridTile(item, meta)) continue;
-			nextItems.push(observe(item));
-			nextMeta.set(item.id, meta);
-		}
-		if (!nextItems.length) {
-			boot.opfsHydrated = true;
-			stripCoreRailTilesFromGrid({ markDirty: true });
-			return;
-		}
-		if (boot.userEditedBeforeHydrate || boot.editGen !== editGenAtStart) {
-			boot.opfsHydrated = true;
-			return;
-		}
-		boot.opfsHydrated = true;
-		if (got.meta.mirrorPath != null) mirrorPathState.value = String(got.meta.mirrorPath || "");
-		if (speedDialItems?.length) {
-			for (const [id, meta] of nextMeta) if (!getSpeedDialMeta(id)) ensureSpeedDialMeta(id, packSpeedDialMetaPlain(meta));
-			stripCoreRailTilesFromGrid({ markDirty: true });
-			return;
-		}
-		speedDialItems.splice(0, speedDialItems.length, ...nextItems);
-		for (const [id, meta] of nextMeta) ensureSpeedDialMeta(id, mergeMetaKeepingAppearance(getSpeedDialMeta(id), meta));
-		stripCoreRailTilesFromGrid({ markDirty: true });
-	} catch (e) {
-		console.warn("[link-store] OPFS hydration failed; using localStorage boot state", e);
-		linkStoreBoot().opfsHydrated = true;
-		stripCoreRailTilesFromGrid({ markDirty: true });
-	}
-};
-var skipLinkStoreOpfs = () => {
-	try {
-		if (String(document.documentElement?.dataset?.cwspSku || "").toLowerCase() === "document") return true;
-		const host = String(location.hostname || "").toLowerCase();
-		if (/(^|\.)md\.u2re\.space$/.test(host)) return true;
-	} catch {}
-	return false;
-};
-var initLinkStore = () => {
-	const boot = linkStoreBoot();
-	if (boot.opfsReady) return boot.opfsReady;
-	boot.opfsReady = (async () => {
-		const ls = getLsLike();
-		if (skipLinkStoreOpfs()) {
-			boot.opfsIo = null;
-			boot.opfsHydrated = true;
-			return;
-		}
-		try {
-			boot.opfsIo = await Promise.race([createOpfsLinkStoreIo(), new Promise((_, reject) => {
-				setTimeout(() => reject(/* @__PURE__ */ new Error("[link-store] OPFS getDirectory timeout")), 800);
-			})]);
-		} catch (e) {
-			console.warn("[link-store] OPFS unavailable; using localStorage", e);
-			boot.opfsIo = null;
-			boot.opfsHydrated = true;
-			return;
-		}
-		if (!boot.opfsIo) return;
-		try {
-			if (ls) await migrateLocalStorageToOpfsIfNeeded(boot.opfsIo, ls);
-			await hydrateFromOpfs(boot.opfsIo);
-			stripCoreRailTilesFromGrid({ markDirty: true });
-			if (boot.userEditedBeforeHydrate) await flushLinkStoreToOpfs();
-		} catch (e) {
-			console.warn("[link-store] OPFS init failed; using localStorage boot state", e);
-			boot.opfsHydrated = true;
-		}
-	})();
-	return boot.opfsReady;
-};
-/** Live tile that already represents this Android pinned shortcut. */
-var findSpeedDialShortcutItem = (pkg, shortcutId) => {
-	const packageName = String(pkg || "").trim();
-	const id = String(shortcutId || "").trim();
-	if (!packageName || !id) return null;
-	for (const item of speedDialItems || []) {
-		const meta = getSpeedDialMeta(item.id);
-		if (String(meta?.packageName || "").trim() === packageName && String(meta?.shortcutId || "").trim() === id) return item;
-	}
-	return null;
-};
-if (typeof globalThis !== "undefined") {
-	try {
-		if (typeof localStorage !== "undefined") {
-			const lsMirror = localStorage.getItem(MIRROR_PATH_LS_KEY);
-			if (lsMirror && !mirrorPathState.value) mirrorPathState.value = lsMirror;
-		}
-	} catch {}
-	initLinkStore().then(() => {
-		refreshSpeedDialMirror();
-	});
-}
-var persistSpeedDialItems = () => {
-	scheduleOpfsFlush();
-	try {
-		saveUIState(STORAGE_KEY);
-		return;
-	} catch {}
-	try {
-		if (typeof localStorage === "undefined") return;
-		localStorage.setItem(STORAGE_KEY, JSOX.stringify(packState(speedDialItems)));
-	} catch {}
-};
-var persistSpeedDialMeta = () => {
-	scheduleOpfsFlush();
-	try {
-		saveUIState(META_STORAGE_KEY);
-		return;
-	} catch {}
-	try {
-		if (typeof localStorage === "undefined") return;
-		localStorage.setItem(META_STORAGE_KEY, JSOX.stringify(packMetaRegistry(speedDialMeta)));
-	} catch {}
-};
-var packSpeedDialItem = (item) => {
-	const packed = serializeItemState(item);
-	const meta = getSpeedDialMeta(item.id);
-	return {
-		...packed,
-		...meta ? { meta: durableMetaForPersist(item.id, meta) } : {}
-	};
-};
-var captureSpeedDialSnapshot = () => ({ items: (speedDialItems || []).map((item) => packSpeedDialItem(item)) });
-var applySpeedDialSnapshot = (snapshot) => {
-	markUserEditedBeforeHydrate();
-	const rows = Array.isArray(snapshot?.items) ? snapshot.items : [];
-	const nextItems = [];
-	for (const raw of rows) {
-		if (!raw?.id) continue;
-		const item = createStatefulItem({
-			id: raw.id,
-			cell: observe([Number(raw.cell?.[0]) || 0, Number(raw.cell?.[1]) || 0]),
-			icon: raw.icon || "sparkle",
-			label: raw.label || "Shortcut",
-			action: raw.action || "open-link"
-		});
-		nextItems.push(observe(item));
-	}
-	speedDialItems.splice(0, speedDialItems.length, ...nextItems);
-	if (!nextItems.length) markIntentionalEmptyGrid();
-	for (const raw of rows) {
-		if (!raw?.id) continue;
-		const incoming = {
-			action: raw.action,
-			...packSpeedDialMetaPlain(raw.meta)
-		};
-		incoming.iconUrl = persistSpeedDialIconBlob(raw.id, String(incoming.iconUrl || ""));
-		const merged = mergeMetaKeepingAppearance(getSpeedDialMeta(raw.id), incoming);
-		ensureSpeedDialMeta(raw.id, merged);
-	}
-	persistSpeedDialItems();
-	persistSpeedDialMeta();
-};
-var metaNumber = (value, fallback) => {
-	let cur = value;
-	if (cur && typeof cur === "object" && "value" in cur) cur = cur.value;
-	const n = Number(cur);
-	return Number.isFinite(n) && n >= 1 ? n : fallback;
-};
-var defaultWidgetSpan = (kind) => {
-	const id = String(kind || "").toLowerCase();
-	if (id === "search") return [2, 1];
-	if (id === "clock") return [2, 1];
-	if (id === "android") return [2, 2];
-	return [1, 1];
-};
-var getItemSpan = (id) => {
-	const meta = id ? getSpeedDialMeta(id) : null;
-	const kind = String(meta?.action || "").toLowerCase() === "widget" ? String(meta?.widgetKind || "").toLowerCase() : "";
-	const fallback = kind ? defaultWidgetSpan(kind) : [1, 1];
-	return normalizeSpan([metaNumber(meta?.spanCols, fallback[0]), metaNumber(meta?.spanRows, fallback[1])]);
-};
-var getSpeedDialMeta = (id) => {
-	if (!id) return null;
-	return speedDialMeta?.get?.(id) ?? null;
-};
-var ensureSpeedDialMeta = (id, defaults = {}) => {
-	let meta = speedDialMeta?.get?.(id);
-	if (!meta) {
-		meta = createMetaState(defaults);
-		speedDialMeta?.set?.(id, meta);
-		persistSpeedDialMeta();
-		return meta;
-	}
-	let changed = false;
-	for (const [key, value] of Object.entries(defaults)) {
-		if (value == null || value === "") continue;
-		if (meta[key] !== value) {
-			meta[key] = value;
-			changed = true;
-		}
-	}
-	if (changed) persistSpeedDialMeta();
-	return meta;
-};
-var removeSpeedDialMeta = (id) => {
-	const removed = speedDialMeta?.delete?.(id);
-	if (removed) {
-		forgetSpeedDialIconBlob(id);
-		persistSpeedDialMeta();
-	}
-	return removed;
-};
-var syncMetaActionFromItem = (item) => {
-	if (!item) return false;
-	const desiredAction = item.action || "open-view";
-	const meta = ensureSpeedDialMeta(item.id, { action: desiredAction });
-	if (meta.action !== desiredAction) {
-		meta.action = desiredAction;
-		return true;
-	}
-	return false;
-};
-var syncMetaActionsForAllItems = () => {
-	let changed = false;
-	speedDialItems?.forEach?.((item) => {
-		if (syncMetaActionFromItem(item)) changed = true;
-	});
-	if (changed) persistSpeedDialMeta();
-};
-var flushLegacyMetaBuffer = () => {
-	if (!legacyMetaBuffer.length) return;
-	legacyMetaBuffer.forEach(([id, meta]) => {
-		const target = ensureSpeedDialMeta(id, meta);
-		Object.assign(target, meta);
-	});
-	legacyMetaBuffer.length = 0;
-	persistSpeedDialMeta();
-};
-flushLegacyMetaBuffer();
-syncMetaActionsForAllItems();
-var ensureExternalShortcuts = () => {
-	let changed = false;
-	EXTERNAL_SHORTCUTS.forEach((shortcut) => {
-		if (!speedDialItems?.find?.((item) => item?.id === shortcut.id)) {
-			const item = createStatefulItem(shortcut);
-			if (shortcut.label && item.label && typeof item.label === "object" && "value" in item.label) item.label.value = shortcut.label;
-			if (shortcut.icon && item.icon && typeof item.icon === "object" && "value" in item.icon) item.icon.value = shortcut.icon;
-			speedDialItems.push(observe(item));
-			ensureSpeedDialMeta(item.id, shortcut.meta);
-			changed = true;
-		} else {
-			const currentMeta = getSpeedDialMeta(shortcut.id);
-			if (shortcut.meta && currentMeta) {
-				const nextHref = String(shortcut.meta.href ?? "");
-				if (nextHref !== String(currentMeta.href ?? "")) {
-					currentMeta.href = nextHref;
-					changed = true;
-				}
-				const nextDesc = String(shortcut.meta.description ?? "");
-				if (nextDesc !== String(currentMeta.description ?? "")) {
-					currentMeta.description = nextDesc;
-					changed = true;
-				}
-			} else if (shortcut.meta && !currentMeta) {
-				ensureSpeedDialMeta(shortcut.id, shortcut.meta);
-				changed = true;
-			}
-		}
-	});
-	if (changed) {
-		persistSpeedDialItems();
-		persistSpeedDialMeta();
-	}
-};
-ensureExternalShortcuts();
-/**
-* WHY: Explorer / Settings / Markdown live on the Core Rail only.
-* Strip them from the curated grid and persist — including after OPFS hydrate,
-* which otherwise re-injects the legacy OPFS snapshot.
-*/
-var stripCoreRailTilesFromGrid = (opts) => {
-	try {
-		let changed = false;
-		const matches = (speedDialItems || []).filter((item) => isCoreRailGridTile(item, getSpeedDialMeta(item?.id)));
-		for (const item of matches) {
-			const idx = speedDialItems.findIndex((it) => it?.id === item.id);
-			if (idx >= 0) {
-				speedDialItems.splice(idx, 1);
-				removeSpeedDialMeta(item.id);
-				changed = true;
-			}
-		}
-		if (changed) {
-			if (opts?.markDirty !== false) markUserEditedBeforeHydrate();
-			persistSpeedDialItems();
-			persistSpeedDialMeta();
-		}
-		return changed;
-	} catch (e) {
-		console.warn("[speed-dial] core rail strip failed", e);
-		return false;
-	}
-};
-/** Boot: remove legacy Core Rail tiles from LS-backed grid before/around hydrate. */
-var ensureCoreViewShortcuts = () => {
-	stripCoreRailTilesFromGrid({ markDirty: true });
-};
-ensureCoreViewShortcuts();
-try {
-	if (typeof chrome !== "undefined" && !!chrome?.storage?.local) {
-		const rewrite = () => {
-			stripCoreRailTilesFromGrid({ markDirty: true });
-			persistSpeedDialItems();
-			persistSpeedDialMeta();
-		};
-		queueMicrotask(rewrite);
-		setTimeout(rewrite, 0);
-		setTimeout(rewrite, 300);
-		setTimeout(rewrite, 1200);
-	}
-} catch {}
-/**
-* WHY: Past merges left both legacy `settings` and `shortcut-settings` (same view) on disk.
-* Keep the preferred default id when present; otherwise keep the first match.
-*/
-var dedupeCoreOpenViewTiles = () => {
-	let changed = false;
-	const core = DEFAULT_SPEED_DIAL_DATA_ALL.filter((entry) => entry.action === "open-view" && isSpeedDialViewAllowed(entry.meta, entry.id));
-	const getItemLabel = (item) => {
-		const raw = item?.label;
-		if (raw && typeof raw === "object" && "value" in raw) return String(raw.value || "").trim().toLowerCase();
-		return String(raw || "").trim().toLowerCase();
-	};
-	for (const shortcut of core) {
-		const view = String(shortcut.meta?.view || "").trim().toLowerCase();
-		const label = String(shortcut.label || "").trim().toLowerCase();
-		if (!view && !label) continue;
-		const matches = (speedDialItems || []).filter((item) => {
-			const metaView = String(getSpeedDialMeta(item.id)?.view || "").trim().toLowerCase();
-			if (String(getSpeedDialMeta(item.id)?.action || item?.action || "open-view").toLowerCase() !== "open-view") return false;
-			if (view && metaView === view) return true;
-			return Boolean(label) && getItemLabel(item) === label;
-		});
-		if (matches.length <= 1) continue;
-		const keep = matches.find((item) => item.id === shortcut.id) || matches[0];
-		for (const item of matches) {
-			if (item === keep) continue;
-			const idx = speedDialItems.findIndex((row) => row?.id === item.id);
-			if (idx >= 0) {
-				speedDialItems.splice(idx, 1);
-				changed = true;
-			}
-		}
-	}
-	if (changed) {
-		persistSpeedDialItems();
-		persistSpeedDialMeta();
-	}
-};
-dedupeCoreOpenViewTiles();
-var addSpeedDialItem = (item) => {
-	markUserEditedBeforeHydrate();
-	speedDialItems?.push?.(observe(item));
-	syncMetaActionFromItem(item);
-	persistSpeedDialItems();
-	persistSpeedDialMeta();
-	emitSpeedDialMutation("add", item.id);
-	return item;
-};
-/** JSON drag envelope for AppMenu → SpeedDial (launcher design spec). */
-function buildLauncherAppDragEnvelope(app) {
-	return JSON.stringify({
-		state: {
-			icon: "device-mobile",
-			label: app.label
-		},
-		desc: {
-			action: "launch-app",
-			meta: {
-				packageName: app.packageName,
-				componentName: app.componentName,
-				entityType: "android-app",
-				iconCacheKey: app.iconCacheKey || app.packageName
-			}
-		}
-	});
-}
-/** First unoccupied logical origin that fits `span`. */
-function findNextFreeSpeedDialCell(span = [1, 1]) {
-	const columns = Math.max(1, Math.min(16, Number(gridLayoutState?.columns) || 4));
-	const rows = Math.max(1, Math.min(16, Number(gridLayoutState?.rows) || 8));
-	const occupied = /* @__PURE__ */ new Set();
-	for (const item of speedDialItems || []) {
-		if (!item?.id) continue;
-		markOccupiedSpan(occupied, [Number(item?.cell?.[0]) || 0, Number(item?.cell?.[1]) || 0], getItemSpan(item.id));
-	}
-	return findNearestFreeRect([0, 0], span, occupied, [columns, rows]);
-}
-var querySpeedDialGridElement = () => document.querySelector("#home .speed-dial-grid[data-grid-layer=\"icons\"]") || document.querySelector("#home .speed-dial-grid:last-of-type") || document.querySelector("#home .speed-dial-grid");
-var readSpeedDialGridLayout = () => [Math.max(1, Math.min(16, Number(gridLayoutState?.columns) || 4)), Math.max(1, Math.min(16, Number(gridLayoutState?.rows) || 8))];
-/** Map viewport coordinates to a logical SpeedDial cell (null when grid is absent). */
-function resolveSpeedDialCellFromClientPoint(clientX, clientY) {
-	const grid = querySpeedDialGridElement();
-	if (!grid) return null;
-	const rect = grid.getBoundingClientRect();
-	const styles = getComputedStyle(grid);
-	const paddingLeft = Number.parseFloat(styles.paddingLeft) || 0;
-	const paddingRight = Number.parseFloat(styles.paddingRight) || 0;
-	const paddingTop = Number.parseFloat(styles.paddingTop) || 0;
-	const paddingBottom = Number.parseFloat(styles.paddingBottom) || 0;
-	const size = [Math.max(1, rect.width - paddingLeft - paddingRight), Math.max(1, rect.height - paddingTop - paddingBottom)];
-	const point = [clientX - rect.left - paddingLeft, clientY - rect.top - paddingTop];
-	const root = grid.closest(".speed-dial-root") || document.getElementById("home");
-	const orientRaw = root?.getAttribute?.("data-orient") ?? root?.dataset?.orient ?? "0";
-	return pointToLogicalCell(point, size, readSpeedDialGridLayout(), normalizeOrient(orientRaw));
-}
-function isClientPointOverSpeedDial(clientX, clientY) {
-	return !!document.elementFromPoint(clientX, clientY)?.closest?.("#home, .speed-dial-root");
-}
-/** Create a persisted `launch-app` tile from an AppMenu entry. */
-function pinLauncherAppEntry(app, cell) {
-	const targetCell = cell ?? findNextFreeSpeedDialCell();
-	const item = parseSpeedDialItemFromJSON(buildLauncherAppDragEnvelope(app), targetCell);
-	if (!item) return null;
-	addSpeedDialItem(item);
-	return item;
-}
-var wallpaperState = makeUIState("cw::workspace::wallpaper", () => observe({
-	src: "/assets/wallpaper.jpg",
-	opacity: 1,
-	blur: 0
-}), (raw) => observe(raw || {
-	src: "/assets/wallpaper.jpg",
-	opacity: 1,
-	blur: 0
-}), (state) => ({ ...state }));
-var persistWallpaper = () => wallpaperState?.$save?.();
-var ICON_SCALE_VALUES = {
-	compact: "0.78",
-	fit: "1",
-	fill: "1.28",
-	zoom: "1.5",
-	max: "1.75"
-};
-var ICON_BITMAP_SCALE_OPTIONS = [
-	{
-		value: "auto",
-		label: "Auto (workspace default)"
-	},
-	{
-		value: "compact",
-		label: "Compact (0.78)"
-	},
-	{
-		value: "fit",
-		label: "Fit (1.0 — no zoom)"
-	},
-	{
-		value: "fill",
-		label: "Fill (1.28 — adaptive)"
-	},
-	{
-		value: "zoom",
-		label: "Zoom (1.5)"
-	},
-	{
-		value: "max",
-		label: "Max (1.75)"
-	}
-];
-function normalizeIconBitmapScale(raw, fallback = "fill") {
-	const v = String(raw || "").trim().toLowerCase();
-	if (v === "compact" || v === "small" || v === "0.78") return "compact";
-	if (v === "fit" || v === "1" || v === "contain") return "fit";
-	if (v === "fill" || v === "adaptive" || v === "1.28") return "fill";
-	if (v === "zoom" || v === "1.5") return "zoom";
-	if (v === "max" || v === "large" || v === "1.75") return "max";
-	return fallback;
-}
-/** Empty / auto → inherit workspace; otherwise a concrete scale. */
-function normalizeItemIconBitmapScale(raw) {
-	const v = String(raw || "").trim().toLowerCase();
-	if (!v || v === "auto" || v === "default" || v === "inherit") return "auto";
-	return normalizeIconBitmapScale(v, "fill");
-}
-function iconBitmapScaleCss(raw) {
-	return ICON_SCALE_VALUES[normalizeIconBitmapScale(raw)];
-}
-/** Resolve item (`auto`) → concrete workspace/id scale factor string. */
-function resolveIconScaleFactor(rawItemScale) {
-	const item = normalizeItemIconBitmapScale(rawItemScale);
-	return ICON_SCALE_VALUES[item === "auto" ? normalizeIconBitmapScale(gridLayoutState?.iconScale, "fill") : item];
-}
-/**
-* Set scale CSS vars on the plate AND inline `transform` on painted icon nodes.
-* WHY: Cap WebView often ignores `transform: scale(var(--x))` — inline scale is reliable.
-*/
-function applyItemIconScaleToElement(el, raw) {
-	if (!el) return;
-	const item = normalizeItemIconBitmapScale(raw);
-	const factor = resolveIconScaleFactor(raw);
-	el.dataset.iconScale = item === "auto" ? "auto" : item;
-	el.style.setProperty("--sd-item-icon-scale", factor);
-	el.style.setProperty("--sd-item-pack-icon-scale", factor);
-}
-/** Inline transform on current icon children (call again after replacing img/ui-icon). */
-function applyIconScaleToPaintedNodes(el, factor) {
-	if (!el) return;
-	const t = `scale(${String(factor || el.style.getPropertyValue("--sd-item-icon-scale") || "").trim() || "1.28"})`;
-	el.querySelectorAll("img.ui-ws-item-icon-img, img[data-launcher-icon], img[data-bookmark-favicon], ui-icon, .ui-ws-item-icon-mask").forEach((node) => {
-		node.style.setProperty("transform", t, "important");
-		node.style.setProperty("transform-origin", "center center", "important");
-	});
-}
-/**
-* Native decode size so CSS zoom (scale × DPR) does not upscale a tiny bitmap.
-* WHY: tiles used to always fetch 96px then scale(1.5–1.75) → pixelation on retina.
-*/
-function tileIconFetchSize(rawItemScale, layoutCssPx = 96) {
-	const factor = Number(resolveIconScaleFactor(rawItemScale)) || 1.28;
-	let dpr = 1;
-	try {
-		dpr = Math.min(3, Math.max(1, Number(globalThis.devicePixelRatio) || 1));
-	} catch {
-		dpr = 1;
-	}
-	const base = Math.max(64, Math.round(Number(layoutCssPx) || 96));
-	return Math.max(128, Math.min(512, Math.round(base * factor * dpr)));
-}
-var GRID_LAYOUT_KEY = "cw::workspace::grid-layout";
-var WORKSPACE_GRID_EVENT = "cwsp:workspace-grid";
-var TILE_SHAPES = /* @__PURE__ */ new Set([
-	"square",
-	"squircle",
-	"circle",
-	"rounded",
-	"hexagon",
-	"diamond",
-	"wavy",
-	"shapeless"
-]);
-var normalizeTileShape = (raw, fallback = "squircle") => {
-	const v = String(raw || "").trim().toLowerCase();
-	return TILE_SHAPES.has(v) ? v : fallback;
-};
-var gridLayoutState = makeUIState(GRID_LAYOUT_KEY, () => observe({
-	columns: 4,
-	rows: 8,
-	shape: "squircle",
-	defaultAction: "open-link",
-	iconScale: "fill"
-}), (raw) => observe(raw || {
-	columns: 4,
-	rows: 8,
-	shape: "squircle",
-	defaultAction: "open-link",
-	iconScale: "fill"
-}), (state) => ({ ...state }));
-var persistGridLayout = () => gridLayoutState?.$save?.();
-function normalizeDefaultAction(raw, fallback = "open-link") {
-	const v = String(raw || "").trim().toLowerCase();
-	if (v === "open-view" || v === "view") return "open-view";
-	if (v === "open-link" || v === "link") return "open-link";
-	return fallback;
-}
-/** Default action id for newly created shortcuts (Settings → Workspace). */
-function getDefaultSpeedDialAction() {
-	return normalizeDefaultAction(gridLayoutState?.defaultAction, "open-link");
-}
-function getIconBitmapScale() {
-	return normalizeIconBitmapScale(gridLayoutState?.iconScale, "fill");
-}
-function applyIconBitmapScaleCss(scale) {
-	if (typeof document === "undefined") return;
-	const id = normalizeIconBitmapScale(scale ?? gridLayoutState?.iconScale, "fill");
-	const factor = iconBitmapScaleCss(id);
-	document.documentElement.dataset.iconScale = id;
-	document.documentElement.style.setProperty("--sd-launcher-icon-scale", factor);
-	document.documentElement.style.setProperty("--sd-pack-icon-scale", factor);
-}
-var hasStoredValue = (key) => {
-	try {
-		return typeof localStorage !== "undefined" && localStorage.getItem(key) !== null;
-	} catch {
-		return false;
-	}
-};
-/**
-* Import the former orient-layer storage once. The renderer now has one state
-* model, but old users must not lose shortcuts when the new entrypoint mounts.
-*/
-var migrateLegacyDesktopState = () => {
-	const legacy = loadDesktopRaw();
-	const decoded = legacy ? decodeDesktopState(legacy) : null;
-	if (!decoded?.items?.length) return;
-	if (hasStoredValue(STORAGE_KEY)) return;
-	const columns = Math.max(1, Math.min(32, Number(decoded.columns) || 4));
-	const rows = Math.max(1, Math.min(32, Number(decoded.rows) || 8));
-	const nextItems = [];
-	speedDialItems.splice(0, speedDialItems.length);
-	speedDialMeta.clear();
-	for (const raw of decoded.items) {
-		const action = raw?.action === "open-link" ? "open-link" : "open-view";
-		const item = createStatefulItem({
-			id: String(raw?.id || generateItemId()),
-			cell: observe([Number(raw?.cell?.[0]) || 0, Number(raw?.cell?.[1]) || 0]),
-			icon: String(raw?.icon || (action === "open-link" ? "link" : "sparkle")),
-			label: String(raw?.label || "Shortcut"),
-			action
-		});
-		const meta = {
-			action,
-			view: action === "open-view" ? String(raw?.viewId || "") : "",
-			href: action === "open-link" ? String(raw?.href || "") : "",
-			description: String(raw?.description || ""),
-			shape: String(raw?.shape || "squircle"),
-			iconSrc: String(raw?.iconSrc || "")
-		};
-		speedDialItems.push(item);
-		ensureSpeedDialMeta(item.id, meta);
-		nextItems.push(item);
-	}
-	if (!nextItems.length) return;
-	gridLayoutState.columns = columns;
-	gridLayoutState.rows = rows;
-	gridLayoutState.shape = "square";
-	persistSpeedDialItems();
-	persistSpeedDialMeta();
-	persistGridLayout();
-};
-migrateLegacyDesktopState();
-var applyGridSettings = (settings) => {
-	const gridConfig = settings?.grid || gridLayoutState;
-	const columns = Math.max(1, Math.min(16, Number(gridConfig?.columns) || gridLayoutState.columns || 4));
-	const rows = Math.max(1, Math.min(16, Number(gridConfig?.rows) || gridLayoutState.rows || 8));
-	const shape = normalizeTileShape(gridConfig?.shape ?? gridLayoutState.shape, "squircle");
-	const defaultAction = normalizeDefaultAction(gridConfig?.defaultAction ?? gridLayoutState.defaultAction, "open-link");
-	const iconScale = normalizeIconBitmapScale(gridConfig?.iconScale ?? gridLayoutState.iconScale, "fill");
-	if (relocateItemsToLayout(speedDialItems, [columns, rows], (item) => getItemSpan(item.id))) persistSpeedDialItems();
-	if (gridLayoutState) {
-		gridLayoutState.columns = columns;
-		gridLayoutState.rows = rows;
-		gridLayoutState.shape = shape;
-		gridLayoutState.defaultAction = defaultAction;
-		gridLayoutState.iconScale = iconScale;
-		persistGridLayout();
-	}
-	const openTarget = gridConfig?.defaultOpenLinkTarget;
-	if (openTarget != null && String(openTarget).trim()) setDefaultOpenLinkTarget(normalizeOpenLinkTarget(openTarget));
-	if (typeof document === "undefined") return;
-	document.documentElement.dataset.gridColumns = String(columns);
-	document.documentElement.dataset.gridRows = String(rows);
-	document.documentElement.dataset.gridShape = shape;
-	applyIconBitmapScaleCss(iconScale);
-	try {
-		document.querySelectorAll(".speed-dial-grid [data-speed-dial-item][data-layer='icons']").forEach((tile) => {
-			const id = tile.getAttribute("data-id") || "";
-			const meta = id ? getSpeedDialMeta(id) : null;
-			applyItemIconScaleToElement(tile, defaultIconScaleForDisplay(tile.getAttribute("data-icon-display"), meta?.iconScale));
-			applyIconScaleToPaintedNodes(tile);
-			tile.dispatchEvent(new CustomEvent("cwsp:icon-bitmap-refresh"));
-		});
-	} catch {}
-};
-if (typeof window !== "undefined") window.addEventListener(WORKSPACE_GRID_EVENT, (ev) => {
-	const detail = ev.detail;
-	if (!detail) return;
-	if (detail.query && typeof detail.receive === "function") {
-		detail.receive({
-			columns: gridLayoutState.columns,
-			rows: gridLayoutState.rows,
-			shape: gridLayoutState.shape,
-			defaultAction: getDefaultSpeedDialAction(),
-			iconScale: getIconBitmapScale(),
-			defaultOpenLinkTarget: getDefaultOpenLinkTarget()
-		});
-		return;
-	}
-	applyGridSettings({ grid: detail });
-	detail.ack?.();
-});
-if (typeof globalThis !== "undefined" && typeof document !== "undefined") {
-	const run = () => applyGridSettings();
-	if (typeof requestAnimationFrame === "function") requestAnimationFrame(run);
-	else queueMicrotask(run);
-}
-var looksLikeJsonObject = (raw) => {
-	const t = String(raw || "").trim();
-	return t.startsWith("{") && t.endsWith("}") || t.startsWith("[") && t.endsWith("]");
-};
-var SPEED_DIAL_CLIP_KIND = "cwsp.speed-dial.shortcut";
-/**
-* Explorer virtual paths (`/bookmarks/…`, `/user/…`, `/assets/…`).
-* WHY: drag from Explorer used to put these in `text/plain`; they are not JSON.
-*/
-var isSpeedDialVirtualPath = (raw) => {
-	const p = String(raw || "").trim();
-	if (!p.startsWith("/") || p.includes("://") || /\s/.test(p)) return false;
-	return p === "/" || p === "/bookmarks" || p.startsWith("/bookmarks/") || p === "/user" || p.startsWith("/user/") || p === "/assets" || p.startsWith("/assets/");
-};
-var parseSpeedDialItemFromVirtualPath = (pathText, suggestedCell, extras) => {
-	const path = String(pathText || "").trim();
-	if (!isSpeedDialVirtualPath(path)) return null;
-	const href = String(extras?.href || "").trim();
-	const isUrl = /^https?:\/\//i.test(href);
-	const isDir = path.endsWith("/") || extras?.kind === "directory";
-	const labelFromPath = path.split("/").filter(Boolean).pop() || path;
-	const item = createStatefulItem({
-		id: generateItemId(),
-		cell: suggestedCell || [0, 0],
-		icon: isUrl ? "link" : isDir ? "folder" : "file",
-		label: String(extras?.label || "").trim() || labelFromPath,
-		action: isUrl ? "open-link" : "open-path"
-	});
-	const meta = {
-		action: isUrl ? "open-link" : "open-path",
-		path,
-		...isUrl ? { href } : {},
-		kind: extras?.kind || (isDir ? "directory" : "file"),
-		iconDisplay: "glyph",
-		iconScale: "compact"
-	};
-	ensureSpeedDialMeta(item.id, meta);
-	return item;
-};
-var parseSpeedDialItemFromJSON = (jsonText, suggestedCell) => {
-	const raw = String(jsonText || "").trim();
-	if (!raw) return null;
-	if (isSpeedDialVirtualPath(raw)) return parseSpeedDialItemFromVirtualPath(raw, suggestedCell);
-	if (!looksLikeJsonObject(raw)) return null;
-	try {
-		const parsedRaw = JSON.parse(raw);
-		if (!parsedRaw || typeof parsedRaw !== "object") return null;
-		const parsed = parsedRaw.kind === "cwsp.speed-dial.shortcut" && parsedRaw.snapshot ? parsedRaw.snapshot : parsedRaw;
-		const state = parsed.state || parsed;
-		const desc = parsed.desc || parsed.meta || {};
-		if (!state || typeof state !== "object") return null;
-		const cellValue = suggestedCell ? [Number(suggestedCell[0]) || 0, Number(suggestedCell[1]) || 0] : state.cell && Array.isArray(state.cell) && state.cell.length >= 2 ? [Number(state.cell[0]) || 0, Number(state.cell[1]) || 0] : [0, 0];
-		const href = String(desc.href || desc.meta?.href || state.href || "").trim();
-		const path = String(desc.path || desc.meta?.path || state.path || "").trim();
-		const action = desc.action || state.action || (href ? "open-link" : path ? "open-path" : "open-view");
-		const item = createStatefulItem({
-			id: generateItemId(),
-			cell: cellValue,
-			icon: state.icon || desc.icon || (action === "launch-app" ? "device-mobile" : href ? "link" : path ? "folder" : "sparkle"),
-			label: state.label || desc.label || "Shortcut",
-			action
-		});
-		const meta = {
-			action,
-			...desc.meta || desc || {},
-			...state.meta || {},
-			...href ? { href } : {},
-			...path ? { path } : {}
-		};
-		meta.action = action;
-		ensureSpeedDialMeta(item.id, meta);
-		return item;
-	} catch (e) {
-		console.warn("Failed to parse JSON for speed dial item:", e);
-		return null;
-	}
-};
-/** Digits-only length for phone heuristics (E.164-ish). */
-var PHONE_DIGIT_MIN = 7;
-var PHONE_DIGIT_MAX = 15;
-var digitsOnly = (s) => String(s || "").replace(/\D+/g, "");
-var looksLikePhoneNumber = (raw) => {
-	const t = String(raw || "").trim();
-	if (!t || /\s{3,}/.test(t)) return false;
-	if (/^tel:/i.test(t)) return true;
-	if (/[@/]|https?:/i.test(t) && !/^tel:/i.test(t)) return false;
-	const digits = digitsOnly(t);
-	if (digits.length < PHONE_DIGIT_MIN || digits.length > PHONE_DIGIT_MAX) return false;
-	return /^[+]?[\d\s().-]{7,24}$/.test(t);
-};
-var looksLikeEmail = (raw) => {
-	const t = String(raw || "").trim();
-	if (!t) return false;
-	if (/^mailto:/i.test(t)) return true;
-	if (/\s/.test(t)) return false;
-	return /^[^\s@]+@[^\s@]+\.[^\s@]+$/i.test(t);
-};
-var looksLikeTelegramHandle = (raw) => {
-	const t = String(raw || "").trim();
-	if (!t) return false;
-	if (/^(tg:|telegram:)/i.test(t)) return true;
-	if (/^(https?:\/\/)?(t\.me|telegram\.me)\//i.test(t)) return true;
-	return /^@[a-zA-Z][a-zA-Z0-9_]{3,31}$/.test(t);
-};
-/**
-* Parse common calendar-ish fragments → Android calendar time URI when possible.
-* WHY: Cap openUri(ACTION_VIEW) on content://com.android.calendar/time/<ms> opens the day.
-*/
-var parseCalendarHref = (raw) => {
-	const t = String(raw || "").trim();
-	if (!t) return null;
-	if (/^content:\/\/com\.android\.calendar\//i.test(t)) return {
-		href: t,
-		label: "Calendar"
-	};
-	const iso = t.match(/^(\d{4}-\d{2}-\d{2})(?:[T\s](\d{1,2}:\d{2}(?::\d{2})?))?(?:Z|[+-]\d{2}:?\d{2})?$/);
-	if (iso) {
-		const d = /* @__PURE__ */ new Date(iso[2] ? `${iso[1]}T${iso[2]}` : `${iso[1]}T12:00:00`);
-		if (!Number.isNaN(d.getTime())) return {
-			href: `content://com.android.calendar/time/${d.getTime()}`,
-			label: iso[1]
-		};
-	}
-	const dmy = t.match(/^(\d{1,2})[./](\d{1,2})[./](\d{4})(?:\s+(\d{1,2}):(\d{2}))?$/);
-	if (dmy) {
-		const day = Number(dmy[1]);
-		const month = Number(dmy[2]) - 1;
-		const year = Number(dmy[3]);
-		const hh = dmy[4] != null ? Number(dmy[4]) : 12;
-		const mm = dmy[5] != null ? Number(dmy[5]) : 0;
-		const d = new Date(year, month, day, hh, mm, 0, 0);
-		if (!Number.isNaN(d.getTime()) && d.getFullYear() === year && d.getMonth() === month) return {
-			href: `content://com.android.calendar/time/${d.getTime()}`,
-			label: `${String(day).padStart(2, "0")}.${String(month + 1).padStart(2, "0")}.${year}`
-		};
-	}
-	return null;
-};
-var normalizeTelegramHref = (raw) => {
-	const t = String(raw || "").trim();
-	if (!t) return null;
-	if (/^tg:/i.test(t) || /^telegram:/i.test(t)) return {
-		href: t,
-		label: "Telegram"
-	};
-	const at = t.match(/^@([a-zA-Z][a-zA-Z0-9_]{3,31})$/);
-	if (at) return {
-		href: `https://t.me/${at[1]}`,
-		label: `@${at[1]}`
-	};
-	try {
-		const u = new URL(t.startsWith("http") ? t : `https://${t.replace(/^\/+/, "")}`);
-		if (/^(t\.me|telegram\.me)$/i.test(u.hostname.replace(/^www\./, ""))) {
-			const user = u.pathname.replace(/^\/+/, "").split("/")[0] || "Telegram";
-			return {
-				href: u.href,
-				label: user.startsWith("+") ? user : `@${user}`
-			};
-		}
-	} catch {}
-	return null;
-};
-/**
-* Build a Speed Dial open-link tile for tel / mailto / telegram / calendar / smart text.
-* Prefer this before plain http(s) parsing when the clipboard is not a web URL.
-*/
-var parseSpeedDialItemFromSmartText = (rawText, suggestedCell) => {
-	const text = String(rawText || "").trim();
-	if (!text) return null;
-	let candidate = text.split(/\r?\n/).map((l) => l.trim()).find((l) => l && !l.startsWith("#")) || text;
-	if (candidate.startsWith("<") && candidate.endsWith(">")) candidate = candidate.slice(1, -1).trim();
-	const makeLinkItem = (opts) => {
-		const item = createStatefulItem({
-			id: generateItemId(),
-			cell: suggestedCell || [0, 0],
-			icon: opts.icon,
-			label: opts.label,
-			action: "open-link"
-		});
-		ensureSpeedDialMeta(item.id, {
-			action: "open-link",
-			href: opts.href,
-			description: opts.description || opts.label,
-			iconDisplay: "glyph",
-			iconScale: "compact",
-			openLinkTarget: defaultOpenLinkTargetForHref(opts.href)
-		});
-		return item;
-	};
-	try {
-		const u = new URL(candidate);
-		const proto = (u.protocol || "").toLowerCase();
-		if (proto === "tel:") {
-			const num = decodeURIComponent(u.pathname || u.href.replace(/^tel:/i, "")).trim() || candidate;
-			return makeLinkItem({
-				href: `tel:${digitsOnly(num) ? num.startsWith("+") ? `+${digitsOnly(num)}` : digitsOnly(num) : num}`,
-				label: num,
-				icon: "phone",
-				description: `Call ${num}`
-			});
-		}
-		if (proto === "mailto:") {
-			const addr = decodeURIComponent(u.pathname || u.username || "").trim() || candidate.replace(/^mailto:/i, "");
-			return makeLinkItem({
-				href: `mailto:${addr}`,
-				label: addr,
-				icon: "at",
-				description: `Email ${addr}`
-			});
-		}
-		if (proto === "tg:" || proto === "telegram:") return makeLinkItem({
-			href: u.href,
-			label: "Telegram",
-			icon: "telegram-logo",
-			description: u.href
-		});
-		if (proto === "content:" && /calendar/i.test(u.href)) return makeLinkItem({
-			href: u.href,
-			label: "Calendar",
-			icon: "calendar",
-			description: u.href
-		});
-	} catch {}
-	if (looksLikePhoneNumber(candidate)) {
-		const digits = digitsOnly(candidate);
-		return makeLinkItem({
-			href: `tel:${candidate.trim().startsWith("+") ? `+${digits}` : digits}`,
-			label: candidate.trim(),
-			icon: "phone",
-			description: `Call ${candidate.trim()}`
-		});
-	}
-	if (looksLikeEmail(candidate)) {
-		const addr = candidate.replace(/^mailto:/i, "").trim();
-		return makeLinkItem({
-			href: `mailto:${addr}`,
-			label: addr,
-			icon: "at",
-			description: `Email ${addr}`
-		});
-	}
-	if (looksLikeTelegramHandle(candidate)) {
-		const tg = normalizeTelegramHref(candidate);
-		if (tg) return makeLinkItem({
-			href: tg.href,
-			label: tg.label,
-			icon: "telegram-logo",
-			description: `Telegram ${tg.label}`
-		});
-	}
-	const cal = parseCalendarHref(candidate);
-	if (cal) return makeLinkItem({
-		href: cal.href,
-		label: cal.label,
-		icon: "calendar",
-		description: `Calendar ${cal.label}`
-	});
-	return null;
-};
-var parseSpeedDialItemFromURL = (urlText, suggestedCell) => {
-	try {
-		const trimmed = urlText.trim();
-		if (!trimmed) return null;
-		const smart = parseSpeedDialItemFromSmartText(trimmed, suggestedCell);
-		if (smart) {
-			try {
-				const u = new URL(trimmed);
-				if (/^https?:$/i.test(u.protocol) && !looksLikeTelegramHandle(trimmed)) {} else return smart;
-			} catch {
-				return smart;
-			}
-			if (looksLikeTelegramHandle(trimmed)) return smart;
-		}
-		let url;
-		try {
-			url = new URL(trimmed);
-		} catch {
-			try {
-				url = new URL(trimmed, globalThis?.location?.href);
-			} catch {
-				return parseSpeedDialItemFromSmartText(trimmed, suggestedCell);
-			}
-		}
-		if (!/^https?:$/i.test(url.protocol)) return parseSpeedDialItemFromSmartText(trimmed, suggestedCell);
-		if (/^(t\.me|telegram\.me)$/i.test(url.hostname.replace(/^www\./, ""))) return parseSpeedDialItemFromSmartText(trimmed, suggestedCell);
-		const hostname = url.hostname || "";
-		const domain = hostname.replace(/^www\./, "");
-		const pathname = url.pathname || "";
-		const label = domain || url.host || "Link";
-		let favicon = "";
-		try {
-			if (hostname) favicon = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(hostname)}&sz=256`;
-		} catch {
-			favicon = "";
-		}
-		const item = createStatefulItem({
-			id: generateItemId(),
-			cell: suggestedCell || [0, 0],
-			icon: "link",
-			label,
-			action: "open-link"
-		});
-		const meta = {
-			action: "open-link",
-			href: url.href,
-			description: `${label}${pathname ? ` - ${pathname}` : ""}`,
-			iconDisplay: "glyph",
-			iconScale: "compact",
-			openLinkTarget: defaultOpenLinkTargetForHref(url.href),
-			...favicon ? { iconUrl: favicon } : {}
-		};
-		ensureSpeedDialMeta(item.id, meta);
-		return item;
-	} catch (e) {
-		console.warn("Failed to parse URL for speed dial item:", e);
-		return null;
-	}
-};
-/** Pin an http(s) / content / file / app shortcut from Android Share / pin-shortcut. */
-function pinSpeedDialLinkFromIntent(raw, cell) {
-	const targetCell = cell ?? findNextFreeSpeedDialCell();
-	const label = String(raw?.label || "").trim();
-	const pkg = String(raw?.packageName || "").trim();
-	const component = String(raw?.componentName || "").trim();
-	const intentUri = String(raw?.intentUri || "").trim();
-	const href = String(raw?.url || raw?.href || intentUri || "").trim();
-	const actionHint = String(raw?.action || "").trim().toLowerCase();
-	const shortcutId = String(raw?.shortcutId || "").trim();
-	const mimeType = String(raw?.mimeType || "").trim() || guessMimeFromLabelOrHref(label, href);
-	const rawIconUrl = String(raw?.iconUrl || "").trim();
-	const iconUrl = rawIconUrl && !/^(data:|blob:)/i.test(rawIconUrl) ? rawIconUrl : "";
-	const iconDisplay = String(raw?.iconDisplay || "").trim() || (rawIconUrl || iconUrl ? "colored" : "");
-	if (actionHint === "launch-shortcut" || shortcutId && pkg && actionHint !== "launch-app") {
-		if (!pkg || !shortcutId) return null;
-		const existing = findSpeedDialShortcutItem(pkg, shortcutId);
-		if (existing) return existing;
-		const item = createStatefulItem({
-			id: generateItemId(),
-			cell: targetCell,
-			icon: "folder",
-			label: label || shortcutId,
-			action: "launch-shortcut"
-		});
-		ensureSpeedDialMeta(item.id, {
-			action: "launch-shortcut",
-			packageName: pkg,
-			shortcutId,
-			entityType: "android-shortcut",
-			description: label || shortcutId,
-			iconDisplay: iconDisplay || "colored",
-			...mimeType ? { mimeType } : {},
-			...iconUrl ? { iconUrl } : {}
-		});
-		addSpeedDialItem(item);
-		return item;
-	}
-	if (actionHint === "launch-app" || pkg && !href && !shortcutId) {
-		if (!pkg) return null;
-		const item = createStatefulItem({
-			id: generateItemId(),
-			cell: targetCell,
-			icon: "device-mobile",
-			label: label || pkg,
-			action: "launch-app"
-		});
-		ensureSpeedDialMeta(item.id, {
-			action: "launch-app",
-			packageName: pkg,
-			componentName: component || void 0,
-			entityType: "android-app",
-			iconCacheKey: pkg,
-			description: label || pkg
-		});
-		addSpeedDialItem(item);
-		return item;
-	}
-	if (!href) return null;
-	if (isSpeedDialVirtualPath(href)) {
-		const item = parseSpeedDialItemFromVirtualPath(href, targetCell, { label: label || void 0 });
-		if (!item) return null;
-		addSpeedDialItem(item);
-		return item;
-	}
-	if (/^https?:\/\//i.test(href) || /^www\./i.test(href)) {
-		const item = parseSpeedDialItemFromURL(href, targetCell);
-		if (!item) return null;
-		if (label) {
-			try {
-				item.label.value = label;
-			} catch {}
-			const meta = ensureSpeedDialMeta(item.id);
-			if (meta) meta.description = label;
-		}
-		addSpeedDialItem(item);
-		return item;
-	}
-	const dataHref = href;
-	const openHref = /^(content:|file:|https?:)/i.test(dataHref) ? dataHref : intentUri || dataHref;
-	const item = createStatefulItem({
-		id: generateItemId(),
-		cell: targetCell,
-		icon: /^content:|^file:/i.test(href) ? "folder" : "link",
-		label: label || href.replace(/^[a-z][a-z0-9+.-]*:/i, "").split("/").filter(Boolean).pop() || "Shortcut",
-		action: "open-link"
-	});
-	ensureSpeedDialMeta(item.id, {
-		action: "open-link",
-		href: openHref,
-		description: label || href,
-		openLinkTarget: "external-app",
-		...intentUri && intentUri !== openHref ? { intentUri } : {},
-		...mimeType ? { mimeType } : {},
-		...shortcutId ? { shortcutId } : {},
-		...pkg ? { publisherPackage: pkg } : {},
-		...iconDisplay ? { iconDisplay } : {},
-		...iconUrl ? { iconUrl } : {}
-	});
-	addSpeedDialItem(item);
-	return item;
-}
-var guessMimeFromLabelOrHref = (label, href) => {
-	const name = `${label} ${href}`.toLowerCase();
-	if (/\.txt(\b|$)/i.test(name) || /\.log(\b|$)/i.test(name) || /\.csv(\b|$)/i.test(name)) return "text/plain";
-	if (/\.md(\b|$)/i.test(name) || /\.markdown(\b|$)/i.test(name)) return "text/markdown";
-	if (/\.pdf(\b|$)/i.test(name)) return "application/pdf";
-	if (/\.png(\b|$)/i.test(name)) return "image/png";
-	if (/\.jpe?g(\b|$)/i.test(name)) return "image/jpeg";
-	if (/\.gif(\b|$)/i.test(name)) return "image/gif";
-	if (/\.webp(\b|$)/i.test(name)) return "image/webp";
-	if (/\.mp4(\b|$)/i.test(name)) return "video/mp4";
-	if (/\.mp3(\b|$)/i.test(name)) return "audio/mpeg";
-	if (/\.html?(\b|$)/i.test(name)) return "text/html";
-	if (/\.json(\b|$)/i.test(name)) return "application/json";
-	if (/\.zip(\b|$)/i.test(name)) return "application/zip";
-	return "";
-};
-//#endregion
-//#region ../../modules/projects/fl.ui/src/ui/speed-dial/toast.ts
-/**
-* Lightweight toasts for home-view / SpeedDial (no CWSP-shell core).
-* Shells may listen for `view:toast` on `window` and render FL-UI / status UI.
-*/
-function showSuccess(message) {
-	globalThis.dispatchEvent?.(new CustomEvent("view:toast", { detail: {
-		type: "success",
-		message: String(message || "")
-	} }));
-}
-//#endregion
 //#region ../../modules/projects/fl.ui/src/ui/speed-dial/android-icon-ref.ts
 var VARIANT_ALIASES = {
 	default: "default",
@@ -37585,7 +38991,7 @@ function getCachedIconResourceObjectUrl(raw, size = 96) {
 async function resolveLauncherBridgeForSpeedDial() {
 	if (registeredLauncherBridge) return registeredLauncherBridge;
 	try {
-		return await __vitePreload(() => import("../chunks/launcher-bridge.js"), [], import.meta.url);
+		return await __vitePreload(() => import("../chunks/launcher-bridge.js"), __vite__mapDeps([0,1,2,3,4,5,6]), import.meta.url);
 	} catch {
 		return null;
 	}
@@ -37601,7 +39007,7 @@ async function launchEcosystemSku(sku) {
 			androidPackageForSku,
 			isCwspSku
 		};
-	}, __vite__mapDeps([0,1,2,3,4,5]), import.meta.url);
+	}, __vite__mapDeps([1,2,3,4,5,6]), import.meta.url);
 	if (!isCwspSku(sku)) return false;
 	const pkg = androidPackageForSku(sku);
 	if (!pkg) return false;
@@ -37619,9 +39025,10 @@ async function tryLaunchSiblingView(view) {
 				readCwspSku,
 				siblingSkuForView
 			};
-		}, __vite__mapDeps([0,1,2,3,4,5]), import.meta.url);
+		}, __vite__mapDeps([1,2,3,4,5,6]), import.meta.url);
 		if (!isCwspNativeHost()) return false;
-		if (readCwspSku() !== "launcher") return false;
+		const sku = readCwspSku();
+		if (sku !== "launcher" && sku !== "explorer") return false;
 		const sibling = siblingSkuForView(view);
 		if (!sibling) return false;
 		return launchEcosystemSku(sibling);
@@ -37651,118 +39058,6 @@ function applyLauncherIconToUiIcon(host, objectUrl, mode = "colored") {
 		if (!host.isConnected) return;
 		apply();
 	});
-}
-//#endregion
-//#region ../../modules/projects/fl.ui/src/ui/navigation/app-menu/bookmarks-menu.ts
-/** Local copy — avoid relative `../../explorer/fs-backend` (breaks when this file is hardlinked under home-view). */
-function faviconForHref(href, size = 64) {
-	const raw = String(href || "").trim();
-	if (!raw || !/^https?:\/\//i.test(raw)) return "";
-	try {
-		const host = new URL(raw).hostname;
-		if (!host) return "";
-		return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(host)}&sz=${size}`;
-	} catch {
-		return "";
-	}
-}
-var registeredBookmarksApi = null;
-var chromeErr = () => {
-	try {
-		const err = globalThis.chrome?.runtime?.lastError;
-		return err ? new Error(String(err.message || err)) : null;
-	} catch {
-		return null;
-	}
-};
-var callChrome = (api, method, ...args) => {
-	const fn = api[method];
-	if (typeof fn !== "function") return Promise.reject(/* @__PURE__ */ new Error(`chrome.bookmarks.${String(method)} missing`));
-	try {
-		const result = fn.apply(api, args);
-		if (result != null && typeof result.then === "function") return result;
-	} catch (e) {
-		return Promise.reject(e);
-	}
-	return new Promise((resolve, reject) => {
-		try {
-			fn.apply(api, [...args, (res) => {
-				const err = chromeErr();
-				if (err) reject(err);
-				else resolve(res);
-			}]);
-		} catch (e) {
-			reject(e);
-		}
-	});
-};
-var nodeToEntry = (node) => {
-	const url = typeof node.url === "string" && node.url ? node.url : void 0;
-	return {
-		id: String(node.id),
-		title: String(node.title || node.url || node.id || "Bookmark"),
-		url,
-		folder: !url,
-		parentId: node.parentId
-	};
-};
-/** Build BookmarksMenuApi from `chrome.bookmarks` (CRX extension pages). */
-function createChromeBookmarksMenuApi(raw) {
-	const api = raw || (globalThis.chrome?.bookmarks ?? null);
-	if (!api?.getTree || !api?.getChildren) return null;
-	const resolveIconUrl = (href, size = 128) => {
-		const page = String(href || "").trim();
-		if (!/^https?:\/\//i.test(page)) return "";
-		const s2 = faviconForHref(page, size);
-		if (s2) return s2;
-		try {
-			const chromeRt = globalThis.chrome?.runtime;
-			if (typeof chromeRt?.getURL === "function") {
-				const u = new URL(chromeRt.getURL("/_favicon/"));
-				u.searchParams.set("pageUrl", page);
-				u.searchParams.set("size", String(size));
-				return u.toString();
-			}
-		} catch {}
-		return "";
-	};
-	return {
-		resolveIconUrl,
-		async listChildren(folderId) {
-			if (folderId) return (await callChrome(api, "getChildren", folderId) || []).map(nodeToEntry);
-			const roots = await callChrome(api, "getTree") || [];
-			const out = [];
-			for (const root of roots) for (const child of root.children || []) out.push(nodeToEntry(child));
-			return out;
-		},
-		async search(query) {
-			const q = String(query || "").trim();
-			if (!q) return this.listChildren();
-			if (typeof api.search !== "function") {
-				const all = await this.listChildren();
-				const lower = q.toLowerCase();
-				return all.filter((e) => e.title.toLowerCase().includes(lower) || String(e.url || "").toLowerCase().includes(lower));
-			}
-			return (await callChrome(api, "search", q) || []).map(nodeToEntry);
-		},
-		async open(entry) {
-			if (entry.folder) return;
-			const href = String(entry.url || "").trim();
-			if (!href) return;
-			try {
-				const tabs = globalThis.chrome?.tabs;
-				if (typeof tabs?.create === "function") {
-					await Promise.resolve(tabs.create({ url: href }));
-					return;
-				}
-			} catch {}
-			globalThis.open?.(href, "_blank", "noopener,noreferrer");
-		}
-	};
-}
-function resolveBookmarksMenuApi() {
-	if (registeredBookmarksApi) return registeredBookmarksApi;
-	return createChromeBookmarksMenuApi();
 }
 //#endregion
 //#region ../../modules/projects/fl.ui/src/ui/speed-dial/icon-resource-picker.ts
@@ -38616,7 +39911,250 @@ function attachIconResourcePickButton(field, input, opts) {
 	});
 	return btn;
 }
-preloadStyle$1("@layer ui-app-menu{.env-shell-app-menu[data-page]{align-items:stretch;inset:0;justify-items:stretch;padding:0;z-index:calc(var(--env-z-shell-chrome, 2147483000) + 4)}.env-shell-app-menu[data-page] .env-shell-app-menu__panel{block-size:100%;border-radius:0;inline-size:100%;max-block-size:stretch;max-inline-size:stretch;overflow:hidden;overflow-y:auto!important;overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch}.env-shell-app-menu__panel>.env-shell-app-menu__grid{align-content:start;align-self:stretch;block-size:max-content;grid-auto-rows:max-content;justify-content:start;max-block-size:max-content;min-block-size:fit-content;overflow:visible;overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch}.env-shell-app-menu[data-page] .env-shell-app-menu__grid{column-gap:.45rem;padding-block-end:calc(var(--env-shell-chrome-stack-reserve, 3rem) + env(safe-area-inset-bottom, 0px));row-gap:.85rem}.env-shell-app-menu{align-items:end;box-sizing:border-box;color-scheme:inherit;display:grid;inset-block-end:var(--env-shell-chrome-stack-reserve,3rem);inset-inline:0;justify-items:start;padding:.5rem;padding-inline-start:max(.5rem,env(safe-area-inset-left,0px));pointer-events:none;position:fixed;z-index:calc(var(--env-z-shell-chrome, 2147483000) + 2);--env-app-menu-accent:var(--wf-md-primary,var(--color-primary,#5a9ec8));--env-app-menu-surface:color-mix(in oklab,var(--color-surface-container,--u2-color-mod(var(--base-color,#5a9ec8),960)) 88%,transparent);--env-app-menu-surface-raised:var(\n        --color-surface-container-high,--u2-color-mod(var(--base-color,#5a9ec8),980)\n    );--env-app-menu-ink:var(\n        --color-on-surface,light-dark(--u2-color-mod(var(--base-color,#5a9ec8),900),--u2-color-mod(var(--base-color,#5a9ec8),100))\n    );--env-app-menu-plate:var(\n        --color-primary-container,light-dark(--u2-color-mod(var(--base-color,#5a9ec8),160),--u2-color-mod(var(--base-color,#5a9ec8),820))\n    )}.env-shell-app-menu[hidden]{display:none!important}.env-shell-app-menu__panel{background:var(--env-app-menu-surface);border:1px solid light-dark(color-mix(in oklab,#000 12%,transparent),color-mix(in oklab,#fff 14%,transparent));border-radius:14px;box-shadow:0 20px 48px -20px light-dark(rgba(0,0,0,.22),rgba(0,0,0,.45)),0 2px 8px -2px light-dark(rgba(0,0,0,.12),rgba(0,0,0,.25));color:var(--env-app-menu-ink);display:grid;gap:.75rem;inline-size:min(420px,100vw - 1rem);max-block-size:min(520px,100dvb - var(--env-shell-chrome-stack-reserve,3rem) - 1rem);overflow:hidden;overflow-y:auto!important;overscroll-behavior:contain;padding:.85rem;pointer-events:auto;touch-action:pan-y;-webkit-overflow-scrolling:touch;animation:b .14s cubic-bezier(.22,.8,.3,1);backdrop-filter:blur(22px) saturate(1.35);-webkit-backdrop-filter:blur(22px) saturate(1.35);block-size:fit-content;color-scheme:inherit;grid-template-rows:auto auto minmax(0,1fr);min-block-size:max(60dvb,60cqb)}.env-shell-app-menu__panel[data-layout=start-split]{grid-template-rows:auto auto minmax(0,1fr);inline-size:min(560px,100vw - 1rem);max-block-size:min(580px,100dvb - var(--env-shell-chrome-stack-reserve,3rem) - 1rem)}.env-shell-app-menu__start-body{display:grid;gap:.65rem;grid-template-columns:minmax(9.5rem,.42fr) minmax(0,1fr);max-block-size:100%;min-block-size:12rem;overflow:hidden}.env-shell-app-menu__start-left{background:light-dark(color-mix(in oklab,var(--env-app-menu-accent) 8%,transparent),color-mix(in oklab,var(--env-app-menu-accent) 12%,transparent));border:1px solid light-dark(color-mix(in oklab,var(--env-app-menu-accent) 22%,transparent),color-mix(in oklab,#fff 14%,transparent));border-radius:12px;display:flex;flex-direction:column;gap:.4rem;min-block-size:fit-content;min-inline-size:0;overflow:auto;padding:.45rem}.env-shell-app-menu__start-right{display:grid;gap:.4rem;grid-template-rows:auto minmax(0,1fr);min-block-size:fit-content;min-inline-size:0;overflow:hidden}.env-shell-app-menu__start-heading{flex:0 0 auto;font:600 .72rem/1.2 ui-sans-serif,system-ui,sans-serif;letter-spacing:.04em;opacity:.72;padding-inline:.25rem;text-transform:uppercase}.env-shell-app-menu__start-recent{align-content:start;display:grid;flex:0 0 auto;gap:.2rem;grid-template-columns:1fr}.env-shell-app-menu__start-recent .env-shell-app-menu__tile{align-items:center;gap:.45rem;grid-template-columns:auto minmax(0,1fr);justify-items:start;padding:.35rem .4rem;text-align:start}.env-shell-app-menu__start-recent .env-shell-app-menu__tile-icon{block-size:2.25rem;inline-size:2.25rem;min-block-size:2.25rem;min-inline-size:2.25rem}.env-shell-app-menu__start-recent .env-shell-app-menu__tile-icon ui-icon:not([data-launcher-icon]){block-size:1.5rem!important;inline-size:1.5rem!important;--icon-size:1.5rem;--icon-padding:0px}.env-shell-app-menu__start-recent .env-shell-app-menu__tile-label{font-size:.78rem;-webkit-line-clamp:1;text-align:start}.env-shell-app-menu__start-right .env-shell-app-menu__grid{align-content:start;display:flex;flex-direction:column;flex-wrap:nowrap;gap:.2rem;grid-template-columns:none;min-block-size:fit-content;overflow:auto}.env-shell-app-menu__start-right .env-shell-app-menu__tile{align-items:center;border-radius:10px;box-sizing:border-box;display:grid;gap:.65rem;grid-template-columns:auto minmax(0,1fr);inline-size:100%;justify-items:start;padding:.4rem .55rem;text-align:start}.env-shell-app-menu__start-right .env-shell-app-menu__tile-icon{block-size:2.5rem;inline-size:2.5rem;min-block-size:2.5rem;min-inline-size:2.5rem}.env-shell-app-menu__start-right .env-shell-app-menu__tile-icon ui-icon:not([data-launcher-icon]){block-size:1.75rem!important;inline-size:1.75rem!important;--icon-size:1.75rem;--icon-padding:0px}.env-shell-app-menu__start-right .env-shell-app-menu__tile-label{font:500 .9rem/1.25 ui-sans-serif,system-ui,sans-serif;justify-self:stretch;-webkit-line-clamp:1;text-align:start}.env-shell-app-menu__crumb{align-items:center;display:flex;flex-wrap:wrap;gap:.2rem;min-block-size:1.4rem}.env-shell-app-menu__crumb-item{appearance:none;background:transparent;border:0;border-radius:6px;color:inherit;cursor:pointer;font:600 .78rem/1.2 ui-sans-serif,system-ui,sans-serif;padding:.15rem .35rem}.env-shell-app-menu__crumb-item:hover{background:light-dark(color-mix(in oklab,#000 8%,transparent),color-mix(in oklab,#fff 10%,transparent))}.env-shell-app-menu__crumb-sep{font-size:.85rem;opacity:.45}.env-shell-app-menu__empty--compact{font-size:.75rem;margin:.35rem 0;padding-inline:.25rem;text-align:start}@media (max-width:520px){.env-shell-app-menu__start-body{grid-template-columns:1fr;grid-template-rows:minmax(0,8rem) minmax(0,1fr)}.env-shell-app-menu__start-recent{display:flex;flex-direction:column;overflow:auto}}.env-shell-app-menu__banner{background:color-mix(in oklab,var(--env-app-menu-accent,var(--color-primary,#60cdff)) 14%,transparent);border:1px solid color-mix(in oklab,var(--env-app-menu-accent,var(--color-primary,#60cdff)) 35%,transparent);border-radius:10px;display:grid;gap:.65rem;padding:.65rem .75rem}.env-shell-app-menu__banner[hidden]{display:none!important}.env-shell-app-menu__banner-text{font:500 .9rem/1.35 ui-sans-serif,system-ui,sans-serif;margin:0}.env-shell-app-menu__banner-action{justify-self:start}.env-shell-app-menu__search{background:var(--env-app-menu-surface-raised);border:1px solid light-dark(color-mix(in oklab,#000 12%,transparent),color-mix(in oklab,#fff 14%,transparent));border-radius:10px;box-sizing:border-box;color:inherit;font:400 .9rem/1.2 ui-sans-serif,system-ui,sans-serif;inline-size:100%;inset-block-start:0;padding:.55rem .65rem;position:sticky;z-index:3}.env-shell-app-menu__search[hidden]{display:none!important}.env-shell-app-menu__grid{align-content:start;block-size:max-content;display:grid;gap:.5rem;grid-auto-rows:max-content;grid-template-columns:repeat(auto-fill,minmax(4.5rem,1fr));min-block-size:fit-content;touch-action:pan-y;-webkit-overflow-scrolling:touch;overflow:visible}.env-shell-app-menu__grid[hidden]{display:none!important}.env-shell-app-menu__tile{align-content:start;background:transparent;border:0;border-radius:12px;color:inherit;cursor:pointer;display:grid;flex-shrink:0;gap:.35rem;justify-items:center;min-block-size:fit-content;padding:.45rem .25rem;text-align:center;touch-action:pan-y;user-select:none}.env-shell-app-menu__tile:focus-visible,.env-shell-app-menu__tile:hover{background:color-mix(in oklab,var(--env-app-menu-accent,var(--color-primary,#60cdff)) 12%,transparent);outline:none}.env-shell-app-menu__tile--dragging{opacity:.45}html[data-app-menu-dragging] .env-shell-app-menu{pointer-events:none}html[data-app-menu-dragging] .env-shell-app-menu__panel{opacity:0;visibility:hidden}.env-shell-app-menu__drag-ghost{display:grid;gap:.35rem;inline-size:4.5rem;inset:0 auto auto 0;justify-items:center;pointer-events:none;position:fixed;will-change:transform;z-index:calc(var(--env-z-shell-chrome, 2147483000) + 8)}.env-shell-app-menu__drag-ghost-icon{aspect-ratio:1/1;backdrop-filter:blur(16px) saturate(1.35);-webkit-backdrop-filter:blur(16px) saturate(1.35);background:light-dark(color-mix(in oklab,#e8eaed 72%,var(--wf-md-primary,var(--color-primary,#60cdff)) 28%),color-mix(in oklab,#111827 72%,var(--wf-md-primary,var(--color-primary,#60cdff)) 28%));block-size:3rem;border:none;border-radius:50%;box-shadow:0 8px 24px -8px rgba(0,0,0,.55);box-sizing:border-box;contain:layout style;display:grid;inline-size:3rem;overflow:hidden;padding:0;place-content:center;place-items:center;position:relative}@supports (corner-shape:round){.env-shell-app-menu__drag-ghost-icon{corner-shape:round}}.env-shell-app-menu__drag-ghost-icon img[data-icon-pending],.env-shell-app-menu__drag-ghost-icon img[data-launcher-icon]:not([src]),.env-shell-app-menu__drag-ghost-icon ui-icon[data-icon-pending]{opacity:0;visibility:hidden}.env-shell-app-menu__drag-ghost-icon .ui-ws-item-icon-img,.env-shell-app-menu__drag-ghost-icon img[data-launcher-icon]{block-size:100%;border-radius:0;inline-size:100%;inset:0;object-fit:cover;object-position:center;pointer-events:none;position:absolute;transform:scale(1.28);transform-origin:center}.env-shell-app-menu__drag-ghost-icon ui-icon[data-launcher-icon]{block-size:100%;inline-size:100%;inset:0;max-block-size:none;max-inline-size:none;min-block-size:0;min-inline-size:0;position:absolute;--icon-size:100%;--icon-padding:0px;pointer-events:none;transform:scale(1.28);transform-origin:center}.env-shell-app-menu__drag-ghost-label{display:-webkit-box;-webkit-box-orient:vertical;font:600 .68rem/1.15 ui-sans-serif,system-ui,sans-serif;-webkit-line-clamp:2;overflow:hidden;text-align:center;text-shadow:0 1px 2px rgba(0,0,0,.35)}.env-shell-app-menu__tile-icon{aspect-ratio:1/1!important;backdrop-filter:blur(16px) saturate(1.35);-webkit-backdrop-filter:blur(16px) saturate(1.35);background:var(--env-app-menu-plate);block-size:2.5rem!important;border:none;border-radius:50%!important;box-shadow:0 6px 24px -8px color-mix(in oklab,#000 38%,transparent);box-sizing:border-box;color:var(--color-on-primary-container,var(--env-app-menu-ink));display:grid;inline-size:2.5rem!important;min-block-size:2.5rem!important;min-inline-size:2.5rem!important;overflow:hidden;padding:0!important;place-content:center;place-items:center;position:relative;--icon-color:var(--color-on-primary-container,var(--env-app-menu-ink))}.env-shell-app-menu__tile-icon:not([data-shape]),.env-shell-app-menu__tile-icon[data-shape=circle]{aspect-ratio:1/1!important;border-radius:50%!important}@supports (corner-shape:round){.env-shell-app-menu__tile-icon:not([data-shape]),.env-shell-app-menu__tile-icon[data-shape=circle]{corner-shape:round}}.env-shell-app-menu__tile-icon[data-shape=squircle]{border-radius:1.5rem!important}@supports (corner-shape:squircle){.env-shell-app-menu__tile-icon[data-shape=squircle]{corner-shape:unset}}@supports (corner-shape:round){.env-shell-app-menu__tile-icon[data-shape=squircle]{corner-shape:round}}.env-shell-app-menu__tile-icon[data-shape=square]{border-radius:12%!important}@supports (corner-shape:square){.env-shell-app-menu__tile-icon[data-shape=square]{corner-shape:square}}.env-shell-app-menu__tile-icon[data-shape=shapeless]{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:transparent!important;border-radius:0!important;box-shadow:none!important;contain:none;overflow:visible!important}@supports (corner-shape:squircle){.env-shell-app-menu__tile-icon[data-shape=shapeless]{corner-shape:unset}}.env-shell-app-menu__tile-icon[data-shape=shapeless] .env-shell-app-menu__tile-favicon,.env-shell-app-menu__tile-icon[data-shape=shapeless] .ui-ws-item-icon-img,.env-shell-app-menu__tile-icon[data-shape=shapeless] img[data-launcher-icon],.env-shell-app-menu__tile-icon[data-shape=shapeless] ui-icon{object-fit:contain}.env-shell-app-menu__tile-icon[data-shape=shapeless] :is(img.sd-icon-silhouette,ui-icon.sd-icon-silhouette){filter:brightness(0) blur(6px);inset:0;object-fit:contain;opacity:.4;pointer-events:none;position:absolute;transform:translateY(10%);z-index:0}.env-shell-app-menu__tile-icon[data-shape=shapeless] .ui-ws-item-icon-img:not(.sd-icon-silhouette),.env-shell-app-menu__tile-icon[data-shape=shapeless] img[data-launcher-icon]:not(.sd-icon-silhouette){filter:none;object-fit:contain;z-index:2}.env-shell-app-menu__tile-icon[data-shape=shapeless][data-icon-display=glyph] ui-icon:not(.sd-icon-silhouette){filter:drop-shadow(0 2px 5px rgba(0,0,0,.4))}.env-shell-app-menu__tile-icon[data-shape=shapeless][data-icon-display=glyph] .sd-icon-silhouette{display:none}.env-shell-app-menu__tile-icon img[data-icon-pending],.env-shell-app-menu__tile-icon img[data-launcher-icon]:not([src]),.env-shell-app-menu__tile-icon ui-icon[data-icon-pending]{opacity:0;visibility:hidden}.env-shell-app-menu__tile-icon .ui-ws-item-icon-img[data-launcher-icon],.env-shell-app-menu__tile-icon img[data-launcher-icon]{block-size:100%;border-radius:0;display:block;inline-size:100%;inset:0;max-block-size:none;max-inline-size:none;object-fit:cover;object-position:center;pointer-events:none;position:absolute;transform:scale(var(--sd-item-icon-scale,var(--sd-launcher-icon-scale,1.28)));transform-origin:center;z-index:1}.env-shell-app-menu__tile-icon .ui-ws-item-icon-img[data-launcher-icon][data-icon-pack],.env-shell-app-menu__tile-icon img[data-launcher-icon][data-icon-pack]{transform:scale(var(--sd-item-icon-scale,var(--sd-launcher-icon-scale,1.28)))}.env-shell-app-menu__tile-icon :is(.env-shell-app-menu__tile-favicon:not([data-launcher-icon]),.ui-ws-item-icon-img:not([data-launcher-icon])){block-size:1.75rem;border-radius:4px;display:block;inline-size:1.75rem;max-block-size:90%;max-inline-size:90%;object-fit:contain;object-position:center;pointer-events:none;position:relative;z-index:1}.env-shell-app-menu__tile-icon ui-icon{block-size:1.75rem!important;display:inline-grid!important;inline-size:1.75rem!important;max-block-size:1.75rem!important;max-inline-size:1.75rem!important;min-block-size:1.75rem!important;min-inline-size:1.75rem!important;position:relative;z-index:1;--icon-size:1.75rem;--icon-padding:0px;--icon-color:currentColor;color:inherit;pointer-events:none}.env-shell-app-menu__tile-icon ui-icon[data-launcher-icon]{block-size:100%!important;inline-size:100%!important;inset:0;max-block-size:none!important;max-inline-size:none!important;min-block-size:0!important;min-inline-size:0!important;position:absolute;--icon-size:100%;--icon-padding:0px;pointer-events:none;transform:scale(1.28);transform-origin:center;z-index:1}.env-shell-app-menu__tile-label{display:-webkit-box;-webkit-box-orient:vertical;font:500 .68rem/1.15 ui-sans-serif,system-ui,sans-serif;-webkit-line-clamp:2;overflow:hidden;word-break:break-word}.env-shell-app-menu__empty{font:400 .85rem/1.3 ui-sans-serif,system-ui,sans-serif;grid-column:1/-1;margin:.5rem 0;opacity:.75;text-align:center}@keyframes b{0%{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}.env-shell-app-menu__pin-menu{background:var(--env-app-menu-surface);border:1px solid light-dark(color-mix(in oklab,#000 12%,transparent),color-mix(in oklab,#fff 14%,transparent));border-radius:10px;box-shadow:0 12px 32px -12px light-dark(rgba(0,0,0,.22),rgba(0,0,0,.45)),0 2px 8px -2px light-dark(rgba(0,0,0,.12),rgba(0,0,0,.25));color:var(--env-app-menu-ink);color-scheme:inherit;display:grid;gap:.25rem;min-inline-size:10rem;padding:.35rem;position:fixed;z-index:calc(var(--env-z-shell-chrome, 2147483000) + 4)}.env-shell-app-menu__pin-action{inline-size:100%;justify-content:start;text-align:start}}");
+//#endregion
+//#region ../../modules/projects/fl.ui/src/ui/navigation/app-menu/tile-chrome.ts
+var STORAGE_KEY$1 = "cwsp-app-menu-tile-chrome-v1";
+var cache = null;
+function readAll() {
+	if (cache) return cache;
+	try {
+		const raw = localStorage.getItem(STORAGE_KEY$1);
+		if (!raw) {
+			cache = {};
+			return cache;
+		}
+		const parsed = JSON.parse(raw);
+		cache = parsed && typeof parsed === "object" ? parsed : {};
+	} catch {
+		cache = {};
+	}
+	return cache;
+}
+function appMenuChromeKeyForPackage(packageName) {
+	return `app:${String(packageName || "").trim()}`;
+}
+function getAppMenuTileChrome(key) {
+	const k = String(key || "").trim();
+	if (!k) return {};
+	return { ...readAll()[k] || {} };
+}
+//#endregion
+//#region ../../modules/projects/fl.ui/src/ui/navigation/app-menu/app-sort.ts
+var APP_MENU_SORT_EVENT = "cwsp:app-menu-sort-change";
+var STORAGE_KEY = "cwsp-app-menu-sort";
+var APP_MENU_SORT_OPTIONS = [
+	["name", "Name"],
+	["installed", "Date installed"],
+	["updated", "Date updated"],
+	["color", "Color (including mask)"],
+	["category", "Category"],
+	["package", "Package"]
+];
+var SORT_SET = new Set(APP_MENU_SORT_OPTIONS.map(([v]) => v));
+var colorCache = /* @__PURE__ */ new Map();
+var normalizeAppMenuSortBy = (raw, fallback = "name") => {
+	const v = String(raw || "").trim().toLowerCase();
+	if (v === "install" || v === "install-date" || v === "date-installed") return "installed";
+	if (v === "update" || v === "update-date" || v === "date-updated" || v === "recent") return "updated";
+	if (v === "hue" || v === "colour") return "color";
+	return SORT_SET.has(v) ? v : fallback;
+};
+var normalizeSortDir = (raw, fallback = "asc") => {
+	const v = String(raw || "").trim().toLowerCase();
+	if (v === "desc" || v === "descending" || v === "newest" || v === "z-a") return "desc";
+	if (v === "asc" || v === "ascending" || v === "oldest" || v === "a-z") return "asc";
+	return fallback;
+};
+var defaultDirForAppSort = (sortBy) => sortBy === "installed" || sortBy === "updated" ? "desc" : "asc";
+var peekAppMenuSort = () => {
+	try {
+		const raw = localStorage.getItem(STORAGE_KEY);
+		if (raw) {
+			const parsed = JSON.parse(raw);
+			const sortBy = normalizeAppMenuSortBy(parsed.sortBy);
+			return {
+				sortBy,
+				sortDir: normalizeSortDir(parsed.sortDir, defaultDirForAppSort(sortBy))
+			};
+		}
+	} catch {}
+	return {
+		sortBy: "name",
+		sortDir: "asc"
+	};
+};
+var writeAppMenuSort = (prefs) => {
+	const cur = peekAppMenuSort();
+	const sortBy = prefs.sortBy != null ? normalizeAppMenuSortBy(prefs.sortBy, cur.sortBy) : cur.sortBy;
+	const next = {
+		sortBy,
+		sortDir: prefs.sortDir != null ? normalizeSortDir(prefs.sortDir, defaultDirForAppSort(sortBy)) : cur.sortDir
+	};
+	try {
+		localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+	} catch {}
+	try {
+		window.dispatchEvent(new CustomEvent(APP_MENU_SORT_EVENT, { detail: next }));
+	} catch {}
+	return next;
+};
+var cmpStr = (a, b) => a.localeCompare(b, void 0, {
+	numeric: true,
+	sensitivity: "base"
+}) || a.localeCompare(b);
+var cmpNum = (a, b) => a === b ? 0 : a < b ? -1 : 1;
+var categoryOf = (app) => {
+	const cat = String(app.category || "").trim().toLowerCase();
+	if (cat) return cat;
+	if (app.system) return "system";
+	return String(app.installer || "").trim().toLowerCase() || "other";
+};
+var displayForApp = (app) => {
+	const chrome = getAppMenuTileChrome(appMenuChromeKeyForPackage(String(app.packageName || "")));
+	return inferIconDisplay({
+		iconDisplay: chrome.iconDisplay,
+		iconUrl: chrome.iconUrl,
+		isLauncherApp: true
+	}) || "colored";
+};
+var parseCssColor = (raw) => {
+	const s = String(raw || "").trim();
+	const hex = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(s);
+	if (hex) {
+		const h = hex[1];
+		const n = h.length === 3 ? h.split("").map((c) => parseInt(c + c, 16)) : [
+			parseInt(h.slice(0, 2), 16),
+			parseInt(h.slice(2, 4), 16),
+			parseInt(h.slice(4, 6), 16)
+		];
+		return {
+			r: n[0],
+			g: n[1],
+			b: n[2]
+		};
+	}
+	const rgb = /rgba?\(\s*([\d.]+)[,\s/]+([\d.]+)[,\s/]+([\d.]+)/i.exec(s);
+	if (!rgb) return null;
+	return {
+		r: Number(rgb[1]),
+		g: Number(rgb[2]),
+		b: Number(rgb[3])
+	};
+};
+var rgbHue = (r, g, b) => {
+	const rn = r / 255;
+	const gn = g / 255;
+	const bn = b / 255;
+	const max = Math.max(rn, gn, bn);
+	const d = max - Math.min(rn, gn, bn);
+	if (d < 1e-4) return 0;
+	let h = 0;
+	if (max === rn) h = (gn - bn) / d % 6;
+	else if (max === gn) h = (bn - rn) / d + 2;
+	else h = (rn - gn) / d + 4;
+	h *= 60;
+	if (h < 0) h += 360;
+	return h;
+};
+var themeHueFrom = (el) => {
+	try {
+		const cs = el ? getComputedStyle(el) : getComputedStyle(document.documentElement);
+		const rgb = parseCssColor(cs.getPropertyValue("--env-app-menu-ink") || cs.color);
+		return rgb ? rgbHue(rgb.r, rgb.g, rgb.b) : 210;
+	} catch {
+		return 210;
+	}
+};
+var sampleUrlHue = (url, mode, themeHue) => new Promise((resolve) => {
+	const img = new Image();
+	img.decoding = "async";
+	img.onload = () => {
+		try {
+			const c = document.createElement("canvas");
+			c.width = 32;
+			c.height = 32;
+			const ctx = c.getContext("2d", { willReadFrequently: true });
+			if (!ctx) {
+				resolve(themeHue);
+				return;
+			}
+			ctx.drawImage(img, 0, 0, 32, 32);
+			const data = ctx.getImageData(0, 0, 32, 32).data;
+			let wr = 0;
+			let wg = 0;
+			let wb = 0;
+			let wsum = 0;
+			for (let i = 0; i < data.length; i += 4) {
+				const a = data[i + 3] / 255;
+				if (a < .12) continue;
+				const r = data[i];
+				const g = data[i + 1];
+				const b = data[i + 2];
+				const luma = (.2126 * r + .7152 * g + .0722 * b) / 255;
+				const mask = mode === "masked-inverse" ? 1 - luma : luma;
+				const weight = mode === "colored" ? a : a * (.15 + .85 * mask);
+				wr += r * weight;
+				wg += g * weight;
+				wb += b * weight;
+				wsum += weight;
+			}
+			if (wsum < .001) {
+				resolve(themeHue);
+				return;
+			}
+			let hue = rgbHue(wr / wsum, wg / wsum, wb / wsum);
+			if (mode === "masked" || mode === "masked-inverse") hue = (hue * .28 + themeHue * .72) % 360;
+			resolve(hue);
+		} catch {
+			resolve(themeHue);
+		}
+	};
+	img.onerror = () => resolve(themeHue);
+	img.src = url;
+});
+var hydrateAppColorKeys = async (apps, themeHost) => {
+	const themeHue = themeHueFrom(themeHost);
+	const jobs = [];
+	for (const app of apps) {
+		const pkg = String(app.packageName || app.iconCacheKey || "").trim();
+		if (!pkg) continue;
+		const mode = displayForApp(app);
+		const cacheKey = `${pkg}|${mode}`;
+		if (colorCache.has(cacheKey)) continue;
+		jobs.push((async () => {
+			try {
+				const url = await ensureLauncherIconObjectUrl(app.iconCacheKey || pkg, 32);
+				const hue = url ? await sampleUrlHue(url, mode, themeHue) : themeHue;
+				colorCache.set(cacheKey, hue);
+			} catch {
+				colorCache.set(cacheKey, themeHue);
+			}
+		})());
+	}
+	const chunk = 12;
+	for (let i = 0; i < jobs.length; i += chunk) await Promise.all(jobs.slice(i, i + chunk));
+};
+var colorKeyOf = (app) => {
+	const pkg = String(app.packageName || app.iconCacheKey || "").trim();
+	const mode = displayForApp(app);
+	return colorCache.get(`${pkg}|${mode}`) ?? 0;
+};
+var sortLauncherApps = (apps, prefs) => {
+	const dir = prefs.sortDir === "desc" ? -1 : 1;
+	return [...apps].sort((a, b) => {
+		let n = 0;
+		if (prefs.sortBy === "installed") n = cmpNum(Number(a.firstInstallTime || 0), Number(b.firstInstallTime || 0));
+		else if (prefs.sortBy === "updated") n = cmpNum(Number(a.lastUpdateTime || 0), Number(b.lastUpdateTime || 0));
+		else if (prefs.sortBy === "color") n = cmpNum(colorKeyOf(a), colorKeyOf(b));
+		else if (prefs.sortBy === "category") n = cmpStr(categoryOf(a), categoryOf(b));
+		else if (prefs.sortBy === "package") n = cmpStr(String(a.packageName || ""), String(b.packageName || ""));
+		else n = cmpStr(String(a.label || a.packageName || ""), String(b.label || b.packageName || ""));
+		if (!n) n = cmpStr(String(a.label || ""), String(b.label || ""));
+		if (!n) n = cmpStr(String(a.packageName || ""), String(b.packageName || ""));
+		return n * dir;
+	});
+};
+preloadStyle$1("@layer ui-app-menu{.env-shell-app-menu[data-page]{align-items:stretch;inset:0;justify-items:stretch;padding:0;z-index:calc(var(--env-z-shell-chrome, 2147483000) + 4)}.env-shell-app-menu[data-page] .env-shell-app-menu__panel{block-size:100%;border-radius:0;inline-size:100%;max-block-size:stretch;max-inline-size:stretch;overflow:hidden;overflow-y:auto!important;overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch;pointer-events:auto}.env-shell-app-menu__panel>.env-shell-app-menu__grid{align-content:start;align-self:stretch;block-size:max-content;grid-auto-rows:max-content;justify-content:start;max-block-size:max-content;min-block-size:fit-content;overflow:visible;overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch}.env-shell-app-menu[data-page] .env-shell-app-menu__grid{column-gap:.45rem;padding-block-end:calc(var(--env-shell-chrome-stack-reserve, 3rem) + env(safe-area-inset-bottom, 0px));row-gap:.85rem}.env-shell-app-menu{align-items:end;box-sizing:border-box;color-scheme:inherit;display:grid;inset-block-end:var(--env-shell-chrome-stack-reserve,3rem);inset-inline:0;justify-items:start;padding:.5rem;padding-inline-start:max(.5rem,env(safe-area-inset-left,0px));pointer-events:auto;position:fixed;z-index:calc(var(--env-z-shell-chrome, 2147483000) + 2);--env-app-menu-accent:var(--wf-md-primary,var(--color-primary,#5a9ec8));--env-app-menu-surface:color-mix(in oklab,var(--color-surface-container,--u2-color-mod(var(--base-color,#5a9ec8),960)) 88%,transparent);--env-app-menu-surface-raised:var(\n        --color-surface-container-high,--u2-color-mod(var(--base-color,#5a9ec8),980)\n    );--env-app-menu-ink:var(\n        --color-on-surface,light-dark(--u2-color-mod(var(--base-color,#5a9ec8),900),--u2-color-mod(var(--base-color,#5a9ec8),100))\n    );--env-app-menu-plate:var(\n        --color-primary-container,light-dark(--u2-color-mod(var(--base-color,#5a9ec8),160),--u2-color-mod(var(--base-color,#5a9ec8),820))\n    )}.env-shell-app-menu[hidden]{display:none!important}.env-shell-app-menu__panel{background:var(--env-app-menu-surface);border:1px solid light-dark(color-mix(in oklab,#000 12%,transparent),color-mix(in oklab,#fff 14%,transparent));border-radius:14px;box-shadow:0 20px 48px -20px light-dark(rgba(0,0,0,.22),rgba(0,0,0,.45)),0 2px 8px -2px light-dark(rgba(0,0,0,.12),rgba(0,0,0,.25));color:var(--env-app-menu-ink);display:grid;gap:.75rem;inline-size:min(420px,100vw - 1rem);max-block-size:min(520px,100dvb - var(--env-shell-chrome-stack-reserve,3rem) - 1rem);overflow:hidden;overflow-y:auto!important;overscroll-behavior:contain;padding:.85rem;pointer-events:auto;touch-action:pan-y;-webkit-overflow-scrolling:touch;animation:b .14s cubic-bezier(.22,.8,.3,1);backdrop-filter:blur(22px) saturate(1.35);-webkit-backdrop-filter:blur(22px) saturate(1.35);block-size:fit-content;color-scheme:inherit;grid-template-rows:auto auto minmax(0,1fr);min-block-size:max(60dvb,60cqb)}.env-shell-app-menu__panel[data-layout=start-split]{grid-template-rows:auto auto minmax(0,1fr);inline-size:min(560px,100vw - 1rem);max-block-size:min(580px,100dvb - var(--env-shell-chrome-stack-reserve,3rem) - 1rem)}.env-shell-app-menu__start-body{display:grid;gap:.65rem;grid-template-columns:minmax(9.5rem,.42fr) minmax(0,1fr);max-block-size:100%;min-block-size:12rem;overflow:hidden}.env-shell-app-menu__start-left{background:light-dark(color-mix(in oklab,var(--env-app-menu-accent) 8%,transparent),color-mix(in oklab,var(--env-app-menu-accent) 12%,transparent));border:1px solid light-dark(color-mix(in oklab,var(--env-app-menu-accent) 22%,transparent),color-mix(in oklab,#fff 14%,transparent));border-radius:12px;display:flex;flex-direction:column;gap:.4rem;min-block-size:fit-content;min-inline-size:0;overflow:auto;padding:.45rem}.env-shell-app-menu__start-right{display:grid;gap:.4rem;grid-template-rows:auto minmax(0,1fr);min-block-size:fit-content;min-inline-size:0;overflow:hidden}.env-shell-app-menu__start-heading{flex:0 0 auto;font:600 .72rem/1.2 ui-sans-serif,system-ui,sans-serif;letter-spacing:.04em;opacity:.72;padding-inline:.25rem;text-transform:uppercase}.env-shell-app-menu__start-recent{align-content:start;display:grid;flex:0 0 auto;gap:.2rem;grid-template-columns:1fr}.env-shell-app-menu__start-recent .env-shell-app-menu__tile{align-items:center;gap:.45rem;grid-template-columns:auto minmax(0,1fr);justify-items:start;padding:.35rem .4rem;text-align:start}.env-shell-app-menu__start-recent .env-shell-app-menu__tile-icon{block-size:2.25rem;inline-size:2.25rem;min-block-size:2.25rem;min-inline-size:2.25rem}.env-shell-app-menu__start-recent .env-shell-app-menu__tile-icon ui-icon:not([data-launcher-icon]){block-size:1.5rem!important;inline-size:1.5rem!important;--icon-size:1.5rem;--icon-padding:0px}.env-shell-app-menu__start-recent .env-shell-app-menu__tile-label{font-size:.78rem;-webkit-line-clamp:1;text-align:start}.env-shell-app-menu__start-right .env-shell-app-menu__grid{align-content:start;display:flex;flex-direction:column;flex-wrap:nowrap;gap:.2rem;grid-template-columns:none;min-block-size:fit-content;overflow:auto}.env-shell-app-menu__start-right .env-shell-app-menu__tile{align-items:center;border-radius:10px;box-sizing:border-box;display:grid;gap:.65rem;grid-template-columns:auto minmax(0,1fr);inline-size:100%;justify-items:start;padding:.4rem .55rem;text-align:start}.env-shell-app-menu__start-right .env-shell-app-menu__tile-icon{block-size:2.5rem;inline-size:2.5rem;min-block-size:2.5rem;min-inline-size:2.5rem}.env-shell-app-menu__start-right .env-shell-app-menu__tile-icon ui-icon:not([data-launcher-icon]){block-size:1.75rem!important;inline-size:1.75rem!important;--icon-size:1.75rem;--icon-padding:0px}.env-shell-app-menu__start-right .env-shell-app-menu__tile-label{font:500 .9rem/1.25 ui-sans-serif,system-ui,sans-serif;justify-self:stretch;-webkit-line-clamp:1;text-align:start}.env-shell-app-menu__crumb{align-items:center;display:flex;flex-wrap:wrap;gap:.35rem .55rem;min-block-size:1.4rem}.env-shell-app-menu__crumb-nav{align-items:center;display:flex;flex:1 1 auto;flex-wrap:wrap;gap:.2rem;min-inline-size:0}.env-shell-app-menu__crumb-actions{align-items:center;display:flex;flex-wrap:wrap;gap:.3rem;margin-inline-start:auto}.env-shell-app-menu__crumb-actions[hidden]{display:none!important}.env-shell-app-menu__crumb-action{appearance:none;background:var(--env-app-menu-surface-raised);border:1px solid light-dark(color-mix(in oklab,#000 12%,transparent),color-mix(in oklab,#fff 14%,transparent));border-radius:8px;color:inherit;cursor:pointer;font:600 .72rem/1.2 ui-sans-serif,system-ui,sans-serif;padding:.28rem .5rem}.env-shell-app-menu__crumb-action:hover{background:light-dark(color-mix(in oklab,#000 8%,transparent),color-mix(in oklab,#fff 10%,transparent))}.env-shell-app-menu__crumb-item{appearance:none;background:transparent;border:0;border-radius:6px;color:inherit;cursor:pointer;font:600 .78rem/1.2 ui-sans-serif,system-ui,sans-serif;padding:.15rem .35rem}.env-shell-app-menu__crumb-item:hover{background:light-dark(color-mix(in oklab,#000 8%,transparent),color-mix(in oklab,#fff 10%,transparent))}.env-shell-app-menu__crumb-sep{font-size:.85rem;opacity:.45}.env-shell-app-menu__empty--compact{font-size:.75rem;margin:.35rem 0;padding-inline:.25rem;text-align:start}@media (max-width:520px){.env-shell-app-menu__tools{grid-template-columns:1fr 1fr}.env-shell-app-menu__search{grid-column:1/-1}.env-shell-app-menu__sort,.env-shell-app-menu__sort-dir{max-inline-size:none}.env-shell-app-menu__start-body{grid-template-columns:1fr;grid-template-rows:minmax(0,8rem) minmax(0,1fr)}.env-shell-app-menu__start-recent{display:flex;flex-direction:column;overflow:auto}}.env-shell-app-menu__banner{background:color-mix(in oklab,var(--env-app-menu-accent,var(--color-primary,#60cdff)) 14%,transparent);border:1px solid color-mix(in oklab,var(--env-app-menu-accent,var(--color-primary,#60cdff)) 35%,transparent);border-radius:10px;display:grid;gap:.65rem;padding:.65rem .75rem}.env-shell-app-menu__banner[hidden]{display:none!important}.env-shell-app-menu__banner-text{font:500 .9rem/1.35 ui-sans-serif,system-ui,sans-serif;margin:0}.env-shell-app-menu__banner-action{justify-self:start}.env-shell-app-menu__tools{align-items:stretch;display:grid;gap:.4rem;grid-template-columns:minmax(0,1fr) auto auto;inset-block-start:0;position:sticky;z-index:3}.env-shell-app-menu__tools[hidden]{display:none!important}.env-shell-app-menu__search,.env-shell-app-menu__sort,.env-shell-app-menu__sort-dir{background:var(--env-app-menu-surface-raised);border:1px solid light-dark(color-mix(in oklab,#000 12%,transparent),color-mix(in oklab,#fff 14%,transparent));border-radius:10px;box-sizing:border-box;color:inherit;font:400 .9rem/1.2 ui-sans-serif,system-ui,sans-serif;padding:.55rem .65rem}.env-shell-app-menu__search{inline-size:100%;min-inline-size:0}.env-shell-app-menu__sort,.env-shell-app-menu__sort-dir{max-inline-size:11rem}.env-shell-app-menu__search[hidden]{display:none!important}.env-shell-app-menu__grid{align-content:start;block-size:max-content;display:grid;gap:.5rem;grid-auto-rows:max-content;grid-template-columns:repeat(auto-fill,minmax(4.5rem,1fr));min-block-size:fit-content;touch-action:pan-y;-webkit-overflow-scrolling:touch;overflow:visible;pointer-events:auto}.env-shell-app-menu__grid[hidden]{display:none!important}.env-shell-app-menu__tile{align-content:start;background:transparent;border:0;border-radius:12px;color:inherit;cursor:pointer;display:grid;flex-shrink:0;gap:.35rem;justify-items:center;min-block-size:fit-content;padding:.45rem .25rem;text-align:center;touch-action:pan-y;user-select:none}.env-shell-app-menu__tile:focus-visible,.env-shell-app-menu__tile:hover{background:color-mix(in oklab,var(--env-app-menu-accent,var(--color-primary,#60cdff)) 12%,transparent);outline:none}.env-shell-app-menu__tile--dragging{opacity:.45}html[data-app-menu-dragging] .env-shell-app-menu{pointer-events:none}html[data-app-menu-dragging] .env-shell-app-menu__panel{opacity:0;visibility:hidden}.env-shell-app-menu__drag-ghost{display:grid;gap:.35rem;inline-size:4.5rem;inset:0 auto auto 0;justify-items:center;pointer-events:none;position:fixed;will-change:transform;z-index:calc(var(--env-z-shell-chrome, 2147483000) + 8)}.env-shell-app-menu__drag-ghost-icon{aspect-ratio:1/1;backdrop-filter:blur(16px) saturate(1.35);-webkit-backdrop-filter:blur(16px) saturate(1.35);background:light-dark(color-mix(in oklab,#e8eaed 72%,var(--wf-md-primary,var(--color-primary,#60cdff)) 28%),color-mix(in oklab,#111827 72%,var(--wf-md-primary,var(--color-primary,#60cdff)) 28%));block-size:3rem;border:none;border-radius:50%;box-shadow:0 8px 24px -8px rgba(0,0,0,.55);box-sizing:border-box;contain:layout style;display:grid;inline-size:3rem;overflow:hidden;padding:0;place-content:center;place-items:center;position:relative}@supports (corner-shape:round){.env-shell-app-menu__drag-ghost-icon{corner-shape:round}}.env-shell-app-menu__drag-ghost-icon img[data-icon-pending],.env-shell-app-menu__drag-ghost-icon img[data-launcher-icon]:not([src]),.env-shell-app-menu__drag-ghost-icon ui-icon[data-icon-pending]{opacity:0;visibility:hidden}.env-shell-app-menu__drag-ghost-icon .ui-ws-item-icon-img,.env-shell-app-menu__drag-ghost-icon img[data-launcher-icon]{block-size:100%;border-radius:0;inline-size:100%;inset:0;object-fit:cover;object-position:center;pointer-events:none;position:absolute;transform:scale(1.28);transform-origin:center}.env-shell-app-menu__drag-ghost-icon ui-icon[data-launcher-icon]{block-size:100%;inline-size:100%;inset:0;max-block-size:none;max-inline-size:none;min-block-size:0;min-inline-size:0;position:absolute;--icon-size:100%;--icon-padding:0px;pointer-events:none;transform:scale(1.28);transform-origin:center}.env-shell-app-menu__drag-ghost-label{display:-webkit-box;-webkit-box-orient:vertical;font:600 .68rem/1.15 ui-sans-serif,system-ui,sans-serif;-webkit-line-clamp:2;overflow:hidden;text-align:center;text-shadow:0 1px 2px rgba(0,0,0,.35)}.env-shell-app-menu__tile-icon{aspect-ratio:1/1!important;backdrop-filter:blur(16px) saturate(1.35);-webkit-backdrop-filter:blur(16px) saturate(1.35);background:var(--env-app-menu-plate);block-size:2.5rem!important;border:none;border-radius:50%!important;box-shadow:0 6px 24px -8px color-mix(in oklab,#000 38%,transparent);box-sizing:border-box;color:var(--color-on-primary-container,var(--env-app-menu-ink));display:grid;inline-size:2.5rem!important;min-block-size:2.5rem!important;min-inline-size:2.5rem!important;overflow:hidden;padding:0!important;place-content:center;place-items:center;position:relative;--icon-color:var(--color-on-primary-container,var(--env-app-menu-ink))}.env-shell-app-menu__tile-icon:not([data-shape]),.env-shell-app-menu__tile-icon[data-shape=circle]{aspect-ratio:1/1!important;border-radius:50%!important}@supports (corner-shape:round){.env-shell-app-menu__tile-icon:not([data-shape]),.env-shell-app-menu__tile-icon[data-shape=circle]{corner-shape:round}}.env-shell-app-menu__tile-icon[data-shape=squircle]{border-radius:1.5rem!important}@supports (corner-shape:squircle){.env-shell-app-menu__tile-icon[data-shape=squircle]{corner-shape:unset}}@supports (corner-shape:round){.env-shell-app-menu__tile-icon[data-shape=squircle]{corner-shape:round}}.env-shell-app-menu__tile-icon[data-shape=square]{border-radius:12%!important}@supports (corner-shape:square){.env-shell-app-menu__tile-icon[data-shape=square]{corner-shape:square}}.env-shell-app-menu__tile-icon[data-shape=shapeless]{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:transparent!important;border-radius:0!important;box-shadow:none!important;contain:none;overflow:visible!important}@supports (corner-shape:squircle){.env-shell-app-menu__tile-icon[data-shape=shapeless]{corner-shape:unset}}.env-shell-app-menu__tile-icon[data-shape=shapeless] .env-shell-app-menu__tile-favicon,.env-shell-app-menu__tile-icon[data-shape=shapeless] .ui-ws-item-icon-img,.env-shell-app-menu__tile-icon[data-shape=shapeless] img[data-launcher-icon],.env-shell-app-menu__tile-icon[data-shape=shapeless] ui-icon{object-fit:contain}.env-shell-app-menu__tile-icon[data-shape=shapeless] :is(img.sd-icon-silhouette,ui-icon.sd-icon-silhouette){filter:brightness(0) blur(6px);inset:0;object-fit:contain;opacity:.4;pointer-events:none;position:absolute;transform:translateY(10%);z-index:0}.env-shell-app-menu__tile-icon[data-shape=shapeless] .ui-ws-item-icon-img:not(.sd-icon-silhouette),.env-shell-app-menu__tile-icon[data-shape=shapeless] img[data-launcher-icon]:not(.sd-icon-silhouette){filter:none;object-fit:contain;z-index:2}.env-shell-app-menu__tile-icon[data-shape=shapeless][data-icon-display=glyph] ui-icon:not(.sd-icon-silhouette){filter:drop-shadow(0 2px 5px rgba(0,0,0,.4))}.env-shell-app-menu__tile-icon[data-shape=shapeless][data-icon-display=glyph] .sd-icon-silhouette{display:none}.env-shell-app-menu__tile-icon img[data-icon-pending],.env-shell-app-menu__tile-icon img[data-launcher-icon]:not([src]),.env-shell-app-menu__tile-icon ui-icon[data-icon-pending]{opacity:0;visibility:hidden}.env-shell-app-menu__tile-icon .ui-ws-item-icon-img[data-launcher-icon],.env-shell-app-menu__tile-icon img[data-launcher-icon]{block-size:100%;border-radius:0;display:block;inline-size:100%;inset:0;max-block-size:none;max-inline-size:none;object-fit:cover;object-position:center;pointer-events:none;position:absolute;transform:scale(var(--sd-item-icon-scale,var(--sd-launcher-icon-scale,1.28)));transform-origin:center;z-index:1}.env-shell-app-menu__tile-icon .ui-ws-item-icon-img[data-launcher-icon][data-icon-pack],.env-shell-app-menu__tile-icon img[data-launcher-icon][data-icon-pack]{transform:scale(var(--sd-item-icon-scale,var(--sd-launcher-icon-scale,1.28)))}.env-shell-app-menu__tile-icon :is(.env-shell-app-menu__tile-favicon:not([data-launcher-icon]),.ui-ws-item-icon-img:not([data-launcher-icon])){block-size:1.75rem;border-radius:4px;display:block;inline-size:1.75rem;max-block-size:90%;max-inline-size:90%;object-fit:contain;object-position:center;pointer-events:none;position:relative;z-index:1}.env-shell-app-menu__tile-icon ui-icon{block-size:1.75rem!important;display:inline-grid!important;inline-size:1.75rem!important;max-block-size:1.75rem!important;max-inline-size:1.75rem!important;min-block-size:1.75rem!important;min-inline-size:1.75rem!important;position:relative;z-index:1;--icon-size:1.75rem;--icon-padding:0px;--icon-color:currentColor;color:inherit;pointer-events:none}.env-shell-app-menu__tile-icon ui-icon[data-launcher-icon]{block-size:100%!important;inline-size:100%!important;inset:0;max-block-size:none!important;max-inline-size:none!important;min-block-size:0!important;min-inline-size:0!important;position:absolute;--icon-size:100%;--icon-padding:0px;pointer-events:none;transform:scale(1.28);transform-origin:center;z-index:1}.env-shell-app-menu__tile-label{display:-webkit-box;-webkit-box-orient:vertical;font:500 .68rem/1.15 ui-sans-serif,system-ui,sans-serif;-webkit-line-clamp:2;overflow:hidden;word-break:break-word}.env-shell-app-menu__empty{font:400 .85rem/1.3 ui-sans-serif,system-ui,sans-serif;grid-column:1/-1;margin:.5rem 0;opacity:.75;text-align:center}@keyframes b{0%{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}.env-shell-app-menu__pin-menu{background:var(--env-app-menu-surface);border:1px solid light-dark(color-mix(in oklab,#000 12%,transparent),color-mix(in oklab,#fff 14%,transparent));border-radius:10px;box-shadow:0 12px 32px -12px light-dark(rgba(0,0,0,.22),rgba(0,0,0,.45)),0 2px 8px -2px light-dark(rgba(0,0,0,.12),rgba(0,0,0,.25));color:var(--env-app-menu-ink);color-scheme:inherit;display:grid;gap:.25rem;min-inline-size:10rem;padding:.35rem;position:fixed;z-index:calc(var(--env-z-shell-chrome, 2147483000) + 4)}.env-shell-app-menu__pin-action{inline-size:100%;justify-content:start;text-align:start}}");
 //#endregion
 //#region ../../modules/projects/fl.ui/src/ui/speed-dial/widgets.ts
 var androidBridge = null;
@@ -40516,4 +42054,4 @@ var { showOpenFilePicker, showSaveFilePicker } = globalThis.showOpenFilePicker ?
 //#region ../../modules/projects/fl.ui/src/styles/ui/home-host-apply.scss?inline
 var home_host_apply_default = ":where(body):has(.speed-dial-root),:where(body):has([data-view=home]),:where(html):has(.speed-dial-root),:where(html[data-cwsp-shell-role=launcher]){block-size:var(--lv-height,100lvb);margin:0;max-block-size:var(--lv-height,100lvb);min-block-size:var(--lv-height,100lvb);overflow:hidden}:where(main,[role=main]):has(>.view-home.env-home-workspace){background:transparent;border:none;box-shadow:none;box-sizing:border-box;display:flex;flex-direction:column;min-block-size:var(--lv-height,100lvb);outline:none}:where(env-shell-container:is([role=main],#app)):has(.env-shell-workspace>.view-home.env-home-workspace,.env-shell-workspace>.env-shell-home-mount>.view-home.env-home-workspace){background:none;background-color:initial;border:0 transparent;box-shadow:none;box-sizing:border-box;display:flex;flex-direction:column;min-block-size:var(--lv-height,100lvb);outline:none;outline:0 none transparent}:where(main,[role=main]):has(>.view-home.env-home-workspace:not(.wf-mounted-view)){margin-inline:0;max-inline-size:none}:where(env-shell-container:is([role=main],#app)):has(.env-shell-workspace>.view-home.env-home-workspace:not(.wf-mounted-view),.env-shell-workspace>.env-shell-home-mount>.view-home.env-home-workspace:not(.wf-mounted-view)){margin-inline:0;max-inline-size:none}.env-home-workspace,.view-home.env-home-workspace{box-sizing:border-box;overflow:visible;pointer-events:none}.view-home.env-home-workspace{align-items:stretch;background:transparent;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr);inline-size:100%;justify-items:stretch;min-block-size:var(--lv-height,100lvb);min-inline-size:0;padding:0;position:relative}.view-home.env-home-workspace>.speed-dial-root{block-size:var(--lv-height,100%);inline-size:var(--lv-width,100%);inset:0 auto auto 0;max-block-size:var(--lv-height,100%);max-inline-size:var(--lv-width,100%);pointer-events:auto;position:absolute}.env-shell-workspace>.env-shell-home-mount>.view-home.env-home-workspace.wf-mounted-view,.env-shell-workspace>.view-home.env-home-workspace.wf-mounted-view,.wf-view-host>.view-home.env-home-workspace.wf-mounted-view{align-self:stretch;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:transparent!important;block-size:auto;border:none!important;border-radius:0!important;box-shadow:none!important;flex:1 1 auto;isolation:isolate;margin:0;margin-inline:0;max-inline-size:none;min-block-size:0;outline:none!important;position:relative;z-index:0}.env-shell-workspace>.env-shell-home-mount>.view-home.env-home-workspace.wf-mounted-view>.speed-dial-root,.env-shell-workspace>.view-home.env-home-workspace.wf-mounted-view>.speed-dial-root,.wf-view-host>.view-home.env-home-workspace.wf-mounted-view>.speed-dial-root{block-size:var(--lv-height,100lvb);border:none!important;border-radius:0!important;box-shadow:none!important;flex:1 1 auto;inline-size:var(--lv-width,100%);max-block-size:var(--lv-height,100lvb);min-block-size:var(--lv-height,100lvb);outline:none!important}.env-shell-workspace>.env-shell-home-mount>.view-home.env-home-workspace.wf-mounted-view,.env-shell-workspace>.view-home.env-home-workspace.wf-mounted-view{padding-block-end:env(safe-area-inset-block-end,0);padding-block-start:env(safe-area-inset-block-start,0);padding-inline-end:env(safe-area-inset-inline-end,0);padding-inline-start:env(safe-area-inset-inline-start,0)}.view-home.env-home-workspace:not(.wf-mounted-view){backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:transparent!important;border:none!important;border-radius:0!important;box-shadow:none!important;margin-inline:0;max-inline-size:none;min-block-size:var(--lv-height,100lvb);outline:none!important}";
 //#endregion
-export { testIconRacing as $, loadDesktopRaw as $t, TILE_SHAPE_OPTIONS as A, makeObjectAssignable as An, getDir as At, getWallpaperStoragePointer as B, orientationNumberMap as Bn, createProtocolEnvelope as Bt, launcher_state_exports as C, effect as Cn, saveMarkdownBlob as Ct, resolveSpeedDialCellFromClientPoint as D, propRef as Dn, isBase64Like as Dt, pinLauncherAppEntry as E, observe as En, decodeBase64ToBytes as Et, normalizeTileShape$1 as F, preloadStyle$1 as Fn, openDirectory as Ft, restoreWallpaperThemeCache as G, __vitePreload as Gn, createTemplateManager as Gt, refreshAppWallpaperPaint as H, MOCElement as Hn, normalizeProtocolEnvelope as Ht, syncShapelessIconShadow as I, removeAdopted as In, provide as It, UIElement as J, makeUIState as Jt, FileManager as K, pointerAnchorRef as Kt, getSpeedDialViewOpener as L, ensureVirtualKeyboardOverlay as Ln, registerDirectoryRoot as Lt, defaultIconScaleForDisplay as M, DOMMixin as Mn, isVirtualFsPath as Mt, inferIconDisplay as N, loadAsAdopted as Nn, matchMappedRoot as Nt, tileIconFetchSize as O, ref as On, normalizeDataAsset as Ot, normalizeIconDisplay as P, loadInlineStyle as Pn, normalizePath as Pt, debugIconSystem as Q, decodeDesktopState as Qt, src_exports as R, fixOrientToScreen as Rn, createServiceChannelManager as Rt, isClientPointOverSpeedDial as S, affected as Sn, resolveFileUnderDirectory as St, parseSpeedDialItemFromJSON as T, numberRef as Tn, writeFileSmart as Tt, setAppWallpaperFromBlob as U, addEvent as Un, dynamicTheme as Ut, initializeAppCanvasLayer as V, updateVP as Vn, isProtocolEnvelope as Vt, applyWallpaperPaperFromLuma as W, isInFocus as Wn, placeOverlay as Wt, __decorate as X, JSOX as Xt, UIElement_default as Y, saveUIState as Yt, clearIconCaches as Z, HistoryManager_exports as Zt, addSpeedDialItem as _, E as _n, pickAssetDirectory as _t, listWorkspacePages as a, elementPointerMap as an, resolveFsBackend$1 as at, buildLauncherAppDragEnvelope as b, getString as bn, provideBoundRelative as bt, applyLauncherIconToUiIcon as c, getBy as cn, src_exports$1 as ct, getCachedLauncherIconObjectUrl as d, H as dn, findEntryRelPath as dt, copy as en, ensureStyleSheet as et, resolveIconResourceUrl as f, vector2Ref as fn, indexDirectoryFiles as ft, ICON_BITMAP_SCALE_OPTIONS as g, navigate as gn, originalRelFromRef as gt, showSuccess as h, registerModal as hn, observeFileSystemHandle as ht, getActiveWorkspaceId as i, resolveOverlayHost as in, listVirtualRootEntriesFromRouter as it, createTileUiIconElement as j, safe as jn, handleIncomingEntries as jt, ICON_DISPLAY_OPTIONS as k, stringRef as kn, parseDataUrl as kt, ensureLauncherIconObjectUrl as l, navigationEnable as ln, getCachedComponent as lt, isAndroidIconRef as m, hasActiveCloseable as mn, mountPickedDirectory as mt, installLauncherBackStack as n, writeText as nn, clearAllCache as nt, switchWorkspacePage as o, bindOutsideDismiss as on, subscribeFsBackendRegister as ot, tryLaunchSiblingView as p, closeHighestPriority as pn, isMarkdownRelativeRef as pt, FileManagerContent_default as q, getSpeechPrompt as qt, WORKSPACE_PAGE_EVENT as r, registerTransientOverlay as rn, openUnifiedContextMenu as rt, attachIconResourcePickButton as s, makeTask as sn, resolveEntryIcon as st, home_host_apply_default as t, initClipboardReceiver as tn, reinitializeRegistry as tt, getCachedIconResourceObjectUrl as u, defineElement as un, bindDirectoryForLaunchedFiles as ut, applyIconScaleToPaintedNodes as v, M$1 as vn, pickMarkdownFile as vt, normalizeItemIconBitmapScale as w, booleanRef as wn, createFileHandler as wt, findNextFreeSpeedDialCell as x, setString as xn, relPathCandidates as xt, applyItemIconScaleToElement as y, StorageKeys as yn, pickSidecarDirectoryFiles as yt, WALLPAPER_IDB_MARKER as z, getCorrectOrientation as zn, getUnifiedMessaging as zt };
+export { pinLauncherAppEntry as $, getCorrectOrientation as $n, getUnifiedMessaging as $t, restoreWallpaperThemeCache as A, navigate as An, originalRelFromRef as At, reinitializeRegistry as B, observe as Bn, decodeBase64ToBytes as Bt, src_exports as C, navigationEnable as Cn, getCachedComponent as Ct, refreshAppWallpaperPaint as D, closeHighestPriority as Dn, isMarkdownRelativeRef as Dt, initializeAppCanvasLayer as E, vector2Ref as En, indexDirectoryFiles as Et, __decorate as F, setString as Fn, relPathCandidates as Ft, applyIconScaleToPaintedNodes as G, safe as Gn, handleIncomingEntries as Gt, openUnifiedContextMenu as H, ref as Hn, normalizeDataAsset as Ht, clearIconCaches as I, affected as In, resolveFileUnderDirectory as It, findNextFreeSpeedDialCell as J, loadInlineStyle as Jn, normalizePath as Jt, applyItemIconScaleToElement as K, DOMMixin as Kn, isVirtualFsPath as Kt, debugIconSystem as L, effect as Ln, saveMarkdownBlob as Lt, FileManagerContent_default as M, M$1 as Mn, pickMarkdownFile as Mt, UIElement as N, StorageKeys as Nn, pickSidecarDirectoryFiles as Nt, setAppWallpaperFromBlob as O, hasActiveCloseable as On, mountPickedDirectory as Ot, UIElement_default as P, getString as Pn, provideBoundRelative as Pt, parseSpeedDialItemFromJSON as Q, fixOrientToScreen as Qn, createServiceChannelManager as Qt, testIconRacing as R, booleanRef as Rn, createFileHandler as Rt, getSpeedDialViewOpener as S, getBy as Sn, src_exports$1 as St, getWallpaperStoragePointer as T, H as Tn, findEntryRelPath as Tt, ICON_BITMAP_SCALE_OPTIONS as U, stringRef as Un, parseDataUrl as Ut, clearAllCache as V, propRef as Vn, isBase64Like as Vt, addSpeedDialItem as W, makeObjectAssignable as Wn, getDir as Wt, launcher_state_exports as X, removeAdopted as Xn, provide as Xt, isClientPointOverSpeedDial as Y, preloadStyle$1 as Yn, openDirectory as Yt, normalizeItemIconBitmapScale as Z, ensureVirtualKeyboardOverlay as Zn, registerDirectoryRoot as Zt, getCachedIconResourceObjectUrl as _, registerTransientOverlay as _n, showSuccess as _t, listWorkspacePages as a, createTemplateManager as an, __vitePreload as ar, defaultIconScaleForDisplay as at, tryLaunchSiblingView as b, bindOutsideDismiss as bn, subscribeFsBackendRegister as bt, APP_MENU_SORT_OPTIONS as c, makeUIState as cn, normalizeTileShape$1 as ct, peekAppMenuSort as d, HistoryManager_exports as dn, getAppLaunchSpec as dt, createProtocolEnvelope as en, orientationNumberMap as er, resolveSpeedDialCellFromClientPoint as et, sortLauncherApps as f, decodeDesktopState as fn, isLauncherLaunchSpecEmpty as ft, ensureLauncherIconObjectUrl as g, writeText as gn, showError as gt, applyLauncherIconToUiIcon as h, initClipboardReceiver as hn, setAppLaunchSpec as ht, getActiveWorkspaceId as i, placeOverlay as in, isInFocus as ir, createTileUiIconElement as it, FileManager as j, E as jn, pickAssetDirectory as jt, applyWallpaperPaperFromLuma as k, registerModal as kn, observeFileSystemHandle as kt, defaultDirForAppSort as l, saveUIState as ln, syncShapelessIconShadow as lt, attachIconResourcePickButton as m, copy as mn, resolveAppLaunchSpec as mt, installLauncherBackStack as n, normalizeProtocolEnvelope as nn, MOCElement as nr, ICON_DISPLAY_OPTIONS as nt, switchWorkspacePage as o, pointerAnchorRef as on, inferIconDisplay as ot, writeAppMenuSort as p, loadDesktopRaw as pn, normalizeLauncherLaunchSpec as pt, buildLauncherAppDragEnvelope as q, loadAsAdopted as qn, matchMappedRoot as qt, WORKSPACE_PAGE_EVENT as r, dynamicTheme as rn, addEvent as rr, TILE_SHAPE_OPTIONS as rt, APP_MENU_SORT_EVENT as s, getSpeechPrompt as sn, normalizeIconDisplay as st, home_host_apply_default as t, isProtocolEnvelope as tn, updateVP as tr, tileIconFetchSize as tt, hydrateAppColorKeys as u, JSOX as un, clearAppLaunchSpec as ut, getCachedLauncherIconObjectUrl as v, resolveOverlayHost as vn, listVirtualRootEntriesFromRouter as vt, WALLPAPER_IDB_MARKER as w, defineElement as wn, bindDirectoryForLaunchedFiles as wt, isAndroidIconRef as x, makeTask as xn, resolveEntryIcon as xt, resolveIconResourceUrl as y, elementPointerMap as yn, resolveFsBackend$1 as yt, ensureStyleSheet as z, numberRef as zn, writeFileSmart as zt };

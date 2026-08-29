@@ -1,9 +1,9 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./crx-control-session.js","../com/app.js","./rolldown-runtime.js","../shells/boot-index.js","../shells/boot-history-base.js","../fest/core.js","../com/service.js","../fest/veela.js"])))=>i.map(i=>d[i]);
-import { c as isCwspSku, i as apkManifestForSku, p as readCwspSku, r as androidPackageForSku, s as inferCwspSkuFromLocation, u as isWebHubSurface } from "../shells/boot-history-base.js";
-import { En as observe, Gn as __vitePreload, In as removeAdopted, On as ref, dn as H, xn as setString, yn as StorageKeys } from "../com/app.js";
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./crx-control-session.js","../com/app.js","./rolldown-runtime.js","./launcher-bridge.js","../shells/boot-index.js","../shells/boot-history-base.js","../fest/core.js","../com/service.js","../fest/veela.js"])))=>i.map(i=>d[i]);
+import { d as isWebHubSurface, i as apkManifestForSku, l as isCwspSku, m as readCwspSku, r as androidPackageForSku, s as inferCwspSkuFromLocation } from "../shells/boot-history-base.js";
+import { Bn as observe, Fn as setString, Hn as ref, Nn as StorageKeys, Tn as H, Xn as removeAdopted, ar as __vitePreload } from "../com/app.js";
 import { o as SettingsChannelAction } from "../views/viewer.js";
 import "./storage.js";
-import { A as canonicalHubSettingsSection, B as visibleHubSettingsSections, Dn as resolveCwspUrlFields, F as readSettingsAreaSection, I as rememberSettingsAreaSection, L as resolveEffectiveHubSettingsSection, M as hasBuiltInSettingsPanel, N as hubSettingsSectionPath, Nn as normalizeEcosystemToken, P as pruneBuiltInSettingsTabs, Pn as resolveEcosystemToken, R as resolveSettingsShellProfile, St as applyAirpadRuntimeFromAppSettings, Wn as sendMessage, Z as DEFAULT_INSTRUCTION_TEMPLATES, _t as ensureCrxCwspSettingsSeeded, at as isEnabledView, bt as noteSettingsControlSync, ct as applyTheme, dt as FALLBACK_BASE_COLOR, ft as defaultColorSource, gt as ensureCapacitorCwspSettingsSeeded, j as defaultSettingsTabForProfile, jn as BUILTIN_AI_MODELS, k as SIBLING_HUB_SETTINGS_SECTIONS, mt as normalizeHexColor, pt as isAppearanceColorSource, t as navigateToView, vt as getLastSettingsSaveReport, xt as saveSettings, yt as loadSettings, z as skuForHubSettingsSection } from "../shells/boot-index.js";
+import { A as canonicalHubSettingsSection, B as visibleHubSettingsSections, Dn as resolveCwspUrlFields, F as readSettingsAreaSection, I as rememberSettingsAreaSection, L as resolveEffectiveHubSettingsSection, M as hasBuiltInSettingsPanel, N as hubSettingsSectionPath, Nn as normalizeEcosystemToken, P as pruneBuiltInSettingsTabs, Pn as resolveEcosystemToken, R as resolveSettingsShellProfile, St as applyAirpadRuntimeFromAppSettings, Z as DEFAULT_INSTRUCTION_TEMPLATES, _t as ensureCrxCwspSettingsSeeded, at as isEnabledView, bt as noteSettingsControlSync, ct as applyTheme, dt as FALLBACK_BASE_COLOR, ft as defaultColorSource, gt as ensureCapacitorCwspSettingsSeeded, ir as sendMessage, j as defaultSettingsTabForProfile, jn as BUILTIN_AI_MODELS, k as SIBLING_HUB_SETTINGS_SECTIONS, mt as normalizeHexColor, pt as isAppearanceColorSource, t as navigateToView, vt as getLastSettingsSaveReport, xt as saveSettings, yt as loadSettings, z as skuForHubSettingsSection, zn as mergeOpenPolicy } from "../shells/boot-index.js";
 import { n as isCapacitorNative } from "./capacitor-permissions.js";
 import { n as requestCapacitorSettingsPermissionsAfterSave } from "./capacitor-settings-permissions.js";
 import { n as openAdminDoorFromCore, r as resolveAdminDoorUrls } from "./admin-doors.js";
@@ -1504,6 +1504,126 @@ var registerReaderSettingsContribution = () => registerSettingsContribution({
 	}), settingsCheckboxField("Wrap long lines", "views.reader.wrapLongLines")])
 });
 //#endregion
+//#region src/shared/other/config/settings/contributions/open-files.ts
+var SINK_OPTIONS = [
+	["ask", "Follow default / this app"],
+	["display", "Display here"],
+	["viewer", "Markdown (in this app)"],
+	["document", "CWSP-document"],
+	["explorer", "CWSP-explorer"],
+	["workcenter", "CWSP-process"],
+	["transfer", "CWSP-transfer"],
+	["wallpaper", "Wallpaper if it fits, otherwise viewer"],
+	["external", "New tab / browser"],
+	["system", "Android / system chooser"]
+];
+var SHELL_IMAGE_OPTIONS = [
+	["wallpaper", "Wallpaper if it fits, otherwise viewer"],
+	["viewer", "Markdown (in this app)"],
+	["document", "CWSP-document"],
+	["workcenter", "CWSP-process"],
+	["transfer", "CWSP-transfer"],
+	["ask", "Wallpaper if it fits, otherwise pin a shortcut"],
+	["system", "Android / system chooser"],
+	["external", "New tab / browser"]
+];
+var showSurface = (ctx, surface) => {
+	const hub = String(ctx.hubSection || "").trim();
+	const sku = String(ctx.sku || "").trim();
+	const host = String(ctx.surface || "").trim();
+	if (hub === "hub") return true;
+	if (hub === "document") return surface === "viewer";
+	if (hub === "explorer") return surface === "explorer";
+	if (hub === "process") return surface === "process";
+	if (hub === "transfer") return surface === "transfer";
+	if (hub) return surface === "shell";
+	if (sku === "document" || host === "markdown") return surface === "viewer";
+	if (sku === "explorer") return surface === "explorer";
+	if (sku === "process") return surface === "process";
+	if (sku === "transfer") return surface === "transfer";
+	if (sku === "launcher" || host === "environment") return surface === "shell";
+	if (sku === "crx" || host === "crx") return surface === "crx";
+	return true;
+};
+var section = (title, hint, fields) => [
+	settingsHeading(title),
+	settingsHint(hint),
+	...fields?.map?.((field) => typeof field === "string" ? settingsSelectField(field, field, SINK_OPTIONS) : field)
+];
+var registerOpenFilesSettingsContribution = () => registerSettingsContribution({
+	id: "open-files",
+	label: "Open & share",
+	order: 22,
+	render: (ctx) => {
+		const blocks = [settingsHint("Where files go when you open, share, or launch them. “Follow default” keeps the current app’s behavior.")];
+		if (showSurface(ctx, "viewer")) blocks.push(...section("Markdown / document", "Opened, pasted, dropped, or shared into the viewer.", [
+			settingsSelectField("When a file opens", "openPolicy.viewer.channels.open", SINK_OPTIONS),
+			settingsSelectField("Share target", "openPolicy.viewer.channels.share-target", SINK_OPTIONS),
+			settingsSelectField("Launch queue", "openPolicy.viewer.channels.launch-queue", SINK_OPTIONS),
+			settingsSelectField("Markdown", "openPolicy.viewer.kinds.markdown", SINK_OPTIONS),
+			settingsSelectField("Text", "openPolicy.viewer.kinds.text", SINK_OPTIONS),
+			settingsSelectField("Documents (PDF, Office)", "openPolicy.viewer.kinds.document", SINK_OPTIONS),
+			settingsSelectField("Images", "openPolicy.viewer.kinds.image", SINK_OPTIONS),
+			settingsSelectField("Other files", "openPolicy.viewer.kinds.other", SINK_OPTIONS)
+		]));
+		if (showSurface(ctx, "explorer")) blocks.push(...section("Explorer", "CWSP-explorer: markdown in this app, CWSP-document / process / transfer, or Android chooser.", [
+			settingsSelectField("Open / click", "openPolicy.explorer.channels.open", SINK_OPTIONS),
+			settingsSelectField("Double-click", "openPolicy.explorer.channels.dblclick", SINK_OPTIONS),
+			settingsSelectField("Share target", "openPolicy.explorer.channels.share-target", SINK_OPTIONS),
+			settingsSelectField("Launch queue", "openPolicy.explorer.channels.launch-queue", SINK_OPTIONS),
+			settingsSelectField("Capacitor open-with", "openPolicy.explorer.channels.capacitor", SINK_OPTIONS),
+			settingsSelectField("Markdown", "openPolicy.explorer.kinds.markdown", SINK_OPTIONS),
+			settingsSelectField("Text", "openPolicy.explorer.kinds.text", SINK_OPTIONS),
+			settingsSelectField("Documents", "openPolicy.explorer.kinds.document", SINK_OPTIONS),
+			settingsSelectField("Images", "openPolicy.explorer.kinds.image", SINK_OPTIONS),
+			settingsSelectField("Other files", "openPolicy.explorer.kinds.other", SINK_OPTIONS)
+		]));
+		if (showSurface(ctx, "shell")) blocks.push(...section("Environment / shell", "Launch queue, Capacitor open-with, share, and drop/paste on the home grid. Per-tile “Open link in” still wins.", [
+			settingsSelectField("Share target", "openPolicy.shell.channels.share-target", SINK_OPTIONS),
+			settingsSelectField("Launch queue", "openPolicy.shell.channels.launch-queue", SINK_OPTIONS),
+			settingsSelectField("Capacitor open-with", "openPolicy.shell.channels.capacitor", SINK_OPTIONS),
+			settingsSelectField("Markdown", "openPolicy.shell.kinds.markdown", SINK_OPTIONS),
+			settingsSelectField("Text", "openPolicy.shell.kinds.text", SINK_OPTIONS),
+			settingsSelectField("Documents", "openPolicy.shell.kinds.document", SINK_OPTIONS),
+			settingsHint("Images on CWSP-shell: a photo that is large enough and not a strip/icon becomes wallpaper. Anything that does not fit opens in the viewer."),
+			settingsSelectField("Images", "openPolicy.shell.kinds.image", SHELL_IMAGE_OPTIONS),
+			settingsSelectField("Links", "openPolicy.shell.kinds.url", SINK_OPTIONS)
+		]));
+		if (showSurface(ctx, "crx")) blocks.push(...section("Chrome extension", "Markdown, images, documents, and snip results from CWSP-crx.", [
+			settingsSelectField("Markdown", "openPolicy.crx.kinds.markdown", SINK_OPTIONS),
+			settingsSelectField("Documents", "openPolicy.crx.kinds.document", SINK_OPTIONS),
+			settingsSelectField("Images", "openPolicy.crx.kinds.image", SINK_OPTIONS),
+			settingsSelectField("Snip results", "openPolicy.crx.channels.snip", SINK_OPTIONS)
+		]));
+		if (showSurface(ctx, "process")) blocks.push(...section("Work Center / process", "Defaults when Work Center is the receiver (share, launch, open-with).", [
+			settingsSelectField("Text", "openPolicy.process.kinds.text", SINK_OPTIONS),
+			settingsSelectField("Documents", "openPolicy.process.kinds.document", SINK_OPTIONS),
+			settingsSelectField("Images", "openPolicy.process.kinds.image", SINK_OPTIONS),
+			settingsSelectField("Links", "openPolicy.process.kinds.url", SINK_OPTIONS),
+			settingsSelectField("Share target", "openPolicy.process.channels.share-target", SINK_OPTIONS),
+			settingsSelectField("Launch queue", "openPolicy.process.channels.launch-queue", SINK_OPTIONS),
+			settingsSelectField("Capacitor open-with", "openPolicy.process.channels.capacitor", SINK_OPTIONS)
+		]));
+		if (showSurface(ctx, "transfer")) blocks.push(...section("Transfer", "What to do when Transfer receives a type or share.", [
+			settingsSelectField("Text", "openPolicy.transfer.kinds.text", SINK_OPTIONS),
+			settingsSelectField("Documents", "openPolicy.transfer.kinds.document", SINK_OPTIONS),
+			settingsSelectField("Images", "openPolicy.transfer.kinds.image", SINK_OPTIONS),
+			settingsSelectField("Links", "openPolicy.transfer.kinds.url", SINK_OPTIONS),
+			settingsSelectField("Share target", "openPolicy.transfer.channels.share-target", SINK_OPTIONS)
+		]));
+		return settingsPanel("open-files", "Open & share", blocks);
+	},
+	load: (settings, panel) => {
+		settings.openPolicy = {
+			...settings,
+			openPolicy: mergeOpenPolicy(settings.openPolicy)
+		}.openPolicy;
+	},
+	save: (settings) => {
+		settings.openPolicy = mergeOpenPolicy(settings.openPolicy);
+	}
+});
+//#endregion
 //#region src/shared/other/config/settings/contributions/workcenter.ts
 var registerWorkcenterSettingsContribution = () => registerSettingsContribution({
 	id: "workcenter",
@@ -1524,9 +1644,23 @@ var SHAPE_OPTIONS = [
 	["wavy", "Wavy"]
 ];
 var ACTION_OPTIONS = [["open-link", "Open link"], ["open-view", "Open view"]];
+var APP_MENU_SORT_OPTIONS = [
+	["name", "Name"],
+	["installed", "Date installed"],
+	["updated", "Date updated"],
+	["color", "Color (including mask)"],
+	["category", "Category"],
+	["package", "Package"]
+];
+var SORT_DIR_OPTIONS = [["asc", "Ascending"], ["desc", "Descending"]];
 var OPEN_TARGET_OPTIONS = [
 	["inline", "Inline (iframe / env window, same tab)"],
 	["external-app", "External app (Android chooser)"],
+	["viewer", "Markdown (in this app)"],
+	["document", "CWSP-document"],
+	["explorer", "CWSP-explorer"],
+	["workcenter", "CWSP-process"],
+	["transfer", "CWSP-transfer"],
 	["native-window", "Native window (new browser window)"],
 	["new-tab", "New tab"]
 ];
@@ -1569,6 +1703,11 @@ var normalizeOpenTarget = (raw, fallback = "inline") => {
 	if (v === "native" || v === "window" || v === "app-window") return "native-window";
 	if (v === "tab" || v === "browser" || v === "browser-tab") return "new-tab";
 	if (v === "app" || v === "chooser" || v === "open-with" || v === "open-in-app" || v === "intent") return "external-app";
+	if (v === "markdown") return "viewer";
+	if (v === "document" || v === "cwsp-document") return "document";
+	if (v === "files") return "explorer";
+	if (v === "process" || v === "cwsp-process") return "workcenter";
+	if (v === "transfer" || v === "cwsp" || v === "network") return "transfer";
 	return ALLOWED_TARGETS.has(v) ? v : fallback;
 };
 /** Best-effort parse of makeUIState JSOX/JSON without importing lure. */
@@ -1790,7 +1929,11 @@ var registerWorkspaceSettingsContribution = () => registerSettingsContribution({
 		}),
 		"Default actions",
 		settingsSelectField("New tile action", "grid.defaultAction", ACTION_OPTIONS),
-		settingsSelectField("Open links in", "grid.defaultOpenLinkTarget", OPEN_TARGET_OPTIONS)
+		settingsSelectField("Open links in", "grid.defaultOpenLinkTarget", OPEN_TARGET_OPTIONS),
+		"App menu",
+		settingsHint("Installed-app icons in the App Menu. Color uses the painted icon, including mask."),
+		settingsSelectField("Sort icons by", "appMenu.sortBy", APP_MENU_SORT_OPTIONS),
+		settingsSelectField("Icon order", "appMenu.sortDir", SORT_DIR_OPTIONS)
 	]),
 	load: (settings, panel) => {
 		const live = readLiveGrid();
@@ -1801,6 +1944,18 @@ var registerWorkspaceSettingsContribution = () => registerSettingsContribution({
 		setFieldValue(panel, "grid.rows", live.rows ?? grid.rows ?? 8);
 		setFieldValue(panel, "grid.defaultAction", live.defaultAction || grid.defaultAction || "open-link");
 		setFieldValue(panel, "grid.defaultOpenLinkTarget", live.defaultOpenLinkTarget || grid.defaultOpenLinkTarget || "inline");
+		let liveAppMenu = {};
+		try {
+			const raw = localStorage.getItem("cwsp-app-menu-sort");
+			if (raw) liveAppMenu = JSON.parse(raw);
+		} catch {}
+		settings.appMenu = {
+			...settings.appMenu || {},
+			sortBy: liveAppMenu.sortBy || settings.appMenu?.sortBy || "name",
+			sortDir: liveAppMenu.sortDir || settings.appMenu?.sortDir || "asc"
+		};
+		setFieldValue(panel, "appMenu.sortBy", settings.appMenu.sortBy || "name");
+		setFieldValue(panel, "appMenu.sortDir", settings.appMenu.sortDir || "asc");
 		bindWorkspacePagesUi(panel);
 	},
 	save: (settings) => {
@@ -1817,7 +1972,60 @@ var registerWorkspaceSettingsContribution = () => registerSettingsContribution({
 			...next
 		};
 		applyLiveGrid(next);
+		try {
+			localStorage.setItem("cwsp-app-menu-sort", JSON.stringify({
+				sortBy: settings.appMenu?.sortBy || "name",
+				sortDir: settings.appMenu?.sortDir || "asc"
+			}));
+			window.dispatchEvent(new CustomEvent("cwsp:app-menu-sort-change"));
+		} catch {}
 	}
+});
+//#endregion
+//#region src/shared/other/config/settings/contributions/list-sort.ts
+var EXPLORER_SORT = [
+	["name", "Name"],
+	["date", "Date modified"],
+	["type", "Type"],
+	["size", "Size"],
+	["kind", "Kind (file / folder)"]
+];
+var DIR = [["asc", "Ascending"], ["desc", "Descending"]];
+var persistExplorer = (settings) => {
+	try {
+		localStorage.setItem("cwsp-explorer-sort", JSON.stringify({
+			sortBy: settings.explorer?.sortBy || "name",
+			sortDir: settings.explorer?.sortDir || "asc",
+			foldersFirst: settings.explorer?.foldersFirst !== false
+		}));
+		window.dispatchEvent(new CustomEvent("cwsp:explorer-sort-change"));
+	} catch {}
+};
+var registerExplorerSortSettingsContribution = () => registerSettingsContribution({
+	id: "explorer-sort",
+	label: "Explorer list",
+	order: 25,
+	requiresView: "explorer",
+	render: () => settingsPanel("explorer-sort", "Explorer list", [
+		settingsHint("Order of files and folders in CWSP-explorer / Explorer."),
+		settingsSelectField("Sort items by", "explorer.sortBy", EXPLORER_SORT),
+		settingsSelectField("Order", "explorer.sortDir", DIR),
+		settingsCheckboxField("Folders first", "explorer.foldersFirst")
+	]),
+	load: (settings) => {
+		let live = {};
+		try {
+			const raw = localStorage.getItem("cwsp-explorer-sort");
+			if (raw) live = JSON.parse(raw);
+		} catch {}
+		settings.explorer = {
+			...settings.explorer || {},
+			sortBy: live.sortBy || settings.explorer?.sortBy || "name",
+			sortDir: live.sortDir || settings.explorer?.sortDir || "asc",
+			foldersFirst: (live.foldersFirst ?? settings.explorer?.foldersFirst) !== false
+		};
+	},
+	save: (settings) => persistExplorer(settings)
 });
 //#endregion
 //#region src/shared/other/config/settings/register-builtin-contributions.ts
@@ -1832,6 +2040,8 @@ var registerBuiltinSettingsContributions = () => {
 	registered = true;
 	registerCwspSettingsContribution();
 	registerWorkspaceSettingsContribution();
+	registerExplorerSortSettingsContribution();
+	registerOpenFilesSettingsContribution();
 	registerReaderSettingsContribution();
 	registerWorkcenterSettingsContribution();
 	registerApkUpdateSettingsContribution();
@@ -1873,7 +2083,7 @@ var refreshInstalledSiblingSettingsSections = async () => {
 			const { launcherHasPackages } = await __vitePreload(async () => {
 				const { launcherHasPackages } = await import("./launcher-bridge.js");
 				return { launcherHasPackages };
-			}, [], import.meta.url);
+			}, __vite__mapDeps([3,4,2,5,1,6,7,8]), import.meta.url);
 			const map = await launcherHasPackages(wanted.map((row) => row.pkg));
 			cachedInstalled = wanted.filter((row) => map[row.pkg] === true).map((row) => row.section);
 		} catch {
@@ -2319,7 +2529,7 @@ var resolveCwspSettingsBeforeSave = async (settings) => {
 	const { sanitizeFleetSelfWireNodeId } = await __vitePreload(async () => {
 		const { sanitizeFleetSelfWireNodeId } = await import("../shells/boot-index.js").then((n) => n.in);
 		return { sanitizeFleetSelfWireNodeId };
-	}, __vite__mapDeps([3,2,4,1,5,6,7]), import.meta.url);
+	}, __vite__mapDeps([4,2,5,1,6,7,8]), import.meta.url);
 	const canonicalUserId = sanitizeFleetSelfWireNodeId(core.userId);
 	if (canonicalUserId) core.userId = canonicalUserId;
 	const isControlSpaHost = (host) => {
@@ -2952,7 +3162,7 @@ var createSettingsView = (opts) => {
 					paintApkVersion(el, info?.echo || {}, info);
 				}
 			}));
-		}), __vite__mapDeps([3,2,4,1,5,6,7]), import.meta.url).catch(() => {});
+		}), __vite__mapDeps([4,2,5,1,6,7,8]), import.meta.url).catch(() => {});
 	}).catch(() => {
 		renderMcpConfigurations(mcpSection, []);
 	});
@@ -3084,11 +3294,11 @@ var createSettingsView = (opts) => {
 			return;
 		}
 		if (t?.closest?.("button[data-action=\"open-native-app-settings\"]")) {
-			__vitePreload(() => import("../shells/boot-index.js").then((n) => n._).then((m) => m.openAppClipboardRelatedSettings()), __vite__mapDeps([3,2,4,1,5,6,7]), import.meta.url).then(() => setNote("App settings opened (native shell only).")).catch(() => setNote("Native settings unavailable in this context."));
+			__vitePreload(() => import("../shells/boot-index.js").then((n) => n._).then((m) => m.openAppClipboardRelatedSettings()), __vite__mapDeps([4,2,5,1,6,7,8]), import.meta.url).then(() => setNote("App settings opened (native shell only).")).catch(() => setNote("Native settings unavailable in this context."));
 			return;
 		}
 		if (t?.closest?.("button[data-action=\"open-native-notification-settings\"]")) {
-			__vitePreload(() => import("../shells/boot-index.js").then((n) => n._).then((m) => m.openNativeNotificationSettings?.()), __vite__mapDeps([3,2,4,1,5,6,7]), import.meta.url).then(() => setNote("Notification settings opened (native shell only).")).catch(() => setNote("Native settings unavailable in this context."));
+			__vitePreload(() => import("../shells/boot-index.js").then((n) => n._).then((m) => m.openNativeNotificationSettings?.()), __vite__mapDeps([4,2,5,1,6,7,8]), import.meta.url).then(() => setNote("Notification settings opened (native shell only).")).catch(() => setNote("Native settings unavailable in this context."));
 			return;
 		}
 		const crxPairBtn = t?.closest?.("button[data-action=\"crx-control-pair\"]");
@@ -3167,7 +3377,7 @@ var createSettingsView = (opts) => {
 						const { invokeCwsNative } = await __vitePreload(async () => {
 							const { invokeCwsNative } = await import("../shells/boot-index.js").then((n) => n.Yt);
 							return { invokeCwsNative };
-						}, __vite__mapDeps([3,2,4,1,5,6,7]), import.meta.url);
+						}, __vite__mapDeps([4,2,5,1,6,7,8]), import.meta.url);
 						const result = await invokeCwsNative(pairRegenBtn ? "control:public-token:regenerate" : "control:pairing:status", {});
 						const echo = result?.controlPairing || result?.echo || {};
 						if (echo?.deviceCode || echo?.publicToken) {
@@ -3211,7 +3421,7 @@ var createSettingsView = (opts) => {
 					const { invokeCwsNative } = await __vitePreload(async () => {
 						const { invokeCwsNative } = await import("../shells/boot-index.js").then((n) => n.Yt);
 						return { invokeCwsNative };
-					}, __vite__mapDeps([3,2,4,1,5,6,7]), import.meta.url);
+					}, __vite__mapDeps([4,2,5,1,6,7,8]), import.meta.url);
 					const s = await loadSettings();
 					const safEl = root.querySelector("[data-files-saf-uri]");
 					const pathsEl = root.querySelector("[data-files-storage-paths]");
@@ -3289,7 +3499,7 @@ var createSettingsView = (opts) => {
 					const { invokeCwsNative } = await __vitePreload(async () => {
 						const { invokeCwsNative } = await import("../shells/boot-index.js").then((n) => n.Yt);
 						return { invokeCwsNative };
-					}, __vite__mapDeps([3,2,4,1,5,6,7]), import.meta.url);
+					}, __vite__mapDeps([4,2,5,1,6,7,8]), import.meta.url);
 					const clicked = apkInstallBtn || apkCheckBtn;
 					const target = apkUpdateTarget(clicked);
 					const result = await invokeCwsNative(channel, {
@@ -3587,7 +3797,7 @@ var createSettingsView = (opts) => {
 						const { invokeCwsNative } = await __vitePreload(async () => {
 							const { invokeCwsNative } = await import("../shells/boot-index.js").then((n) => n.Yt);
 							return { invokeCwsNative };
-						}, __vite__mapDeps([3,2,4,1,5,6,7]), import.meta.url);
+						}, __vite__mapDeps([4,2,5,1,6,7,8]), import.meta.url);
 						await invokeCwsNative("runtime:reload-settings", {});
 					} catch (e) {
 						console.warn("[Settings] Java /ws reload skipped", e);
@@ -3597,8 +3807,8 @@ var createSettingsView = (opts) => {
 				await m.applyHubSocketFromSettings(saved);
 				__vitePreload(() => import("../shells/boot-index.js").then((n) => n.l).then((ws) => {
 					if (typeof ws.reconnectTransportAfterLifecycleResume === "function") ws.reconnectTransportAfterLifecycleResume("settings-save");
-				}), __vite__mapDeps([3,2,4,1,5,6,7]), import.meta.url).catch(() => void 0);
-			}), __vite__mapDeps([3,2,4,1,5,6,7]), import.meta.url);
+				}), __vite__mapDeps([4,2,5,1,6,7,8]), import.meta.url).catch(() => void 0);
+			}), __vite__mapDeps([4,2,5,1,6,7,8]), import.meta.url);
 			applyTheme(saved);
 			opts.onTheme?.(saved.appearance?.theme || "auto");
 			const parts = ["Saved locally"];
@@ -3837,7 +4047,7 @@ var SettingsView = class {
 			this.handleMessage({ data: payload });
 			(async () => {
 				try {
-					const [{ loadSettings }, { applyTheme }] = await Promise.all([__vitePreload(() => import("../shells/boot-index.js").then((n) => n.ht), __vite__mapDeps([3,2,4,1,5,6,7]), import.meta.url), __vitePreload(() => import("../shells/boot-index.js").then((n) => n.st), __vite__mapDeps([3,2,4,1,5,6,7]), import.meta.url)]);
+					const [{ loadSettings }, { applyTheme }] = await Promise.all([__vitePreload(() => import("../shells/boot-index.js").then((n) => n.ht), __vite__mapDeps([4,2,5,1,6,7,8]), import.meta.url), __vitePreload(() => import("../shells/boot-index.js").then((n) => n.st), __vite__mapDeps([4,2,5,1,6,7,8]), import.meta.url)]);
 					const cur = await loadSettings();
 					const patch = payload;
 					applyTheme({

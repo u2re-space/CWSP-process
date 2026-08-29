@@ -1,9 +1,10 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./BootLoader.js","../com/app.js","./rolldown-runtime.js","../fest/core.js","../shells/boot-index.js","../shells/boot-history-base.js","../com/service.js","../fest/veela.js","../shells/preference.js","./capacitor-settings-permissions.js","./capacitor-permissions.js","./RuntimeSettings.js","./sku-ingress.js"])))=>i.map(i=>d[i]);
-import { d as publicHrefForSku, h as siblingSkuForView, m as shouldHandoffViewToSibling, n as SKU_HUB_PATHS, o as ensureCwspSkuFromLocation, r as androidPackageForSku, s as inferCwspSkuFromLocation, t as ECOSYSTEM_SKUS } from "../shells/boot-history-base.js";
-import { Dt as isBase64Like, Gn as __vitePreload, en as copy, kt as parseDataUrl, tn as initClipboardReceiver, ut as bindDirectoryForLaunchedFiles } from "../com/app.js";
-import { $n as resolveProcessApiUrl, Gn as sendProtocolMessage, Jn as BROADCAST_CHANNELS, Kn as unifiedMessaging, Qn as viewBroadcastChannelName, X as unifiedMessaging$1, Zn as normalizeDestination, et as buildShareDataFromCachedPayload, nt as storeShareTargetPayloadToCache, tt as consumeCachedShareTargetPayload, yt as loadSettings, zn as enqueuePendingMessage } from "../shells/boot-index.js";
-import { applyLauncherIngress, skuIngressHint } from "./sku-ingress.js";
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../shells/boot-index.js","./rolldown-runtime.js","../shells/boot-history-base.js","../com/app.js","../fest/core.js","../com/service.js","../fest/veela.js","./BootLoader.js","../shells/preference.js","./capacitor-settings-permissions.js","./capacitor-permissions.js","./RuntimeSettings.js","./sku-ingress.js"])))=>i.map(i=>d[i]);
+import { c as isCwspNativeHost, n as SKU_HUB_PATHS, s as inferCwspSkuFromLocation } from "../shells/boot-history-base.js";
+import { Ut as parseDataUrl, Vt as isBase64Like, ar as __vitePreload, hn as initClipboardReceiver, mn as copy, wt as bindDirectoryForLaunchedFiles } from "../com/app.js";
+import { X as unifiedMessaging$1, cr as BROADCAST_CHANNELS, et as buildShareDataFromCachedPayload, nt as storeShareTargetPayloadToCache, or as unifiedMessaging, pr as resolveProcessApiUrl, tt as consumeCachedShareTargetPayload, yt as loadSettings } from "../shells/boot-index.js";
 import { t as summarizeForLog$1 } from "./LogSanitizer.js";
+import { applyLauncherIngress, installShellImageOpenListener, refineLauncherImageIngress, skuIngressHint } from "./sku-ingress.js";
+import { classifyIngressFile, classifyIngressFromBasename, dispatchViewTransfer } from "./ViewTransferRouting.js";
 //#region src/shared/boot/toast.ts
 var DEFAULT_CONFIG = {
 	containerId: "rs-toast-layer",
@@ -706,10 +707,11 @@ function isKnownPathMountSegment(segment) {
 function pathForSkuHostView(viewPath) {
 	let path = String(viewPath || "/").trim() || "/";
 	if (!path.startsWith("/")) path = `/${path}`;
-	if (!isDedicatedSkuHost()) return path;
+	const sku = inferCwspSkuFromLocation();
+	const nativeSku = isCwspNativeHost() && !!sku && sku !== "launcher" && sku !== "crx";
+	if (!isDedicatedSkuHost() && !nativeSku) return path;
 	const seg = path.replace(/^\/+/, "").split("/")[0]?.toLowerCase() || "";
 	if (!seg || !isKnownPathMountSegment(seg)) return path;
-	const sku = inferCwspSkuFromLocation();
 	if (sku && sku !== "launcher" && sku !== "crx") return SKU_HUB_PATHS[sku]?.includes(seg) ? "/" : path;
 	return "/";
 }
@@ -790,6 +792,53 @@ var probeScriptUrl = async (url) => {
 		clearTimeout(timer);
 	}
 };
+/** Legacy markdown path-mount (not `md.u2re.space`). */
+var isCwMarkdownMount = () => {
+	try {
+		const p = String(globalThis?.location?.pathname || "");
+		return p === "/apps/cw" || p.startsWith("/apps/cw/");
+	} catch {
+		return false;
+	}
+};
+var scriptPathname = (scriptURL) => {
+	try {
+		const origin = typeof globalThis !== "undefined" && globalThis.location?.origin ? String(globalThis.location.origin) : "https://invalid.invalid";
+		return new URL(scriptURL, `${origin}/`).pathname;
+	} catch {
+		return "";
+	}
+};
+/** `/apps/cw/sw.js` on `u2re.space/` is a leftover from the old path SKU. */
+var isForeignSkuWorkerScript = (scriptURL) => {
+	const path = scriptPathname(scriptURL);
+	return (path === "/apps/cw/sw.js" || path.startsWith("/apps/cw/")) && !isCwMarkdownMount();
+};
+/**
+* Drop workers whose script 404s or belongs to another SKU.
+* WHY: `getRegistration()` returns a zombie `/apps/cw/sw.js` after markdown moved hosts.
+*/
+var dropStaleServiceWorkerRegistrations = async () => {
+	if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return;
+	let regs = [];
+	try {
+		regs = await navigator.serviceWorker.getRegistrations();
+	} catch {
+		return;
+	}
+	for (const reg of regs) {
+		const src = reg.active?.scriptURL || reg.waiting?.scriptURL || reg.installing?.scriptURL || "";
+		if (!src || isForeignSkuWorkerScript(src)) {
+			if (src) console.warn("[SW] Unregistering foreign SKU worker:", src);
+			await reg.unregister().catch(() => {});
+			continue;
+		}
+		const probe = await probeScriptUrl(src);
+		if (probe.ok) continue;
+		console.warn("[SW] Unregistering worker with dead script:", src, probe.status);
+		await reg.unregister().catch(() => {});
+	}
+};
 /** Vite base (e.g. `/` or `/apps/cw/`) — normalized with trailing slash. */
 var viteBasePrefix = () => {
 	const raw = String("./");
@@ -857,11 +906,8 @@ var getServiceWorkerCandidates = () => {
 		}
 	}
 	const devFallbacks = ["/dev-sw.js?dev-sw", "/sw.js"];
-	let prod = ["/sw.js", "/apps/cw/sw.js"];
-	try {
-		const p = String(globalThis?.location?.pathname || "");
-		if (p === "/apps/cw" || p.startsWith("/apps/cw/")) prod = ["/apps/cw/sw.js", "/sw.js"];
-	} catch {}
+	let prod = ["/sw.js"];
+	if (isCwMarkdownMount()) prod = ["/apps/cw/sw.js", "/sw.js"];
 	const merged = isDev ? [
 		...perBaseDev,
 		...devFallbacks,
@@ -875,6 +921,7 @@ var ensureServiceWorkerRegistered = async () => {
 	const protocol = (globalThis?.location?.protocol || "").toLowerCase();
 	if (protocol === "chrome-extension:" || protocol === "file:" || protocol === "about:") return null;
 	if (protocol !== "https:" && protocol !== "http:") return null;
+	await dropStaleServiceWorkerRegistrations();
 	const tryGet = async (clientUrl) => {
 		if (!clientUrl) return void 0;
 		try {
@@ -924,245 +971,6 @@ var ensureServiceWorkerRegistered = async () => {
 		if (reg) return reg;
 	}
 	return null;
-};
-//#endregion
-//#region src/shared/routing/channel/ViewTransferRouting.ts
-/**
-* Canonical classification for share-target / launch-queue files (extension often beats flaky MIME).
-* Viewer-first routing treats `markdown` + `text`; other kinds stay on Work Center or sibling sinks.
-*/
-var classifyIngressFile = (file) => {
-	const name = String(file?.name || "").toLowerCase();
-	const mime = String(file?.type || "").toLowerCase();
-	if (mime.startsWith("image/")) return "image";
-	const mdTail = /\.(?:md|markdown|mdown|mkd|mkdn|mdtxt|mdtext)(?:$|[?#])/i;
-	if (mime === "text/markdown" || mdTail.test(name)) return "markdown";
-	if (mime.startsWith("text/")) return "text";
-	if (mime === "application/json" || mime === "application/xml" || mime === "application/xhtml+xml" || mime === "application/javascript" || mime === "application/typescript" || mime === "application/x-typescript") return "text";
-	if (/\.(?:txt|text|html|htm|css|scss|sass|less|json|csv|xml|yaml|yml|log|ini|env|toml|graphql|svg|tsx?|jsx?|mts|cts|cjs|mjs|vue|svelte|rst)(?:$|[?#])/i.test(name)) return mdTail.test(name) ? "markdown" : "text";
-	if (!mime || mime === "application/octet-stream") {
-		if (mdTail.test(name)) return "markdown";
-	}
-	if (/\.(?:png|jpe?g|gif|webp|bmp)(?:$|[?#])/i.test(name)) return "image";
-	return "file";
-};
-/** Filename-only classification when blobs are still in Cache Storage (`fileCount` but `files=[]`). */
-var classifyIngressFromBasename = (raw) => {
-	const t = raw.trim().replace(/\\/g, "/");
-	const cut = Math.max(t.lastIndexOf("/"), t.lastIndexOf("\\"));
-	const nameOnly = ((cut >= 0 ? t.slice(cut + 1) : t) || "").trim();
-	if (!nameOnly) return "file";
-	try {
-		return classifyIngressFile(new File([], nameOnly, { type: "application/octet-stream" }));
-	} catch {
-		return "file";
-	}
-};
-var getContentType = (payload) => {
-	const files = Array.isArray(payload.files) ? payload.files : [];
-	const text = String(payload.text || "").trim();
-	const url = String(payload.url || "").trim();
-	const meta = payload.metadata && typeof payload.metadata === "object" && !Array.isArray(payload.metadata) ? payload.metadata : {};
-	const expectedFileCount = Math.max(Number(meta.fileCount) || 0, Number(payload.fileCount) || 0);
-	/** Android share-target often ships a `content:`/`https:` URL together with attachments; blobs may hydrate later. */
-	const filesStillPending = files.length === 0 && expectedFileCount > 0;
-	if (payload.hint?.contentType && !filesStillPending) return String(payload.hint.contentType);
-	if (files.length > 0) {
-		const kind = classifyIngressFile(files[0]);
-		if (kind === "image") return "image";
-		if (kind === "markdown") return "markdown";
-		if (kind === "text") return "text";
-		return "file";
-	}
-	/** SW metadata row often beats File[] hydration (`fileCount` only) — classify from title/filename hint. */
-	const nameProbe = typeof payload.hint?.filename === "string" && payload.hint.filename.trim() || typeof payload.title === "string" && payload.title.trim() || "";
-	if (!text && nameProbe && (!url || filesStillPending)) {
-		const nk = classifyIngressFromBasename(nameProbe);
-		if (nk === "markdown") return "markdown";
-		if (nk === "text") return "text";
-		if (nk === "image") return "image";
-		if (filesStillPending && nk === "file") return "file";
-	}
-	if (url) {
-		const normalized = url.split("#")[0].split("?")[0].toLowerCase();
-		if (/\.(md|markdown|mdown|mkd|mkdn|mdtxt|mdtext)$/.test(normalized)) return "markdown";
-		return "url";
-	}
-	if (text) return "text";
-	return "other";
-};
-var pickDestination = (payload, contentType) => {
-	ensureCwspSkuFromLocation();
-	const skuHint = skuIngressHint(payload);
-	if (skuHint?.destination) return skuHint.destination;
-	if (payload.hint?.action === "save") return "explorer";
-	/** Readable docs should win over stale `hint.destination` from cached/share envelopes. */
-	if (contentType === "markdown" || contentType === "text") return "viewer";
-	if (payload.hint?.destination) return payload.hint.destination;
-	if (payload.hint?.action === "process" || payload.hint?.action === "attach") return "workcenter";
-	if (payload.hint?.action === "open") return "viewer";
-	if (contentType === "url") return "workcenter";
-	if (contentType === "image" || contentType === "file") return "workcenter";
-	return "workcenter";
-};
-var toMessageType = (destination, hint) => {
-	if (destination === "viewer") return hint?.action === "open" ? "content-load" : "content-view";
-	if (destination === "explorer") {
-		if (hint?.action === "ask") return "file-ask";
-		if (hint?.action === "open") return "navigate-path";
-		return "file-save";
-	}
-	if (destination === "workcenter") return "content-attach";
-	if (destination === "editor") return "content-load";
-	if (destination === "home") return hint?.action === "wallpaper" ? "content-share" : "content-share";
-	return "content-share";
-};
-var resolveViewTransfer = (payload) => {
-	const contentType = getContentType(payload);
-	const skuHint = skuIngressHint(payload);
-	const destination = pickDestination(payload, contentType);
-	const hint = skuHint ? {
-		...payload.hint,
-		...skuHint
-	} : payload.hint;
-	const messageType = toMessageType(destination, hint);
-	const files = Array.isArray(payload.files) ? payload.files : [];
-	const data = {
-		title: payload.title,
-		text: payload.text,
-		content: payload.text,
-		url: payload.url,
-		files,
-		filename: hint?.filename || files[0]?.name,
-		source: payload.source,
-		route: payload.route,
-		hint
-	};
-	/** INVARIANT: do not overwrite `data.source` (transfer enum). Path goes on src/path/virtualPath. */
-	const virtualSource = String(hint?.source || payload.url || "").trim();
-	if (virtualSource && virtualSource !== "share-target" && virtualSource !== "launch-queue" && virtualSource !== "clipboard" && virtualSource !== "pending") {
-		data.path = virtualSource;
-		data.src = virtualSource;
-		data.virtualPath = virtualSource;
-	}
-	const resolved = {
-		destination: normalizeDestination(destination),
-		routePath: `/${destination}`,
-		messageType,
-		contentType,
-		data,
-		metadata: {
-			source: payload.source,
-			route: payload.route,
-			pending: Boolean(payload.pending),
-			hint,
-			...payload.metadata || {}
-		}
-	};
-	console.log("[ViewTransfer] Resolved transfer:", summarizeForLog$1({
-		source: payload.source,
-		route: payload.route,
-		pending: payload.pending,
-		hint,
-		contentType,
-		destination,
-		messageType,
-		fileCount: files.length
-	}));
-	return resolved;
-};
-var mirrorTransferToViewChannel = (resolved, message) => {
-	if (typeof BroadcastChannel === "undefined") return;
-	try {
-		const ch = new BroadcastChannel(viewBroadcastChannelName(resolved.destination));
-		ch.postMessage({
-			type: "view-transfer",
-			message
-		});
-		ch.close();
-	} catch (e) {
-		console.warn("[ViewTransfer] View-channel mirror failed:", e);
-	}
-};
-var dispatchViewTransfer = async (payload) => {
-	const resolved = resolveViewTransfer(payload);
-	ensureCwspSkuFromLocation();
-	const sibling = siblingSkuForView(resolved.destination);
-	if (shouldHandoffViewToSibling(resolved.destination) && sibling) {
-		const pkg = androidPackageForSku(sibling);
-		let handedOff = false;
-		if (pkg) try {
-			const bridge = await __vitePreload(() => import("./launcher-bridge.js"), [], import.meta.url);
-			handedOff = Boolean(await bridge.launcherLaunch?.(pkg));
-		} catch {}
-		if (!handedOff && typeof location !== "undefined") try {
-			location.assign(publicHrefForSku(sibling));
-			handedOff = true;
-		} catch {
-			const scheme = ECOSYSTEM_SKUS[sibling]?.scheme;
-			if (scheme) try {
-				location.assign(`${scheme}://`);
-				handedOff = true;
-			} catch {}
-		}
-		if (handedOff) return {
-			delivered: true,
-			resolved
-		};
-	}
-	Array.isArray(payload.files) && payload.files;
-	const hasBinaryPayload = resolved.contentType === "image" || resolved.contentType === "file";
-	const message = {
-		id: crypto.randomUUID(),
-		type: resolved.messageType,
-		destination: normalizeDestination(resolved.destination),
-		contentType: resolved.contentType,
-		data: resolved.data,
-		metadata: resolved.metadata,
-		source: `view-transfer:${payload.source}`
-	};
-	console.log("[ViewTransfer] Dispatching message:", summarizeForLog$1({
-		destination: message.destination,
-		type: message.type,
-		contentType: message.contentType,
-		metadata: message.metadata
-	}));
-	mirrorTransferToViewChannel(resolved, message);
-	let queuedAsPending = false;
-	if (payload.pending && !hasBinaryPayload) try {
-		const pendingMessage = {
-			...message,
-			data: {
-				...message.data || {},
-				files: []
-			}
-		};
-		enqueuePendingMessage(resolved.destination, pendingMessage);
-		queuedAsPending = true;
-	} catch (error) {
-		console.warn("[ViewTransfer] Failed to enqueue pending message:", error);
-	}
-	const deliveredNow = await sendProtocolMessage({
-		...message,
-		purpose: ["deliver", "mail"],
-		protocol: "window",
-		op: payload.hint?.action === "open" ? "invoke" : "deliver",
-		srcChannel: message.source,
-		dstChannel: normalizeDestination(resolved.destination)
-	});
-	const delivered = deliveredNow || queuedAsPending;
-	console.log("[ViewTransfer] Message delivery status:", {
-		deliveredNow,
-		queuedAsPending,
-		hasBinaryPayload,
-		delivered,
-		destination: resolved.destination,
-		routePath: resolved.routePath
-	});
-	return {
-		delivered,
-		resolved
-	};
 };
 //#endregion
 //#region src/shared/routing/policies/ingress-pipeline-guard.ts
@@ -1347,8 +1155,14 @@ var activateWaitingWorker = (registration, reason) => {
 };
 /** Re-fetch `sw.js` from network; helps when CDN/proxy cache or long-lived tabs hide updates. */
 var probeServiceWorkerUpdate = async (registration) => {
-	if (!registration?.update) return;
-	await registration.update().catch((e) => console.warn("[PWA] registration.update failed:", e));
+	await dropStaleServiceWorkerRegistrations();
+	let live = registration;
+	try {
+		live = await navigator.serviceWorker.getRegistration() ?? registration;
+	} catch {}
+	if (!live?.update) return;
+	if (!(live.active?.scriptURL || live.waiting?.scriptURL || live.installing?.scriptURL || "")) return;
+	await live.update().catch((e) => console.warn("[PWA] registration.update failed:", e));
 };
 var bindServiceWorkerLifecycleUpdateChecks = (registration) => {
 	if (_swVisibilityUpdateBound || typeof document === "undefined") return;
@@ -1554,7 +1368,9 @@ var mergeUrlParamsShareWithCache = async (fromUrl) => {
 		source: "share-target"
 	};
 	try {
-		const response = await (await caches.open("share-target-data")).match("/share-target-data");
+		const cache = await caches.open("share-target-data");
+		const shareKey = new URL("/share-target-data", globalThis.location.origin).href;
+		const response = await cache.match(shareKey);
 		if (!response) return {
 			...fromUrl,
 			source: "share-target"
@@ -1618,15 +1434,21 @@ var routeToTransferView = async (shareData, source, hint, pending = false) => {
 	}));
 	let autoProcessShared = true;
 	try {
-		autoProcessShared = ((await loadSettings().catch(() => null))?.ai?.autoProcessShared ?? true) !== false;
+		const settings = await loadSettings().catch(() => null);
+		autoProcessShared = (settings?.ai?.autoProcessShared ?? true) !== false;
+		const { rememberOpenPolicyFromSettings } = await __vitePreload(async () => {
+			const { rememberOpenPolicyFromSettings } = await import("../shells/boot-index.js").then((n) => n.Vn);
+			return { rememberOpenPolicyFromSettings };
+		}, __vite__mapDeps([0,1,2,3,4,5,6]), import.meta.url);
+		rememberOpenPolicyFromSettings(settings);
 	} catch {
 		autoProcessShared = true;
 	}
 	const sku = inferCwspSkuFromLocation();
-	const skuHint = skuIngressHint(preparedData, {
+	const skuHint = await refineLauncherImageIngress(skuIngressHint(preparedData, {
 		sku,
 		autoProcessShared
-	});
+	}), files);
 	const forceAttachToWorkCenter = !skuHint && await shouldForceWorkCenterAttachment(preparedData);
 	const textLike = inferShareContentType(preparedData) === "markdown" || inferShareContentType(preparedData) === "text";
 	const mergedViewerHint = !skuHint && textLike && !forceAttachToWorkCenter ? {
@@ -1676,7 +1498,7 @@ var routeToTransferView = async (shareData, source, hint, pending = false) => {
 	} catch (error) {
 		console.warn("[ViewTransfer] Process SKU auto-AI failed:", error);
 	}
-	if (sku === "launcher" || resolved.destination === "home") {
+	if (resolved.destination === "home") {
 		const capacitorNative = (() => {
 			try {
 				const c = globalThis.Capacitor;
@@ -1722,7 +1544,7 @@ var routeToTransferView = async (shareData, source, hint, pending = false) => {
 			const { bootLoader } = await __vitePreload(async () => {
 				const { bootLoader } = await import("./BootLoader.js");
 				return { bootLoader };
-			}, __vite__mapDeps([0,1,2,3,4,5,6,7,8,9,10]), import.meta.url);
+			}, __vite__mapDeps([7,3,1,4,0,2,5,6,8,9,10]), import.meta.url);
 			const shell = bootLoader.getShell();
 			if (!(shell && ![
 				"window",
@@ -1763,6 +1585,17 @@ var routeToTransferView = async (shareData, source, hint, pending = false) => {
 	}
 	if (currentPath !== destNorm) {
 		if (!await tryNavigateLiveShell()) {
+			if ((() => {
+				try {
+					const c = globalThis.Capacitor;
+					return typeof c?.isNativePlatform === "function" && Boolean(c.isNativePlatform());
+				} catch {
+					return false;
+				}
+			})()) {
+				console.warn("[ViewTransfer] Skipping hard navigation on Capacitor:", destNorm);
+				return delivered;
+			}
 			const nextUrl = new URL(globalThis?.location?.href);
 			nextUrl.pathname = destPath;
 			nextUrl.search = "";
@@ -2027,7 +1860,7 @@ var tryServerSideProcessing = async (shareData) => {
 		const { getRuntimeSettings } = await __vitePreload(async () => {
 			const { getRuntimeSettings } = await import("./RuntimeSettings.js").then((n) => n.t);
 			return { getRuntimeSettings };
-		}, __vite__mapDeps([11,2,1,4,5,3,6,7]), import.meta.url);
+		}, __vite__mapDeps([11,1,3,0,2,4,5,6]), import.meta.url);
 		const settings = await getRuntimeSettings().catch(() => null);
 		const apiKey = settings?.ai?.apiKey;
 		if (!apiKey) {
@@ -2122,7 +1955,7 @@ var handleShareTarget = () => {
 					const { dataUrlToFile } = await __vitePreload(async () => {
 						const { dataUrlToFile } = await import("./sku-ingress.js");
 						return { dataUrlToFile };
-					}, __vite__mapDeps([12,5,1,2]), import.meta.url);
+					}, __vite__mapDeps([12,2,3,1,0,4,5,6]), import.meta.url);
 					const files = [];
 					for (const item of row.files || []) {
 						if (!item?.data) continue;
@@ -2444,6 +2277,9 @@ var initIngressPWA = async () => {
 	if (_ingressPwaPromise) return _ingressPwaPromise;
 	_ingressPwaPromise = (async () => {
 		if (typeof globalThis === "undefined" || !globalThis.window) return;
+		try {
+			installShellImageOpenListener();
+		} catch {}
 		if (!shouldRunPwaIngress()) return;
 		try {
 			/**

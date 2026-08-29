@@ -1,4 +1,4 @@
-import { n as SKU_HUB_PATHS, s as inferCwspSkuFromLocation } from "./boot-history-base.js";
+import { c as isCwspNativeHost, n as SKU_HUB_PATHS, s as inferCwspSkuFromLocation } from "./boot-history-base.js";
 //#region src/frontend/boot/history-base.ts
 var KNOWN_PATH_MOUNTS = [
 	"cwsp",
@@ -41,10 +41,11 @@ function isKnownPathMountSegment(segment) {
 function pathForSkuHostView(viewPath) {
 	let path = String(viewPath || "/").trim() || "/";
 	if (!path.startsWith("/")) path = `/${path}`;
-	if (!isDedicatedSkuHost()) return path;
+	const sku = inferCwspSkuFromLocation();
+	const nativeSku = isCwspNativeHost() && !!sku && sku !== "launcher" && sku !== "crx";
+	if (!isDedicatedSkuHost() && !nativeSku) return path;
 	const seg = path.replace(/^\/+/, "").split("/")[0]?.toLowerCase() || "";
 	if (!seg || !isKnownPathMountSegment(seg)) return path;
-	const sku = inferCwspSkuFromLocation();
 	if (sku && sku !== "launcher" && sku !== "crx") return SKU_HUB_PATHS[sku]?.includes(seg) ? "/" : path;
 	return "/";
 }

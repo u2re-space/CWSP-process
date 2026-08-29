@@ -9,6 +9,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { hoistSharedSlices } from "../../../runtime/fastify/apps/hoist-shared-slices.mjs";
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const repoRoot = path.dirname(path.dirname(root));
@@ -49,4 +50,5 @@ fs.writeFileSync(
     ) + "\n"
 );
 
+hoistSharedSlices(dest, "stage-cw-workcenter");
 console.log(`[stage-cw-workcenter] ${src} → ${dest}`);

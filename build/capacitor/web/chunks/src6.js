@@ -1,4 +1,5 @@
-import { B as getWallpaperStoragePointer, Bn as orientationNumberMap, Dn as propRef, En as observe, Fn as preloadStyle, Gn as __vitePreload, Hn as MOCElement, Kt as pointerAnchorRef, Ln as ensureVirtualKeyboardOverlay, Mn as DOMMixin, Nn as loadAsAdopted, Sn as affected, Tn as numberRef, U as setAppWallpaperFromBlob, Vn as updateVP, Wn as isInFocus, an as elementPointerMap, at as resolveFsBackend, dn as H, fn as vector2Ref, gn as navigate, hn as registerModal, it as listVirtualRootEntriesFromRouter, jt as handleIncomingEntries, n as installLauncherBackStack, rt as openUnifiedContextMenu, t as home_host_apply_default, vn as M, zn as getCorrectOrientation } from "../com/app.js";
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./launcher-bridge.js","../shells/boot-index.js","./rolldown-runtime.js","../shells/boot-history-base.js","../com/app.js","../fest/core.js","../com/service.js","../fest/veela.js"])))=>i.map(i=>d[i]);
+import { $n as getCorrectOrientation, An as navigate, Bn as observe, En as vector2Ref, Gt as handleIncomingEntries, H as openUnifiedContextMenu, In as affected, Kn as DOMMixin, Mn as M, O as setAppWallpaperFromBlob, T as getWallpaperStoragePointer, Tn as H, Vn as propRef, Yn as preloadStyle, Zn as ensureVirtualKeyboardOverlay, ar as __vitePreload, er as orientationNumberMap, ir as isInFocus, kn as registerModal, n as installLauncherBackStack, nr as MOCElement, on as pointerAnchorRef, qn as loadAsAdopted, t as home_host_apply_default, tr as updateVP, vt as listVirtualRootEntriesFromRouter, yn as elementPointerMap, yt as resolveFsBackend, zn as numberRef } from "../com/app.js";
 import { a as HomeChannelAction } from "../views/viewer.js";
 import { $ as setItemSpan, B as parseSpeedDialItemFromSmartText, C as getItemSpan, Ct as normalizeSpan, D as isExternalWebHref, E as gridLayoutState, F as normalizeItemIconBitmapScale, G as persistSpeedDialItems, H as parseSpeedDialItemFromVirtualPath, I as normalizeOpenLinkTarget, J as refreshSpeedDialMirror, K as persistSpeedDialMeta, L as openInDetachedBrowserWindow, M as markSpeedDialUserEditBeforeHydrate, N as mirrorSpeedDialItems, O as isMirrorMode, P as normalizeExternalWebHref, Q as resolveSpeedDialItemHref, R as openInNewBrowserTab, S as getDefaultTileShape, St as normalizeOrient, T as getSpeedDialMirrorPath, Tt as visualLayout, U as parseSpeedDialViewFromHref, V as parseSpeedDialItemFromURL, W as persistSpeedDialIconBlob, X as resolveItemOpenLinkTarget, Y as removeSpeedDialItem, Z as resolveSpeedDialIconUrl, _ as defaultOpenLinkTargetForHref, _t as syncShapelessIconShadow, a as addSpeedDialItem, at as upsertSpeedDialItem, b as findNextFreeCellInSnapshot, bt as logicalToVisualSpan, c as applySpeedDialSnapshot, ct as ICON_DISPLAY_OPTIONS, d as captureSpeedDialSnapshot, dt as defaultIconScaleForDisplay, et as setSpeedDialMirrorPath, f as cloneSpeedDialItemPacked, ft as inferIconDisplay, g as createWidgetSpeedDialItem, gt as syncPlateGlyphInk, h as createSpeedDialItemFromClipboard, ht as normalizeTileShape, i as addClonedSpeedDialItem, it as tileIconFetchSize, j as looksLikeSpeedDialShortcutJson, k as isSpeedDialVirtualPath, l as buildSpeedDialViewPathHref, lt as TILE_SHAPE_OPTIONS, m as createEmptySpeedDialItem, mt as normalizeIconDisplay, n as NAVIGATION_SHORTCUTS, nt as speedDialMeta, o as applyIconScaleToPaintedNodes, ot as wallpaperState, p as copySpeedDialItemToClipboard, pt as isTileShapeValue, q as persistWallpaper, r as SPEED_DIAL_MUTATION_EVENT, rt as stripCoreRailTilesFromGrid, s as applyItemIconScaleToElement, st as wasSpeedDialUserEdited, t as ICON_BITMAP_SCALE_OPTIONS, tt as speedDialItems, u as canUseNativeOpenUri, ut as createTileUiIconElement, v as emitSpeedDialMutation, vt as findNearestFreeRect, w as getSpeedDialMeta, wt as pointToLogicalCell, x as findSpeedDialItem, xt as markOccupiedSpan, y as ensureSpeedDialMeta, yt as logicalToVisualCell, z as parseSpeedDialItemFromJSON } from "./launcher-state.js";
 //#region ../../modules/views/home-view/src/ts/pointer-interaction.ts
@@ -302,6 +303,13 @@ function faviconForHref(href, size = 64) {
 		return "";
 	}
 }
+/** Accept http(s) and other schemes; bare hosts become `https://…`. */
+function normalizeBookmarkHref(raw) {
+	const text = String(raw || "").trim();
+	if (!text) return "";
+	if (/^[a-z][a-z0-9+.-]*:/i.test(text)) return text;
+	return `https://${text}`;
+}
 var registeredBookmarksApi = null;
 var chromeErr = () => {
 	try {
@@ -393,6 +401,69 @@ function createChromeBookmarksMenuApi(raw) {
 				}
 			} catch {}
 			globalThis.open?.(href, "_blank", "noopener,noreferrer");
+		},
+		async remove(entry) {
+			const id = String(entry?.id || "").trim();
+			if (!id) return false;
+			try {
+				if (entry.folder) {
+					if (typeof api.removeTree !== "function") return false;
+					await callChrome(api, "removeTree", id);
+				} else {
+					if (typeof api.remove !== "function") return false;
+					await callChrome(api, "remove", id);
+				}
+				return true;
+			} catch {
+				return false;
+			}
+		},
+		async update(id, patch) {
+			const key = String(id || "").trim();
+			if (!key || typeof api.update !== "function") return null;
+			const body = {};
+			if (patch.title != null) body.title = String(patch.title || "").trim();
+			if (patch.url != null) {
+				const href = normalizeBookmarkHref(patch.url);
+				if (href) body.url = href;
+			}
+			try {
+				const node = await callChrome(api, "update", key, body);
+				return node ? nodeToEntry(node) : null;
+			} catch {
+				return null;
+			}
+		},
+		async create(parentId, spec) {
+			if (typeof api.create !== "function") return null;
+			const title = String(spec.title || "").trim();
+			if (!title) return null;
+			const body = {
+				parentId: String(parentId || "0"),
+				title
+			};
+			if (spec.url != null) {
+				const href = normalizeBookmarkHref(spec.url);
+				if (!href) return null;
+				body.url = href;
+			}
+			const attempt = async (pid) => {
+				const node = await callChrome(api, "create", {
+					...body,
+					parentId: pid
+				});
+				return node ? nodeToEntry(node) : null;
+			};
+			try {
+				return await attempt(body.parentId);
+			} catch {
+				if (body.parentId === "0") try {
+					return await attempt("1");
+				} catch {
+					return null;
+				}
+				return null;
+			}
 		}
 	};
 }
@@ -449,6 +520,66 @@ function resolveBookmarkDesktopIconUrl(entry, api) {
 	const href = String(entry.url || "").trim();
 	if (!href) return "";
 	return faviconForHref(href, DESKTOP_FAVICON_SIZE) || faviconForHref(href, 128) || faviconForHref(href, 64) || api?.resolveIconUrl?.(href, DESKTOP_FAVICON_SIZE) || api?.resolveIconUrl?.(href, 128) || "";
+}
+//#endregion
+//#region ../../modules/views/home-view/src/ts/app-launch.ts
+var STORAGE_KEY = "cwsp-app-launch-spec-v1";
+var cache = null;
+var launchKey = (packageName) => `app:${String(packageName || "").trim()}`;
+function readAll() {
+	if (cache) return cache;
+	try {
+		const raw = localStorage.getItem(STORAGE_KEY);
+		if (!raw) {
+			cache = {};
+			return cache;
+		}
+		const parsed = JSON.parse(raw);
+		cache = parsed && typeof parsed === "object" ? parsed : {};
+	} catch {
+		cache = {};
+	}
+	return cache;
+}
+var sanitizeDataUri = (raw) => {
+	const data = String(raw || "").trim();
+	if (!data) return "";
+	if (/^javascript:/i.test(data)) return "";
+	return data;
+};
+function normalizeLauncherLaunchSpec(raw) {
+	const src = raw && typeof raw === "object" ? raw : {};
+	const extrasIn = src.extras && typeof src.extras === "object" ? src.extras : {};
+	const extras = {};
+	for (const [k, v] of Object.entries(extrasIn)) {
+		const key = String(k || "").trim();
+		if (!key) continue;
+		if (typeof v === "boolean" || typeof v === "number" || typeof v === "string") extras[key] = v;
+	}
+	const flags = Array.isArray(src.flags) ? src.flags.map((f) => String(f || "").trim().toUpperCase()).filter(Boolean) : [];
+	const categories = Array.isArray(src.categories) ? src.categories.map((c) => String(c || "").trim()).filter(Boolean) : [];
+	return {
+		action: String(src.action || "").trim(),
+		data: sanitizeDataUri(String(src.data || "")),
+		mimeType: String(src.mimeType || "").trim(),
+		extras,
+		flags,
+		categories,
+		componentName: String(src.componentName || "").trim()
+	};
+}
+function isLauncherLaunchSpecEmpty(spec) {
+	if (!spec) return true;
+	return !spec.action && !spec.data && !spec.mimeType && !spec.componentName && (!spec.flags || spec.flags.length === 0) && (!spec.categories || spec.categories.length === 0) && (!spec.extras || Object.keys(spec.extras).length === 0);
+}
+function getAppLaunchSpec(packageName) {
+	const key = launchKey(packageName);
+	if (!key || key === "app:") return {};
+	return normalizeLauncherLaunchSpec(readAll()[key]);
+}
+/** Stock MAIN/LAUNCHER when nothing is stored. */
+function resolveAppLaunchSpec(packageName) {
+	return getAppLaunchSpec(packageName);
 }
 //#endregion
 //#region ../../modules/views/home-view/src/ts/view-opener.ts
@@ -724,7 +855,7 @@ function getCachedIconResourceObjectUrl(raw, size = 96) {
 async function resolveLauncherBridgeForSpeedDial() {
 	if (registeredLauncherBridge) return registeredLauncherBridge;
 	try {
-		return await __vitePreload(() => import("./launcher-bridge.js"), [], import.meta.url);
+		return await __vitePreload(() => import("./launcher-bridge.js"), __vite__mapDeps([0,1,2,3,4,5,6,7]), import.meta.url);
 	} catch {
 		return null;
 	}
@@ -760,7 +891,8 @@ async function tryLaunchSiblingView(view) {
 			};
 		}, [], import.meta.url);
 		if (!isCwspNativeHost()) return false;
-		if (readCwspSku() !== "launcher") return false;
+		const sku = readCwspSku();
+		if (sku !== "launcher" && sku !== "explorer") return false;
 		const sibling = siblingSkuForView(view);
 		if (!sibling) return false;
 		return launchEcosystemSku(sibling);
@@ -768,6 +900,19 @@ async function tryLaunchSiblingView(view) {
 		return false;
 	}
 }
+var viewIdForLinkTarget = (target) => {
+	if (target === "document") return "viewer";
+	if (target === "transfer") return "network";
+	return target;
+};
+/** Launch CWSP-document / process / transfer / explorer APK when the tile asks for that SKU. */
+var tryLaunchLinkTargetSku = async (target) => {
+	if (target === "viewer") return false;
+	if (target === "document") return tryLaunchSiblingView("viewer");
+	if (target === "transfer") return tryLaunchSiblingView("network");
+	if (target === "workcenter" || target === "explorer") return tryLaunchSiblingView(target);
+	return false;
+};
 /** Apply fetched Android icon to a launcher `ui-icon` via resource + presentation mode. */
 function applyLauncherIconToUiIcon(host, objectUrl, mode = "colored") {
 	const url = String(objectUrl || "").trim();
@@ -1049,6 +1194,11 @@ var installBuiltins = () => {
 		if (await tryLaunchSiblingView(targetView)) return;
 		const viewMaker = context?.viewMaker ?? getSpeedDialViewOpener();
 		const linkTarget = context?.openLinkTarget != null ? normalizeOpenLinkTarget(context.openLinkTarget) : meta?.openLinkTarget != null && String(meta.openLinkTarget).trim() ? normalizeOpenLinkTarget(meta.openLinkTarget) : "inline";
+		if (linkTarget === "viewer" || linkTarget === "document" || linkTarget === "explorer" || linkTarget === "workcenter" || linkTarget === "transfer") {
+			if (await tryLaunchLinkTargetSku(linkTarget)) return;
+			ensureHashNavigation(viewIdForLinkTarget(linkTarget), viewMaker, {});
+			return;
+		}
 		if (linkTarget === "native-window") {
 			const href = buildSpeedDialViewPathHref(targetView, true, { native: true });
 			if (!href) {
@@ -1116,6 +1266,41 @@ var installBuiltins = () => {
 				return false;
 			}
 		};
+		if (linkTarget === "viewer" || linkTarget === "document" || linkTarget === "explorer" || linkTarget === "workcenter" || linkTarget === "transfer") {
+			const src = externalHref || normalizeSpeedDialOpenHref(String(raw || ""));
+			const viewId = viewIdForLinkTarget(linkTarget);
+			if (src) try {
+				const { stashSkuHandoff } = await __vitePreload(async () => {
+					const { stashSkuHandoff } = await import("./ecosystem-skus.js");
+					return { stashSkuHandoff };
+				}, [], import.meta.url);
+				stashSkuHandoff({
+					dest: viewId,
+					src,
+					filename: String(item?.label || "")
+				});
+			} catch {}
+			if (await tryLaunchLinkTargetSku(linkTarget)) return;
+			if (typeof opener === "function") try {
+				opener(viewId, {
+					src,
+					url: src,
+					href: src,
+					path: src,
+					filename: String(item?.label || meta?.description || "")
+				});
+				return;
+			} catch (e) {
+				console.warn("[speed-dial] view-sink open failed", e);
+			}
+			ensureHashNavigation(viewId, opener, {
+				src,
+				url: src,
+				href: src,
+				path: src
+			});
+			return;
+		}
 		if (linkTarget === "external-app") {
 			const href = externalHref ? externalHref : view ? buildSpeedDialViewPathHref(view, true, { native: false }) : normalizeSpeedDialOpenHref(String(raw || ""));
 			if (!href) {
@@ -1200,8 +1385,9 @@ var installBuiltins = () => {
 			showError("Unable to launch app");
 			return;
 		}
-		const component = String(meta?.componentName || entityDesc?.componentName || "").trim() || void 0;
-		if (!await bridge.launcherLaunch(pkg, component)) showError("Unable to launch app");
+		const spec = resolveAppLaunchSpec(pkg);
+		const component = spec.componentName || String(meta?.componentName || entityDesc?.componentName || "").trim() || void 0;
+		if (!await bridge.launcherLaunch(pkg, component, isLauncherLaunchSpecEmpty(spec) ? void 0 : spec)) showError("Unable to launch app");
 	});
 	iconsPerAction.set("launch-shortcut", "folder");
 	labelsPerAction.set("launch-shortcut", (d) => `Open ${d?.label || d?.shortcutId || "shortcut"}`);
@@ -2290,7 +2476,12 @@ var openShortcutEditor = (options) => {
                     <label for="sd-edit-open-target">Open link in</label>
                     <select id="sd-edit-open-target" name="openLinkTarget">
                         <option value="inline">Open Inline (iframe window, same tab)</option>
-                        <option value="external-app">Open in app (Android chooser)</option>
+                        <option value="external-app">Android / system chooser</option>
+                        <option value="viewer">Markdown (in this app)</option>
+                        <option value="document">CWSP-document</option>
+                        <option value="explorer">CWSP-explorer</option>
+                        <option value="workcenter">CWSP-process</option>
+                        <option value="transfer">CWSP-transfer</option>
                         <option value="native-window">Native window (new browser window)</option>
                         <option value="new-tab">Open in new tab</option>
                     </select>
@@ -2406,7 +2597,7 @@ var openShortcutEditor = (options) => {
 	if (iconDisplaySelect) iconDisplaySelect.value = iconDisplayVal;
 	if (shapeSelect) shapeSelect.value = isTileShapeValue(shapeVal) ? shapeVal : "squircle";
 	if (iconScaleSelect) iconScaleSelect.value = iconScaleVal;
-	if (openLinkTargetSelect) openLinkTargetSelect.value = olt === "native-window" || olt === "native" || olt === "window" ? "native-window" : olt === "new-tab" || olt === "tab" || olt === "browser" || olt === "browser-tab" ? "new-tab" : olt === "external-app" || olt === "app" || olt === "chooser" || olt === "open-with" || olt === "open-in-app" ? "external-app" : "inline";
+	if (openLinkTargetSelect) openLinkTargetSelect.value = olt === "native-window" || olt === "native" || olt === "window" ? "native-window" : olt === "new-tab" || olt === "tab" || olt === "browser" || olt === "browser-tab" ? "new-tab" : olt === "external-app" || olt === "app" || olt === "chooser" || olt === "open-with" || olt === "open-in-app" ? "external-app" : olt === "viewer" || olt === "markdown" ? "viewer" : olt === "document" || olt === "cwsp-document" ? "document" : olt === "explorer" || olt === "files" ? "explorer" : olt === "workcenter" || olt === "process" ? "workcenter" : olt === "transfer" || olt === "cwsp" || olt === "network" ? "transfer" : "inline";
 	if (hrefInput) {
 		fillTextControl(hrefInput, hrefValue);
 		const autoHref = synthesizeViewHref(viewValue, openLinkTargetSelect?.value || olt);
@@ -2425,7 +2616,7 @@ var openShortcutEditor = (options) => {
 		const kind = String(widgetKindSelect?.value || widgetKindVal || "clock");
 		if (viewField) viewField.hidden = !isViewAction(action) || widgetOn;
 		if (hrefField) hrefField.hidden = !isHrefAction(action) || widgetOn;
-		if (openLinkTargetField) openLinkTargetField.hidden = widgetOn || !(action === "open-link" || isHrefAction(action));
+		if (openLinkTargetField) openLinkTargetField.hidden = widgetOn || !(action === "open-link" || action === "open-view" || isHrefAction(action));
 		const toggleField = (node, show) => {
 			if (!node) return;
 			if (show) node.removeAttribute("hidden");
@@ -2524,6 +2715,11 @@ var openShortcutEditor = (options) => {
 				if (v === "native-window" || v === "native" || v === "window") return "native-window";
 				if (v === "new-tab" || v === "tab" || v === "browser") return "new-tab";
 				if (v === "external-app" || v === "app" || v === "chooser" || v === "open-with" || v === "open-in-app") return "external-app";
+				if (v === "viewer" || v === "markdown") return "viewer";
+				if (v === "document" || v === "cwsp-document") return "document";
+				if (v === "explorer" || v === "files") return "explorer";
+				if (v === "workcenter" || v === "process") return "workcenter";
+				if (v === "transfer" || v === "cwsp" || v === "network") return "transfer";
 				return "inline";
 			})()
 		});
@@ -3450,7 +3646,7 @@ var bindWorkspacePageHotkeys = () => {
 		window.removeEventListener(WORKSPACE_CMD_EVENT, onCmd);
 	};
 };
-preloadStyle("@layer ui-app-menu{.env-shell-app-menu[data-page]{align-items:stretch;inset:0;justify-items:stretch;padding:0;z-index:calc(var(--env-z-shell-chrome, 2147483000) + 4)}.env-shell-app-menu[data-page] .env-shell-app-menu__panel{block-size:100%;border-radius:0;inline-size:100%;max-block-size:stretch;max-inline-size:stretch;overflow:hidden;overflow-y:auto!important;overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch}.env-shell-app-menu__panel>.env-shell-app-menu__grid{align-content:start;align-self:stretch;block-size:max-content;grid-auto-rows:max-content;justify-content:start;max-block-size:max-content;min-block-size:fit-content;overflow:visible;overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch}.env-shell-app-menu[data-page] .env-shell-app-menu__grid{column-gap:.45rem;padding-block-end:calc(var(--env-shell-chrome-stack-reserve, 3rem) + env(safe-area-inset-bottom, 0px));row-gap:.85rem}.env-shell-app-menu{align-items:end;box-sizing:border-box;color-scheme:inherit;display:grid;inset-block-end:var(--env-shell-chrome-stack-reserve,3rem);inset-inline:0;justify-items:start;padding:.5rem;padding-inline-start:max(.5rem,env(safe-area-inset-left,0px));pointer-events:none;position:fixed;z-index:calc(var(--env-z-shell-chrome, 2147483000) + 2);--env-app-menu-accent:var(--wf-md-primary,var(--color-primary,#5a9ec8));--env-app-menu-surface:color-mix(in oklab,var(--color-surface-container,--u2-color-mod(var(--base-color,#5a9ec8),960)) 88%,transparent);--env-app-menu-surface-raised:var(\n        --color-surface-container-high,--u2-color-mod(var(--base-color,#5a9ec8),980)\n    );--env-app-menu-ink:var(\n        --color-on-surface,light-dark(--u2-color-mod(var(--base-color,#5a9ec8),900),--u2-color-mod(var(--base-color,#5a9ec8),100))\n    );--env-app-menu-plate:var(\n        --color-primary-container,light-dark(--u2-color-mod(var(--base-color,#5a9ec8),160),--u2-color-mod(var(--base-color,#5a9ec8),820))\n    )}.env-shell-app-menu[hidden]{display:none!important}.env-shell-app-menu__panel{background:var(--env-app-menu-surface);border:1px solid light-dark(color-mix(in oklab,#000 12%,transparent),color-mix(in oklab,#fff 14%,transparent));border-radius:14px;box-shadow:0 20px 48px -20px light-dark(rgba(0,0,0,.22),rgba(0,0,0,.45)),0 2px 8px -2px light-dark(rgba(0,0,0,.12),rgba(0,0,0,.25));color:var(--env-app-menu-ink);display:grid;gap:.75rem;inline-size:min(420px,100vw - 1rem);max-block-size:min(520px,100dvb - var(--env-shell-chrome-stack-reserve,3rem) - 1rem);overflow:hidden;overflow-y:auto!important;overscroll-behavior:contain;padding:.85rem;pointer-events:auto;touch-action:pan-y;-webkit-overflow-scrolling:touch;animation:b .14s cubic-bezier(.22,.8,.3,1);backdrop-filter:blur(22px) saturate(1.35);-webkit-backdrop-filter:blur(22px) saturate(1.35);block-size:fit-content;color-scheme:inherit;grid-template-rows:auto auto minmax(0,1fr);min-block-size:max(60dvb,60cqb)}.env-shell-app-menu__panel[data-layout=start-split]{grid-template-rows:auto auto minmax(0,1fr);inline-size:min(560px,100vw - 1rem);max-block-size:min(580px,100dvb - var(--env-shell-chrome-stack-reserve,3rem) - 1rem)}.env-shell-app-menu__start-body{display:grid;gap:.65rem;grid-template-columns:minmax(9.5rem,.42fr) minmax(0,1fr);max-block-size:100%;min-block-size:12rem;overflow:hidden}.env-shell-app-menu__start-left{background:light-dark(color-mix(in oklab,var(--env-app-menu-accent) 8%,transparent),color-mix(in oklab,var(--env-app-menu-accent) 12%,transparent));border:1px solid light-dark(color-mix(in oklab,var(--env-app-menu-accent) 22%,transparent),color-mix(in oklab,#fff 14%,transparent));border-radius:12px;display:flex;flex-direction:column;gap:.4rem;min-block-size:fit-content;min-inline-size:0;overflow:auto;padding:.45rem}.env-shell-app-menu__start-right{display:grid;gap:.4rem;grid-template-rows:auto minmax(0,1fr);min-block-size:fit-content;min-inline-size:0;overflow:hidden}.env-shell-app-menu__start-heading{flex:0 0 auto;font:600 .72rem/1.2 ui-sans-serif,system-ui,sans-serif;letter-spacing:.04em;opacity:.72;padding-inline:.25rem;text-transform:uppercase}.env-shell-app-menu__start-recent{align-content:start;display:grid;flex:0 0 auto;gap:.2rem;grid-template-columns:1fr}.env-shell-app-menu__start-recent .env-shell-app-menu__tile{align-items:center;gap:.45rem;grid-template-columns:auto minmax(0,1fr);justify-items:start;padding:.35rem .4rem;text-align:start}.env-shell-app-menu__start-recent .env-shell-app-menu__tile-icon{block-size:2.25rem;inline-size:2.25rem;min-block-size:2.25rem;min-inline-size:2.25rem}.env-shell-app-menu__start-recent .env-shell-app-menu__tile-icon ui-icon:not([data-launcher-icon]){block-size:1.5rem!important;inline-size:1.5rem!important;--icon-size:1.5rem;--icon-padding:0px}.env-shell-app-menu__start-recent .env-shell-app-menu__tile-label{font-size:.78rem;-webkit-line-clamp:1;text-align:start}.env-shell-app-menu__start-right .env-shell-app-menu__grid{align-content:start;display:flex;flex-direction:column;flex-wrap:nowrap;gap:.2rem;grid-template-columns:none;min-block-size:fit-content;overflow:auto}.env-shell-app-menu__start-right .env-shell-app-menu__tile{align-items:center;border-radius:10px;box-sizing:border-box;display:grid;gap:.65rem;grid-template-columns:auto minmax(0,1fr);inline-size:100%;justify-items:start;padding:.4rem .55rem;text-align:start}.env-shell-app-menu__start-right .env-shell-app-menu__tile-icon{block-size:2.5rem;inline-size:2.5rem;min-block-size:2.5rem;min-inline-size:2.5rem}.env-shell-app-menu__start-right .env-shell-app-menu__tile-icon ui-icon:not([data-launcher-icon]){block-size:1.75rem!important;inline-size:1.75rem!important;--icon-size:1.75rem;--icon-padding:0px}.env-shell-app-menu__start-right .env-shell-app-menu__tile-label{font:500 .9rem/1.25 ui-sans-serif,system-ui,sans-serif;justify-self:stretch;-webkit-line-clamp:1;text-align:start}.env-shell-app-menu__crumb{align-items:center;display:flex;flex-wrap:wrap;gap:.2rem;min-block-size:1.4rem}.env-shell-app-menu__crumb-item{appearance:none;background:transparent;border:0;border-radius:6px;color:inherit;cursor:pointer;font:600 .78rem/1.2 ui-sans-serif,system-ui,sans-serif;padding:.15rem .35rem}.env-shell-app-menu__crumb-item:hover{background:light-dark(color-mix(in oklab,#000 8%,transparent),color-mix(in oklab,#fff 10%,transparent))}.env-shell-app-menu__crumb-sep{font-size:.85rem;opacity:.45}.env-shell-app-menu__empty--compact{font-size:.75rem;margin:.35rem 0;padding-inline:.25rem;text-align:start}@media (max-width:520px){.env-shell-app-menu__start-body{grid-template-columns:1fr;grid-template-rows:minmax(0,8rem) minmax(0,1fr)}.env-shell-app-menu__start-recent{display:flex;flex-direction:column;overflow:auto}}.env-shell-app-menu__banner{background:color-mix(in oklab,var(--env-app-menu-accent,var(--color-primary,#60cdff)) 14%,transparent);border:1px solid color-mix(in oklab,var(--env-app-menu-accent,var(--color-primary,#60cdff)) 35%,transparent);border-radius:10px;display:grid;gap:.65rem;padding:.65rem .75rem}.env-shell-app-menu__banner[hidden]{display:none!important}.env-shell-app-menu__banner-text{font:500 .9rem/1.35 ui-sans-serif,system-ui,sans-serif;margin:0}.env-shell-app-menu__banner-action{justify-self:start}.env-shell-app-menu__search{background:var(--env-app-menu-surface-raised);border:1px solid light-dark(color-mix(in oklab,#000 12%,transparent),color-mix(in oklab,#fff 14%,transparent));border-radius:10px;box-sizing:border-box;color:inherit;font:400 .9rem/1.2 ui-sans-serif,system-ui,sans-serif;inline-size:100%;inset-block-start:0;padding:.55rem .65rem;position:sticky;z-index:3}.env-shell-app-menu__search[hidden]{display:none!important}.env-shell-app-menu__grid{align-content:start;block-size:max-content;display:grid;gap:.5rem;grid-auto-rows:max-content;grid-template-columns:repeat(auto-fill,minmax(4.5rem,1fr));min-block-size:fit-content;touch-action:pan-y;-webkit-overflow-scrolling:touch;overflow:visible}.env-shell-app-menu__grid[hidden]{display:none!important}.env-shell-app-menu__tile{align-content:start;background:transparent;border:0;border-radius:12px;color:inherit;cursor:pointer;display:grid;flex-shrink:0;gap:.35rem;justify-items:center;min-block-size:fit-content;padding:.45rem .25rem;text-align:center;touch-action:pan-y;user-select:none}.env-shell-app-menu__tile:focus-visible,.env-shell-app-menu__tile:hover{background:color-mix(in oklab,var(--env-app-menu-accent,var(--color-primary,#60cdff)) 12%,transparent);outline:none}.env-shell-app-menu__tile--dragging{opacity:.45}html[data-app-menu-dragging] .env-shell-app-menu{pointer-events:none}html[data-app-menu-dragging] .env-shell-app-menu__panel{opacity:0;visibility:hidden}.env-shell-app-menu__drag-ghost{display:grid;gap:.35rem;inline-size:4.5rem;inset:0 auto auto 0;justify-items:center;pointer-events:none;position:fixed;will-change:transform;z-index:calc(var(--env-z-shell-chrome, 2147483000) + 8)}.env-shell-app-menu__drag-ghost-icon{aspect-ratio:1/1;backdrop-filter:blur(16px) saturate(1.35);-webkit-backdrop-filter:blur(16px) saturate(1.35);background:light-dark(color-mix(in oklab,#e8eaed 72%,var(--wf-md-primary,var(--color-primary,#60cdff)) 28%),color-mix(in oklab,#111827 72%,var(--wf-md-primary,var(--color-primary,#60cdff)) 28%));block-size:3rem;border:none;border-radius:50%;box-shadow:0 8px 24px -8px rgba(0,0,0,.55);box-sizing:border-box;contain:layout style;display:grid;inline-size:3rem;overflow:hidden;padding:0;place-content:center;place-items:center;position:relative}@supports (corner-shape:round){.env-shell-app-menu__drag-ghost-icon{corner-shape:round}}.env-shell-app-menu__drag-ghost-icon img[data-icon-pending],.env-shell-app-menu__drag-ghost-icon img[data-launcher-icon]:not([src]),.env-shell-app-menu__drag-ghost-icon ui-icon[data-icon-pending]{opacity:0;visibility:hidden}.env-shell-app-menu__drag-ghost-icon .ui-ws-item-icon-img,.env-shell-app-menu__drag-ghost-icon img[data-launcher-icon]{block-size:100%;border-radius:0;inline-size:100%;inset:0;object-fit:cover;object-position:center;pointer-events:none;position:absolute;transform:scale(1.28);transform-origin:center}.env-shell-app-menu__drag-ghost-icon ui-icon[data-launcher-icon]{block-size:100%;inline-size:100%;inset:0;max-block-size:none;max-inline-size:none;min-block-size:0;min-inline-size:0;position:absolute;--icon-size:100%;--icon-padding:0px;pointer-events:none;transform:scale(1.28);transform-origin:center}.env-shell-app-menu__drag-ghost-label{display:-webkit-box;-webkit-box-orient:vertical;font:600 .68rem/1.15 ui-sans-serif,system-ui,sans-serif;-webkit-line-clamp:2;overflow:hidden;text-align:center;text-shadow:0 1px 2px rgba(0,0,0,.35)}.env-shell-app-menu__tile-icon{aspect-ratio:1/1!important;backdrop-filter:blur(16px) saturate(1.35);-webkit-backdrop-filter:blur(16px) saturate(1.35);background:var(--env-app-menu-plate);block-size:2.5rem!important;border:none;border-radius:50%!important;box-shadow:0 6px 24px -8px color-mix(in oklab,#000 38%,transparent);box-sizing:border-box;color:var(--color-on-primary-container,var(--env-app-menu-ink));display:grid;inline-size:2.5rem!important;min-block-size:2.5rem!important;min-inline-size:2.5rem!important;overflow:hidden;padding:0!important;place-content:center;place-items:center;position:relative;--icon-color:var(--color-on-primary-container,var(--env-app-menu-ink))}.env-shell-app-menu__tile-icon:not([data-shape]),.env-shell-app-menu__tile-icon[data-shape=circle]{aspect-ratio:1/1!important;border-radius:50%!important}@supports (corner-shape:round){.env-shell-app-menu__tile-icon:not([data-shape]),.env-shell-app-menu__tile-icon[data-shape=circle]{corner-shape:round}}.env-shell-app-menu__tile-icon[data-shape=squircle]{border-radius:1.5rem!important}@supports (corner-shape:squircle){.env-shell-app-menu__tile-icon[data-shape=squircle]{corner-shape:unset}}@supports (corner-shape:round){.env-shell-app-menu__tile-icon[data-shape=squircle]{corner-shape:round}}.env-shell-app-menu__tile-icon[data-shape=square]{border-radius:12%!important}@supports (corner-shape:square){.env-shell-app-menu__tile-icon[data-shape=square]{corner-shape:square}}.env-shell-app-menu__tile-icon[data-shape=shapeless]{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:transparent!important;border-radius:0!important;box-shadow:none!important;contain:none;overflow:visible!important}@supports (corner-shape:squircle){.env-shell-app-menu__tile-icon[data-shape=shapeless]{corner-shape:unset}}.env-shell-app-menu__tile-icon[data-shape=shapeless] .env-shell-app-menu__tile-favicon,.env-shell-app-menu__tile-icon[data-shape=shapeless] .ui-ws-item-icon-img,.env-shell-app-menu__tile-icon[data-shape=shapeless] img[data-launcher-icon],.env-shell-app-menu__tile-icon[data-shape=shapeless] ui-icon{object-fit:contain}.env-shell-app-menu__tile-icon[data-shape=shapeless] :is(img.sd-icon-silhouette,ui-icon.sd-icon-silhouette){filter:brightness(0) blur(6px);inset:0;object-fit:contain;opacity:.4;pointer-events:none;position:absolute;transform:translateY(10%);z-index:0}.env-shell-app-menu__tile-icon[data-shape=shapeless] .ui-ws-item-icon-img:not(.sd-icon-silhouette),.env-shell-app-menu__tile-icon[data-shape=shapeless] img[data-launcher-icon]:not(.sd-icon-silhouette){filter:none;object-fit:contain;z-index:2}.env-shell-app-menu__tile-icon[data-shape=shapeless][data-icon-display=glyph] ui-icon:not(.sd-icon-silhouette){filter:drop-shadow(0 2px 5px rgba(0,0,0,.4))}.env-shell-app-menu__tile-icon[data-shape=shapeless][data-icon-display=glyph] .sd-icon-silhouette{display:none}.env-shell-app-menu__tile-icon img[data-icon-pending],.env-shell-app-menu__tile-icon img[data-launcher-icon]:not([src]),.env-shell-app-menu__tile-icon ui-icon[data-icon-pending]{opacity:0;visibility:hidden}.env-shell-app-menu__tile-icon .ui-ws-item-icon-img[data-launcher-icon],.env-shell-app-menu__tile-icon img[data-launcher-icon]{block-size:100%;border-radius:0;display:block;inline-size:100%;inset:0;max-block-size:none;max-inline-size:none;object-fit:cover;object-position:center;pointer-events:none;position:absolute;transform:scale(var(--sd-item-icon-scale,var(--sd-launcher-icon-scale,1.28)));transform-origin:center;z-index:1}.env-shell-app-menu__tile-icon .ui-ws-item-icon-img[data-launcher-icon][data-icon-pack],.env-shell-app-menu__tile-icon img[data-launcher-icon][data-icon-pack]{transform:scale(var(--sd-item-icon-scale,var(--sd-launcher-icon-scale,1.28)))}.env-shell-app-menu__tile-icon :is(.env-shell-app-menu__tile-favicon:not([data-launcher-icon]),.ui-ws-item-icon-img:not([data-launcher-icon])){block-size:1.75rem;border-radius:4px;display:block;inline-size:1.75rem;max-block-size:90%;max-inline-size:90%;object-fit:contain;object-position:center;pointer-events:none;position:relative;z-index:1}.env-shell-app-menu__tile-icon ui-icon{block-size:1.75rem!important;display:inline-grid!important;inline-size:1.75rem!important;max-block-size:1.75rem!important;max-inline-size:1.75rem!important;min-block-size:1.75rem!important;min-inline-size:1.75rem!important;position:relative;z-index:1;--icon-size:1.75rem;--icon-padding:0px;--icon-color:currentColor;color:inherit;pointer-events:none}.env-shell-app-menu__tile-icon ui-icon[data-launcher-icon]{block-size:100%!important;inline-size:100%!important;inset:0;max-block-size:none!important;max-inline-size:none!important;min-block-size:0!important;min-inline-size:0!important;position:absolute;--icon-size:100%;--icon-padding:0px;pointer-events:none;transform:scale(1.28);transform-origin:center;z-index:1}.env-shell-app-menu__tile-label{display:-webkit-box;-webkit-box-orient:vertical;font:500 .68rem/1.15 ui-sans-serif,system-ui,sans-serif;-webkit-line-clamp:2;overflow:hidden;word-break:break-word}.env-shell-app-menu__empty{font:400 .85rem/1.3 ui-sans-serif,system-ui,sans-serif;grid-column:1/-1;margin:.5rem 0;opacity:.75;text-align:center}@keyframes b{0%{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}.env-shell-app-menu__pin-menu{background:var(--env-app-menu-surface);border:1px solid light-dark(color-mix(in oklab,#000 12%,transparent),color-mix(in oklab,#fff 14%,transparent));border-radius:10px;box-shadow:0 12px 32px -12px light-dark(rgba(0,0,0,.22),rgba(0,0,0,.45)),0 2px 8px -2px light-dark(rgba(0,0,0,.12),rgba(0,0,0,.25));color:var(--env-app-menu-ink);color-scheme:inherit;display:grid;gap:.25rem;min-inline-size:10rem;padding:.35rem;position:fixed;z-index:calc(var(--env-z-shell-chrome, 2147483000) + 4)}.env-shell-app-menu__pin-action{inline-size:100%;justify-content:start;text-align:start}}");
+preloadStyle("@layer ui-app-menu{.env-shell-app-menu[data-page]{align-items:stretch;inset:0;justify-items:stretch;padding:0;z-index:calc(var(--env-z-shell-chrome, 2147483000) + 4)}.env-shell-app-menu[data-page] .env-shell-app-menu__panel{block-size:100%;border-radius:0;inline-size:100%;max-block-size:stretch;max-inline-size:stretch;overflow:hidden;overflow-y:auto!important;overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch;pointer-events:auto}.env-shell-app-menu__panel>.env-shell-app-menu__grid{align-content:start;align-self:stretch;block-size:max-content;grid-auto-rows:max-content;justify-content:start;max-block-size:max-content;min-block-size:fit-content;overflow:visible;overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch}.env-shell-app-menu[data-page] .env-shell-app-menu__grid{column-gap:.45rem;padding-block-end:calc(var(--env-shell-chrome-stack-reserve, 3rem) + env(safe-area-inset-bottom, 0px));row-gap:.85rem}.env-shell-app-menu{align-items:end;box-sizing:border-box;color-scheme:inherit;display:grid;inset-block-end:var(--env-shell-chrome-stack-reserve,3rem);inset-inline:0;justify-items:start;padding:.5rem;padding-inline-start:max(.5rem,env(safe-area-inset-left,0px));pointer-events:auto;position:fixed;z-index:calc(var(--env-z-shell-chrome, 2147483000) + 2);--env-app-menu-accent:var(--wf-md-primary,var(--color-primary,#5a9ec8));--env-app-menu-surface:color-mix(in oklab,var(--color-surface-container,--u2-color-mod(var(--base-color,#5a9ec8),960)) 88%,transparent);--env-app-menu-surface-raised:var(\n        --color-surface-container-high,--u2-color-mod(var(--base-color,#5a9ec8),980)\n    );--env-app-menu-ink:var(\n        --color-on-surface,light-dark(--u2-color-mod(var(--base-color,#5a9ec8),900),--u2-color-mod(var(--base-color,#5a9ec8),100))\n    );--env-app-menu-plate:var(\n        --color-primary-container,light-dark(--u2-color-mod(var(--base-color,#5a9ec8),160),--u2-color-mod(var(--base-color,#5a9ec8),820))\n    )}.env-shell-app-menu[hidden]{display:none!important}.env-shell-app-menu__panel{background:var(--env-app-menu-surface);border:1px solid light-dark(color-mix(in oklab,#000 12%,transparent),color-mix(in oklab,#fff 14%,transparent));border-radius:14px;box-shadow:0 20px 48px -20px light-dark(rgba(0,0,0,.22),rgba(0,0,0,.45)),0 2px 8px -2px light-dark(rgba(0,0,0,.12),rgba(0,0,0,.25));color:var(--env-app-menu-ink);display:grid;gap:.75rem;inline-size:min(420px,100vw - 1rem);max-block-size:min(520px,100dvb - var(--env-shell-chrome-stack-reserve,3rem) - 1rem);overflow:hidden;overflow-y:auto!important;overscroll-behavior:contain;padding:.85rem;pointer-events:auto;touch-action:pan-y;-webkit-overflow-scrolling:touch;animation:b .14s cubic-bezier(.22,.8,.3,1);backdrop-filter:blur(22px) saturate(1.35);-webkit-backdrop-filter:blur(22px) saturate(1.35);block-size:fit-content;color-scheme:inherit;grid-template-rows:auto auto minmax(0,1fr);min-block-size:max(60dvb,60cqb)}.env-shell-app-menu__panel[data-layout=start-split]{grid-template-rows:auto auto minmax(0,1fr);inline-size:min(560px,100vw - 1rem);max-block-size:min(580px,100dvb - var(--env-shell-chrome-stack-reserve,3rem) - 1rem)}.env-shell-app-menu__start-body{display:grid;gap:.65rem;grid-template-columns:minmax(9.5rem,.42fr) minmax(0,1fr);max-block-size:100%;min-block-size:12rem;overflow:hidden}.env-shell-app-menu__start-left{background:light-dark(color-mix(in oklab,var(--env-app-menu-accent) 8%,transparent),color-mix(in oklab,var(--env-app-menu-accent) 12%,transparent));border:1px solid light-dark(color-mix(in oklab,var(--env-app-menu-accent) 22%,transparent),color-mix(in oklab,#fff 14%,transparent));border-radius:12px;display:flex;flex-direction:column;gap:.4rem;min-block-size:fit-content;min-inline-size:0;overflow:auto;padding:.45rem}.env-shell-app-menu__start-right{display:grid;gap:.4rem;grid-template-rows:auto minmax(0,1fr);min-block-size:fit-content;min-inline-size:0;overflow:hidden}.env-shell-app-menu__start-heading{flex:0 0 auto;font:600 .72rem/1.2 ui-sans-serif,system-ui,sans-serif;letter-spacing:.04em;opacity:.72;padding-inline:.25rem;text-transform:uppercase}.env-shell-app-menu__start-recent{align-content:start;display:grid;flex:0 0 auto;gap:.2rem;grid-template-columns:1fr}.env-shell-app-menu__start-recent .env-shell-app-menu__tile{align-items:center;gap:.45rem;grid-template-columns:auto minmax(0,1fr);justify-items:start;padding:.35rem .4rem;text-align:start}.env-shell-app-menu__start-recent .env-shell-app-menu__tile-icon{block-size:2.25rem;inline-size:2.25rem;min-block-size:2.25rem;min-inline-size:2.25rem}.env-shell-app-menu__start-recent .env-shell-app-menu__tile-icon ui-icon:not([data-launcher-icon]){block-size:1.5rem!important;inline-size:1.5rem!important;--icon-size:1.5rem;--icon-padding:0px}.env-shell-app-menu__start-recent .env-shell-app-menu__tile-label{font-size:.78rem;-webkit-line-clamp:1;text-align:start}.env-shell-app-menu__start-right .env-shell-app-menu__grid{align-content:start;display:flex;flex-direction:column;flex-wrap:nowrap;gap:.2rem;grid-template-columns:none;min-block-size:fit-content;overflow:auto}.env-shell-app-menu__start-right .env-shell-app-menu__tile{align-items:center;border-radius:10px;box-sizing:border-box;display:grid;gap:.65rem;grid-template-columns:auto minmax(0,1fr);inline-size:100%;justify-items:start;padding:.4rem .55rem;text-align:start}.env-shell-app-menu__start-right .env-shell-app-menu__tile-icon{block-size:2.5rem;inline-size:2.5rem;min-block-size:2.5rem;min-inline-size:2.5rem}.env-shell-app-menu__start-right .env-shell-app-menu__tile-icon ui-icon:not([data-launcher-icon]){block-size:1.75rem!important;inline-size:1.75rem!important;--icon-size:1.75rem;--icon-padding:0px}.env-shell-app-menu__start-right .env-shell-app-menu__tile-label{font:500 .9rem/1.25 ui-sans-serif,system-ui,sans-serif;justify-self:stretch;-webkit-line-clamp:1;text-align:start}.env-shell-app-menu__crumb{align-items:center;display:flex;flex-wrap:wrap;gap:.35rem .55rem;min-block-size:1.4rem}.env-shell-app-menu__crumb-nav{align-items:center;display:flex;flex:1 1 auto;flex-wrap:wrap;gap:.2rem;min-inline-size:0}.env-shell-app-menu__crumb-actions{align-items:center;display:flex;flex-wrap:wrap;gap:.3rem;margin-inline-start:auto}.env-shell-app-menu__crumb-actions[hidden]{display:none!important}.env-shell-app-menu__crumb-action{appearance:none;background:var(--env-app-menu-surface-raised);border:1px solid light-dark(color-mix(in oklab,#000 12%,transparent),color-mix(in oklab,#fff 14%,transparent));border-radius:8px;color:inherit;cursor:pointer;font:600 .72rem/1.2 ui-sans-serif,system-ui,sans-serif;padding:.28rem .5rem}.env-shell-app-menu__crumb-action:hover{background:light-dark(color-mix(in oklab,#000 8%,transparent),color-mix(in oklab,#fff 10%,transparent))}.env-shell-app-menu__crumb-item{appearance:none;background:transparent;border:0;border-radius:6px;color:inherit;cursor:pointer;font:600 .78rem/1.2 ui-sans-serif,system-ui,sans-serif;padding:.15rem .35rem}.env-shell-app-menu__crumb-item:hover{background:light-dark(color-mix(in oklab,#000 8%,transparent),color-mix(in oklab,#fff 10%,transparent))}.env-shell-app-menu__crumb-sep{font-size:.85rem;opacity:.45}.env-shell-app-menu__empty--compact{font-size:.75rem;margin:.35rem 0;padding-inline:.25rem;text-align:start}@media (max-width:520px){.env-shell-app-menu__tools{grid-template-columns:1fr 1fr}.env-shell-app-menu__search{grid-column:1/-1}.env-shell-app-menu__sort,.env-shell-app-menu__sort-dir{max-inline-size:none}.env-shell-app-menu__start-body{grid-template-columns:1fr;grid-template-rows:minmax(0,8rem) minmax(0,1fr)}.env-shell-app-menu__start-recent{display:flex;flex-direction:column;overflow:auto}}.env-shell-app-menu__banner{background:color-mix(in oklab,var(--env-app-menu-accent,var(--color-primary,#60cdff)) 14%,transparent);border:1px solid color-mix(in oklab,var(--env-app-menu-accent,var(--color-primary,#60cdff)) 35%,transparent);border-radius:10px;display:grid;gap:.65rem;padding:.65rem .75rem}.env-shell-app-menu__banner[hidden]{display:none!important}.env-shell-app-menu__banner-text{font:500 .9rem/1.35 ui-sans-serif,system-ui,sans-serif;margin:0}.env-shell-app-menu__banner-action{justify-self:start}.env-shell-app-menu__tools{align-items:stretch;display:grid;gap:.4rem;grid-template-columns:minmax(0,1fr) auto auto;inset-block-start:0;position:sticky;z-index:3}.env-shell-app-menu__tools[hidden]{display:none!important}.env-shell-app-menu__search,.env-shell-app-menu__sort,.env-shell-app-menu__sort-dir{background:var(--env-app-menu-surface-raised);border:1px solid light-dark(color-mix(in oklab,#000 12%,transparent),color-mix(in oklab,#fff 14%,transparent));border-radius:10px;box-sizing:border-box;color:inherit;font:400 .9rem/1.2 ui-sans-serif,system-ui,sans-serif;padding:.55rem .65rem}.env-shell-app-menu__search{inline-size:100%;min-inline-size:0}.env-shell-app-menu__sort,.env-shell-app-menu__sort-dir{max-inline-size:11rem}.env-shell-app-menu__search[hidden]{display:none!important}.env-shell-app-menu__grid{align-content:start;block-size:max-content;display:grid;gap:.5rem;grid-auto-rows:max-content;grid-template-columns:repeat(auto-fill,minmax(4.5rem,1fr));min-block-size:fit-content;touch-action:pan-y;-webkit-overflow-scrolling:touch;overflow:visible;pointer-events:auto}.env-shell-app-menu__grid[hidden]{display:none!important}.env-shell-app-menu__tile{align-content:start;background:transparent;border:0;border-radius:12px;color:inherit;cursor:pointer;display:grid;flex-shrink:0;gap:.35rem;justify-items:center;min-block-size:fit-content;padding:.45rem .25rem;text-align:center;touch-action:pan-y;user-select:none}.env-shell-app-menu__tile:focus-visible,.env-shell-app-menu__tile:hover{background:color-mix(in oklab,var(--env-app-menu-accent,var(--color-primary,#60cdff)) 12%,transparent);outline:none}.env-shell-app-menu__tile--dragging{opacity:.45}html[data-app-menu-dragging] .env-shell-app-menu{pointer-events:none}html[data-app-menu-dragging] .env-shell-app-menu__panel{opacity:0;visibility:hidden}.env-shell-app-menu__drag-ghost{display:grid;gap:.35rem;inline-size:4.5rem;inset:0 auto auto 0;justify-items:center;pointer-events:none;position:fixed;will-change:transform;z-index:calc(var(--env-z-shell-chrome, 2147483000) + 8)}.env-shell-app-menu__drag-ghost-icon{aspect-ratio:1/1;backdrop-filter:blur(16px) saturate(1.35);-webkit-backdrop-filter:blur(16px) saturate(1.35);background:light-dark(color-mix(in oklab,#e8eaed 72%,var(--wf-md-primary,var(--color-primary,#60cdff)) 28%),color-mix(in oklab,#111827 72%,var(--wf-md-primary,var(--color-primary,#60cdff)) 28%));block-size:3rem;border:none;border-radius:50%;box-shadow:0 8px 24px -8px rgba(0,0,0,.55);box-sizing:border-box;contain:layout style;display:grid;inline-size:3rem;overflow:hidden;padding:0;place-content:center;place-items:center;position:relative}@supports (corner-shape:round){.env-shell-app-menu__drag-ghost-icon{corner-shape:round}}.env-shell-app-menu__drag-ghost-icon img[data-icon-pending],.env-shell-app-menu__drag-ghost-icon img[data-launcher-icon]:not([src]),.env-shell-app-menu__drag-ghost-icon ui-icon[data-icon-pending]{opacity:0;visibility:hidden}.env-shell-app-menu__drag-ghost-icon .ui-ws-item-icon-img,.env-shell-app-menu__drag-ghost-icon img[data-launcher-icon]{block-size:100%;border-radius:0;inline-size:100%;inset:0;object-fit:cover;object-position:center;pointer-events:none;position:absolute;transform:scale(1.28);transform-origin:center}.env-shell-app-menu__drag-ghost-icon ui-icon[data-launcher-icon]{block-size:100%;inline-size:100%;inset:0;max-block-size:none;max-inline-size:none;min-block-size:0;min-inline-size:0;position:absolute;--icon-size:100%;--icon-padding:0px;pointer-events:none;transform:scale(1.28);transform-origin:center}.env-shell-app-menu__drag-ghost-label{display:-webkit-box;-webkit-box-orient:vertical;font:600 .68rem/1.15 ui-sans-serif,system-ui,sans-serif;-webkit-line-clamp:2;overflow:hidden;text-align:center;text-shadow:0 1px 2px rgba(0,0,0,.35)}.env-shell-app-menu__tile-icon{aspect-ratio:1/1!important;backdrop-filter:blur(16px) saturate(1.35);-webkit-backdrop-filter:blur(16px) saturate(1.35);background:var(--env-app-menu-plate);block-size:2.5rem!important;border:none;border-radius:50%!important;box-shadow:0 6px 24px -8px color-mix(in oklab,#000 38%,transparent);box-sizing:border-box;color:var(--color-on-primary-container,var(--env-app-menu-ink));display:grid;inline-size:2.5rem!important;min-block-size:2.5rem!important;min-inline-size:2.5rem!important;overflow:hidden;padding:0!important;place-content:center;place-items:center;position:relative;--icon-color:var(--color-on-primary-container,var(--env-app-menu-ink))}.env-shell-app-menu__tile-icon:not([data-shape]),.env-shell-app-menu__tile-icon[data-shape=circle]{aspect-ratio:1/1!important;border-radius:50%!important}@supports (corner-shape:round){.env-shell-app-menu__tile-icon:not([data-shape]),.env-shell-app-menu__tile-icon[data-shape=circle]{corner-shape:round}}.env-shell-app-menu__tile-icon[data-shape=squircle]{border-radius:1.5rem!important}@supports (corner-shape:squircle){.env-shell-app-menu__tile-icon[data-shape=squircle]{corner-shape:unset}}@supports (corner-shape:round){.env-shell-app-menu__tile-icon[data-shape=squircle]{corner-shape:round}}.env-shell-app-menu__tile-icon[data-shape=square]{border-radius:12%!important}@supports (corner-shape:square){.env-shell-app-menu__tile-icon[data-shape=square]{corner-shape:square}}.env-shell-app-menu__tile-icon[data-shape=shapeless]{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:transparent!important;border-radius:0!important;box-shadow:none!important;contain:none;overflow:visible!important}@supports (corner-shape:squircle){.env-shell-app-menu__tile-icon[data-shape=shapeless]{corner-shape:unset}}.env-shell-app-menu__tile-icon[data-shape=shapeless] .env-shell-app-menu__tile-favicon,.env-shell-app-menu__tile-icon[data-shape=shapeless] .ui-ws-item-icon-img,.env-shell-app-menu__tile-icon[data-shape=shapeless] img[data-launcher-icon],.env-shell-app-menu__tile-icon[data-shape=shapeless] ui-icon{object-fit:contain}.env-shell-app-menu__tile-icon[data-shape=shapeless] :is(img.sd-icon-silhouette,ui-icon.sd-icon-silhouette){filter:brightness(0) blur(6px);inset:0;object-fit:contain;opacity:.4;pointer-events:none;position:absolute;transform:translateY(10%);z-index:0}.env-shell-app-menu__tile-icon[data-shape=shapeless] .ui-ws-item-icon-img:not(.sd-icon-silhouette),.env-shell-app-menu__tile-icon[data-shape=shapeless] img[data-launcher-icon]:not(.sd-icon-silhouette){filter:none;object-fit:contain;z-index:2}.env-shell-app-menu__tile-icon[data-shape=shapeless][data-icon-display=glyph] ui-icon:not(.sd-icon-silhouette){filter:drop-shadow(0 2px 5px rgba(0,0,0,.4))}.env-shell-app-menu__tile-icon[data-shape=shapeless][data-icon-display=glyph] .sd-icon-silhouette{display:none}.env-shell-app-menu__tile-icon img[data-icon-pending],.env-shell-app-menu__tile-icon img[data-launcher-icon]:not([src]),.env-shell-app-menu__tile-icon ui-icon[data-icon-pending]{opacity:0;visibility:hidden}.env-shell-app-menu__tile-icon .ui-ws-item-icon-img[data-launcher-icon],.env-shell-app-menu__tile-icon img[data-launcher-icon]{block-size:100%;border-radius:0;display:block;inline-size:100%;inset:0;max-block-size:none;max-inline-size:none;object-fit:cover;object-position:center;pointer-events:none;position:absolute;transform:scale(var(--sd-item-icon-scale,var(--sd-launcher-icon-scale,1.28)));transform-origin:center;z-index:1}.env-shell-app-menu__tile-icon .ui-ws-item-icon-img[data-launcher-icon][data-icon-pack],.env-shell-app-menu__tile-icon img[data-launcher-icon][data-icon-pack]{transform:scale(var(--sd-item-icon-scale,var(--sd-launcher-icon-scale,1.28)))}.env-shell-app-menu__tile-icon :is(.env-shell-app-menu__tile-favicon:not([data-launcher-icon]),.ui-ws-item-icon-img:not([data-launcher-icon])){block-size:1.75rem;border-radius:4px;display:block;inline-size:1.75rem;max-block-size:90%;max-inline-size:90%;object-fit:contain;object-position:center;pointer-events:none;position:relative;z-index:1}.env-shell-app-menu__tile-icon ui-icon{block-size:1.75rem!important;display:inline-grid!important;inline-size:1.75rem!important;max-block-size:1.75rem!important;max-inline-size:1.75rem!important;min-block-size:1.75rem!important;min-inline-size:1.75rem!important;position:relative;z-index:1;--icon-size:1.75rem;--icon-padding:0px;--icon-color:currentColor;color:inherit;pointer-events:none}.env-shell-app-menu__tile-icon ui-icon[data-launcher-icon]{block-size:100%!important;inline-size:100%!important;inset:0;max-block-size:none!important;max-inline-size:none!important;min-block-size:0!important;min-inline-size:0!important;position:absolute;--icon-size:100%;--icon-padding:0px;pointer-events:none;transform:scale(1.28);transform-origin:center;z-index:1}.env-shell-app-menu__tile-label{display:-webkit-box;-webkit-box-orient:vertical;font:500 .68rem/1.15 ui-sans-serif,system-ui,sans-serif;-webkit-line-clamp:2;overflow:hidden;word-break:break-word}.env-shell-app-menu__empty{font:400 .85rem/1.3 ui-sans-serif,system-ui,sans-serif;grid-column:1/-1;margin:.5rem 0;opacity:.75;text-align:center}@keyframes b{0%{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}.env-shell-app-menu__pin-menu{background:var(--env-app-menu-surface);border:1px solid light-dark(color-mix(in oklab,#000 12%,transparent),color-mix(in oklab,#fff 14%,transparent));border-radius:10px;box-shadow:0 12px 32px -12px light-dark(rgba(0,0,0,.22),rgba(0,0,0,.45)),0 2px 8px -2px light-dark(rgba(0,0,0,.12),rgba(0,0,0,.25));color:var(--env-app-menu-ink);color-scheme:inherit;display:grid;gap:.25rem;min-inline-size:10rem;padding:.35rem;position:fixed;z-index:calc(var(--env-z-shell-chrome, 2147483000) + 4)}.env-shell-app-menu__pin-action{inline-size:100%;justify-content:start;text-align:start}}");
 /** Matches {@code BootLoader} + launcher design spec. */
 function isLauncherSku() {
 	return document.documentElement.dataset.cwspShellRole === "launcher" || globalThis.__RS_SHELL_ROLE__ === "launcher";
@@ -4603,7 +4799,18 @@ var handleWallpaperDropOrPaste = (event) => {
 	if (imageFile) {
 		event.preventDefault();
 		event.stopPropagation();
-		applyWallpaperFromImageFile(imageFile);
+		const policyEv = new CustomEvent("cwsp:shell-image-open", {
+			bubbles: true,
+			cancelable: true,
+			detail: {
+				file: imageFile,
+				source: isPaste ? "paste" : "drop"
+			}
+		});
+		try {
+			window.dispatchEvent(policyEv);
+		} catch {}
+		if (!policyEv.defaultPrevented) applyWallpaperFromImageFile(imageFile);
 		queueMicrotask(() => {
 			try {
 				handleIncomingEntries(dataTransfer, "/images/wallpaper/", null, (file) => {
@@ -4648,7 +4855,18 @@ var handleWallpaperDropOrPaste = (event) => {
 			if (!droppedOnItem) {
 				const apiImage = await readImageFileFromClipboardApi();
 				if (apiImage) {
-					applyWallpaperFromImageFile(apiImage);
+					const policyEv = new CustomEvent("cwsp:shell-image-open", {
+						bubbles: true,
+						cancelable: true,
+						detail: {
+							file: apiImage,
+							source: "paste"
+						}
+					});
+					try {
+						window.dispatchEvent(policyEv);
+					} catch {}
+					if (!policyEv.defaultPrevented) applyWallpaperFromImageFile(apiImage);
 					return;
 				}
 			}

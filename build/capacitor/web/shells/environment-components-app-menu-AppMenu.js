@@ -1,4 +1,779 @@
-import { A as TILE_SHAPE_OPTIONS, D as resolveSpeedDialCellFromClientPoint, E as pinLauncherAppEntry, F as normalizeTileShape, Fn as preloadStyle, Gn as __vitePreload, I as syncShapelessIconShadow, M as defaultIconScaleForDisplay, N as inferIconDisplay, O as tileIconFetchSize, P as normalizeIconDisplay, S as isClientPointOverSpeedDial, T as parseSpeedDialItemFromJSON, _ as addSpeedDialItem, b as buildLauncherAppDragEnvelope, c as applyLauncherIconToUiIcon, d as getCachedLauncherIconObjectUrl, f as resolveIconResourceUrl, g as ICON_BITMAP_SCALE_OPTIONS, h as showSuccess, j as createTileUiIconElement, k as ICON_DISPLAY_OPTIONS, l as ensureLauncherIconObjectUrl, m as isAndroidIconRef, rt as openUnifiedContextMenu, s as attachIconResourcePickButton, u as getCachedIconResourceObjectUrl, v as applyIconScaleToPaintedNodes, w as normalizeItemIconBitmapScale, x as findNextFreeSpeedDialCell, y as applyItemIconScaleToElement } from "../com/app.js";
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../chunks/launcher-bridge.js","./boot-index.js","../chunks/rolldown-runtime.js","./boot-history-base.js","../com/app.js","../fest/core.js","../com/service.js","../fest/veela.js"])))=>i.map(i=>d[i]);
+import { $ as pinLauncherAppEntry, G as applyIconScaleToPaintedNodes, H as openUnifiedContextMenu, J as findNextFreeSpeedDialCell, K as applyItemIconScaleToElement, Q as parseSpeedDialItemFromJSON, U as ICON_BITMAP_SCALE_OPTIONS, W as addSpeedDialItem, Y as isClientPointOverSpeedDial, Yn as preloadStyle, Z as normalizeItemIconBitmapScale, _ as getCachedIconResourceObjectUrl, _t as showSuccess, ar as __vitePreload, at as defaultIconScaleForDisplay, c as APP_MENU_SORT_OPTIONS, ct as normalizeTileShape, d as peekAppMenuSort, dt as getAppLaunchSpec, et as resolveSpeedDialCellFromClientPoint, f as sortLauncherApps, ft as isLauncherLaunchSpecEmpty, g as ensureLauncherIconObjectUrl, gt as showError, h as applyLauncherIconToUiIcon, ht as setAppLaunchSpec, it as createTileUiIconElement, l as defaultDirForAppSort, lt as syncShapelessIconShadow, m as attachIconResourcePickButton, mt as resolveAppLaunchSpec, nt as ICON_DISPLAY_OPTIONS, ot as inferIconDisplay, p as writeAppMenuSort, pt as normalizeLauncherLaunchSpec, q as buildLauncherAppDragEnvelope, rt as TILE_SHAPE_OPTIONS, s as APP_MENU_SORT_EVENT, st as normalizeIconDisplay, tt as tileIconFetchSize, u as hydrateAppColorKeys, ut as clearAppLaunchSpec, v as getCachedLauncherIconObjectUrl, x as isAndroidIconRef, y as resolveIconResourceUrl } from "../com/app.js";
+//#region src/frontend/shells/environment/components/app-menu/bookmarks-menu.ts
+/** Local copy — avoid relative `../../explorer/fs-backend` (breaks when this file is hardlinked under home-view). */
+function faviconForHref(href, size = 64) {
+	const raw = String(href || "").trim();
+	if (!raw || !/^https?:\/\//i.test(raw)) return "";
+	try {
+		const host = new URL(raw).hostname;
+		if (!host) return "";
+		return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(host)}&sz=${size}`;
+	} catch {
+		return "";
+	}
+}
+/** Chrome `_favicon`, Google S2, or generic favicon URL — not Android adaptive bitmaps. */
+function isBookmarkFaviconResourceUrl(raw) {
+	const u = String(raw || "").trim().toLowerCase();
+	if (!u) return false;
+	if (u.includes("/_favicon/")) return true;
+	if (u.includes("s2/favicons")) return true;
+	if (u.includes("favicon")) return true;
+	if (u.startsWith("android-icon:")) return false;
+	return false;
+}
+/** Accept http(s) and other schemes; bare hosts become `https://…`. */
+function normalizeBookmarkHref(raw) {
+	const text = String(raw || "").trim();
+	if (!text) return "";
+	if (/^[a-z][a-z0-9+.-]*:/i.test(text)) return text;
+	return `https://${text}`;
+}
+var RECENT_KEY = "rs-app-menu-bookmark-recent";
+var PINNED_KEY = "rs-app-menu-bookmark-pinned";
+var MAX_RECENT = 12;
+var MAX_PINNED = 16;
+var registeredBookmarksApi = null;
+function setBookmarksMenuApi(api) {
+	registeredBookmarksApi = api;
+}
+var chromeErr = () => {
+	try {
+		const err = globalThis.chrome?.runtime?.lastError;
+		return err ? new Error(String(err.message || err)) : null;
+	} catch {
+		return null;
+	}
+};
+var callChrome = (api, method, ...args) => {
+	const fn = api[method];
+	if (typeof fn !== "function") return Promise.reject(/* @__PURE__ */ new Error(`chrome.bookmarks.${String(method)} missing`));
+	try {
+		const result = fn.apply(api, args);
+		if (result != null && typeof result.then === "function") return result;
+	} catch (e) {
+		return Promise.reject(e);
+	}
+	return new Promise((resolve, reject) => {
+		try {
+			fn.apply(api, [...args, (res) => {
+				const err = chromeErr();
+				if (err) reject(err);
+				else resolve(res);
+			}]);
+		} catch (e) {
+			reject(e);
+		}
+	});
+};
+var nodeToEntry = (node) => {
+	const url = typeof node.url === "string" && node.url ? node.url : void 0;
+	return {
+		id: String(node.id),
+		title: String(node.title || node.url || node.id || "Bookmark"),
+		url,
+		folder: !url,
+		parentId: node.parentId
+	};
+};
+/** Build BookmarksMenuApi from `chrome.bookmarks` (CRX extension pages). */
+function createChromeBookmarksMenuApi(raw) {
+	const api = raw || (globalThis.chrome?.bookmarks ?? null);
+	if (!api?.getTree || !api?.getChildren) return null;
+	const resolveIconUrl = (href, size = 128) => {
+		const page = String(href || "").trim();
+		if (!/^https?:\/\//i.test(page)) return "";
+		const s2 = faviconForHref(page, size);
+		if (s2) return s2;
+		try {
+			const chromeRt = globalThis.chrome?.runtime;
+			if (typeof chromeRt?.getURL === "function") {
+				const u = new URL(chromeRt.getURL("/_favicon/"));
+				u.searchParams.set("pageUrl", page);
+				u.searchParams.set("size", String(size));
+				return u.toString();
+			}
+		} catch {}
+		return "";
+	};
+	return {
+		resolveIconUrl,
+		async listChildren(folderId) {
+			if (folderId) return (await callChrome(api, "getChildren", folderId) || []).map(nodeToEntry);
+			const roots = await callChrome(api, "getTree") || [];
+			const out = [];
+			for (const root of roots) for (const child of root.children || []) out.push(nodeToEntry(child));
+			return out;
+		},
+		async search(query) {
+			const q = String(query || "").trim();
+			if (!q) return this.listChildren();
+			if (typeof api.search !== "function") {
+				const all = await this.listChildren();
+				const lower = q.toLowerCase();
+				return all.filter((e) => e.title.toLowerCase().includes(lower) || String(e.url || "").toLowerCase().includes(lower));
+			}
+			return (await callChrome(api, "search", q) || []).map(nodeToEntry);
+		},
+		async open(entry) {
+			if (entry.folder) return;
+			const href = String(entry.url || "").trim();
+			if (!href) return;
+			try {
+				const tabs = globalThis.chrome?.tabs;
+				if (typeof tabs?.create === "function") {
+					await Promise.resolve(tabs.create({ url: href }));
+					return;
+				}
+			} catch {}
+			globalThis.open?.(href, "_blank", "noopener,noreferrer");
+		},
+		async remove(entry) {
+			const id = String(entry?.id || "").trim();
+			if (!id) return false;
+			try {
+				if (entry.folder) {
+					if (typeof api.removeTree !== "function") return false;
+					await callChrome(api, "removeTree", id);
+				} else {
+					if (typeof api.remove !== "function") return false;
+					await callChrome(api, "remove", id);
+				}
+				return true;
+			} catch {
+				return false;
+			}
+		},
+		async update(id, patch) {
+			const key = String(id || "").trim();
+			if (!key || typeof api.update !== "function") return null;
+			const body = {};
+			if (patch.title != null) body.title = String(patch.title || "").trim();
+			if (patch.url != null) {
+				const href = normalizeBookmarkHref(patch.url);
+				if (href) body.url = href;
+			}
+			try {
+				const node = await callChrome(api, "update", key, body);
+				return node ? nodeToEntry(node) : null;
+			} catch {
+				return null;
+			}
+		},
+		async create(parentId, spec) {
+			if (typeof api.create !== "function") return null;
+			const title = String(spec.title || "").trim();
+			if (!title) return null;
+			const body = {
+				parentId: String(parentId || "0"),
+				title
+			};
+			if (spec.url != null) {
+				const href = normalizeBookmarkHref(spec.url);
+				if (!href) return null;
+				body.url = href;
+			}
+			const attempt = async (pid) => {
+				const node = await callChrome(api, "create", {
+					...body,
+					parentId: pid
+				});
+				return node ? nodeToEntry(node) : null;
+			};
+			try {
+				return await attempt(body.parentId);
+			} catch {
+				if (body.parentId === "0") try {
+					return await attempt("1");
+				} catch {
+					return null;
+				}
+				return null;
+			}
+		}
+	};
+}
+function resolveBookmarksMenuApi() {
+	if (registeredBookmarksApi) return registeredBookmarksApi;
+	return createChromeBookmarksMenuApi();
+}
+function hasBookmarksMenuApi() {
+	return Boolean(resolveBookmarksMenuApi());
+}
+function readRecentBookmarks() {
+	try {
+		const raw = localStorage.getItem(RECENT_KEY);
+		if (!raw) return [];
+		const parsed = JSON.parse(raw);
+		if (!Array.isArray(parsed)) return [];
+		return parsed.filter((e) => e && e.id && e.title).slice(0, MAX_RECENT);
+	} catch {
+		return [];
+	}
+}
+function pushRecentBookmark(entry) {
+	if (!entry?.id || entry.folder) return;
+	const next = [entry, ...readRecentBookmarks().filter((e) => e.id !== entry.id)].slice(0, MAX_RECENT);
+	try {
+		localStorage.setItem(RECENT_KEY, JSON.stringify(next));
+	} catch {}
+}
+var readBookmarkList = (key, max) => {
+	try {
+		const raw = localStorage.getItem(key);
+		if (!raw) return [];
+		const parsed = JSON.parse(raw);
+		if (!Array.isArray(parsed)) return [];
+		return parsed.filter((e) => e && e.id && e.title && !e.folder).slice(0, max);
+	} catch {
+		return [];
+	}
+};
+function readPinnedBookmarks() {
+	return readBookmarkList(PINNED_KEY, MAX_PINNED);
+}
+function isBookmarkPinnedToStart(id) {
+	return readPinnedBookmarks().some((e) => e.id === id);
+}
+function pinBookmarkToStart(entry) {
+	if (!entry?.id || entry.folder || !String(entry.url || "").trim()) return false;
+	const next = [entry, ...readPinnedBookmarks().filter((e) => e.id !== entry.id)].slice(0, MAX_PINNED);
+	try {
+		localStorage.setItem(PINNED_KEY, JSON.stringify(next));
+		return true;
+	} catch {
+		return false;
+	}
+}
+function unpinBookmarkFromStart(id) {
+	const key = String(id || "").trim();
+	if (!key) return false;
+	const next = readPinnedBookmarks().filter((e) => e.id !== key);
+	try {
+		localStorage.setItem(PINNED_KEY, JSON.stringify(next));
+		return true;
+	} catch {
+		return false;
+	}
+}
+var writeBookmarkList = (key, items, max) => {
+	localStorage.setItem(key, JSON.stringify(items.slice(0, max)));
+};
+/** Keep Start pin/recent tiles in sync after a chrome.bookmarks update. */
+function syncStoredBookmark(entry) {
+	const id = String(entry?.id || "").trim();
+	if (!id) return;
+	const patch = (list) => list.map((item) => item.id === id ? {
+		...item,
+		title: entry.title || item.title,
+		url: entry.url || item.url
+	} : item);
+	try {
+		writeBookmarkList(PINNED_KEY, patch(readPinnedBookmarks()), MAX_PINNED);
+		writeBookmarkList(RECENT_KEY, patch(readRecentBookmarks()), MAX_RECENT);
+	} catch {}
+}
+/** Drop a deleted Chrome bookmark from Start pin/recent lists. */
+function forgetBookmarkFromLists(id) {
+	const key = String(id || "").trim();
+	if (!key) return;
+	unpinBookmarkFromStart(key);
+	try {
+		writeBookmarkList(RECENT_KEY, readRecentBookmarks().filter((item) => item.id !== key), MAX_RECENT);
+	} catch {}
+}
+var DESKTOP_FAVICON_SIZE = 256;
+/** Bump `_favicon` / S2 query size so desktop tiles are not upscaled from 16–32px assets. */
+function bumpBookmarkIconUrlSize(raw, size = DESKTOP_FAVICON_SIZE) {
+	const url = String(raw || "").trim();
+	if (!url) return "";
+	try {
+		const parsed = new URL(url, globalThis.location?.href);
+		if (parsed.searchParams.has("pageUrl")) {
+			parsed.searchParams.set("size", String(size));
+			return parsed.toString();
+		}
+		if (parsed.hostname.endsWith("google.com") && parsed.pathname.includes("favicon")) {
+			parsed.searchParams.set("sz", String(size));
+			return parsed.toString();
+		}
+	} catch {}
+	return url;
+}
+/** Best favicon URL for Start / desktop — Google S2 first, then Chrome `_favicon`. */
+function resolveBookmarkDesktopIconUrl(entry, api) {
+	const href = String(entry.url || "").trim();
+	if (!href) return "";
+	return faviconForHref(href, DESKTOP_FAVICON_SIZE) || faviconForHref(href, 128) || faviconForHref(href, 64) || api?.resolveIconUrl?.(href, DESKTOP_FAVICON_SIZE) || api?.resolveIconUrl?.(href, 128) || "";
+}
+/** Place bookmark on Speed Dial — same open-link tile path as Android launcher pins. */
+function placeBookmarkOnDesktop(entry, cell, api, iconUrl = "") {
+	return pinBookmarkEntry(entry, cell, String(iconUrl || "").trim() || bumpBookmarkIconUrlSize(resolveBookmarkDesktopIconUrl(entry, api), DESKTOP_FAVICON_SIZE));
+}
+/** JSON drag envelope for Bookmarks AppMenu → SpeedDial. */
+function buildBookmarkPinEnvelope(entry, iconUrl = "") {
+	const href = String(entry.url || "").trim();
+	return JSON.stringify({
+		state: {
+			icon: entry.folder ? "folder" : "link",
+			label: entry.title || href || "Bookmark",
+			action: entry.folder ? "open-path" : "open-link"
+		},
+		desc: {
+			action: entry.folder ? "open-path" : "open-link",
+			href: entry.folder ? "" : href,
+			path: entry.folder ? `/bookmarks/${entry.id}/` : `/bookmarks/${entry.id}`,
+			meta: {
+				entityType: "bookmark",
+				bookmarkId: entry.id,
+				...iconUrl ? { iconUrl } : {}
+			}
+		}
+	});
+}
+function pinBookmarkEntry(entry, cell, iconUrl = "") {
+	if (entry.folder || !String(entry.url || "").trim()) return null;
+	const targetCell = cell ?? findNextFreeSpeedDialCell();
+	const item = parseSpeedDialItemFromJSON(buildBookmarkPinEnvelope(entry, iconUrl), targetCell);
+	if (!item) return null;
+	addSpeedDialItem(item);
+	return item;
+}
+var appendPhosphorGlyph = (plate, name) => {
+	const icon = document.createElement("ui-icon");
+	icon.setAttribute("icon", name);
+	icon.setAttribute("icon-style", "duotone");
+	icon.setAttribute("aria-hidden", "true");
+	icon.style.setProperty("--icon-size", "1.75rem");
+	icon.style.setProperty("--icon-padding", "0px");
+	icon.style.setProperty("--icon-color", "currentColor");
+	icon.style.color = "currentColor";
+	plate.append(icon);
+	customElements.whenDefined("ui-icon").then(() => {
+		if (!icon.isConnected) return;
+		if (!icon.getAttribute("icon")) icon.setAttribute("icon", name);
+		icon.style.setProperty("--icon-size", "1.75rem");
+		icon.style.setProperty("--icon-padding", "0px");
+	});
+};
+/**
+* Paint bookmark tile icon.
+* WHY: list UI uses plain `<img>` (not ui-icon mask). Size probes used to clear the
+* plate and reject typical 16–32px favicons (≥48px gate), leaving empty slots.
+*/
+async function applyBookmarkIconToPlate(plate, entry, api) {
+	plate.replaceChildren();
+	if (entry.folder) {
+		appendPhosphorGlyph(plate, "folder");
+		plate.toggleAttribute("data-bookmark-bitmap", false);
+		return "";
+	}
+	const href = String(entry.url || "").trim();
+	const candidates = [];
+	const s2 = faviconForHref(href, DESKTOP_FAVICON_SIZE);
+	if (s2) candidates.push(s2);
+	const s2128 = faviconForHref(href, 128);
+	if (s2128 && !candidates.includes(s2128)) candidates.push(s2128);
+	const s264 = faviconForHref(href, 64);
+	if (s264 && !candidates.includes(s264)) candidates.push(s264);
+	const fromApi256 = api?.resolveIconUrl?.(href, DESKTOP_FAVICON_SIZE) || "";
+	if (fromApi256 && !candidates.includes(fromApi256)) candidates.push(fromApi256);
+	const fromApi128 = api?.resolveIconUrl?.(href, 128) || "";
+	if (fromApi128 && !candidates.includes(fromApi128)) candidates.push(fromApi128);
+	const fromApi64 = api?.resolveIconUrl?.(href, 64) || "";
+	if (fromApi64 && !candidates.includes(fromApi64)) candidates.push(fromApi64);
+	try {
+		const chromeRt = globalThis.chrome?.runtime;
+		if (typeof chromeRt?.getURL === "function" && href) {
+			const u = new URL(chromeRt.getURL("/_favicon/"));
+			u.searchParams.set("pageUrl", href);
+			u.searchParams.set("size", String(DESKTOP_FAVICON_SIZE));
+			const chromeFav = u.toString();
+			if (chromeFav && !candidates.includes(chromeFav)) candidates.push(chromeFav);
+		}
+	} catch {}
+	appendPhosphorGlyph(plate, "link");
+	plate.toggleAttribute("data-bookmark-bitmap", false);
+	if (!candidates.length) return "";
+	return await new Promise((resolve) => {
+		let index = 0;
+		const tryNext = () => {
+			if (index >= candidates.length) {
+				resolve("");
+				return;
+			}
+			const url = candidates[index++];
+			const img = document.createElement("img");
+			img.className = "env-shell-app-menu__tile-favicon";
+			img.alt = "";
+			img.decoding = "async";
+			img.loading = "eager";
+			img.referrerPolicy = "no-referrer";
+			img.draggable = false;
+			img.addEventListener("load", () => {
+				plate.replaceChildren(img);
+				plate.toggleAttribute("data-bookmark-bitmap", true);
+				resolve(url);
+			}, { once: true });
+			img.addEventListener("error", () => {
+				tryNext();
+			}, { once: true });
+			img.src = url;
+		};
+		tryNext();
+	});
+}
+//#endregion
+//#region src/frontend/shells/environment/components/app-menu/app-actions.ts
+var FLAG_CHOICES = [
+	"NEW_TASK",
+	"CLEAR_TOP",
+	"SINGLE_TOP",
+	"CLEAR_TASK",
+	"NO_HISTORY",
+	"REORDER_TO_FRONT",
+	"MULTIPLE_TASK"
+];
+var esc = (value) => String(value ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+var fmtTime = (ms) => {
+	const n = Number(ms);
+	if (!Number.isFinite(n) || n <= 0) return "—";
+	try {
+		return new Date(n).toLocaleString();
+	} catch {
+		return String(n);
+	}
+};
+var openEditorDialog = (inner) => {
+	const modal = document.createElement("dialog");
+	modal.className = "speed-dial-editor env-shell-app-menu__chrome-editor";
+	modal.innerHTML = inner;
+	const close = () => {
+		try {
+			if (modal.open) modal.close();
+		} catch {}
+		modal.remove();
+	};
+	modal.addEventListener("cancel", (ev) => {
+		ev.preventDefault();
+		close();
+	});
+	modal.__cwspClose = close;
+	document.body.append(modal);
+	try {
+		modal.showModal();
+	} catch {
+		modal.setAttribute("open", "");
+	}
+	return modal;
+};
+var extrasToText = (extras) => {
+	if (!extras || !Object.keys(extras).length) return "";
+	try {
+		return JSON.stringify(extras, null, 2);
+	} catch {
+		return "";
+	}
+};
+var parseExtrasText = (raw) => {
+	const text = String(raw || "").trim();
+	if (!text) return {};
+	if (text.startsWith("{")) try {
+		const parsed = JSON.parse(text);
+		return normalizeLauncherLaunchSpec({ extras: parsed }).extras || {};
+	} catch {}
+	const extras = {};
+	for (const line of text.split(/\r?\n/)) {
+		const eq = line.indexOf("=");
+		if (eq < 1) continue;
+		const key = line.slice(0, eq).trim();
+		const value = line.slice(eq + 1).trim();
+		if (!key) continue;
+		if (value === "true" || value === "false") extras[key] = value === "true";
+		else if (/^-?\d+(\.\d+)?$/.test(value)) extras[key] = Number(value);
+		else extras[key] = value;
+	}
+	return extras;
+};
+function openAppInfoDialog(opts) {
+	const info = opts.info || {};
+	const pkg = String(info.packageName || opts.fallback.packageName || "").trim();
+	const label = String(info.label || opts.fallback.label || opts.title || pkg).trim();
+	const rows = [
+		["Label", label],
+		["Package", pkg],
+		["Activity", String(info.componentName || opts.fallback.componentName || "—")],
+		["Version", `${info.versionName || "—"} (${info.versionCode ?? "—"})`],
+		["Installer", String(info.installer || "—")],
+		["Enabled", info.enabled === false ? "no" : "yes"],
+		["System", info.system ? info.updatedSystem ? "updated system" : "yes" : "no"],
+		["Installed", fmtTime(info.firstInstallTime)],
+		["Updated", fmtTime(info.lastUpdateTime)]
+	];
+	const modal = openEditorDialog(`
+        <form class="speed-dial-editor__form" autocomplete="off">
+            <header class="modal-header">
+                <h2 class="modal-title">App info</h2>
+                <p class="modal-description">${esc(label)}</p>
+            </header>
+            <div class="modal-fields">
+                ${rows.map(([k, v]) => `
+                    <div class="modal-field">
+                        <label>${esc(k)}</label>
+                        <input type="text" readonly value="${esc(v)}" />
+                    </div>`).join("")}
+            </div>
+            <div class="modal-actions" role="group">
+                ${opts.onOpenSystem ? `<button type="button" data-action="system" class="btn secondary">System details</button>` : `<span></span>`}
+                <button type="button" data-action="close" class="btn save">Close</button>
+            </div>
+        </form>
+    `);
+	const close = modal.__cwspClose;
+	modal.querySelector("form")?.addEventListener("click", (ev) => {
+		const action = ev.target?.closest?.("[data-action]")?.getAttribute("data-action");
+		if (action === "close") {
+			ev.preventDefault();
+			close?.();
+		}
+		if (action === "system") {
+			ev.preventDefault();
+			Promise.resolve(opts.onOpenSystem?.()).finally(() => close?.());
+		}
+	});
+}
+function openAppLaunchEditor(opts) {
+	const initial = getAppLaunchSpec(opts.packageName);
+	const selected = new Set((initial.flags || []).map((f) => f.toUpperCase()));
+	const modal = openEditorDialog(`
+        <form class="speed-dial-editor__form" autocomplete="off">
+            <header class="modal-header">
+                <h2 class="modal-title">Edit launch</h2>
+                <p class="modal-description">${esc(opts.title)} — action, data URI, extras, flags</p>
+            </header>
+            <div class="modal-fields">
+                <div class="modal-field">
+                    <label for="am-launch-component">Activity</label>
+                    <input id="am-launch-component" name="componentName" type="text" value="${esc(initial.componentName || opts.defaultComponent || "")}" placeholder="pkg/.MainActivity" />
+                </div>
+                <div class="modal-field">
+                    <label for="am-launch-action">Intent action</label>
+                    <input id="am-launch-action" name="action" type="text" value="${esc(initial.action || "")}" placeholder="android.intent.action.MAIN" />
+                </div>
+                <div class="modal-field">
+                    <label for="am-launch-data">Data URI</label>
+                    <input id="am-launch-data" name="data" type="text" value="${esc(initial.data || "")}" placeholder="https://…  content://…  app scheme" />
+                </div>
+                <div class="modal-field">
+                    <label for="am-launch-mime">MIME</label>
+                    <input id="am-launch-mime" name="mimeType" type="text" value="${esc(initial.mimeType || "")}" placeholder="text/plain" />
+                </div>
+                <div class="modal-field">
+                    <label for="am-launch-categories">Categories (comma)</label>
+                    <input id="am-launch-categories" name="categories" type="text" value="${esc((initial.categories || []).join(", "))}" placeholder="android.intent.category.LAUNCHER" />
+                </div>
+                <div class="modal-field">
+                    <label>Flags</label>
+                    <div>
+                        ${FLAG_CHOICES.map((flag) => `
+                        <label style="display:flex;gap:0.4rem;align-items:center;margin:0.2rem 0;">
+                            <input type="checkbox" name="flag" value="${flag}"${selected.has(flag) ? " checked" : ""} />
+                            <span>${flag}</span>
+                        </label>`).join("")}
+                    </div>
+                </div>
+                <div class="modal-field">
+                    <label for="am-launch-extras">Extras (JSON or key=value)</label>
+                    <textarea id="am-launch-extras" name="extras" rows="5" placeholder='{"debug": true}'>${esc(extrasToText(initial.extras))}</textarea>
+                </div>
+            </div>
+            <div class="modal-actions" role="group">
+                <button type="button" data-action="reset" class="btn secondary">Reset</button>
+                <button type="button" data-action="cancel" class="btn secondary">Cancel</button>
+                <button type="submit" class="btn save">Save</button>
+            </div>
+        </form>
+    `);
+	const close = modal.__cwspClose;
+	const form = modal.querySelector("form");
+	const readSpec = () => {
+		const flags = [...modal.querySelectorAll("input[name=\"flag\"]:checked")].map((el) => el.value);
+		const categories = String(modal.querySelector("[name=\"categories\"]")?.value || "").split(",").map((c) => c.trim()).filter(Boolean);
+		return normalizeLauncherLaunchSpec({
+			componentName: modal.querySelector("[name=\"componentName\"]")?.value,
+			action: modal.querySelector("[name=\"action\"]")?.value,
+			data: modal.querySelector("[name=\"data\"]")?.value,
+			mimeType: modal.querySelector("[name=\"mimeType\"]")?.value,
+			categories,
+			flags,
+			extras: parseExtrasText(modal.querySelector("[name=\"extras\"]")?.value || "")
+		});
+	};
+	form?.addEventListener("click", (ev) => {
+		const action = ev.target?.closest?.("[data-action]")?.getAttribute("data-action");
+		if (action === "cancel") {
+			ev.preventDefault();
+			close?.();
+		}
+		if (action === "reset") {
+			ev.preventDefault();
+			clearAppLaunchSpec(opts.packageName);
+			opts.onSave?.({});
+			showSuccess("Launch reset to default");
+			close?.();
+		}
+	});
+	form?.addEventListener("submit", (ev) => {
+		ev.preventDefault();
+		const spec = readSpec();
+		setAppLaunchSpec(opts.packageName, spec);
+		opts.onSave?.(spec);
+		showSuccess(isLauncherLaunchSpecEmpty(spec) ? "Launch reset to default" : "Launch saved");
+		close?.();
+	});
+}
+function confirmUninstall(label, verb = "Uninstall") {
+	return globalThis.confirm?.(`${verb} “${label}”?`) === true;
+}
+function refreshWhenVisible(onRefresh) {
+	const tick = () => {
+		if (document.visibilityState !== "visible") return;
+		document.removeEventListener("visibilitychange", tick);
+		onRefresh();
+	};
+	document.addEventListener("visibilitychange", tick);
+	globalThis.setTimeout?.(onRefresh, 1600);
+}
+function openBookmarkInfoDialog(entry) {
+	const rows = [
+		["Title", entry.title || "—"],
+		["URL", entry.url || "—"],
+		["Id", entry.id],
+		["Type", entry.folder ? "Folder" : "Bookmark"]
+	];
+	const modal = openEditorDialog(`
+        <form class="speed-dial-editor__form" autocomplete="off">
+            <header class="modal-header">
+                <h2 class="modal-title">${entry.folder ? "Folder info" : "Bookmark info"}</h2>
+                <p class="modal-description">${esc(entry.title)}</p>
+            </header>
+            <div class="modal-fields">
+                ${rows.map(([k, v]) => `
+                    <div class="modal-field">
+                        <label>${esc(k)}</label>
+                        <input type="text" readonly value="${esc(v)}" />
+                    </div>`).join("")}
+            </div>
+            <div class="modal-actions" role="group">
+                <span></span>
+                <button type="button" data-action="close" class="btn save">Close</button>
+            </div>
+        </form>
+    `);
+	const close = modal.__cwspClose;
+	modal.querySelector("form")?.addEventListener("click", (ev) => {
+		if (ev.target?.closest?.("[data-action]")?.getAttribute("data-action") === "close") {
+			ev.preventDefault();
+			close?.();
+		}
+	});
+}
+function openBookmarkFieldsDialog(opts) {
+	const showUrl = opts.showUrl !== false;
+	return new Promise((resolve) => {
+		let settled = false;
+		const modal = openEditorDialog(`
+        <form class="speed-dial-editor__form" autocomplete="off">
+            <header class="modal-header">
+                <h2 class="modal-title">${esc(opts.heading)}</h2>
+                ${opts.description ? `<p class="modal-description">${esc(opts.description)}</p>` : ""}
+            </header>
+            <div class="modal-fields">
+                <div class="modal-field">
+                    <label for="am-bm-title">Title</label>
+                    <input id="am-bm-title" name="title" type="text" value="${esc(opts.initialTitle || "")}" />
+                </div>
+                ${showUrl ? `<div class="modal-field">
+                    <label for="am-bm-url">URL</label>
+                    <input id="am-bm-url" name="url" type="url" value="${esc(opts.initialUrl || "")}" placeholder="https://" />
+                </div>` : ""}
+            </div>
+            <div class="modal-actions" role="group">
+                <span></span>
+                <button type="button" data-action="cancel" class="btn secondary">Cancel</button>
+                <button type="submit" class="btn save">${esc(opts.submitLabel || "Save")}</button>
+            </div>
+        </form>
+    `);
+		const close = modal.__cwspClose;
+		const finish = (value) => {
+			if (settled) return;
+			settled = true;
+			close?.();
+			resolve(value);
+		};
+		const form = modal.querySelector("form");
+		form?.addEventListener("click", (ev) => {
+			if (ev.target?.closest?.("[data-action]")?.getAttribute("data-action") === "cancel") {
+				ev.preventDefault();
+				finish(null);
+			}
+		});
+		modal.addEventListener("cancel", () => finish(null));
+		form?.addEventListener("submit", (ev) => {
+			ev.preventDefault();
+			const title = String(modal.querySelector("[name=\"title\"]")?.value || "").trim();
+			if (!title) {
+				showError("Title is required");
+				return;
+			}
+			if (!showUrl) {
+				finish({ title });
+				return;
+			}
+			const href = normalizeBookmarkHref(modal.querySelector("[name=\"url\"]")?.value || "");
+			if (!href) {
+				showError("URL is required");
+				return;
+			}
+			finish({
+				title,
+				url: href
+			});
+		});
+	});
+}
+function openBookmarkLaunchEditor(opts) {
+	const entry = opts.entry;
+	(async () => {
+		const fields = await openBookmarkFieldsDialog({
+			heading: entry.folder ? "Rename folder" : "Edit bookmark",
+			description: entry.folder ? entry.title : `${entry.title} — Chrome bookmark`,
+			initialTitle: entry.title,
+			initialUrl: entry.url || "",
+			showUrl: !entry.folder,
+			submitLabel: "Save"
+		});
+		if (!fields) return;
+		if (!opts.api.update) {
+			showError("Bookmark edit unavailable");
+			return;
+		}
+		const next = await opts.api.update(entry.id, entry.folder ? { title: fields.title } : {
+			title: fields.title,
+			url: fields.url
+		});
+		if (!next) {
+			showError(entry.folder ? "Could not rename folder" : "Could not update bookmark");
+			return;
+		}
+		syncStoredBookmark(next);
+		showSuccess(entry.folder ? "Folder renamed" : "Bookmark updated");
+		opts.onSaved?.(next);
+	})();
+}
+//#endregion
 //#region src/frontend/shells/environment/components/app-menu/tile-chrome.ts
 var STORAGE_KEY = "cwsp-app-menu-tile-chrome-v1";
 var cache = null;
@@ -192,342 +967,13 @@ function openAppMenuTileChromeEditor(opts) {
 	}
 }
 //#endregion
-//#region src/frontend/shells/environment/components/app-menu/bookmarks-menu.ts
-/** Local copy — avoid relative `../../explorer/fs-backend` (breaks when this file is hardlinked under home-view). */
-function faviconForHref(href, size = 64) {
-	const raw = String(href || "").trim();
-	if (!raw || !/^https?:\/\//i.test(raw)) return "";
-	try {
-		const host = new URL(raw).hostname;
-		if (!host) return "";
-		return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(host)}&sz=${size}`;
-	} catch {
-		return "";
-	}
-}
-/** Chrome `_favicon`, Google S2, or generic favicon URL — not Android adaptive bitmaps. */
-function isBookmarkFaviconResourceUrl(raw) {
-	const u = String(raw || "").trim().toLowerCase();
-	if (!u) return false;
-	if (u.includes("/_favicon/")) return true;
-	if (u.includes("s2/favicons")) return true;
-	if (u.includes("favicon")) return true;
-	if (u.startsWith("android-icon:")) return false;
-	return false;
-}
-var RECENT_KEY = "rs-app-menu-bookmark-recent";
-var PINNED_KEY = "rs-app-menu-bookmark-pinned";
-var MAX_RECENT = 12;
-var MAX_PINNED = 16;
-var registeredBookmarksApi = null;
-function setBookmarksMenuApi(api) {
-	registeredBookmarksApi = api;
-}
-var chromeErr = () => {
-	try {
-		const err = globalThis.chrome?.runtime?.lastError;
-		return err ? new Error(String(err.message || err)) : null;
-	} catch {
-		return null;
-	}
-};
-var callChrome = (api, method, ...args) => {
-	const fn = api[method];
-	if (typeof fn !== "function") return Promise.reject(/* @__PURE__ */ new Error(`chrome.bookmarks.${String(method)} missing`));
-	try {
-		const result = fn.apply(api, args);
-		if (result != null && typeof result.then === "function") return result;
-	} catch (e) {
-		return Promise.reject(e);
-	}
-	return new Promise((resolve, reject) => {
-		try {
-			fn.apply(api, [...args, (res) => {
-				const err = chromeErr();
-				if (err) reject(err);
-				else resolve(res);
-			}]);
-		} catch (e) {
-			reject(e);
-		}
-	});
-};
-var nodeToEntry = (node) => {
-	const url = typeof node.url === "string" && node.url ? node.url : void 0;
-	return {
-		id: String(node.id),
-		title: String(node.title || node.url || node.id || "Bookmark"),
-		url,
-		folder: !url,
-		parentId: node.parentId
-	};
-};
-/** Build BookmarksMenuApi from `chrome.bookmarks` (CRX extension pages). */
-function createChromeBookmarksMenuApi(raw) {
-	const api = raw || (globalThis.chrome?.bookmarks ?? null);
-	if (!api?.getTree || !api?.getChildren) return null;
-	const resolveIconUrl = (href, size = 128) => {
-		const page = String(href || "").trim();
-		if (!/^https?:\/\//i.test(page)) return "";
-		const s2 = faviconForHref(page, size);
-		if (s2) return s2;
-		try {
-			const chromeRt = globalThis.chrome?.runtime;
-			if (typeof chromeRt?.getURL === "function") {
-				const u = new URL(chromeRt.getURL("/_favicon/"));
-				u.searchParams.set("pageUrl", page);
-				u.searchParams.set("size", String(size));
-				return u.toString();
-			}
-		} catch {}
-		return "";
-	};
-	return {
-		resolveIconUrl,
-		async listChildren(folderId) {
-			if (folderId) return (await callChrome(api, "getChildren", folderId) || []).map(nodeToEntry);
-			const roots = await callChrome(api, "getTree") || [];
-			const out = [];
-			for (const root of roots) for (const child of root.children || []) out.push(nodeToEntry(child));
-			return out;
-		},
-		async search(query) {
-			const q = String(query || "").trim();
-			if (!q) return this.listChildren();
-			if (typeof api.search !== "function") {
-				const all = await this.listChildren();
-				const lower = q.toLowerCase();
-				return all.filter((e) => e.title.toLowerCase().includes(lower) || String(e.url || "").toLowerCase().includes(lower));
-			}
-			return (await callChrome(api, "search", q) || []).map(nodeToEntry);
-		},
-		async open(entry) {
-			if (entry.folder) return;
-			const href = String(entry.url || "").trim();
-			if (!href) return;
-			try {
-				const tabs = globalThis.chrome?.tabs;
-				if (typeof tabs?.create === "function") {
-					await Promise.resolve(tabs.create({ url: href }));
-					return;
-				}
-			} catch {}
-			globalThis.open?.(href, "_blank", "noopener,noreferrer");
-		}
-	};
-}
-function resolveBookmarksMenuApi() {
-	if (registeredBookmarksApi) return registeredBookmarksApi;
-	return createChromeBookmarksMenuApi();
-}
-function hasBookmarksMenuApi() {
-	return Boolean(resolveBookmarksMenuApi());
-}
-function readRecentBookmarks() {
-	try {
-		const raw = localStorage.getItem(RECENT_KEY);
-		if (!raw) return [];
-		const parsed = JSON.parse(raw);
-		if (!Array.isArray(parsed)) return [];
-		return parsed.filter((e) => e && e.id && e.title).slice(0, MAX_RECENT);
-	} catch {
-		return [];
-	}
-}
-function pushRecentBookmark(entry) {
-	if (!entry?.id || entry.folder) return;
-	const next = [entry, ...readRecentBookmarks().filter((e) => e.id !== entry.id)].slice(0, MAX_RECENT);
-	try {
-		localStorage.setItem(RECENT_KEY, JSON.stringify(next));
-	} catch {}
-}
-var readBookmarkList = (key, max) => {
-	try {
-		const raw = localStorage.getItem(key);
-		if (!raw) return [];
-		const parsed = JSON.parse(raw);
-		if (!Array.isArray(parsed)) return [];
-		return parsed.filter((e) => e && e.id && e.title && !e.folder).slice(0, max);
-	} catch {
-		return [];
-	}
-};
-function readPinnedBookmarks() {
-	return readBookmarkList(PINNED_KEY, MAX_PINNED);
-}
-function isBookmarkPinnedToStart(id) {
-	return readPinnedBookmarks().some((e) => e.id === id);
-}
-function pinBookmarkToStart(entry) {
-	if (!entry?.id || entry.folder || !String(entry.url || "").trim()) return false;
-	const next = [entry, ...readPinnedBookmarks().filter((e) => e.id !== entry.id)].slice(0, MAX_PINNED);
-	try {
-		localStorage.setItem(PINNED_KEY, JSON.stringify(next));
-		return true;
-	} catch {
-		return false;
-	}
-}
-function unpinBookmarkFromStart(id) {
-	const key = String(id || "").trim();
-	if (!key) return false;
-	const next = readPinnedBookmarks().filter((e) => e.id !== key);
-	try {
-		localStorage.setItem(PINNED_KEY, JSON.stringify(next));
-		return true;
-	} catch {
-		return false;
-	}
-}
-var DESKTOP_FAVICON_SIZE = 256;
-/** Bump `_favicon` / S2 query size so desktop tiles are not upscaled from 16–32px assets. */
-function bumpBookmarkIconUrlSize(raw, size = DESKTOP_FAVICON_SIZE) {
-	const url = String(raw || "").trim();
-	if (!url) return "";
-	try {
-		const parsed = new URL(url, globalThis.location?.href);
-		if (parsed.searchParams.has("pageUrl")) {
-			parsed.searchParams.set("size", String(size));
-			return parsed.toString();
-		}
-		if (parsed.hostname.endsWith("google.com") && parsed.pathname.includes("favicon")) {
-			parsed.searchParams.set("sz", String(size));
-			return parsed.toString();
-		}
-	} catch {}
-	return url;
-}
-/** Best favicon URL for Start / desktop — Google S2 first, then Chrome `_favicon`. */
-function resolveBookmarkDesktopIconUrl(entry, api) {
-	const href = String(entry.url || "").trim();
-	if (!href) return "";
-	return faviconForHref(href, DESKTOP_FAVICON_SIZE) || faviconForHref(href, 128) || faviconForHref(href, 64) || api?.resolveIconUrl?.(href, DESKTOP_FAVICON_SIZE) || api?.resolveIconUrl?.(href, 128) || "";
-}
-/** Place bookmark on Speed Dial — same open-link tile path as Android launcher pins. */
-function placeBookmarkOnDesktop(entry, cell, api, iconUrl = "") {
-	return pinBookmarkEntry(entry, cell, String(iconUrl || "").trim() || bumpBookmarkIconUrlSize(resolveBookmarkDesktopIconUrl(entry, api), DESKTOP_FAVICON_SIZE));
-}
-/** JSON drag envelope for Bookmarks AppMenu → SpeedDial. */
-function buildBookmarkPinEnvelope(entry, iconUrl = "") {
-	const href = String(entry.url || "").trim();
-	return JSON.stringify({
-		state: {
-			icon: entry.folder ? "folder" : "link",
-			label: entry.title || href || "Bookmark",
-			action: entry.folder ? "open-path" : "open-link"
-		},
-		desc: {
-			action: entry.folder ? "open-path" : "open-link",
-			href: entry.folder ? "" : href,
-			path: entry.folder ? `/bookmarks/${entry.id}/` : `/bookmarks/${entry.id}`,
-			meta: {
-				entityType: "bookmark",
-				bookmarkId: entry.id,
-				...iconUrl ? { iconUrl } : {}
-			}
-		}
-	});
-}
-function pinBookmarkEntry(entry, cell, iconUrl = "") {
-	if (entry.folder || !String(entry.url || "").trim()) return null;
-	const targetCell = cell ?? findNextFreeSpeedDialCell();
-	const item = parseSpeedDialItemFromJSON(buildBookmarkPinEnvelope(entry, iconUrl), targetCell);
-	if (!item) return null;
-	addSpeedDialItem(item);
-	return item;
-}
-var appendPhosphorGlyph = (plate, name) => {
-	const icon = document.createElement("ui-icon");
-	icon.setAttribute("icon", name);
-	icon.setAttribute("icon-style", "duotone");
-	icon.setAttribute("aria-hidden", "true");
-	icon.style.setProperty("--icon-size", "1.75rem");
-	icon.style.setProperty("--icon-padding", "0px");
-	icon.style.setProperty("--icon-color", "currentColor");
-	icon.style.color = "currentColor";
-	plate.append(icon);
-	customElements.whenDefined("ui-icon").then(() => {
-		if (!icon.isConnected) return;
-		if (!icon.getAttribute("icon")) icon.setAttribute("icon", name);
-		icon.style.setProperty("--icon-size", "1.75rem");
-		icon.style.setProperty("--icon-padding", "0px");
-	});
-};
-/**
-* Paint bookmark tile icon.
-* WHY: list UI uses plain `<img>` (not ui-icon mask). Size probes used to clear the
-* plate and reject typical 16–32px favicons (≥48px gate), leaving empty slots.
-*/
-async function applyBookmarkIconToPlate(plate, entry, api) {
-	plate.replaceChildren();
-	if (entry.folder) {
-		appendPhosphorGlyph(plate, "folder");
-		plate.toggleAttribute("data-bookmark-bitmap", false);
-		return "";
-	}
-	const href = String(entry.url || "").trim();
-	const candidates = [];
-	const s2 = faviconForHref(href, DESKTOP_FAVICON_SIZE);
-	if (s2) candidates.push(s2);
-	const s2128 = faviconForHref(href, 128);
-	if (s2128 && !candidates.includes(s2128)) candidates.push(s2128);
-	const s264 = faviconForHref(href, 64);
-	if (s264 && !candidates.includes(s264)) candidates.push(s264);
-	const fromApi256 = api?.resolveIconUrl?.(href, DESKTOP_FAVICON_SIZE) || "";
-	if (fromApi256 && !candidates.includes(fromApi256)) candidates.push(fromApi256);
-	const fromApi128 = api?.resolveIconUrl?.(href, 128) || "";
-	if (fromApi128 && !candidates.includes(fromApi128)) candidates.push(fromApi128);
-	const fromApi64 = api?.resolveIconUrl?.(href, 64) || "";
-	if (fromApi64 && !candidates.includes(fromApi64)) candidates.push(fromApi64);
-	try {
-		const chromeRt = globalThis.chrome?.runtime;
-		if (typeof chromeRt?.getURL === "function" && href) {
-			const u = new URL(chromeRt.getURL("/_favicon/"));
-			u.searchParams.set("pageUrl", href);
-			u.searchParams.set("size", String(DESKTOP_FAVICON_SIZE));
-			const chromeFav = u.toString();
-			if (chromeFav && !candidates.includes(chromeFav)) candidates.push(chromeFav);
-		}
-	} catch {}
-	appendPhosphorGlyph(plate, "link");
-	plate.toggleAttribute("data-bookmark-bitmap", false);
-	if (!candidates.length) return "";
-	return await new Promise((resolve) => {
-		let index = 0;
-		const tryNext = () => {
-			if (index >= candidates.length) {
-				resolve("");
-				return;
-			}
-			const url = candidates[index++];
-			const img = document.createElement("img");
-			img.className = "env-shell-app-menu__tile-favicon";
-			img.alt = "";
-			img.decoding = "async";
-			img.loading = "eager";
-			img.referrerPolicy = "no-referrer";
-			img.draggable = false;
-			img.addEventListener("load", () => {
-				plate.replaceChildren(img);
-				plate.toggleAttribute("data-bookmark-bitmap", true);
-				resolve(url);
-			}, { once: true });
-			img.addEventListener("error", () => {
-				tryNext();
-			}, { once: true });
-			img.src = url;
-		};
-		tryNext();
-	});
-}
-//#endregion
 //#region src/frontend/shells/environment/components/app-menu/AppMenu.ts
 /**
 * WHY: `.env-shell-app-menu` slide-over host for launcher SKU.
 * Avoids a static import of subsystem `launcher-bridge` (fl.ui ↔ subsystem cycle) — hosts
 * resolve `com/routing/native/launcher-bridge` at runtime, or register via {@link setLauncherBridgeForAppMenu}.
 */
-var styled = preloadStyle("@layer ui-app-menu{.env-shell-app-menu[data-page]{align-items:stretch;inset:0;justify-items:stretch;padding:0;z-index:calc(var(--env-z-shell-chrome, 2147483000) + 4)}.env-shell-app-menu[data-page] .env-shell-app-menu__panel{block-size:100%;border-radius:0;inline-size:100%;max-block-size:stretch;max-inline-size:stretch;overflow:hidden;overflow-y:auto!important;overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch}.env-shell-app-menu__panel>.env-shell-app-menu__grid{align-content:start;align-self:stretch;block-size:max-content;grid-auto-rows:max-content;justify-content:start;max-block-size:max-content;min-block-size:fit-content;overflow:visible;overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch}.env-shell-app-menu[data-page] .env-shell-app-menu__grid{column-gap:.45rem;padding-block-end:calc(var(--env-shell-chrome-stack-reserve, 3rem) + env(safe-area-inset-bottom, 0px));row-gap:.85rem}.env-shell-app-menu{align-items:end;box-sizing:border-box;color-scheme:inherit;display:grid;inset-block-end:var(--env-shell-chrome-stack-reserve,3rem);inset-inline:0;justify-items:start;padding:.5rem;padding-inline-start:max(.5rem,env(safe-area-inset-left,0px));pointer-events:none;position:fixed;z-index:calc(var(--env-z-shell-chrome, 2147483000) + 2);--env-app-menu-accent:var(--wf-md-primary,var(--color-primary,#5a9ec8));--env-app-menu-surface:color-mix(in oklab,var(--color-surface-container,--u2-color-mod(var(--base-color,#5a9ec8),960)) 88%,transparent);--env-app-menu-surface-raised:var(\n        --color-surface-container-high,--u2-color-mod(var(--base-color,#5a9ec8),980)\n    );--env-app-menu-ink:var(\n        --color-on-surface,light-dark(--u2-color-mod(var(--base-color,#5a9ec8),900),--u2-color-mod(var(--base-color,#5a9ec8),100))\n    );--env-app-menu-plate:var(\n        --color-primary-container,light-dark(--u2-color-mod(var(--base-color,#5a9ec8),160),--u2-color-mod(var(--base-color,#5a9ec8),820))\n    )}.env-shell-app-menu[hidden]{display:none!important}.env-shell-app-menu__panel{background:var(--env-app-menu-surface);border:1px solid light-dark(color-mix(in oklab,#000 12%,transparent),color-mix(in oklab,#fff 14%,transparent));border-radius:14px;box-shadow:0 20px 48px -20px light-dark(rgba(0,0,0,.22),rgba(0,0,0,.45)),0 2px 8px -2px light-dark(rgba(0,0,0,.12),rgba(0,0,0,.25));color:var(--env-app-menu-ink);display:grid;gap:.75rem;inline-size:min(420px,100vw - 1rem);max-block-size:min(520px,100dvb - var(--env-shell-chrome-stack-reserve,3rem) - 1rem);overflow:hidden;overflow-y:auto!important;overscroll-behavior:contain;padding:.85rem;pointer-events:auto;touch-action:pan-y;-webkit-overflow-scrolling:touch;animation:b .14s cubic-bezier(.22,.8,.3,1);backdrop-filter:blur(22px) saturate(1.35);-webkit-backdrop-filter:blur(22px) saturate(1.35);block-size:fit-content;color-scheme:inherit;grid-template-rows:auto auto minmax(0,1fr);min-block-size:max(60dvb,60cqb)}.env-shell-app-menu__panel[data-layout=start-split]{grid-template-rows:auto auto minmax(0,1fr);inline-size:min(560px,100vw - 1rem);max-block-size:min(580px,100dvb - var(--env-shell-chrome-stack-reserve,3rem) - 1rem)}.env-shell-app-menu__start-body{display:grid;gap:.65rem;grid-template-columns:minmax(9.5rem,.42fr) minmax(0,1fr);max-block-size:100%;min-block-size:12rem;overflow:hidden}.env-shell-app-menu__start-left{background:light-dark(color-mix(in oklab,var(--env-app-menu-accent) 8%,transparent),color-mix(in oklab,var(--env-app-menu-accent) 12%,transparent));border:1px solid light-dark(color-mix(in oklab,var(--env-app-menu-accent) 22%,transparent),color-mix(in oklab,#fff 14%,transparent));border-radius:12px;display:flex;flex-direction:column;gap:.4rem;min-block-size:fit-content;min-inline-size:0;overflow:auto;padding:.45rem}.env-shell-app-menu__start-right{display:grid;gap:.4rem;grid-template-rows:auto minmax(0,1fr);min-block-size:fit-content;min-inline-size:0;overflow:hidden}.env-shell-app-menu__start-heading{flex:0 0 auto;font:600 .72rem/1.2 ui-sans-serif,system-ui,sans-serif;letter-spacing:.04em;opacity:.72;padding-inline:.25rem;text-transform:uppercase}.env-shell-app-menu__start-recent{align-content:start;display:grid;flex:0 0 auto;gap:.2rem;grid-template-columns:1fr}.env-shell-app-menu__start-recent .env-shell-app-menu__tile{align-items:center;gap:.45rem;grid-template-columns:auto minmax(0,1fr);justify-items:start;padding:.35rem .4rem;text-align:start}.env-shell-app-menu__start-recent .env-shell-app-menu__tile-icon{block-size:2.25rem;inline-size:2.25rem;min-block-size:2.25rem;min-inline-size:2.25rem}.env-shell-app-menu__start-recent .env-shell-app-menu__tile-icon ui-icon:not([data-launcher-icon]){block-size:1.5rem!important;inline-size:1.5rem!important;--icon-size:1.5rem;--icon-padding:0px}.env-shell-app-menu__start-recent .env-shell-app-menu__tile-label{font-size:.78rem;-webkit-line-clamp:1;text-align:start}.env-shell-app-menu__start-right .env-shell-app-menu__grid{align-content:start;display:flex;flex-direction:column;flex-wrap:nowrap;gap:.2rem;grid-template-columns:none;min-block-size:fit-content;overflow:auto}.env-shell-app-menu__start-right .env-shell-app-menu__tile{align-items:center;border-radius:10px;box-sizing:border-box;display:grid;gap:.65rem;grid-template-columns:auto minmax(0,1fr);inline-size:100%;justify-items:start;padding:.4rem .55rem;text-align:start}.env-shell-app-menu__start-right .env-shell-app-menu__tile-icon{block-size:2.5rem;inline-size:2.5rem;min-block-size:2.5rem;min-inline-size:2.5rem}.env-shell-app-menu__start-right .env-shell-app-menu__tile-icon ui-icon:not([data-launcher-icon]){block-size:1.75rem!important;inline-size:1.75rem!important;--icon-size:1.75rem;--icon-padding:0px}.env-shell-app-menu__start-right .env-shell-app-menu__tile-label{font:500 .9rem/1.25 ui-sans-serif,system-ui,sans-serif;justify-self:stretch;-webkit-line-clamp:1;text-align:start}.env-shell-app-menu__crumb{align-items:center;display:flex;flex-wrap:wrap;gap:.2rem;min-block-size:1.4rem}.env-shell-app-menu__crumb-item{appearance:none;background:transparent;border:0;border-radius:6px;color:inherit;cursor:pointer;font:600 .78rem/1.2 ui-sans-serif,system-ui,sans-serif;padding:.15rem .35rem}.env-shell-app-menu__crumb-item:hover{background:light-dark(color-mix(in oklab,#000 8%,transparent),color-mix(in oklab,#fff 10%,transparent))}.env-shell-app-menu__crumb-sep{font-size:.85rem;opacity:.45}.env-shell-app-menu__empty--compact{font-size:.75rem;margin:.35rem 0;padding-inline:.25rem;text-align:start}@media (max-width:520px){.env-shell-app-menu__start-body{grid-template-columns:1fr;grid-template-rows:minmax(0,8rem) minmax(0,1fr)}.env-shell-app-menu__start-recent{display:flex;flex-direction:column;overflow:auto}}.env-shell-app-menu__banner{background:color-mix(in oklab,var(--env-app-menu-accent,var(--color-primary,#60cdff)) 14%,transparent);border:1px solid color-mix(in oklab,var(--env-app-menu-accent,var(--color-primary,#60cdff)) 35%,transparent);border-radius:10px;display:grid;gap:.65rem;padding:.65rem .75rem}.env-shell-app-menu__banner[hidden]{display:none!important}.env-shell-app-menu__banner-text{font:500 .9rem/1.35 ui-sans-serif,system-ui,sans-serif;margin:0}.env-shell-app-menu__banner-action{justify-self:start}.env-shell-app-menu__search{background:var(--env-app-menu-surface-raised);border:1px solid light-dark(color-mix(in oklab,#000 12%,transparent),color-mix(in oklab,#fff 14%,transparent));border-radius:10px;box-sizing:border-box;color:inherit;font:400 .9rem/1.2 ui-sans-serif,system-ui,sans-serif;inline-size:100%;inset-block-start:0;padding:.55rem .65rem;position:sticky;z-index:3}.env-shell-app-menu__search[hidden]{display:none!important}.env-shell-app-menu__grid{align-content:start;block-size:max-content;display:grid;gap:.5rem;grid-auto-rows:max-content;grid-template-columns:repeat(auto-fill,minmax(4.5rem,1fr));min-block-size:fit-content;touch-action:pan-y;-webkit-overflow-scrolling:touch;overflow:visible}.env-shell-app-menu__grid[hidden]{display:none!important}.env-shell-app-menu__tile{align-content:start;background:transparent;border:0;border-radius:12px;color:inherit;cursor:pointer;display:grid;flex-shrink:0;gap:.35rem;justify-items:center;min-block-size:fit-content;padding:.45rem .25rem;text-align:center;touch-action:pan-y;user-select:none}.env-shell-app-menu__tile:focus-visible,.env-shell-app-menu__tile:hover{background:color-mix(in oklab,var(--env-app-menu-accent,var(--color-primary,#60cdff)) 12%,transparent);outline:none}.env-shell-app-menu__tile--dragging{opacity:.45}html[data-app-menu-dragging] .env-shell-app-menu{pointer-events:none}html[data-app-menu-dragging] .env-shell-app-menu__panel{opacity:0;visibility:hidden}.env-shell-app-menu__drag-ghost{display:grid;gap:.35rem;inline-size:4.5rem;inset:0 auto auto 0;justify-items:center;pointer-events:none;position:fixed;will-change:transform;z-index:calc(var(--env-z-shell-chrome, 2147483000) + 8)}.env-shell-app-menu__drag-ghost-icon{aspect-ratio:1/1;backdrop-filter:blur(16px) saturate(1.35);-webkit-backdrop-filter:blur(16px) saturate(1.35);background:light-dark(color-mix(in oklab,#e8eaed 72%,var(--wf-md-primary,var(--color-primary,#60cdff)) 28%),color-mix(in oklab,#111827 72%,var(--wf-md-primary,var(--color-primary,#60cdff)) 28%));block-size:3rem;border:none;border-radius:50%;box-shadow:0 8px 24px -8px rgba(0,0,0,.55);box-sizing:border-box;contain:layout style;display:grid;inline-size:3rem;overflow:hidden;padding:0;place-content:center;place-items:center;position:relative}@supports (corner-shape:round){.env-shell-app-menu__drag-ghost-icon{corner-shape:round}}.env-shell-app-menu__drag-ghost-icon img[data-icon-pending],.env-shell-app-menu__drag-ghost-icon img[data-launcher-icon]:not([src]),.env-shell-app-menu__drag-ghost-icon ui-icon[data-icon-pending]{opacity:0;visibility:hidden}.env-shell-app-menu__drag-ghost-icon .ui-ws-item-icon-img,.env-shell-app-menu__drag-ghost-icon img[data-launcher-icon]{block-size:100%;border-radius:0;inline-size:100%;inset:0;object-fit:cover;object-position:center;pointer-events:none;position:absolute;transform:scale(1.28);transform-origin:center}.env-shell-app-menu__drag-ghost-icon ui-icon[data-launcher-icon]{block-size:100%;inline-size:100%;inset:0;max-block-size:none;max-inline-size:none;min-block-size:0;min-inline-size:0;position:absolute;--icon-size:100%;--icon-padding:0px;pointer-events:none;transform:scale(1.28);transform-origin:center}.env-shell-app-menu__drag-ghost-label{display:-webkit-box;-webkit-box-orient:vertical;font:600 .68rem/1.15 ui-sans-serif,system-ui,sans-serif;-webkit-line-clamp:2;overflow:hidden;text-align:center;text-shadow:0 1px 2px rgba(0,0,0,.35)}.env-shell-app-menu__tile-icon{aspect-ratio:1/1!important;backdrop-filter:blur(16px) saturate(1.35);-webkit-backdrop-filter:blur(16px) saturate(1.35);background:var(--env-app-menu-plate);block-size:2.5rem!important;border:none;border-radius:50%!important;box-shadow:0 6px 24px -8px color-mix(in oklab,#000 38%,transparent);box-sizing:border-box;color:var(--color-on-primary-container,var(--env-app-menu-ink));display:grid;inline-size:2.5rem!important;min-block-size:2.5rem!important;min-inline-size:2.5rem!important;overflow:hidden;padding:0!important;place-content:center;place-items:center;position:relative;--icon-color:var(--color-on-primary-container,var(--env-app-menu-ink))}.env-shell-app-menu__tile-icon:not([data-shape]),.env-shell-app-menu__tile-icon[data-shape=circle]{aspect-ratio:1/1!important;border-radius:50%!important}@supports (corner-shape:round){.env-shell-app-menu__tile-icon:not([data-shape]),.env-shell-app-menu__tile-icon[data-shape=circle]{corner-shape:round}}.env-shell-app-menu__tile-icon[data-shape=squircle]{border-radius:1.5rem!important}@supports (corner-shape:squircle){.env-shell-app-menu__tile-icon[data-shape=squircle]{corner-shape:unset}}@supports (corner-shape:round){.env-shell-app-menu__tile-icon[data-shape=squircle]{corner-shape:round}}.env-shell-app-menu__tile-icon[data-shape=square]{border-radius:12%!important}@supports (corner-shape:square){.env-shell-app-menu__tile-icon[data-shape=square]{corner-shape:square}}.env-shell-app-menu__tile-icon[data-shape=shapeless]{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:transparent!important;border-radius:0!important;box-shadow:none!important;contain:none;overflow:visible!important}@supports (corner-shape:squircle){.env-shell-app-menu__tile-icon[data-shape=shapeless]{corner-shape:unset}}.env-shell-app-menu__tile-icon[data-shape=shapeless] .env-shell-app-menu__tile-favicon,.env-shell-app-menu__tile-icon[data-shape=shapeless] .ui-ws-item-icon-img,.env-shell-app-menu__tile-icon[data-shape=shapeless] img[data-launcher-icon],.env-shell-app-menu__tile-icon[data-shape=shapeless] ui-icon{object-fit:contain}.env-shell-app-menu__tile-icon[data-shape=shapeless] :is(img.sd-icon-silhouette,ui-icon.sd-icon-silhouette){filter:brightness(0) blur(6px);inset:0;object-fit:contain;opacity:.4;pointer-events:none;position:absolute;transform:translateY(10%);z-index:0}.env-shell-app-menu__tile-icon[data-shape=shapeless] .ui-ws-item-icon-img:not(.sd-icon-silhouette),.env-shell-app-menu__tile-icon[data-shape=shapeless] img[data-launcher-icon]:not(.sd-icon-silhouette){filter:none;object-fit:contain;z-index:2}.env-shell-app-menu__tile-icon[data-shape=shapeless][data-icon-display=glyph] ui-icon:not(.sd-icon-silhouette){filter:drop-shadow(0 2px 5px rgba(0,0,0,.4))}.env-shell-app-menu__tile-icon[data-shape=shapeless][data-icon-display=glyph] .sd-icon-silhouette{display:none}.env-shell-app-menu__tile-icon img[data-icon-pending],.env-shell-app-menu__tile-icon img[data-launcher-icon]:not([src]),.env-shell-app-menu__tile-icon ui-icon[data-icon-pending]{opacity:0;visibility:hidden}.env-shell-app-menu__tile-icon .ui-ws-item-icon-img[data-launcher-icon],.env-shell-app-menu__tile-icon img[data-launcher-icon]{block-size:100%;border-radius:0;display:block;inline-size:100%;inset:0;max-block-size:none;max-inline-size:none;object-fit:cover;object-position:center;pointer-events:none;position:absolute;transform:scale(var(--sd-item-icon-scale,var(--sd-launcher-icon-scale,1.28)));transform-origin:center;z-index:1}.env-shell-app-menu__tile-icon .ui-ws-item-icon-img[data-launcher-icon][data-icon-pack],.env-shell-app-menu__tile-icon img[data-launcher-icon][data-icon-pack]{transform:scale(var(--sd-item-icon-scale,var(--sd-launcher-icon-scale,1.28)))}.env-shell-app-menu__tile-icon :is(.env-shell-app-menu__tile-favicon:not([data-launcher-icon]),.ui-ws-item-icon-img:not([data-launcher-icon])){block-size:1.75rem;border-radius:4px;display:block;inline-size:1.75rem;max-block-size:90%;max-inline-size:90%;object-fit:contain;object-position:center;pointer-events:none;position:relative;z-index:1}.env-shell-app-menu__tile-icon ui-icon{block-size:1.75rem!important;display:inline-grid!important;inline-size:1.75rem!important;max-block-size:1.75rem!important;max-inline-size:1.75rem!important;min-block-size:1.75rem!important;min-inline-size:1.75rem!important;position:relative;z-index:1;--icon-size:1.75rem;--icon-padding:0px;--icon-color:currentColor;color:inherit;pointer-events:none}.env-shell-app-menu__tile-icon ui-icon[data-launcher-icon]{block-size:100%!important;inline-size:100%!important;inset:0;max-block-size:none!important;max-inline-size:none!important;min-block-size:0!important;min-inline-size:0!important;position:absolute;--icon-size:100%;--icon-padding:0px;pointer-events:none;transform:scale(1.28);transform-origin:center;z-index:1}.env-shell-app-menu__tile-label{display:-webkit-box;-webkit-box-orient:vertical;font:500 .68rem/1.15 ui-sans-serif,system-ui,sans-serif;-webkit-line-clamp:2;overflow:hidden;word-break:break-word}.env-shell-app-menu__empty{font:400 .85rem/1.3 ui-sans-serif,system-ui,sans-serif;grid-column:1/-1;margin:.5rem 0;opacity:.75;text-align:center}@keyframes b{0%{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}.env-shell-app-menu__pin-menu{background:var(--env-app-menu-surface);border:1px solid light-dark(color-mix(in oklab,#000 12%,transparent),color-mix(in oklab,#fff 14%,transparent));border-radius:10px;box-shadow:0 12px 32px -12px light-dark(rgba(0,0,0,.22),rgba(0,0,0,.45)),0 2px 8px -2px light-dark(rgba(0,0,0,.12),rgba(0,0,0,.25));color:var(--env-app-menu-ink);color-scheme:inherit;display:grid;gap:.25rem;min-inline-size:10rem;padding:.35rem;position:fixed;z-index:calc(var(--env-z-shell-chrome, 2147483000) + 4)}.env-shell-app-menu__pin-action{inline-size:100%;justify-content:start;text-align:start}}");
+var styled = preloadStyle("@layer ui-app-menu{.env-shell-app-menu[data-page]{align-items:stretch;inset:0;justify-items:stretch;padding:0;z-index:calc(var(--env-z-shell-chrome, 2147483000) + 4)}.env-shell-app-menu[data-page] .env-shell-app-menu__panel{block-size:100%;border-radius:0;inline-size:100%;max-block-size:stretch;max-inline-size:stretch;overflow:hidden;overflow-y:auto!important;overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch;pointer-events:auto}.env-shell-app-menu__panel>.env-shell-app-menu__grid{align-content:start;align-self:stretch;block-size:max-content;grid-auto-rows:max-content;justify-content:start;max-block-size:max-content;min-block-size:fit-content;overflow:visible;overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch}.env-shell-app-menu[data-page] .env-shell-app-menu__grid{column-gap:.45rem;padding-block-end:calc(var(--env-shell-chrome-stack-reserve, 3rem) + env(safe-area-inset-bottom, 0px));row-gap:.85rem}.env-shell-app-menu{align-items:end;box-sizing:border-box;color-scheme:inherit;display:grid;inset-block-end:var(--env-shell-chrome-stack-reserve,3rem);inset-inline:0;justify-items:start;padding:.5rem;padding-inline-start:max(.5rem,env(safe-area-inset-left,0px));pointer-events:auto;position:fixed;z-index:calc(var(--env-z-shell-chrome, 2147483000) + 2);--env-app-menu-accent:var(--wf-md-primary,var(--color-primary,#5a9ec8));--env-app-menu-surface:color-mix(in oklab,var(--color-surface-container,--u2-color-mod(var(--base-color,#5a9ec8),960)) 88%,transparent);--env-app-menu-surface-raised:var(\n        --color-surface-container-high,--u2-color-mod(var(--base-color,#5a9ec8),980)\n    );--env-app-menu-ink:var(\n        --color-on-surface,light-dark(--u2-color-mod(var(--base-color,#5a9ec8),900),--u2-color-mod(var(--base-color,#5a9ec8),100))\n    );--env-app-menu-plate:var(\n        --color-primary-container,light-dark(--u2-color-mod(var(--base-color,#5a9ec8),160),--u2-color-mod(var(--base-color,#5a9ec8),820))\n    )}.env-shell-app-menu[hidden]{display:none!important}.env-shell-app-menu__panel{background:var(--env-app-menu-surface);border:1px solid light-dark(color-mix(in oklab,#000 12%,transparent),color-mix(in oklab,#fff 14%,transparent));border-radius:14px;box-shadow:0 20px 48px -20px light-dark(rgba(0,0,0,.22),rgba(0,0,0,.45)),0 2px 8px -2px light-dark(rgba(0,0,0,.12),rgba(0,0,0,.25));color:var(--env-app-menu-ink);display:grid;gap:.75rem;inline-size:min(420px,100vw - 1rem);max-block-size:min(520px,100dvb - var(--env-shell-chrome-stack-reserve,3rem) - 1rem);overflow:hidden;overflow-y:auto!important;overscroll-behavior:contain;padding:.85rem;pointer-events:auto;touch-action:pan-y;-webkit-overflow-scrolling:touch;animation:b .14s cubic-bezier(.22,.8,.3,1);backdrop-filter:blur(22px) saturate(1.35);-webkit-backdrop-filter:blur(22px) saturate(1.35);block-size:fit-content;color-scheme:inherit;grid-template-rows:auto auto minmax(0,1fr);min-block-size:max(60dvb,60cqb)}.env-shell-app-menu__panel[data-layout=start-split]{grid-template-rows:auto auto minmax(0,1fr);inline-size:min(560px,100vw - 1rem);max-block-size:min(580px,100dvb - var(--env-shell-chrome-stack-reserve,3rem) - 1rem)}.env-shell-app-menu__start-body{display:grid;gap:.65rem;grid-template-columns:minmax(9.5rem,.42fr) minmax(0,1fr);max-block-size:100%;min-block-size:12rem;overflow:hidden}.env-shell-app-menu__start-left{background:light-dark(color-mix(in oklab,var(--env-app-menu-accent) 8%,transparent),color-mix(in oklab,var(--env-app-menu-accent) 12%,transparent));border:1px solid light-dark(color-mix(in oklab,var(--env-app-menu-accent) 22%,transparent),color-mix(in oklab,#fff 14%,transparent));border-radius:12px;display:flex;flex-direction:column;gap:.4rem;min-block-size:fit-content;min-inline-size:0;overflow:auto;padding:.45rem}.env-shell-app-menu__start-right{display:grid;gap:.4rem;grid-template-rows:auto minmax(0,1fr);min-block-size:fit-content;min-inline-size:0;overflow:hidden}.env-shell-app-menu__start-heading{flex:0 0 auto;font:600 .72rem/1.2 ui-sans-serif,system-ui,sans-serif;letter-spacing:.04em;opacity:.72;padding-inline:.25rem;text-transform:uppercase}.env-shell-app-menu__start-recent{align-content:start;display:grid;flex:0 0 auto;gap:.2rem;grid-template-columns:1fr}.env-shell-app-menu__start-recent .env-shell-app-menu__tile{align-items:center;gap:.45rem;grid-template-columns:auto minmax(0,1fr);justify-items:start;padding:.35rem .4rem;text-align:start}.env-shell-app-menu__start-recent .env-shell-app-menu__tile-icon{block-size:2.25rem;inline-size:2.25rem;min-block-size:2.25rem;min-inline-size:2.25rem}.env-shell-app-menu__start-recent .env-shell-app-menu__tile-icon ui-icon:not([data-launcher-icon]){block-size:1.5rem!important;inline-size:1.5rem!important;--icon-size:1.5rem;--icon-padding:0px}.env-shell-app-menu__start-recent .env-shell-app-menu__tile-label{font-size:.78rem;-webkit-line-clamp:1;text-align:start}.env-shell-app-menu__start-right .env-shell-app-menu__grid{align-content:start;display:flex;flex-direction:column;flex-wrap:nowrap;gap:.2rem;grid-template-columns:none;min-block-size:fit-content;overflow:auto}.env-shell-app-menu__start-right .env-shell-app-menu__tile{align-items:center;border-radius:10px;box-sizing:border-box;display:grid;gap:.65rem;grid-template-columns:auto minmax(0,1fr);inline-size:100%;justify-items:start;padding:.4rem .55rem;text-align:start}.env-shell-app-menu__start-right .env-shell-app-menu__tile-icon{block-size:2.5rem;inline-size:2.5rem;min-block-size:2.5rem;min-inline-size:2.5rem}.env-shell-app-menu__start-right .env-shell-app-menu__tile-icon ui-icon:not([data-launcher-icon]){block-size:1.75rem!important;inline-size:1.75rem!important;--icon-size:1.75rem;--icon-padding:0px}.env-shell-app-menu__start-right .env-shell-app-menu__tile-label{font:500 .9rem/1.25 ui-sans-serif,system-ui,sans-serif;justify-self:stretch;-webkit-line-clamp:1;text-align:start}.env-shell-app-menu__crumb{align-items:center;display:flex;flex-wrap:wrap;gap:.35rem .55rem;min-block-size:1.4rem}.env-shell-app-menu__crumb-nav{align-items:center;display:flex;flex:1 1 auto;flex-wrap:wrap;gap:.2rem;min-inline-size:0}.env-shell-app-menu__crumb-actions{align-items:center;display:flex;flex-wrap:wrap;gap:.3rem;margin-inline-start:auto}.env-shell-app-menu__crumb-actions[hidden]{display:none!important}.env-shell-app-menu__crumb-action{appearance:none;background:var(--env-app-menu-surface-raised);border:1px solid light-dark(color-mix(in oklab,#000 12%,transparent),color-mix(in oklab,#fff 14%,transparent));border-radius:8px;color:inherit;cursor:pointer;font:600 .72rem/1.2 ui-sans-serif,system-ui,sans-serif;padding:.28rem .5rem}.env-shell-app-menu__crumb-action:hover{background:light-dark(color-mix(in oklab,#000 8%,transparent),color-mix(in oklab,#fff 10%,transparent))}.env-shell-app-menu__crumb-item{appearance:none;background:transparent;border:0;border-radius:6px;color:inherit;cursor:pointer;font:600 .78rem/1.2 ui-sans-serif,system-ui,sans-serif;padding:.15rem .35rem}.env-shell-app-menu__crumb-item:hover{background:light-dark(color-mix(in oklab,#000 8%,transparent),color-mix(in oklab,#fff 10%,transparent))}.env-shell-app-menu__crumb-sep{font-size:.85rem;opacity:.45}.env-shell-app-menu__empty--compact{font-size:.75rem;margin:.35rem 0;padding-inline:.25rem;text-align:start}@media (max-width:520px){.env-shell-app-menu__tools{grid-template-columns:1fr 1fr}.env-shell-app-menu__search{grid-column:1/-1}.env-shell-app-menu__sort,.env-shell-app-menu__sort-dir{max-inline-size:none}.env-shell-app-menu__start-body{grid-template-columns:1fr;grid-template-rows:minmax(0,8rem) minmax(0,1fr)}.env-shell-app-menu__start-recent{display:flex;flex-direction:column;overflow:auto}}.env-shell-app-menu__banner{background:color-mix(in oklab,var(--env-app-menu-accent,var(--color-primary,#60cdff)) 14%,transparent);border:1px solid color-mix(in oklab,var(--env-app-menu-accent,var(--color-primary,#60cdff)) 35%,transparent);border-radius:10px;display:grid;gap:.65rem;padding:.65rem .75rem}.env-shell-app-menu__banner[hidden]{display:none!important}.env-shell-app-menu__banner-text{font:500 .9rem/1.35 ui-sans-serif,system-ui,sans-serif;margin:0}.env-shell-app-menu__banner-action{justify-self:start}.env-shell-app-menu__tools{align-items:stretch;display:grid;gap:.4rem;grid-template-columns:minmax(0,1fr) auto auto;inset-block-start:0;position:sticky;z-index:3}.env-shell-app-menu__tools[hidden]{display:none!important}.env-shell-app-menu__search,.env-shell-app-menu__sort,.env-shell-app-menu__sort-dir{background:var(--env-app-menu-surface-raised);border:1px solid light-dark(color-mix(in oklab,#000 12%,transparent),color-mix(in oklab,#fff 14%,transparent));border-radius:10px;box-sizing:border-box;color:inherit;font:400 .9rem/1.2 ui-sans-serif,system-ui,sans-serif;padding:.55rem .65rem}.env-shell-app-menu__search{inline-size:100%;min-inline-size:0}.env-shell-app-menu__sort,.env-shell-app-menu__sort-dir{max-inline-size:11rem}.env-shell-app-menu__search[hidden]{display:none!important}.env-shell-app-menu__grid{align-content:start;block-size:max-content;display:grid;gap:.5rem;grid-auto-rows:max-content;grid-template-columns:repeat(auto-fill,minmax(4.5rem,1fr));min-block-size:fit-content;touch-action:pan-y;-webkit-overflow-scrolling:touch;overflow:visible;pointer-events:auto}.env-shell-app-menu__grid[hidden]{display:none!important}.env-shell-app-menu__tile{align-content:start;background:transparent;border:0;border-radius:12px;color:inherit;cursor:pointer;display:grid;flex-shrink:0;gap:.35rem;justify-items:center;min-block-size:fit-content;padding:.45rem .25rem;text-align:center;touch-action:pan-y;user-select:none}.env-shell-app-menu__tile:focus-visible,.env-shell-app-menu__tile:hover{background:color-mix(in oklab,var(--env-app-menu-accent,var(--color-primary,#60cdff)) 12%,transparent);outline:none}.env-shell-app-menu__tile--dragging{opacity:.45}html[data-app-menu-dragging] .env-shell-app-menu{pointer-events:none}html[data-app-menu-dragging] .env-shell-app-menu__panel{opacity:0;visibility:hidden}.env-shell-app-menu__drag-ghost{display:grid;gap:.35rem;inline-size:4.5rem;inset:0 auto auto 0;justify-items:center;pointer-events:none;position:fixed;will-change:transform;z-index:calc(var(--env-z-shell-chrome, 2147483000) + 8)}.env-shell-app-menu__drag-ghost-icon{aspect-ratio:1/1;backdrop-filter:blur(16px) saturate(1.35);-webkit-backdrop-filter:blur(16px) saturate(1.35);background:light-dark(color-mix(in oklab,#e8eaed 72%,var(--wf-md-primary,var(--color-primary,#60cdff)) 28%),color-mix(in oklab,#111827 72%,var(--wf-md-primary,var(--color-primary,#60cdff)) 28%));block-size:3rem;border:none;border-radius:50%;box-shadow:0 8px 24px -8px rgba(0,0,0,.55);box-sizing:border-box;contain:layout style;display:grid;inline-size:3rem;overflow:hidden;padding:0;place-content:center;place-items:center;position:relative}@supports (corner-shape:round){.env-shell-app-menu__drag-ghost-icon{corner-shape:round}}.env-shell-app-menu__drag-ghost-icon img[data-icon-pending],.env-shell-app-menu__drag-ghost-icon img[data-launcher-icon]:not([src]),.env-shell-app-menu__drag-ghost-icon ui-icon[data-icon-pending]{opacity:0;visibility:hidden}.env-shell-app-menu__drag-ghost-icon .ui-ws-item-icon-img,.env-shell-app-menu__drag-ghost-icon img[data-launcher-icon]{block-size:100%;border-radius:0;inline-size:100%;inset:0;object-fit:cover;object-position:center;pointer-events:none;position:absolute;transform:scale(1.28);transform-origin:center}.env-shell-app-menu__drag-ghost-icon ui-icon[data-launcher-icon]{block-size:100%;inline-size:100%;inset:0;max-block-size:none;max-inline-size:none;min-block-size:0;min-inline-size:0;position:absolute;--icon-size:100%;--icon-padding:0px;pointer-events:none;transform:scale(1.28);transform-origin:center}.env-shell-app-menu__drag-ghost-label{display:-webkit-box;-webkit-box-orient:vertical;font:600 .68rem/1.15 ui-sans-serif,system-ui,sans-serif;-webkit-line-clamp:2;overflow:hidden;text-align:center;text-shadow:0 1px 2px rgba(0,0,0,.35)}.env-shell-app-menu__tile-icon{aspect-ratio:1/1!important;backdrop-filter:blur(16px) saturate(1.35);-webkit-backdrop-filter:blur(16px) saturate(1.35);background:var(--env-app-menu-plate);block-size:2.5rem!important;border:none;border-radius:50%!important;box-shadow:0 6px 24px -8px color-mix(in oklab,#000 38%,transparent);box-sizing:border-box;color:var(--color-on-primary-container,var(--env-app-menu-ink));display:grid;inline-size:2.5rem!important;min-block-size:2.5rem!important;min-inline-size:2.5rem!important;overflow:hidden;padding:0!important;place-content:center;place-items:center;position:relative;--icon-color:var(--color-on-primary-container,var(--env-app-menu-ink))}.env-shell-app-menu__tile-icon:not([data-shape]),.env-shell-app-menu__tile-icon[data-shape=circle]{aspect-ratio:1/1!important;border-radius:50%!important}@supports (corner-shape:round){.env-shell-app-menu__tile-icon:not([data-shape]),.env-shell-app-menu__tile-icon[data-shape=circle]{corner-shape:round}}.env-shell-app-menu__tile-icon[data-shape=squircle]{border-radius:1.5rem!important}@supports (corner-shape:squircle){.env-shell-app-menu__tile-icon[data-shape=squircle]{corner-shape:unset}}@supports (corner-shape:round){.env-shell-app-menu__tile-icon[data-shape=squircle]{corner-shape:round}}.env-shell-app-menu__tile-icon[data-shape=square]{border-radius:12%!important}@supports (corner-shape:square){.env-shell-app-menu__tile-icon[data-shape=square]{corner-shape:square}}.env-shell-app-menu__tile-icon[data-shape=shapeless]{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:transparent!important;border-radius:0!important;box-shadow:none!important;contain:none;overflow:visible!important}@supports (corner-shape:squircle){.env-shell-app-menu__tile-icon[data-shape=shapeless]{corner-shape:unset}}.env-shell-app-menu__tile-icon[data-shape=shapeless] .env-shell-app-menu__tile-favicon,.env-shell-app-menu__tile-icon[data-shape=shapeless] .ui-ws-item-icon-img,.env-shell-app-menu__tile-icon[data-shape=shapeless] img[data-launcher-icon],.env-shell-app-menu__tile-icon[data-shape=shapeless] ui-icon{object-fit:contain}.env-shell-app-menu__tile-icon[data-shape=shapeless] :is(img.sd-icon-silhouette,ui-icon.sd-icon-silhouette){filter:brightness(0) blur(6px);inset:0;object-fit:contain;opacity:.4;pointer-events:none;position:absolute;transform:translateY(10%);z-index:0}.env-shell-app-menu__tile-icon[data-shape=shapeless] .ui-ws-item-icon-img:not(.sd-icon-silhouette),.env-shell-app-menu__tile-icon[data-shape=shapeless] img[data-launcher-icon]:not(.sd-icon-silhouette){filter:none;object-fit:contain;z-index:2}.env-shell-app-menu__tile-icon[data-shape=shapeless][data-icon-display=glyph] ui-icon:not(.sd-icon-silhouette){filter:drop-shadow(0 2px 5px rgba(0,0,0,.4))}.env-shell-app-menu__tile-icon[data-shape=shapeless][data-icon-display=glyph] .sd-icon-silhouette{display:none}.env-shell-app-menu__tile-icon img[data-icon-pending],.env-shell-app-menu__tile-icon img[data-launcher-icon]:not([src]),.env-shell-app-menu__tile-icon ui-icon[data-icon-pending]{opacity:0;visibility:hidden}.env-shell-app-menu__tile-icon .ui-ws-item-icon-img[data-launcher-icon],.env-shell-app-menu__tile-icon img[data-launcher-icon]{block-size:100%;border-radius:0;display:block;inline-size:100%;inset:0;max-block-size:none;max-inline-size:none;object-fit:cover;object-position:center;pointer-events:none;position:absolute;transform:scale(var(--sd-item-icon-scale,var(--sd-launcher-icon-scale,1.28)));transform-origin:center;z-index:1}.env-shell-app-menu__tile-icon .ui-ws-item-icon-img[data-launcher-icon][data-icon-pack],.env-shell-app-menu__tile-icon img[data-launcher-icon][data-icon-pack]{transform:scale(var(--sd-item-icon-scale,var(--sd-launcher-icon-scale,1.28)))}.env-shell-app-menu__tile-icon :is(.env-shell-app-menu__tile-favicon:not([data-launcher-icon]),.ui-ws-item-icon-img:not([data-launcher-icon])){block-size:1.75rem;border-radius:4px;display:block;inline-size:1.75rem;max-block-size:90%;max-inline-size:90%;object-fit:contain;object-position:center;pointer-events:none;position:relative;z-index:1}.env-shell-app-menu__tile-icon ui-icon{block-size:1.75rem!important;display:inline-grid!important;inline-size:1.75rem!important;max-block-size:1.75rem!important;max-inline-size:1.75rem!important;min-block-size:1.75rem!important;min-inline-size:1.75rem!important;position:relative;z-index:1;--icon-size:1.75rem;--icon-padding:0px;--icon-color:currentColor;color:inherit;pointer-events:none}.env-shell-app-menu__tile-icon ui-icon[data-launcher-icon]{block-size:100%!important;inline-size:100%!important;inset:0;max-block-size:none!important;max-inline-size:none!important;min-block-size:0!important;min-inline-size:0!important;position:absolute;--icon-size:100%;--icon-padding:0px;pointer-events:none;transform:scale(1.28);transform-origin:center;z-index:1}.env-shell-app-menu__tile-label{display:-webkit-box;-webkit-box-orient:vertical;font:500 .68rem/1.15 ui-sans-serif,system-ui,sans-serif;-webkit-line-clamp:2;overflow:hidden;word-break:break-word}.env-shell-app-menu__empty{font:400 .85rem/1.3 ui-sans-serif,system-ui,sans-serif;grid-column:1/-1;margin:.5rem 0;opacity:.75;text-align:center}@keyframes b{0%{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}.env-shell-app-menu__pin-menu{background:var(--env-app-menu-surface);border:1px solid light-dark(color-mix(in oklab,#000 12%,transparent),color-mix(in oklab,#fff 14%,transparent));border-radius:10px;box-shadow:0 12px 32px -12px light-dark(rgba(0,0,0,.22),rgba(0,0,0,.45)),0 2px 8px -2px light-dark(rgba(0,0,0,.12),rgba(0,0,0,.25));color:var(--env-app-menu-ink);color-scheme:inherit;display:grid;gap:.25rem;min-inline-size:10rem;padding:.35rem;position:fixed;z-index:calc(var(--env-z-shell-chrome, 2147483000) + 4)}.env-shell-app-menu__pin-action{inline-size:100%;justify-content:start;text-align:start}}");
 var documentStylesApplied = false;
 var LONG_PRESS_MS = 420;
 var PRE_DRAG_MOVE_PX = 10;
@@ -548,7 +994,7 @@ function resolveAppMenuMode() {
 async function resolveLauncherBridge() {
 	if (registeredLauncherBridge) return registeredLauncherBridge;
 	try {
-		return await __vitePreload(() => import("../chunks/launcher-bridge.js"), [], import.meta.url);
+		return await __vitePreload(() => import("../chunks/launcher-bridge.js"), __vite__mapDeps([0,1,2,3,4,5,6,7]), import.meta.url);
 	} catch {
 		return null;
 	}
@@ -798,12 +1244,17 @@ function bindLauncherAppTileDrag(tile, app, iconPlate, hooks) {
 		}
 	}, true);
 }
+async function launchListedApp(bridge, app) {
+	const spec = resolveAppLaunchSpec(app.packageName);
+	const component = spec.componentName || app.componentName;
+	if (!await bridge.launcherLaunch(app.packageName, component, isLauncherLaunchSpecEmpty(spec) ? void 0 : spec)) showError(`Unable to open “${app.label}”`);
+}
 function renderAppTile(app, bridge, gen, refreshGen, hooks) {
 	const tile = document.createElement("button");
 	tile.type = "button";
 	tile.className = "env-shell-app-menu__tile";
 	tile.setAttribute("data-package", app.packageName);
-	tile.title = `${app.label} — right-click: desktop; hold and drag`;
+	tile.title = `${app.label} — right-click: info / uninstall / launch; hold and drag`;
 	const chromeKey = appMenuChromeKeyForPackage(app.packageName);
 	const iconPlate = document.createElement("span");
 	iconPlate.className = "env-shell-app-menu__tile-icon ui-ws-item-icon shaped";
@@ -891,10 +1342,76 @@ function renderAppTile(app, bridge, gen, refreshGen, hooks) {
 					icon: "arrow-square-out",
 					action: async () => {
 						try {
-							await bridge.launcherLaunch(app.packageName, app.componentName);
+							await launchListedApp(bridge, app);
 						} catch {}
 					}
-				}
+				},
+				{
+					id: "app-info",
+					label: "App info",
+					icon: "info",
+					action: async () => {
+						let info = null;
+						try {
+							info = await bridge.launcherAppInfo?.(app.packageName) || null;
+						} catch {
+							info = null;
+						}
+						openAppInfoDialog({
+							title: app.label,
+							fallback: {
+								packageName: app.packageName,
+								componentName: app.componentName,
+								label: app.label
+							},
+							info,
+							onOpenSystem: bridge.launcherOpenAppInfo ? () => bridge.launcherOpenAppInfo(app.packageName) : void 0
+						});
+					}
+				},
+				...bridge.launcherOpenAppInfo ? [{
+					id: "android-settings",
+					label: "Android settings",
+					icon: "gear",
+					action: async () => {
+						try {
+							if (!await bridge.launcherOpenAppInfo(app.packageName)) showError(`Cannot open Android settings for “${app.label}”`);
+						} catch {
+							showError(`Cannot open Android settings for “${app.label}”`);
+						}
+					}
+				}] : [],
+				{
+					id: "edit-launch",
+					label: "Edit launch…",
+					icon: "sliders",
+					action: () => {
+						openAppLaunchEditor({
+							title: app.label,
+							packageName: app.packageName,
+							defaultComponent: app.componentName
+						});
+					}
+				},
+				...bridge.launcherUninstall ? [{
+					id: "uninstall",
+					label: "Uninstall",
+					icon: "trash",
+					danger: true,
+					action: async () => {
+						if (!confirmUninstall(app.label, "Uninstall")) return;
+						try {
+							if (!await bridge.launcherUninstall(app.packageName)) {
+								showError(`Cannot uninstall “${app.label}”`);
+								return;
+							}
+							showSuccess(`Uninstall started for “${app.label}”`);
+							refreshWhenVisible(() => hooks.onAppsChanged?.());
+						} catch {
+							showError(`Cannot uninstall “${app.label}”`);
+						}
+					}
+				}] : []
 			]
 		});
 	});
@@ -902,7 +1419,7 @@ function renderAppTile(app, bridge, gen, refreshGen, hooks) {
 		ev.preventDefault();
 		ev.stopPropagation();
 		try {
-			await bridge.launcherLaunch(app.packageName, app.componentName);
+			await launchListedApp(bridge, app);
 		} catch {}
 	});
 	return tile;
@@ -1014,14 +1531,56 @@ function bindBookmarkTileContextMenu(tile, entry, api, iconUrl, hooks) {
 				x: ev.clientX,
 				y: ev.clientY,
 				compact: true,
-				items: [{
-					id: "open-folder",
-					label: "Open folder",
-					icon: "folder-open",
-					action: () => {
-						tile.click();
-					}
-				}]
+				items: [
+					{
+						id: "open-folder",
+						label: "Open folder",
+						icon: "folder-open",
+						action: () => {
+							tile.click();
+						}
+					},
+					{
+						id: "bm-info",
+						label: "Info",
+						icon: "info",
+						action: () => {
+							openBookmarkInfoDialog(entry);
+						}
+					},
+					...api.update ? [{
+						id: "bm-edit",
+						label: "Rename folder…",
+						icon: "pencil",
+						action: () => {
+							openBookmarkLaunchEditor({
+								entry,
+								api,
+								onSaved: () => hooks.onAppsChanged?.()
+							});
+						}
+					}] : [],
+					...api.remove ? [{
+						id: "bm-delete",
+						label: "Delete folder",
+						icon: "trash",
+						danger: true,
+						action: async () => {
+							if (!confirmUninstall(entry.title, "Delete")) return;
+							try {
+								if (!await api.remove(entry)) {
+									showError(`Could not delete “${entry.title}”`);
+									return;
+								}
+								showSuccess(`Deleted “${entry.title}”`);
+								forgetBookmarkFromLists(entry.id);
+								hooks.onAppsChanged?.();
+							} catch {
+								showError(`Could not delete “${entry.title}”`);
+							}
+						}
+					}] : []
+				]
 			});
 			return;
 		}
@@ -1105,7 +1664,47 @@ function bindBookmarkTileContextMenu(tile, entry, api, iconUrl, hooks) {
 							await api.open(entry);
 						} catch {}
 					}
-				}
+				},
+				{
+					id: "bm-info",
+					label: "Info",
+					icon: "info",
+					action: () => {
+						openBookmarkInfoDialog(entry);
+					}
+				},
+				...api.update && !entry.folder ? [{
+					id: "bm-edit",
+					label: "Edit bookmark…",
+					icon: "pencil",
+					action: () => {
+						openBookmarkLaunchEditor({
+							entry,
+							api,
+							onSaved: () => hooks.onAppsChanged?.()
+						});
+					}
+				}] : [],
+				...api.remove ? [{
+					id: "bm-delete",
+					label: entry.folder ? "Delete folder" : "Delete",
+					icon: "trash",
+					danger: true,
+					action: async () => {
+						if (!confirmUninstall(entry.title, "Delete")) return;
+						try {
+							if (!await api.remove(entry)) {
+								showError(`Could not delete “${entry.title}”`);
+								return;
+							}
+							showSuccess(`Deleted “${entry.title}”`);
+							forgetBookmarkFromLists(entry.id);
+							hooks.onAppsChanged?.();
+						} catch {
+							showError(`Could not delete “${entry.title}”`);
+						}
+					}
+				}] : []
 			]
 		});
 	});
@@ -1116,7 +1715,7 @@ function renderBookmarkTile(entry, api, hooks, onFolder) {
 	tile.className = "env-shell-app-menu__tile";
 	tile.setAttribute("data-bookmark-id", entry.id);
 	if (entry.folder) tile.setAttribute("data-folder", "");
-	tile.title = entry.folder ? `${entry.title} — open folder` : `${entry.title} — right-click: desktop / pin; hold to drag`;
+	tile.title = entry.folder ? `${entry.title} — open folder` : `${entry.title} — right-click: info / edit / delete; hold to drag`;
 	const chromeKey = appMenuChromeKeyForBookmark(entry.id);
 	const iconPlate = document.createElement("span");
 	iconPlate.className = "env-shell-app-menu__tile-icon ui-ws-item-icon shaped";
@@ -1222,6 +1821,33 @@ function mountEnvironmentAppMenu() {
 	search.placeholder = mode === "bookmarks" ? "Search bookmarks" : "Search apps";
 	search.autocomplete = "off";
 	search.setAttribute("aria-label", mode === "bookmarks" ? "Search bookmarks" : "Search apps");
+	const tools = document.createElement("div");
+	tools.className = "env-shell-app-menu__tools";
+	const sortBySelect = document.createElement("select");
+	sortBySelect.className = "env-shell-app-menu__sort";
+	sortBySelect.setAttribute("aria-label", "Sort apps");
+	for (const [value, label] of APP_MENU_SORT_OPTIONS) {
+		const opt = document.createElement("option");
+		opt.value = value;
+		opt.textContent = label;
+		sortBySelect.appendChild(opt);
+	}
+	const sortDirSelect = document.createElement("select");
+	sortDirSelect.className = "env-shell-app-menu__sort-dir";
+	sortDirSelect.setAttribute("aria-label", "Sort order");
+	for (const [value, label] of [["asc", "A–Z / oldest"], ["desc", "Z–A / newest"]]) {
+		const opt = document.createElement("option");
+		opt.value = value;
+		opt.textContent = label;
+		sortDirSelect.appendChild(opt);
+	}
+	const syncSortControls = () => {
+		const prefs = peekAppMenuSort();
+		sortBySelect.value = prefs.sortBy;
+		sortDirSelect.value = prefs.sortDir;
+	};
+	syncSortControls();
+	tools.append(search, sortBySelect, sortDirSelect);
 	const startBody = document.createElement("div");
 	startBody.className = "env-shell-app-menu__start-body";
 	startBody.hidden = mode !== "bookmarks";
@@ -1243,14 +1869,19 @@ function mountEnvironmentAppMenu() {
 	rightCol.className = "env-shell-app-menu__start-right";
 	const crumb = document.createElement("div");
 	crumb.className = "env-shell-app-menu__crumb";
+	const crumbNav = document.createElement("div");
+	crumbNav.className = "env-shell-app-menu__crumb-nav";
+	const crumbActions = document.createElement("div");
+	crumbActions.className = "env-shell-app-menu__crumb-actions";
+	crumb.append(crumbNav, crumbActions);
 	const gridHost = document.createElement("div");
 	gridHost.className = "env-shell-app-menu__grid";
 	gridHost.setAttribute("data-part", "grid");
 	gridHost.setAttribute("aria-label", mode === "bookmarks" ? "Bookmarks" : "Installed apps");
 	rightCol.append(crumb, gridHost);
 	startBody.append(leftCol, rightCol);
-	if (mode === "bookmarks") panel.append(banner, search, startBody);
-	else panel.append(banner, search, gridHost);
+	if (mode === "bookmarks") panel.append(banner, tools, startBody);
+	else panel.append(banner, tools, gridHost);
 	root.appendChild(panel);
 	resolveAppMenuHost().appendChild(root);
 	let open = false;
@@ -1300,10 +1931,81 @@ function mountEnvironmentAppMenu() {
 		},
 		onStartPinsChanged: () => {
 			refresh();
+		},
+		onAppsChanged: () => {
+			refresh();
 		}
 	};
+	const beginCreateBookmark = (kind) => {
+		const api = resolveBookmarksMenuApi();
+		if (!api?.create) {
+			showError("Cannot create bookmark here");
+			return;
+		}
+		const parent = folderStack.length ? folderStack[folderStack.length - 1] : null;
+		const parentId = parent?.id || "0";
+		const parentTitle = parent?.title || "Bookmarks";
+		(async () => {
+			const fields = await openBookmarkFieldsDialog({
+				heading: kind === "folder" ? "New folder" : "New bookmark",
+				description: `Add to “${parentTitle}” (Chrome bookmarks)`,
+				showUrl: kind === "url",
+				initialTitle: kind === "folder" ? "New folder" : "",
+				initialUrl: kind === "url" ? "https://" : "",
+				submitLabel: "Create"
+			});
+			if (!fields) return;
+			const created = await api.create(parentId, {
+				title: fields.title,
+				url: kind === "url" ? fields.url : void 0
+			});
+			if (!created) {
+				showError(kind === "folder" ? "Could not create folder" : "Could not create bookmark");
+				return;
+			}
+			showSuccess(kind === "folder" ? `Created folder “${created.title}”` : `Created “${created.title}”`);
+			refresh();
+		})();
+	};
+	const makeCrumbAction = (label, onClick) => {
+		const btn = document.createElement("button");
+		btn.type = "button";
+		btn.className = "env-shell-app-menu__crumb-action";
+		btn.textContent = label;
+		btn.addEventListener("click", (ev) => {
+			ev.preventDefault();
+			ev.stopPropagation();
+			onClick();
+		});
+		return btn;
+	};
+	crumbActions.append(makeCrumbAction("New bookmark", () => beginCreateBookmark("url")), makeCrumbAction("New folder", () => beginCreateBookmark("folder")));
+	gridHost.addEventListener("contextmenu", (ev) => {
+		if (ev.target?.closest?.("[data-bookmark-id]")) return;
+		if (resolveAppMenuMode() !== "bookmarks") return;
+		if (!resolveBookmarksMenuApi()?.create) return;
+		ev.preventDefault();
+		ev.stopPropagation();
+		openUnifiedContextMenu({
+			x: ev.clientX,
+			y: ev.clientY,
+			compact: true,
+			items: [{
+				id: "new-bookmark",
+				label: "New bookmark…",
+				icon: "bookmark-simple",
+				action: () => beginCreateBookmark("url")
+			}, {
+				id: "new-folder",
+				label: "New folder…",
+				icon: "folder-plus",
+				action: () => beginCreateBookmark("folder")
+			}]
+		});
+	});
 	const paintCrumb = () => {
-		crumb.replaceChildren();
+		crumbNav.replaceChildren();
+		crumbActions.hidden = mode !== "bookmarks" || !resolveBookmarksMenuApi()?.create;
 		if (mode !== "bookmarks") return;
 		const rootBtn = document.createElement("button");
 		rootBtn.type = "button";
@@ -1313,7 +2015,7 @@ function mountEnvironmentAppMenu() {
 			folderStack = [];
 			refresh();
 		});
-		crumb.appendChild(rootBtn);
+		crumbNav.appendChild(rootBtn);
 		folderStack.forEach((seg, idx) => {
 			const sep = document.createElement("span");
 			sep.className = "env-shell-app-menu__crumb-sep";
@@ -1326,7 +2028,7 @@ function mountEnvironmentAppMenu() {
 				folderStack = folderStack.slice(0, idx + 1);
 				refresh();
 			});
-			crumb.append(sep, btn);
+			crumbNav.append(sep, btn);
 		});
 	};
 	const populateLauncherGrid = async (bridge, gen) => {
@@ -1338,6 +2040,12 @@ function mountEnvironmentAppMenu() {
 		}
 		if (gen !== refreshGen) return;
 		gridHost.replaceChildren();
+		const prefs = peekAppMenuSort();
+		if (prefs.sortBy === "color") {
+			await hydrateAppColorKeys(apps, gridHost);
+			if (gen !== refreshGen) return;
+		}
+		apps = sortLauncherApps(apps, prefs);
 		if (apps.length === 0) {
 			const empty = document.createElement("p");
 			empty.className = "env-shell-app-menu__empty";
@@ -1393,14 +2101,20 @@ function mountEnvironmentAppMenu() {
 			return;
 		}
 		const frag = document.createDocumentFragment();
+		const dir = peekAppMenuSort().sortDir === "desc" ? -1 : 1;
 		const folders = entries.filter((e) => e.folder);
 		const links = entries.filter((e) => !e.folder);
-		for (const entry of [...folders, ...links]) frag.appendChild(renderBookmarkTile(entry, api, tileDragHooks, enterFolder));
+		const byTitle = (a, b) => String(a.title || "").localeCompare(String(b.title || ""), void 0, {
+			numeric: true,
+			sensitivity: "base"
+		}) * dir;
+		for (const entry of [...folders.sort(byTitle), ...links.sort(byTitle)]) frag.appendChild(renderBookmarkTile(entry, api, tileDragHooks, enterFolder));
 		gridHost.appendChild(frag);
 	};
 	const refresh = async () => {
 		const gen = ++refreshGen;
 		banner.hidden = true;
+		tools.hidden = false;
 		search.hidden = false;
 		const activeMode = resolveAppMenuMode();
 		if (!activeMode) {
@@ -1412,7 +2126,7 @@ function mountEnvironmentAppMenu() {
 			panel.setAttribute("data-layout", "start-split");
 			startBody.hidden = false;
 			if (!panel.contains(startBody)) {
-				panel.append(banner, search, startBody);
+				panel.append(banner, tools, startBody);
 				if (gridHost.parentElement !== rightCol) rightCol.append(crumb, gridHost);
 			}
 			const api = resolveBookmarksMenuApi();
@@ -1421,6 +2135,7 @@ function mountEnvironmentAppMenu() {
 				bannerText.textContent = "Bookmarks API unavailable in this context";
 				bannerAction.hidden = true;
 				search.hidden = true;
+				tools.hidden = true;
 				startBody.hidden = true;
 				return;
 			}
@@ -1438,6 +2153,7 @@ function mountEnvironmentAppMenu() {
 			bannerText.textContent = "Launcher bridge unavailable — rebuild the Capacitor APK";
 			bannerAction.hidden = true;
 			search.hidden = true;
+			tools.hidden = true;
 			gridHost.hidden = true;
 			return;
 		}
@@ -1454,9 +2170,26 @@ function mountEnvironmentAppMenu() {
 			bannerAction.hidden = false;
 		} else banner.hidden = true;
 		search.hidden = false;
+		tools.hidden = false;
 		gridHost.hidden = false;
 		await populateLauncherGrid(bridge, gen);
 	};
+	sortBySelect.addEventListener("change", () => {
+		const sortBy = sortBySelect.value;
+		writeAppMenuSort({
+			sortBy,
+			sortDir: defaultDirForAppSort(sortBy)
+		});
+		syncSortControls();
+	});
+	sortDirSelect.addEventListener("change", () => {
+		writeAppMenuSort({ sortDir: sortDirSelect.value === "desc" ? "desc" : "asc" });
+	});
+	const onSortPrefs = () => {
+		syncSortControls();
+		if (open) refresh();
+	};
+	window.addEventListener(APP_MENU_SORT_EVENT, onSortPrefs);
 	search.addEventListener("input", () => {
 		searchQuery = search.value.trim();
 		if (searchTimer) clearTimeout(searchTimer);
@@ -1491,6 +2224,9 @@ function mountEnvironmentAppMenu() {
 	const APP_MENU_KEEP_OPEN_SEL = [
 		".env-shell-app-menu__tile",
 		".env-shell-app-menu__search",
+		".env-shell-app-menu__sort",
+		".env-shell-app-menu__sort-dir",
+		".env-shell-app-menu__tools",
 		".env-shell-app-menu__banner",
 		".env-shell-app-menu__pin-menu",
 		".env-shell-app-menu__crumb-item",
@@ -1542,6 +2278,7 @@ function mountEnvironmentAppMenu() {
 		root.removeEventListener("pointerup", onEmptySurfacePointerUp);
 		root.removeEventListener("pointercancel", onEmptySurfacePointerCancel);
 		document.removeEventListener("u2-theme-change", onThemeChange);
+		window.removeEventListener(APP_MENU_SORT_EVENT, onSortPrefs);
 		try {
 			themeAttrObserver.disconnect();
 		} catch {}

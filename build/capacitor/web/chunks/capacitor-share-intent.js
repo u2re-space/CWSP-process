@@ -1,4 +1,4 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../shells/boot-index.js","./rolldown-runtime.js","../shells/boot-history-base.js","../com/app.js","../fest/core.js","../com/service.js","../fest/veela.js","./sku-ingress.js","./sw-handling.js","./LogSanitizer.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../shells/boot-index.js","./rolldown-runtime.js","../shells/boot-history-base.js","../com/app.js","../fest/core.js","../com/service.js","../fest/veela.js","./sku-ingress.js","./sw-handling.js","./LogSanitizer.js","./ViewTransferRouting.js"])))=>i.map(i=>d[i]);
 const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
 import { An as splitMultiValueList } from "../shells/boot-index.js";
 import { n as isCapacitorNative } from "./capacitor-permissions.js";
@@ -80,7 +80,7 @@ var consumeNativePendingShare = async () => {
 				const { dataUrlToFile } = await __vitePreload(async () => {
 					const { dataUrlToFile } = await import("./sku-ingress.js");
 					return { dataUrlToFile };
-				}, __vite__mapDeps([7,2,3,1]), import.meta.url);
+				}, __vite__mapDeps([7,2,3,1,0,4,5,6]), import.meta.url);
 				const file = await dataUrlToFile(blob.data, String(blob.name || echo.name || "shared.bin"), String(blob.mime || echo.mime || "application/octet-stream"));
 				if (file) files.push(file);
 			}
@@ -101,7 +101,7 @@ var ingestParsedShare = async (input) => {
 	const { ingestSharePayload } = await __vitePreload(async () => {
 		const { ingestSharePayload } = await import("./sw-handling.js");
 		return { ingestSharePayload };
-	}, __vite__mapDeps([8,2,3,1,0,4,5,6,7,9]), import.meta.url);
+	}, __vite__mapDeps([8,2,3,1,0,4,5,6,9,7,10]), import.meta.url);
 	await ingestSharePayload({
 		title: input.title || void 0,
 		text: input.text || void 0,
@@ -147,7 +147,7 @@ var installCapacitorShareIntentBridge = () => {
 					const { dataUrlToFile } = await __vitePreload(async () => {
 						const { dataUrlToFile } = await import("./sku-ingress.js");
 						return { dataUrlToFile };
-					}, __vite__mapDeps([7,2,3,1]), import.meta.url);
+					}, __vite__mapDeps([7,2,3,1,0,4,5,6]), import.meta.url);
 					const files = [];
 					if (asset?.data) {
 						const file = await dataUrlToFile(asset.data, String(asset.name || "shared.bin"), String(asset.mimeType || asset.type || "application/octet-stream"));

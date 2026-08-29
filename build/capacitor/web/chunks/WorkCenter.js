@@ -1,13 +1,13 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./WorkCenterState.js","./rolldown-runtime.js","../shells/boot-index.js","../shells/boot-history-base.js","../com/app.js","../fest/core.js","../com/service.js","../fest/veela.js","./WorkCenterDataProcessing.js","../vendor/dompurify.js","../vendor/marked.js","./AIResponseParser.js"])))=>i.map(i=>d[i]);
-import { g as stashSkuHandoff, m as shouldHandoffViewToSibling } from "../shells/boot-history-base.js";
-import { Dt as isBase64Like, Gn as __vitePreload, Ot as normalizeDataAsset, dn as H, kt as parseDataUrl } from "../com/app.js";
-import { Un as registerComponent, Vn as initializeComponent, Wn as sendMessage, Yn as ROUTE_HASHES } from "../shells/boot-index.js";
+import { _ as stashSkuHandoff, h as shouldHandoffViewToSibling } from "../shells/boot-history-base.js";
+import { Ht as normalizeDataAsset, Tn as H, Ut as parseDataUrl, Vt as isBase64Like, ar as __vitePreload } from "../com/app.js";
+import { ir as sendMessage, lr as ROUTE_HASHES, rr as registerComponent, tr as initializeComponent } from "../shells/boot-index.js";
 import { i as validateReadableFileForIngress } from "../com/service.js";
 import { t as f } from "../vendor/marked.js";
 import { t as renderMathInElement } from "../vendor/katex.js";
 import { t as src_default } from "../vendor/marked-katex-extension.js";
-import { n as fetchCachedShareFiles, t as consumeCachedShareTargetPayload } from "./ShareTargetGateway.js";
 import { t as summarizeForLog } from "./LogSanitizer.js";
+import { n as fetchCachedShareFiles, t as consumeCachedShareTargetPayload } from "./ShareTargetGateway.js";
 import { i as buildInstructionPrompt } from "./utils.js";
 import { a as getCustomInstructions, o as getInstructionRegistry, s as setActiveInstruction } from "./CustomInstructions.js";
 import { o as toBase64 } from "./entities.js";
@@ -2190,7 +2190,7 @@ var WorkCenterActions = class {
 		}
 		try {
 			const { unifiedMessaging } = await __vitePreload(async () => {
-				const { unifiedMessaging } = await import("../shells/boot-index.js").then((n) => n.Ln);
+				const { unifiedMessaging } = await import("../shells/boot-index.js").then((n) => n.Zn);
 				return { unifiedMessaging };
 			}, __vite__mapDeps([2,1,3,4,5,6,7]), import.meta.url);
 			let resultContent = typeof state.lastRawResult === "string" ? state.lastRawResult : JSON.stringify(state.lastRawResult, null, 2);
@@ -2251,7 +2251,7 @@ var WorkCenterActions = class {
 		}
 		try {
 			const { unifiedMessaging } = await __vitePreload(async () => {
-				const { unifiedMessaging } = await import("../shells/boot-index.js").then((n) => n.Ln);
+				const { unifiedMessaging } = await import("../shells/boot-index.js").then((n) => n.Zn);
 				return { unifiedMessaging };
 			}, __vite__mapDeps([2,1,3,4,5,6,7]), import.meta.url);
 			const resultContent = typeof state.lastRawResult === "string" ? state.lastRawResult : JSON.stringify(state.lastRawResult, null, 2);

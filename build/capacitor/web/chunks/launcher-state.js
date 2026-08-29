@@ -1,5 +1,5 @@
 import { n as __exportAll } from "./rolldown-runtime.js";
-import { $t as loadDesktopRaw, An as makeObjectAssignable, En as observe, Gn as __vitePreload, Jt as makeUIState, Qt as decodeDesktopState, Xt as JSOX, Yt as saveUIState, at as resolveFsBackend, jn as safe, kn as stringRef, ot as subscribeFsBackendRegister, st as resolveEntryIcon } from "../com/app.js";
+import { Bn as observe, Gn as safe, Un as stringRef, Wn as makeObjectAssignable, ar as __vitePreload, bt as subscribeFsBackendRegister, cn as makeUIState, fn as decodeDesktopState, ln as saveUIState, pn as loadDesktopRaw, un as JSOX, xt as resolveEntryIcon, yt as resolveFsBackend } from "../com/app.js";
 //#region ../../modules/views/home-view/src/ts/layout.ts
 var DEFAULT_LAYOUT = [4, 8];
 var clamp = (value, min, max) => {
@@ -1034,6 +1034,11 @@ var normalizeOpenLinkTarget = (raw) => {
 	if (v === "inline" || v === "in-shell" || v === "env" || v === "shell") return "inline";
 	if (v === "new-tab" || v === "newtab" || v === "tab" || v === "browser" || v === "browser-tab" || v === "external-tab") return "new-tab";
 	if (v === "external-app" || v === "app" || v === "chooser" || v === "open-with" || v === "open-in-app" || v === "intent") return "external-app";
+	if (v === "viewer" || v === "markdown") return "viewer";
+	if (v === "document" || v === "cwsp-document") return "document";
+	if (v === "explorer" || v === "files") return "explorer";
+	if (v === "workcenter" || v === "process" || v === "cwsp-process") return "workcenter";
+	if (v === "transfer" || v === "cwsp" || v === "cwsp-transfer" || v === "network") return "transfer";
 	if (v === "native-window" || v === "native" || v === "window" || v === "app-window") return "native-window";
 	return "inline";
 };

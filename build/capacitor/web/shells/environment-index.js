@@ -1,5 +1,5 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./environment-window-views-browser-view.js","../chunks/rolldown-runtime.js"])))=>i.map(i=>d[i]);
-import { Cn as effect, Gn as __vitePreload, Tn as numberRef, p as tryLaunchSiblingView, wn as booleanRef } from "../com/app.js";
+import { Ln as effect, Rn as booleanRef, ar as __vitePreload, b as tryLaunchSiblingView, zn as numberRef } from "../com/app.js";
 import { a as SHELL_SLOT, i as isEnvironmentShellContainerHost, o as resolveOverlayMountPoint, s as resolveShellOverlaysMount, t as getOrCreateEnvironmentOverlayMount } from "./environment-environment-overlay.js";
 import { a as setChromeFlyoutShellHost } from "./environment-components-calendar-CalendarFlyout.js";
 import { t as restoreQuickFilters } from "./environment-components-settings-QuickSettings.js";

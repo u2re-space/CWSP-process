@@ -1,7 +1,9 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../com/app.js","./rolldown-runtime.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../com/app.js","./rolldown-runtime.js","./ViewTransferRouting.js","../shells/boot-history-base.js","../shells/boot-index.js","../fest/core.js","../com/service.js","../fest/veela.js","./LogSanitizer.js"])))=>i.map(i=>d[i]);
 import { s as inferCwspSkuFromLocation } from "../shells/boot-history-base.js";
 const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
+import { Gn as sinkToAction, Hn as peekOpenPolicy, In as classifyOpenKindFromPayload, Jn as surfaceForSku, Kn as sinkToDestination, Ln as inferIngressChannels, Wn as resolveOpenPolicy } from "../shells/boot-index.js";
 //#region src/shared/routing/channel/sku-ingress.ts
+var loadLauncherState = () => __vitePreload(() => import("../com/app.js").then((n) => n.X), __vite__mapDeps([0,1]), import.meta.url);
 var WALLPAPER_EXT = /* @__PURE__ */ new Set([
 	"png",
 	"jpg",
@@ -79,14 +81,40 @@ var pathProbe = (payload) => {
 * Receiving SKU owns the share. Hub/CRX fall through to content-based routing.
 * WHY: otherwise process hands text to document, and document hands images to process.
 */
+var isNativeCapacitor = () => {
+	try {
+		return Boolean(globalThis.Capacitor?.isNativePlatform?.());
+	} catch {
+		return false;
+	}
+};
+var skuDefaultDestination = (sku) => {
+	if (sku === "process") return "workcenter";
+	if (sku === "document") return "viewer";
+	if (sku === "explorer") return "explorer";
+	if (sku === "launcher") return "home";
+};
 var skuIngressHint = (payload, opts) => {
 	const sku = opts?.sku || inferCwspSkuFromLocation();
-	if (!sku || sku === "crx" || sku === "transfer") return void 0;
 	const file = firstFile(payload);
 	const path = pathProbe(payload);
 	const filename = payload.hint?.filename || file?.name || "";
-	const mime = String(file?.type || "").toLowerCase();
-	const kind = mime.startsWith("image/") ? "image" : mime.startsWith("text/") ? "text" : file ? "file" : void 0;
+	const kind = classifyOpenKindFromPayload(payload);
+	const sourceToken = String(payload.source || payload.route || payload.hint?.source || "").toLowerCase();
+	const ingressSource = sourceToken.includes("launch") ? "launch-queue" : sourceToken.includes("share") ? "share-target" : sourceToken.includes("snip") ? "snip" : sourceToken.includes("capacitor") ? "capacitor" : "";
+	const surface = surfaceForSku(sku);
+	const channels = inferIngressChannels(ingressSource || void 0, isNativeCapacitor());
+	const sink = resolveOpenPolicy(opts?.openPolicy || peekOpenPolicy(), surface, kind, channels);
+	const skuDest = skuDefaultDestination(sku);
+	if (surface && sink !== "ask") return {
+		destination: sinkToDestination(sink, skuDest || "workcenter"),
+		action: sinkToAction(sink, sku === "process" ? "process" : "open"),
+		filename,
+		source: path || payload.hint?.source,
+		contentType: kind,
+		sink
+	};
+	if (!sku || sku === "crx" || sku === "transfer") return void 0;
 	if (sku === "process") {
 		const hinted = payload.hint?.action;
 		return {
@@ -124,6 +152,23 @@ var skuIngressHint = (payload, opts) => {
 		};
 	}
 };
+/**
+* Wallpaper sink: keep home only when the photo passes size/aspect.
+* WHY: icons and strips must not become wallpaper — send those to the viewer.
+*/
+var refineLauncherImageIngress = async (hint, files) => {
+	if (!hint || hint.action !== "wallpaper") return hint;
+	if (!files?.length) return hint;
+	const image = files.find((f) => looksLikeWallpaperFile(f));
+	if (image && await isWallpaperCompatible(image)) return hint;
+	return {
+		...hint,
+		destination: "viewer",
+		action: "open",
+		contentType: "image",
+		sink: "viewer"
+	};
+};
 var dataUrlToFile = async (raw, name = "shared.bin", mime = "application/octet-stream") => {
 	const src = String(raw || "").trim();
 	if (!src) return null;
@@ -140,37 +185,21 @@ var applyLauncherIngress = async (payload) => {
 	const image = files.find((f) => looksLikeWallpaperFile(f));
 	if ((payload.action === "wallpaper" || !payload.action) && image && await isWallpaperCompatible(image)) {
 		const { setAppWallpaperFromBlob, getWallpaperStoragePointer, WALLPAPER_IDB_MARKER } = await __vitePreload(async () => {
-			const { setAppWallpaperFromBlob, getWallpaperStoragePointer, WALLPAPER_IDB_MARKER } = await import("../com/app.js").then((n) => n.R);
+			const { setAppWallpaperFromBlob, getWallpaperStoragePointer, WALLPAPER_IDB_MARKER } = await import("../com/app.js").then((n) => n.C);
 			return {
 				setAppWallpaperFromBlob,
 				getWallpaperStoragePointer,
 				WALLPAPER_IDB_MARKER
 			};
 		}, __vite__mapDeps([0,1]), import.meta.url);
-		const { wallpaperState, persistWallpaper } = await __vitePreload(async () => {
-			const { wallpaperState, persistWallpaper } = await import("../com/app.js").then((n) => n.C);
-			return {
-				wallpaperState,
-				persistWallpaper
-			};
-		}, __vite__mapDeps([0,1]), import.meta.url);
+		const { wallpaperState, persistWallpaper } = await loadLauncherState();
 		await setAppWallpaperFromBlob(image);
 		wallpaperState.src = getWallpaperStoragePointer() || WALLPAPER_IDB_MARKER;
 		persistWallpaper();
 		return "wallpaper";
 	}
-	const { pinSpeedDialLinkFromIntent, parseSpeedDialItemFromURL, parseSpeedDialItemFromSmartText, addSpeedDialItem, persistSpeedDialItems, persistSpeedDialMeta, findNextFreeSpeedDialCell } = await __vitePreload(async () => {
-		const { pinSpeedDialLinkFromIntent, parseSpeedDialItemFromURL, parseSpeedDialItemFromSmartText, addSpeedDialItem, persistSpeedDialItems, persistSpeedDialMeta, findNextFreeSpeedDialCell } = await import("../com/app.js").then((n) => n.C);
-		return {
-			pinSpeedDialLinkFromIntent,
-			parseSpeedDialItemFromURL,
-			parseSpeedDialItemFromSmartText,
-			addSpeedDialItem,
-			persistSpeedDialItems,
-			persistSpeedDialMeta,
-			findNextFreeSpeedDialCell
-		};
-	}, __vite__mapDeps([0,1]), import.meta.url);
+	if (payload.action === "wallpaper") return "none";
+	const { pinSpeedDialLinkFromIntent, parseSpeedDialItemFromURL, parseSpeedDialItemFromSmartText, addSpeedDialItem, persistSpeedDialItems, persistSpeedDialMeta, findNextFreeSpeedDialCell } = await loadLauncherState();
 	const cell = findNextFreeSpeedDialCell();
 	const url = String(payload.url || "").trim();
 	const text = String(payload.text || "").trim();
@@ -212,5 +241,125 @@ var applyLauncherIngress = async (payload) => {
 	}
 	return "none";
 };
+var SHELL_IMAGE_OPEN_EVENT = "cwsp:shell-image-open";
+var shellImageOpenInstalled = false;
+var openShellImageInViewer = async (file) => {
+	const { dispatchViewTransfer } = await __vitePreload(async () => {
+		const { dispatchViewTransfer } = await import("./ViewTransferRouting.js");
+		return { dispatchViewTransfer };
+	}, __vite__mapDeps([2,3,0,1,4,5,6,7,8]), import.meta.url);
+	await dispatchViewTransfer({
+		source: "clipboard",
+		route: "clipboard",
+		files: [file],
+		fileCount: 1,
+		hint: {
+			destination: "viewer",
+			action: "open",
+			filename: file.name,
+			contentType: "image",
+			sink: "viewer"
+		}
+	});
+};
+var applyShellWallpaper = async (file) => {
+	if (!await isWallpaperCompatible(file)) return false;
+	const { setAppWallpaperFromBlob, getWallpaperStoragePointer, WALLPAPER_IDB_MARKER } = await __vitePreload(async () => {
+		const { setAppWallpaperFromBlob, getWallpaperStoragePointer, WALLPAPER_IDB_MARKER } = await import("../com/app.js").then((n) => n.C);
+		return {
+			setAppWallpaperFromBlob,
+			getWallpaperStoragePointer,
+			WALLPAPER_IDB_MARKER
+		};
+	}, __vite__mapDeps([0,1]), import.meta.url);
+	const { wallpaperState, persistWallpaper } = await loadLauncherState();
+	await setAppWallpaperFromBlob(file);
+	wallpaperState.src = getWallpaperStoragePointer() || WALLPAPER_IDB_MARKER;
+	persistWallpaper();
+	return true;
+};
+/**
+* Home drop/paste: SpeedDial fires `cwsp:shell-image-open`. Policy picks wallpaper vs viewer.
+*/
+var installShellImageOpenListener = () => {
+	if (shellImageOpenInstalled || typeof window === "undefined") return;
+	shellImageOpenInstalled = true;
+	window.addEventListener(SHELL_IMAGE_OPEN_EVENT, (raw) => {
+		const ev = raw;
+		const file = ev.detail?.file;
+		if (!(file instanceof File)) return;
+		ev.preventDefault();
+		(async () => {
+			try {
+				const { loadSettings } = await __vitePreload(async () => {
+					const { loadSettings } = await import("../shells/boot-index.js").then((n) => n.ht);
+					return { loadSettings };
+				}, __vite__mapDeps([4,1,3,0,5,6,7]), import.meta.url);
+				const { peekOpenPolicy, rememberOpenPolicyFromSettings, resolveOpenPolicy } = await __vitePreload(async () => {
+					const { peekOpenPolicy, rememberOpenPolicyFromSettings, resolveOpenPolicy } = await import("../shells/boot-index.js").then((n) => n.Vn);
+					return {
+						peekOpenPolicy,
+						rememberOpenPolicyFromSettings,
+						resolveOpenPolicy
+					};
+				}, __vite__mapDeps([4,1,3,0,5,6,7]), import.meta.url);
+				const settings = await loadSettings().catch(() => null);
+				rememberOpenPolicyFromSettings(settings);
+				const sink = resolveOpenPolicy(settings?.openPolicy ?? peekOpenPolicy(), "shell", "image", "open");
+				if (sink === "viewer" || sink === "display") {
+					await openShellImageInViewer(file);
+					return;
+				}
+				if (sink === "document" || sink === "transfer" || sink === "system" || sink === "external") {
+					const { dispatchViewTransfer } = await __vitePreload(async () => {
+						const { dispatchViewTransfer } = await import("./ViewTransferRouting.js");
+						return { dispatchViewTransfer };
+					}, __vite__mapDeps([2,3,0,1,4,5,6,7,8]), import.meta.url);
+					await dispatchViewTransfer({
+						source: "clipboard",
+						route: "clipboard",
+						files: [file],
+						fileCount: 1,
+						hint: {
+							destination: sink === "transfer" ? "network" : "viewer",
+							action: "open",
+							filename: file.name,
+							contentType: "image",
+							sink
+						}
+					});
+					return;
+				}
+				if (sink === "workcenter") {
+					const { dispatchViewTransfer } = await __vitePreload(async () => {
+						const { dispatchViewTransfer } = await import("./ViewTransferRouting.js");
+						return { dispatchViewTransfer };
+					}, __vite__mapDeps([2,3,0,1,4,5,6,7,8]), import.meta.url);
+					await dispatchViewTransfer({
+						source: "clipboard",
+						route: "clipboard",
+						files: [file],
+						fileCount: 1,
+						hint: {
+							destination: "workcenter",
+							action: "attach",
+							filename: file.name,
+							contentType: "image"
+						}
+					});
+					return;
+				}
+				if (sink === "wallpaper" || sink === "ask") {
+					if (await applyShellWallpaper(file)) return;
+					if (sink === "wallpaper") await openShellImageInViewer(file);
+					return;
+				}
+				if (!await applyShellWallpaper(file)) await openShellImageInViewer(file);
+			} catch (error) {
+				console.warn("[sku-ingress] shell image open failed", error);
+			}
+		})();
+	});
+};
 //#endregion
-export { applyLauncherIngress, dataUrlToFile, skuIngressHint };
+export { applyLauncherIngress, dataUrlToFile, installShellImageOpenListener, refineLauncherImageIngress, skuIngressHint };

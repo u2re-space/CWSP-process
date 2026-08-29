@@ -1,6 +1,6 @@
-import { f as publicHrefForView, m as shouldHandoffViewToSibling } from "../shells/boot-history-base.js";
-import { Fn as preloadStyle, On as ref, Pn as loadInlineStyle, Ut as dynamicTheme, et as ensureStyleSheet } from "../com/app.js";
-import { A as canonicalHubSettingsSection, Fn as getTransitionDirection, In as withViewTransition, L as resolveEffectiveHubSettingsSection, N as hubSettingsSectionPath, U as ViewRegistry, V as scheduleViewModulePrefetch, at as isEnabledView, ct as applyTheme, lt as resyncThemeAfterAdoptedViewSheet, rt as serviceChannels, ut as syncBrowserChromeTheme, xt as saveSettings, yt as loadSettings } from "../shells/boot-index.js";
+import { h as shouldHandoffViewToSibling, p as publicHrefForView } from "../shells/boot-history-base.js";
+import { Hn as ref, Jn as loadInlineStyle, Yn as preloadStyle, rn as dynamicTheme, z as ensureStyleSheet } from "../com/app.js";
+import { A as canonicalHubSettingsSection, L as resolveEffectiveHubSettingsSection, N as hubSettingsSectionPath, U as ViewRegistry, V as scheduleViewModulePrefetch, Xn as withViewTransition, Yn as getTransitionDirection, at as isEnabledView, ct as applyTheme, lt as resyncThemeAfterAdoptedViewSheet, rt as serviceChannels, ut as syncBrowserChromeTheme, xt as saveSettings, yt as loadSettings } from "../shells/boot-index.js";
 import { a as stripHistoryBase, i as pathForSkuHostView, n as initBootShellWindowActivity, o as withHistoryBase, r as ensureHistoryBaseDataset } from "../shells/preference.js";
 import { o as resolveOverlayMountPoint } from "../shells/environment-environment-overlay.js";
 //#region src/frontend/boot/shell-elements.ts
@@ -531,13 +531,6 @@ var ShellBase = class {
 				return;
 			}
 			if (!isEnabledView(vid)) return;
-			const target = String(d.target ?? "window").toLowerCase();
-			if ([
-				"window",
-				"tabbed",
-				"environment",
-				"frame"
-			].includes(target)) return;
 			if ([
 				"window",
 				"tabbed",
