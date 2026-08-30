@@ -1,7 +1,7 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./launcher-bridge.js","../shells/boot-index.js","./rolldown-runtime.js","../shells/boot-history-base.js","../com/app.js","../fest/core.js","../com/service.js","../fest/veela.js"])))=>i.map(i=>d[i]);
-import { _ as stashSkuHandoff, f as publicHrefForSku, g as siblingSkuForView, h as shouldHandoffViewToSibling, o as ensureCwspSkuFromLocation, r as androidPackageForSku, s as inferCwspSkuFromLocation, t as ECOSYSTEM_SKUS } from "../shells/boot-history-base.js";
+import { _ as stashSkuHandoff, c as isCwspNativeHost, f as publicHrefForSku, g as siblingSkuForView, h as shouldHandoffViewToSibling, m as readCwspSku, o as ensureCwspSkuFromLocation, r as androidPackageForSku, s as inferCwspSkuFromLocation, t as ECOSYSTEM_SKUS } from "../shells/boot-history-base.js";
 const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
-import { $n as enqueuePendingMessage, Bn as normalizeOpenSink, Hn as peekOpenPolicy, In as classifyOpenKindFromPayload, Jn as surfaceForSku, Kn as sinkToDestination, Ln as inferIngressChannels, Wn as resolveOpenPolicy, ar as sendProtocolMessage, dr as normalizeDestination, fr as viewBroadcastChannelName, qn as skuForOpenSink } from "../shells/boot-index.js";
+import { Gn as sendProtocolMessage, Qn as viewBroadcastChannelName, Zn as normalizeDestination, _r as skuForOpenSink, cr as peekOpenPolicy, hr as sinkToDestination, nr as classifyOpenKindFromPayload, or as normalizeOpenSink, pr as resolveOpenPolicy, rr as inferIngressChannels, yr as surfaceForSku, zn as enqueuePendingMessage } from "../shells/boot-index.js";
 import { t as summarizeForLog } from "./LogSanitizer.js";
 import { skuIngressHint } from "./sku-ingress.js";
 //#region src/shared/routing/channel/ViewTransferRouting.ts
@@ -218,10 +218,23 @@ var launchSinkSku = async (sink, payload, resolved) => {
 		});
 	} catch {}
 	const pkg = androidPackageForSku(sku);
+	const src = String(payload.url || payload.hint?.source || "");
+	if (pkg && /^(content|file|https?):/i.test(src)) try {
+		const { launcherOpenUri } = await __vitePreload(async () => {
+			const { launcherOpenUri } = await import("./launcher-bridge.js");
+			return { launcherOpenUri };
+		}, __vite__mapDeps([0,1,2,3,4,5,6,7]), import.meta.url);
+		if (await launcherOpenUri(src, {
+			packageName: pkg,
+			chooser: false,
+			mimeType: file?.type || void 0
+		})) return true;
+	} catch {}
 	if (pkg) try {
 		if (await (await __vitePreload(() => import("./launcher-bridge.js"), __vite__mapDeps([0,1,2,3,4,5,6,7]), import.meta.url)).launcherLaunch?.(pkg)) return true;
 	} catch {}
 	try {
+		if (isCwspNativeHost()) return false;
 		location.assign(publicHrefForSku(sku));
 		return true;
 	} catch {
@@ -239,10 +252,12 @@ var dispatchViewTransfer = async (payload) => {
 		};
 	}
 	if (sink === "document") {
-		if (await launchSinkSku(sink, payload, resolved)) return {
-			delivered: true,
-			resolved
-		};
+		if ((inferCwspSkuFromLocation() || readCwspSku()) !== "document") {
+			if (await launchSinkSku(sink, payload, resolved)) return {
+				delivered: true,
+				resolved
+			};
+		}
 	}
 	const stayInApp = sink === "viewer" || sink === "display";
 	const sibling = siblingSkuForView(resolved.destination);
@@ -286,8 +301,16 @@ var dispatchViewTransfer = async (payload) => {
 		metadata: message.metadata
 	}));
 	mirrorTransferToViewChannel(resolved, message);
+	const deliveredNow = await sendProtocolMessage({
+		...message,
+		purpose: ["deliver", "mail"],
+		protocol: "window",
+		op: payload.hint?.action === "open" ? "invoke" : "deliver",
+		srcChannel: message.source,
+		dstChannel: normalizeDestination(resolved.destination)
+	});
 	let queuedAsPending = false;
-	if (payload.pending && !hasBinaryPayload) try {
+	if (!deliveredNow && !hasBinaryPayload) try {
 		const pendingMessage = {
 			...message,
 			data: {
@@ -300,14 +323,6 @@ var dispatchViewTransfer = async (payload) => {
 	} catch (error) {
 		console.warn("[ViewTransfer] Failed to enqueue pending message:", error);
 	}
-	const deliveredNow = await sendProtocolMessage({
-		...message,
-		purpose: ["deliver", "mail"],
-		protocol: "window",
-		op: payload.hint?.action === "open" ? "invoke" : "deliver",
-		srcChannel: message.source,
-		dstChannel: normalizeDestination(resolved.destination)
-	});
 	const delivered = deliveredNow || queuedAsPending;
 	console.log("[ViewTransfer] Message delivery status:", {
 		deliveredNow,

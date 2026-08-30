@@ -131,7 +131,6 @@ var SKU_LOCAL_NAV_VIEWS = {
 	],
 	explorer: [
 		"explorer",
-		"viewer",
 		"settings",
 		"history"
 	],
@@ -257,16 +256,20 @@ var shouldHandoffViewToSibling = (view) => {
 };
 var CWSP_SKU_HANDOFF_KEY = "cwsp-sku-handoff";
 var stashSkuHandoff = (payload) => {
+	const json = JSON.stringify({
+		...payload,
+		ts: Date.now()
+	});
 	try {
-		globalThis.sessionStorage?.setItem?.(CWSP_SKU_HANDOFF_KEY, JSON.stringify({
-			...payload,
-			ts: Date.now()
-		}));
+		globalThis.sessionStorage?.setItem?.(CWSP_SKU_HANDOFF_KEY, json);
+	} catch {}
+	try {
+		globalThis.localStorage?.setItem?.(CWSP_SKU_HANDOFF_KEY, json);
 	} catch {}
 };
 var takeSkuHandoff = (...accept) => {
 	try {
-		const raw = globalThis.sessionStorage?.getItem?.(CWSP_SKU_HANDOFF_KEY);
+		const raw = globalThis.sessionStorage?.getItem?.("cwsp-sku-handoff") || globalThis.localStorage?.getItem?.("cwsp-sku-handoff");
 		if (!raw) return null;
 		const parsed = JSON.parse(raw);
 		const dest = normalizeNavViewId(String(parsed.dest || ""));
@@ -274,6 +277,7 @@ var takeSkuHandoff = (...accept) => {
 			if (!accept.some((entry) => normalizeNavViewId(entry) === dest)) return null;
 		}
 		globalThis.sessionStorage?.removeItem?.(CWSP_SKU_HANDOFF_KEY);
+		globalThis.localStorage?.removeItem?.(CWSP_SKU_HANDOFF_KEY);
 		return parsed;
 	} catch {
 		return null;

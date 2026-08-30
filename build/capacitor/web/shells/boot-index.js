@@ -1,7 +1,7 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../chunks/crx-control-session.js","../com/app.js","../chunks/rolldown-runtime.js","../chunks/src2.js","../chunks/shells.js","./boot-history-base.js","./preference.js","./environment-environment-overlay.js","../chunks/preview.js","../chunks/src3.js","../chunks/window.js","../chunks/environment-shell.js","./environment-index.js","./environment-components-calendar-CalendarFlyout.js","./environment-components-settings-QuickSettings.js","./environment-components-statusbar-capacitor-native-safe-area.js","./environment-components-app-menu-AppMenu.js","./environment-components-taskbar-element-TaskBar.js","./environment-components-explorer-ContextMenu.js","./environment-components-wallpaper.js","./environment-scss-main.scss_inline.js","../chunks/tabbed.js","../chunks/environment.js","../chunks/src9.js","../views/viewer.js","../com/service.js","../vendor/dompurify.js","../chunks/src10.js","../chunks/WorkCenter.js","../vendor/marked.js","../vendor/katex.js","../vendor/marked-katex-extension.js","../chunks/LogSanitizer.js","../chunks/ShareTargetGateway.js","../chunks/utils.js","../chunks/CustomInstructions.js","../chunks/entities.js","../chunks/AIResponseParser.js","../vendor/@toon-format_toon.js","../chunks/unified.js","../chunks/RuntimeSettings.js","../chunks/WorkCenterState.js","../chunks/WorkCenterDataProcessing.js","../chunks/src8.js","../chunks/storage.js","../chunks/capacitor-permissions.js","../chunks/capacitor-settings-permissions.js","../chunks/admin-doors.js","../chunks/src7.js","../chunks/frontend-debug-capture.js","../chunks/src5.js","../chunks/transfer-history-runtime.js","../chunks/src.js","../chunks/src4.js","../chunks/src6.js","../chunks/launcher-state.js","../chunks/crx-control-session2.js","../chunks/sw-handling.js","../chunks/sku-ingress.js","../chunks/ViewTransferRouting.js"])))=>i.map(i=>d[i]);
 import { n as __exportAll } from "../chunks/rolldown-runtime.js";
 import { c as isCwspNativeHost$1, h as shouldHandoffViewToSibling, m as readCwspSku$1, n as SKU_HUB_PATHS$1, p as publicHrefForView, s as inferCwspSkuFromLocation$1, u as isViewLocalToSurface$1 } from "./boot-history-base.js";
-import { $t as getUnifiedMessaging$2, Bn as observe, E as initializeAppCanvasLayer, F as __decorate, Gn as safe, N as UIElement, Qn as fixOrientToScreen, Qt as createServiceChannelManager, Un as stringRef, Wn as makeObjectAssignable, ar as __vitePreload, cn as makeUIState, en as createProtocolEnvelope, ln as saveUIState, nn as normalizeProtocolEnvelope, qn as loadAsAdopted, tn as isProtocolEnvelope, un as JSOX, wn as defineElement, zt as writeFileSmart } from "../com/app.js";
+import { Bn as Q, D as initializeAppCanvasLayer, I as __decorate, P as UIElement, Un as fixOrientToScreen, Wt as writeFileSmart, _n as saveUIState, ar as safe, cn as createProtocolEnvelope, er as observe, gn as makeUIState, ir as makeObjectAssignable, jn as defineElement, ln as isProtocolEnvelope, on as createServiceChannelManager, or as loadAsAdopted, rr as stringRef, sn as getUnifiedMessaging$2, un as normalizeProtocolEnvelope, ur as __vitePreload, vn as JSOX } from "../com/app.js";
 import { t as withTimeout } from "../fest/core.js";
 import { r as validateIngressBeforeViewHandle } from "../com/service.js";
 import { n as core_default, t as scss_default } from "../fest/veela.js";
@@ -363,6 +363,533 @@ var applyGridSettings = (settings) => {
 	document.documentElement.dataset.gridShape = shape;
 };
 if (typeof globalThis !== "undefined" && typeof document !== "undefined") scheduleFrame(() => applyGridSettings());
+//#endregion
+//#region src/shared/other/config/settings-host.ts
+var SETTINGS_HOSTS$1 = [
+	"capacitor",
+	"crx",
+	"pwa",
+	"web"
+];
+var isCrxHost$1 = () => {
+	try {
+		const proto = String(globalThis.location?.protocol || "").toLowerCase();
+		if (proto === "chrome-extension:" || proto === "moz-extension:") return true;
+		return Boolean(globalThis.chrome?.runtime?.id);
+	} catch {
+		return false;
+	}
+};
+var isPwaStandalone$1 = () => {
+	try {
+		if (String(document.documentElement?.dataset?.cwspSurface || "").toLowerCase().includes("pwa")) return true;
+		const standalone = globalThis.matchMedia?.("(display-mode: standalone)").matches || globalThis.navigator.standalone === true;
+		return Boolean(standalone);
+	} catch {
+		return false;
+	}
+};
+/**
+* INVARIANT: Capacitor wins over standalone (WebView is also standalone).
+* CRX wins over PWA. Web and PWA on the same origin keep different slices.
+*/
+var detectSettingsHost$1 = () => {
+	if (isCwspNativeHost$1()) return "capacitor";
+	if (isCrxHost$1()) return "crx";
+	if (isPwaStandalone$1()) return "pwa";
+	return "web";
+};
+//#endregion
+//#region src/shared/other/config/open-policy.ts
+/**
+* What to do with a file or payload, per surface / channel / kind.
+* INVARIANT: `ask` keeps the current SKU / content-type router.
+* Explorer: Web uses `channels`/`kinds`/`placement`. Capacitor uses `nativeOpen`/`nativeKinds` only.
+* Host slices live in `openPolicyByHost` (`settings-host.ts`).
+*/
+var open_policy_exports = /* @__PURE__ */ __exportAll({
+	DEFAULT_OPEN_POLICY: () => DEFAULT_OPEN_POLICY$1,
+	OPEN_CHANNELS: () => OPEN_CHANNELS$1,
+	OPEN_KINDS: () => OPEN_KINDS$1,
+	OPEN_PLACEMENTS: () => OPEN_PLACEMENTS$1,
+	OPEN_SINKS: () => OPEN_SINKS$1,
+	OPEN_SURFACES: () => OPEN_SURFACES$1,
+	adaptExplorerSinkForNative: () => adaptExplorerSinkForNative,
+	classifyOpenKind: () => classifyOpenKind,
+	classifyOpenKindFromName: () => classifyOpenKindFromName,
+	classifyOpenKindFromPayload: () => classifyOpenKindFromPayload,
+	inferIngressChannels: () => inferIngressChannels,
+	looksLikePreviewableBinary: () => looksLikePreviewableBinary,
+	mergeOpenPolicy: () => mergeOpenPolicy$1,
+	mergeOpenPolicyByHost: () => mergeOpenPolicyByHost$1,
+	normalizeOpenChannel: () => normalizeOpenChannel,
+	normalizeOpenPlacement: () => normalizeOpenPlacement$1,
+	normalizeOpenSink: () => normalizeOpenSink$1,
+	normalizeOpenSurface: () => normalizeOpenSurface,
+	peekOpenPolicy: () => peekOpenPolicy,
+	rememberOpenPolicyFromSettings: () => rememberOpenPolicyFromSettings$1,
+	resolveExplorerOpenSink: () => resolveExplorerOpenSink,
+	resolveHostOpenPolicy: () => resolveHostOpenPolicy$1,
+	resolveOpenPlacement: () => resolveOpenPlacement,
+	resolveOpenPolicy: () => resolveOpenPolicy,
+	sinkToAction: () => sinkToAction,
+	sinkToDestination: () => sinkToDestination,
+	sinkToOpenLinkTarget: () => sinkToOpenLinkTarget,
+	skuForOpenSink: () => skuForOpenSink,
+	stampHostOpenPolicy: () => stampHostOpenPolicy,
+	surfaceForSku: () => surfaceForSku,
+	viewIdForOpenSink: () => viewIdForOpenSink
+});
+var OPEN_KINDS$1 = [
+	"markdown",
+	"text",
+	"document",
+	"image",
+	"url",
+	"other"
+];
+var OPEN_SINKS$1 = [
+	"ask",
+	"display",
+	"viewer",
+	"document",
+	"explorer",
+	"workcenter",
+	"transfer",
+	"wallpaper",
+	"external",
+	"system"
+];
+var OPEN_CHANNELS$1 = [
+	"open",
+	"dblclick",
+	"share-target",
+	"launch-queue",
+	"snip",
+	"capacitor"
+];
+var OPEN_SURFACES$1 = [
+	"viewer",
+	"explorer",
+	"shell",
+	"crx",
+	"process",
+	"transfer"
+];
+/** How Explorer presents markdown/images in the browser (not Capacitor). */
+var OPEN_PLACEMENTS$1 = [
+	"inline",
+	"native-window",
+	"new-tab"
+];
+new Set(OPEN_KINDS$1);
+var SINK_SET$1 = new Set(OPEN_SINKS$1);
+var CHANNEL_SET$1 = new Set(OPEN_CHANNELS$1);
+var SURFACE_SET$1 = new Set(OPEN_SURFACES$1);
+var IMAGE_EXT = /\.(?:png|jpe?g|gif|webp|bmp|svg|avif|ico|jxl|tiff?|heic|heif)(?:$|[?#])/i;
+var MARKDOWN_EXT = /\.(?:md|markdown|mdown|mkd|mkdn|mdtxt|mdtext)(?:$|[?#])/i;
+var TEXT_EXT = /\.(?:txt|text|html|htm|css|scss|sass|less|json|csv|xml|yaml|yml|log|ini|env|toml|graphql|tsx?|jsx?|mts|cts|cjs|mjs|vue|svelte|rst)(?:$|[?#])/i;
+var DOCUMENT_EXT = /\.(?:pdf|docx?|odt|rtf|pages|epub|pptx?|xlsx?|ods|odp)(?:$|[?#])/i;
+var DEFAULT_OPEN_POLICY$1 = {
+	viewer: {
+		channels: {
+			open: "display",
+			"share-target": "display",
+			"launch-queue": "display",
+			capacitor: "display"
+		},
+		kinds: {
+			markdown: "display",
+			text: "display",
+			document: "display",
+			image: "display",
+			url: "display",
+			other: "display"
+		}
+	},
+	explorer: {
+		channels: {
+			open: "viewer",
+			dblclick: "viewer",
+			"share-target": "viewer",
+			"launch-queue": "viewer",
+			capacitor: "document"
+		},
+		placement: "inline",
+		kinds: {
+			markdown: "ask",
+			text: "ask",
+			document: "ask",
+			image: "ask",
+			url: "ask",
+			other: "ask"
+		},
+		nativeOpen: "document",
+		nativeKinds: {
+			markdown: "ask",
+			text: "ask",
+			document: "ask",
+			image: "ask",
+			url: "ask",
+			other: "ask"
+		}
+	},
+	shell: {
+		channels: {
+			open: "ask",
+			"share-target": "ask",
+			"launch-queue": "ask",
+			capacitor: "ask"
+		},
+		kinds: {
+			markdown: "ask",
+			text: "ask",
+			document: "ask",
+			image: "wallpaper",
+			url: "ask",
+			other: "ask"
+		}
+	},
+	crx: {
+		channels: {
+			open: "ask",
+			snip: "workcenter",
+			"share-target": "ask"
+		},
+		kinds: {
+			markdown: "viewer",
+			text: "viewer",
+			document: "viewer",
+			image: "workcenter",
+			url: "workcenter",
+			other: "workcenter"
+		}
+	},
+	process: {
+		channels: {
+			open: "workcenter",
+			"share-target": "workcenter",
+			"launch-queue": "workcenter",
+			capacitor: "workcenter"
+		},
+		kinds: {
+			markdown: "workcenter",
+			text: "workcenter",
+			document: "workcenter",
+			image: "workcenter",
+			url: "workcenter",
+			other: "workcenter"
+		}
+	},
+	transfer: {
+		channels: {
+			open: "ask",
+			"share-target": "ask",
+			"launch-queue": "ask",
+			capacitor: "ask"
+		},
+		kinds: {
+			markdown: "ask",
+			text: "ask",
+			document: "ask",
+			image: "ask",
+			url: "ask",
+			other: "ask"
+		}
+	}
+};
+var cachedPolicy$1 = DEFAULT_OPEN_POLICY$1;
+var normalizeOpenSink$1 = (raw, fallback = "ask") => {
+	const v = String(raw || "").trim().toLowerCase();
+	if (!v) return fallback;
+	if (v === "markdown" || v === "in-shell" || v === "in-app") return "viewer";
+	if (v === "document" || v === "cwsp-document" || v === "md") return "document";
+	if (v === "process" || v === "cwsp-process") return "workcenter";
+	if (v === "transfer" || v === "cwsp" || v === "cwsp-transfer" || v === "network") return "transfer";
+	if (v === "wallpaper" || v === "обои" || v === "backdrop" || v === "desktop") return "wallpaper";
+	if (v === "android" || v === "chooser" || v === "open-with") return "system";
+	if (v === "browser" || v === "new-tab" || v === "tab") return "external";
+	return SINK_SET$1.has(v) ? v : fallback;
+};
+var normalizeOpenPlacement$1 = (raw, fallback = "inline") => {
+	const v = String(raw || "").trim().toLowerCase();
+	if (!v) return fallback;
+	if (v === "in-shell" || v === "env" || v === "shell" || v === "iframe") return "inline";
+	if (v === "native" || v === "popup" || v === "app-window" || v === "detached" || v === "separate") return "native-window";
+	if (v === "tab" || v === "browser" || v === "as-is" || v === "browser-tab") return "new-tab";
+	return OPEN_PLACEMENTS$1.includes(v) ? v : fallback;
+};
+var normalizeOpenChannel = (raw) => {
+	const v = String(raw || "").trim().toLowerCase();
+	if (v === "dbl-click" || v === "double-click") return "dblclick";
+	if (v === "share" || v === "sharetarget") return "share-target";
+	if (v === "launch" || v === "launchqueue") return "launch-queue";
+	return CHANNEL_SET$1.has(v) ? v : "";
+};
+var normalizeOpenSurface = (raw) => {
+	const v = String(raw || "").trim().toLowerCase();
+	if (v === "document" || v === "markdown") return "viewer";
+	if (v === "launcher" || v === "environment" || v === "home") return "shell";
+	return SURFACE_SET$1.has(v) ? v : "";
+};
+var normalizeKinds$1 = (raw) => {
+	const out = {};
+	if (!raw || typeof raw !== "object") return out;
+	for (const key of OPEN_KINDS$1) {
+		const sink = raw[key];
+		if (sink == null || sink === "") continue;
+		out[key] = normalizeOpenSink$1(sink);
+	}
+	return out;
+};
+var normalizeChannels$1 = (raw) => {
+	const out = {};
+	if (!raw || typeof raw !== "object") return out;
+	for (const key of OPEN_CHANNELS$1) {
+		const sink = raw[key];
+		if (sink == null || sink === "") continue;
+		out[key] = normalizeOpenSink$1(sink);
+	}
+	return out;
+};
+var mergeOpenPolicy$1 = (...parts) => {
+	const out = {};
+	for (const surface of OPEN_SURFACES$1) {
+		const base = DEFAULT_OPEN_POLICY$1[surface] || {};
+		let channels = { ...base.channels || {} };
+		let kinds = { ...base.kinds || {} };
+		let placement = normalizeOpenPlacement$1(base.placement, "inline");
+		let nativeOpen = normalizeOpenSink$1(base.nativeOpen, surface === "explorer" ? "document" : "ask");
+		let nativeKinds = { ...base.nativeKinds || {} };
+		let nativeOpenSaved = false;
+		for (const part of parts) {
+			const src = part?.[surface];
+			if (!src) continue;
+			channels = {
+				...channels,
+				...normalizeChannels$1(src.channels)
+			};
+			kinds = {
+				...kinds,
+				...normalizeKinds$1(src.kinds)
+			};
+			if (src.placement != null && src.placement !== "") placement = normalizeOpenPlacement$1(src.placement, placement);
+			if (src.nativeOpen != null && src.nativeOpen !== "") {
+				nativeOpenSaved = true;
+				nativeOpen = normalizeOpenSink$1(src.nativeOpen, nativeOpen);
+			}
+			if (src.nativeKinds) nativeKinds = {
+				...nativeKinds,
+				...normalizeKinds$1(src.nativeKinds)
+			};
+		}
+		if (!nativeOpenSaved && surface === "explorer") {
+			const legacy = channels.open;
+			if (legacy === "system" || legacy === "transfer" || legacy === "workcenter") nativeOpen = legacy;
+		}
+		out[surface] = surface === "explorer" ? {
+			channels,
+			kinds,
+			placement,
+			nativeOpen,
+			nativeKinds
+		} : {
+			channels,
+			kinds,
+			placement
+		};
+	}
+	return out;
+};
+var mergeOpenPolicyByHost$1 = (...parts) => {
+	const out = {};
+	for (const host of SETTINGS_HOSTS$1) {
+		const slices = parts.map((part) => part?.[host]).filter((p) => Boolean(p));
+		if (slices.length) out[host] = mergeOpenPolicy$1(...slices);
+	}
+	return out;
+};
+/** Host slice wins over a leftover flat `openPolicy` so Capacitor cannot clobber Web. */
+var resolveHostOpenPolicy$1 = (settings) => {
+	const host = detectSettingsHost$1();
+	return mergeOpenPolicy$1(settings?.openPolicy, settings?.openPolicyByHost?.[host]);
+};
+var stampHostOpenPolicy = (settings) => {
+	const host = detectSettingsHost$1();
+	const next = mergeOpenPolicy$1(settings.openPolicy);
+	settings.openPolicy = next;
+	settings.openPolicyByHost = {
+		...settings.openPolicyByHost || {},
+		[host]: next
+	};
+	return next;
+};
+var rememberOpenPolicyFromSettings$1 = (settings) => {
+	cachedPolicy$1 = resolveHostOpenPolicy$1(settings);
+	return cachedPolicy$1;
+};
+var peekOpenPolicy = () => cachedPolicy$1;
+var surfaceForSku = (sku) => {
+	const v = String(sku || "").trim().toLowerCase();
+	if (v === "document") return "viewer";
+	if (v === "explorer") return "explorer";
+	if (v === "launcher") return "shell";
+	if (v === "process") return "process";
+	if (v === "transfer") return "transfer";
+	if (v === "crx") return "crx";
+	return "";
+};
+var basenameOf = (raw) => {
+	const t = String(raw || "").trim().replace(/\\/g, "/");
+	const noQuery = t.split(/[?#]/)[0] || t;
+	const cut = noQuery.lastIndexOf("/");
+	return (cut >= 0 ? noQuery.slice(cut + 1) : noQuery).trim();
+};
+var classifyOpenKindFromName = (raw, mime = "") => {
+	const name = basenameOf(raw);
+	const type = String(mime || "").toLowerCase();
+	if (type.startsWith("image/") || IMAGE_EXT.test(name)) return "image";
+	if (type === "text/markdown" || type.includes("markdown") || MARKDOWN_EXT.test(name)) return "markdown";
+	if (type === "application/pdf" || type.includes("officedocument") || type.includes("msword") || type.includes("opendocument") || DOCUMENT_EXT.test(name)) return "document";
+	if (type.startsWith("text/") || type === "application/json" || type === "application/xml" || type === "application/javascript" || type === "application/typescript" || TEXT_EXT.test(name)) return "text";
+	return "other";
+};
+var classifyOpenKind = (file) => {
+	if (!file) return "other";
+	if (typeof file === "string") return classifyOpenKindFromName(file);
+	return classifyOpenKindFromName(String(file.name || ""), String(file.type || ""));
+};
+/** Image or PDF — viewer can paint these without treating bytes as markdown. */
+var looksLikePreviewableBinary = (file) => {
+	if (!file) return false;
+	if (classifyOpenKind(file) === "image") return true;
+	const name = String(file.name || "");
+	return String(file.type || "").toLowerCase() === "application/pdf" || /\.pdf(?:$|[?#])/i.test(name);
+};
+var classifyOpenKindFromPayload = (payload) => {
+	const files = Array.isArray(payload.files) ? payload.files : [];
+	if (files[0]) return classifyOpenKind(files[0]);
+	const hinted = String(payload.hint?.contentType || "").toLowerCase();
+	if (hinted === "markdown" || hinted === "text" || hinted === "image" || hinted === "url") return hinted;
+	const name = String(payload.hint?.filename || payload.title || "").trim();
+	if (name && (!payload.url || Number(payload.fileCount || 0) > 0)) {
+		const fromName = classifyOpenKindFromName(name);
+		if (fromName !== "other") return fromName;
+	}
+	const url = String(payload.url || "").trim();
+	if (url) {
+		const fromUrl = classifyOpenKindFromName(url);
+		return fromUrl === "other" ? "url" : fromUrl;
+	}
+	if (String(payload.text || "").trim()) return "text";
+	return "other";
+};
+var firstNonAsk = (...sinks) => {
+	for (const sink of sinks) if (sink && sink !== "ask") return sink;
+	return "";
+};
+/**
+* Explorer: channel (Open / click) wins, kind is an override only when channel is `ask`.
+* Other surfaces: kind override → first non-`ask` channel.
+*/
+var resolveOpenPolicy = (policy, surface, kind, channels = "open") => {
+	const surf = normalizeOpenSurface(surface);
+	if (!surf) return "ask";
+	const block = mergeOpenPolicy$1(policy)[surf] || {};
+	const kinds = block.kinds || {};
+	const chans = block.channels || {};
+	const kindSink = kind && kinds[kind] ? kinds[kind] : void 0;
+	const channelSinks = (Array.isArray(channels) ? channels : [channels]).map((ch) => normalizeOpenChannel(ch)).filter((ch) => Boolean(ch)).map((ch) => chans[ch]);
+	if (surf === "explorer") return firstNonAsk(...channelSinks, kindSink) || kindSink || channelSinks[0] || "ask";
+	return firstNonAsk(kindSink, ...channelSinks) || kindSink || channelSinks[0] || "ask";
+};
+/**
+* Capacitor Explorer has no inline viewer.
+* `document` → CWSP-document. `system` / `ask` / `external` → Android Open-with.
+* `viewer` / `display` only map to Document so a leftover web default still opens the APK.
+*/
+var adaptExplorerSinkForNative = (sink) => {
+	if (sink === "viewer" || sink === "display") return "document";
+	if (sink === "ask" || sink === "external") return "system";
+	return sink;
+};
+var NATIVE_EXPLORER_SINKS = /* @__PURE__ */ new Set([
+	"document",
+	"system",
+	"transfer",
+	"workcenter"
+]);
+/**
+* INVARIANT: Web reads `channels`/`kinds` only. Capacitor reads `nativeOpen`/`nativeKinds` only.
+* A leftover `channels.open` of document/system is honored on native until Settings saves `nativeOpen`.
+*/
+var resolveExplorerOpenSink = (policy, kind, native, how = "open") => {
+	const block = mergeOpenPolicy$1(policy).explorer || {};
+	if (native) {
+		const kindSink = kind && block.nativeKinds?.[kind] ? block.nativeKinds[kind] : void 0;
+		const legacy = block.channels?.open;
+		const open = normalizeOpenSink$1(block.nativeOpen || (legacy && NATIVE_EXPLORER_SINKS.has(legacy) ? legacy : "") || block.channels?.capacitor, "document");
+		return adaptExplorerSinkForNative(firstNonAsk(kindSink, open) || open);
+	}
+	const ch = how === "dblclick" ? block.channels?.dblclick : block.channels?.open;
+	const kindSink = kind && block.kinds?.[kind] ? block.kinds[kind] : void 0;
+	return firstNonAsk(ch, kindSink) || kindSink || ch || "viewer";
+};
+var sinkToDestination = (sink, fallback) => {
+	if (sink === "viewer" || sink === "document") return "viewer";
+	if (sink === "explorer") return "explorer";
+	if (sink === "workcenter") return "workcenter";
+	if (sink === "transfer") return "network";
+	if (sink === "wallpaper") return "home";
+	if (sink === "display") return fallback;
+	return fallback;
+};
+var sinkToAction = (sink, fallback = "open") => {
+	if (sink === "workcenter") return "process";
+	if (sink === "viewer" || sink === "display" || sink === "document" || sink === "transfer") return "open";
+	if (sink === "explorer") return "open";
+	if (sink === "wallpaper") return "wallpaper";
+	return fallback;
+};
+/** Sibling SKU for a sink. `viewer` / `display` stay in this app. */
+var skuForOpenSink = (sink) => {
+	if (sink === "document") return "document";
+	if (sink === "workcenter") return "process";
+	if (sink === "transfer") return "transfer";
+	if (sink === "explorer") return "explorer";
+	return "";
+};
+/** Per-tile Speed Dial target for a sink. `ask` leaves the tile unset (global default). */
+var sinkToOpenLinkTarget = (sink) => {
+	if (sink === "viewer" || sink === "display") return "viewer";
+	if (sink === "document") return "document";
+	if (sink === "explorer") return "explorer";
+	if (sink === "workcenter") return "workcenter";
+	if (sink === "transfer") return "transfer";
+	if (sink === "system" || sink === "external") return "external-app";
+	return "";
+};
+var resolveOpenPlacement = (policy, surface = "explorer") => {
+	const surf = normalizeOpenSurface(surface) || "explorer";
+	return normalizeOpenPlacement$1(mergeOpenPolicy$1(policy)[surf]?.placement, "inline");
+};
+var viewIdForOpenSink = (sink) => {
+	if (sink === "document" || sink === "viewer") return "viewer";
+	if (sink === "workcenter") return "workcenter";
+	if (sink === "transfer") return "network";
+	if (sink === "explorer") return "explorer";
+	return "";
+};
+var inferIngressChannels = (source, native) => {
+	const src = String(source || "").toLowerCase();
+	const out = [];
+	if (native && (src === "launch-queue" || src === "share-target" || src === "capacitor")) out.push("capacitor");
+	if (src === "share-target") out.push("share-target");
+	else if (src === "launch-queue") out.push("launch-queue");
+	else if (src === "snip") out.push("snip");
+	else out.push("open");
+	return out;
+};
 //#endregion
 //#region src/shared/routing/api/process-api.ts
 var PROCESS_API_PUBLIC_ORIGIN$1 = "https://process.u2re.space";
@@ -1512,454 +2039,6 @@ function createMessageWithOverrides(type, source, contentType, data, overrideFac
 	};
 }
 //#endregion
-//#region src/shared/routing/core/view-transitions.ts
-/**
-* Canonical view order used to determine navigation direction.
-* Earlier index = "back", later index = "forward".
-*/
-var VIEW_ORDER = [
-	"home",
-	"viewer",
-	"editor",
-	"explorer",
-	"workcenter",
-	"history",
-	"settings",
-	"print"
-];
-/** `true` when `document.startViewTransition` is available (Chrome 111+). */
-var supportsViewTransitions = () => typeof document !== "undefined" && "startViewTransition" in document;
-/**
-* WHY: Neutralino / WebNative WebViews have flaky View Transition teardown —
-* a stuck `::view-transition` layer makes the whole shell unclickable.
-* Prefer an instant DOM swap there.
-*/
-function shouldSkipViewTransitions() {
-	try {
-		const g = globalThis;
-		if (g.__CWS_NEUTRALINO_BOOT__ || g.__CWS_WEBNATIVE_BOOT__) return true;
-		if (g.NL_OS || g.Neutralino) return true;
-		if (typeof document !== "undefined" && document.documentElement?.dataset?.cwspDisableVt === "1") return true;
-	} catch {}
-	return false;
-}
-/**
-* Compute navigation direction based on the ordered view list.
-*
-* Unknown view IDs fall back to `"fade"` (no slide animation).
-*/
-function getTransitionDirection(from, to) {
-	const fi = VIEW_ORDER.indexOf(from);
-	const ti = VIEW_ORDER.indexOf(to);
-	if (fi === -1 || ti === -1 || fi === ti) return "fade";
-	return fi < ti ? "forward" : "backward";
-}
-/**
-* Wrap a DOM mutation in a View Transition, with a transparent fallback.
-*
-* Before starting the transition, `data-vt-direction` is set on `:root` so
-* CSS `::view-transition-old/new(active-view)` can select the right keyframe
-* animation via inherited CSS custom properties.
-*
-* If a transition is already running, the browser will abort the previous one
-* and start the new one — this is intentional and handled gracefully.
-*/
-async function withViewTransition(update, options = {}) {
-	const finishOnce = () => {
-		try {
-			options.onTransitionFinished?.();
-		} catch (error) {
-			console.warn("[view-transition] onTransitionFinished error:", error);
-		}
-	};
-	let finishedCalled = false;
-	const guardedFinish = () => {
-		if (finishedCalled) return;
-		finishedCalled = true;
-		finishOnce();
-	};
-	if (!supportsViewTransitions() || shouldSkipViewTransitions()) {
-		await update();
-		requestAnimationFrame(() => requestAnimationFrame(guardedFinish));
-		return;
-	}
-	const { direction = "fade", types } = options;
-	document.documentElement.dataset.vtDirection = direction;
-	const doc = document;
-	const transition = types?.length ? doc.startViewTransition({
-		update,
-		types
-	}) : doc.startViewTransition(update);
-	transition.finished.then(guardedFinish).catch(guardedFinish);
-	globalThis.setTimeout?.(() => {
-		try {
-			transition.skipTransition();
-		} catch {}
-		guardedFinish();
-	}, 900);
-	try {
-		await (transition.updateCallbackDone ?? transition.finished);
-	} catch {} finally {
-		delete document.documentElement.dataset.vtDirection;
-	}
-	transition.finished.catch(() => {});
-}
-//#endregion
-//#region src/shared/other/config/open-policy.ts
-var open_policy_exports = /* @__PURE__ */ __exportAll({
-	DEFAULT_OPEN_POLICY: () => DEFAULT_OPEN_POLICY$1,
-	OPEN_CHANNELS: () => OPEN_CHANNELS$1,
-	OPEN_KINDS: () => OPEN_KINDS$1,
-	OPEN_SINKS: () => OPEN_SINKS$1,
-	OPEN_SURFACES: () => OPEN_SURFACES$1,
-	classifyOpenKind: () => classifyOpenKind,
-	classifyOpenKindFromName: () => classifyOpenKindFromName,
-	classifyOpenKindFromPayload: () => classifyOpenKindFromPayload,
-	inferIngressChannels: () => inferIngressChannels,
-	looksLikePreviewableBinary: () => looksLikePreviewableBinary,
-	mergeOpenPolicy: () => mergeOpenPolicy$1,
-	normalizeOpenChannel: () => normalizeOpenChannel,
-	normalizeOpenPolicy: () => normalizeOpenPolicy$1,
-	normalizeOpenSink: () => normalizeOpenSink$1,
-	normalizeOpenSurface: () => normalizeOpenSurface,
-	peekOpenPolicy: () => peekOpenPolicy,
-	rememberOpenPolicyFromSettings: () => rememberOpenPolicyFromSettings$1,
-	resolveOpenPolicy: () => resolveOpenPolicy,
-	sinkToAction: () => sinkToAction,
-	sinkToDestination: () => sinkToDestination,
-	skuForOpenSink: () => skuForOpenSink,
-	surfaceForSku: () => surfaceForSku
-});
-/**
-* What to do with a file or payload, per surface / channel / kind.
-* INVARIANT: `ask` keeps the current SKU / content-type router. Kind beats channel.
-*/
-var OPEN_KINDS$1 = [
-	"markdown",
-	"text",
-	"document",
-	"image",
-	"url",
-	"other"
-];
-var OPEN_SINKS$1 = [
-	"ask",
-	"display",
-	"viewer",
-	"document",
-	"explorer",
-	"workcenter",
-	"transfer",
-	"wallpaper",
-	"external",
-	"system"
-];
-var OPEN_CHANNELS$1 = [
-	"open",
-	"dblclick",
-	"share-target",
-	"launch-queue",
-	"snip",
-	"capacitor"
-];
-var OPEN_SURFACES$1 = [
-	"viewer",
-	"explorer",
-	"shell",
-	"crx",
-	"process",
-	"transfer"
-];
-new Set(OPEN_KINDS$1);
-var SINK_SET$1 = new Set(OPEN_SINKS$1);
-var CHANNEL_SET$1 = new Set(OPEN_CHANNELS$1);
-var SURFACE_SET$1 = new Set(OPEN_SURFACES$1);
-var IMAGE_EXT = /\.(?:png|jpe?g|gif|webp|bmp|svg|avif|ico|jxl|tiff?|heic|heif)(?:$|[?#])/i;
-var MARKDOWN_EXT = /\.(?:md|markdown|mdown|mkd|mkdn|mdtxt|mdtext)(?:$|[?#])/i;
-var TEXT_EXT = /\.(?:txt|text|html|htm|css|scss|sass|less|json|csv|xml|yaml|yml|log|ini|env|toml|graphql|tsx?|jsx?|mts|cts|cjs|mjs|vue|svelte|rst)(?:$|[?#])/i;
-var DOCUMENT_EXT = /\.(?:pdf|docx?|odt|rtf|pages|epub|pptx?|xlsx?|ods|odp)(?:$|[?#])/i;
-var DEFAULT_OPEN_POLICY$1 = {
-	viewer: {
-		channels: {
-			open: "display",
-			"share-target": "display",
-			"launch-queue": "display",
-			capacitor: "display"
-		},
-		kinds: {
-			markdown: "display",
-			text: "display",
-			document: "display",
-			image: "display",
-			url: "display",
-			other: "display"
-		}
-	},
-	explorer: {
-		channels: {
-			open: "ask",
-			dblclick: "ask",
-			"share-target": "ask",
-			"launch-queue": "ask",
-			capacitor: "ask"
-		},
-		kinds: {
-			markdown: "ask",
-			text: "ask",
-			document: "ask",
-			image: "ask",
-			url: "ask",
-			other: "ask"
-		}
-	},
-	shell: {
-		channels: {
-			open: "ask",
-			"share-target": "ask",
-			"launch-queue": "ask",
-			capacitor: "ask"
-		},
-		kinds: {
-			markdown: "ask",
-			text: "ask",
-			document: "ask",
-			image: "wallpaper",
-			url: "ask",
-			other: "ask"
-		}
-	},
-	crx: {
-		channels: {
-			open: "ask",
-			snip: "workcenter",
-			"share-target": "ask"
-		},
-		kinds: {
-			markdown: "viewer",
-			text: "viewer",
-			document: "viewer",
-			image: "workcenter",
-			url: "workcenter",
-			other: "workcenter"
-		}
-	},
-	process: {
-		channels: {
-			open: "workcenter",
-			"share-target": "workcenter",
-			"launch-queue": "workcenter",
-			capacitor: "workcenter"
-		},
-		kinds: {
-			markdown: "workcenter",
-			text: "workcenter",
-			document: "workcenter",
-			image: "workcenter",
-			url: "workcenter",
-			other: "workcenter"
-		}
-	},
-	transfer: {
-		channels: {
-			open: "ask",
-			"share-target": "ask",
-			"launch-queue": "ask",
-			capacitor: "ask"
-		},
-		kinds: {
-			markdown: "ask",
-			text: "ask",
-			document: "ask",
-			image: "ask",
-			url: "ask",
-			other: "ask"
-		}
-	}
-};
-var cachedPolicy$1 = DEFAULT_OPEN_POLICY$1;
-var normalizeOpenSink$1 = (raw, fallback = "ask") => {
-	const v = String(raw || "").trim().toLowerCase();
-	if (!v) return fallback;
-	if (v === "markdown" || v === "in-shell" || v === "in-app") return "viewer";
-	if (v === "document" || v === "cwsp-document" || v === "md") return "document";
-	if (v === "process" || v === "cwsp-process") return "workcenter";
-	if (v === "transfer" || v === "cwsp" || v === "cwsp-transfer" || v === "network") return "transfer";
-	if (v === "wallpaper" || v === "обои" || v === "backdrop" || v === "desktop") return "wallpaper";
-	if (v === "android" || v === "chooser" || v === "open-with") return "system";
-	if (v === "browser" || v === "new-tab" || v === "tab") return "external";
-	return SINK_SET$1.has(v) ? v : fallback;
-};
-var normalizeOpenChannel = (raw) => {
-	const v = String(raw || "").trim().toLowerCase();
-	if (v === "dbl-click" || v === "double-click") return "dblclick";
-	if (v === "share" || v === "sharetarget") return "share-target";
-	if (v === "launch" || v === "launchqueue") return "launch-queue";
-	return CHANNEL_SET$1.has(v) ? v : "";
-};
-var normalizeOpenSurface = (raw) => {
-	const v = String(raw || "").trim().toLowerCase();
-	if (v === "document" || v === "markdown") return "viewer";
-	if (v === "launcher" || v === "environment" || v === "home") return "shell";
-	return SURFACE_SET$1.has(v) ? v : "";
-};
-var normalizeKinds$1 = (raw) => {
-	const out = {};
-	if (!raw || typeof raw !== "object") return out;
-	for (const key of OPEN_KINDS$1) {
-		const sink = raw[key];
-		if (sink == null || sink === "") continue;
-		out[key] = normalizeOpenSink$1(sink);
-	}
-	return out;
-};
-var normalizeChannels$1 = (raw) => {
-	const out = {};
-	if (!raw || typeof raw !== "object") return out;
-	for (const key of OPEN_CHANNELS$1) {
-		const sink = raw[key];
-		if (sink == null || sink === "") continue;
-		out[key] = normalizeOpenSink$1(sink);
-	}
-	return out;
-};
-var mergeOpenPolicy$1 = (...parts) => {
-	const out = {};
-	for (const surface of OPEN_SURFACES$1) {
-		const base = DEFAULT_OPEN_POLICY$1[surface] || {};
-		let channels = { ...base.channels || {} };
-		let kinds = { ...base.kinds || {} };
-		for (const part of parts) {
-			const src = part?.[surface];
-			if (!src) continue;
-			channels = {
-				...channels,
-				...normalizeChannels$1(src.channels)
-			};
-			kinds = {
-				...kinds,
-				...normalizeKinds$1(src.kinds)
-			};
-		}
-		out[surface] = {
-			channels,
-			kinds
-		};
-	}
-	return out;
-};
-var normalizeOpenPolicy$1 = (raw) => mergeOpenPolicy$1(raw && typeof raw === "object" ? raw : void 0);
-var rememberOpenPolicyFromSettings$1 = (settings) => {
-	cachedPolicy$1 = normalizeOpenPolicy$1(settings?.openPolicy);
-	return cachedPolicy$1;
-};
-var peekOpenPolicy = () => cachedPolicy$1;
-var surfaceForSku = (sku) => {
-	const v = String(sku || "").trim().toLowerCase();
-	if (v === "document") return "viewer";
-	if (v === "explorer") return "explorer";
-	if (v === "launcher") return "shell";
-	if (v === "process") return "process";
-	if (v === "transfer") return "transfer";
-	if (v === "crx") return "crx";
-	return "";
-};
-var basenameOf = (raw) => {
-	const t = String(raw || "").trim().replace(/\\/g, "/");
-	const noQuery = t.split(/[?#]/)[0] || t;
-	const cut = noQuery.lastIndexOf("/");
-	return (cut >= 0 ? noQuery.slice(cut + 1) : noQuery).trim();
-};
-var classifyOpenKindFromName = (raw, mime = "") => {
-	const name = basenameOf(raw);
-	const type = String(mime || "").toLowerCase();
-	if (type.startsWith("image/") || IMAGE_EXT.test(name)) return "image";
-	if (type === "text/markdown" || type.includes("markdown") || MARKDOWN_EXT.test(name)) return "markdown";
-	if (type === "application/pdf" || type.includes("officedocument") || type.includes("msword") || type.includes("opendocument") || DOCUMENT_EXT.test(name)) return "document";
-	if (type.startsWith("text/") || type === "application/json" || type === "application/xml" || type === "application/javascript" || type === "application/typescript" || TEXT_EXT.test(name)) return "text";
-	return "other";
-};
-var classifyOpenKind = (file) => {
-	if (!file) return "other";
-	if (typeof file === "string") return classifyOpenKindFromName(file);
-	return classifyOpenKindFromName(String(file.name || ""), String(file.type || ""));
-};
-/** Image or PDF — viewer can paint these without treating bytes as markdown. */
-var looksLikePreviewableBinary = (file) => {
-	if (!file) return false;
-	if (classifyOpenKind(file) === "image") return true;
-	const name = String(file.name || "");
-	return String(file.type || "").toLowerCase() === "application/pdf" || /\.pdf(?:$|[?#])/i.test(name);
-};
-var classifyOpenKindFromPayload = (payload) => {
-	const files = Array.isArray(payload.files) ? payload.files : [];
-	if (files[0]) return classifyOpenKind(files[0]);
-	const hinted = String(payload.hint?.contentType || "").toLowerCase();
-	if (hinted === "markdown" || hinted === "text" || hinted === "image" || hinted === "url") return hinted;
-	const name = String(payload.hint?.filename || payload.title || "").trim();
-	if (name && (!payload.url || Number(payload.fileCount || 0) > 0)) {
-		const fromName = classifyOpenKindFromName(name);
-		if (fromName !== "other") return fromName;
-	}
-	const url = String(payload.url || "").trim();
-	if (url) {
-		const fromUrl = classifyOpenKindFromName(url);
-		return fromUrl === "other" ? "url" : fromUrl;
-	}
-	if (String(payload.text || "").trim()) return "text";
-	return "other";
-};
-var firstNonAsk = (...sinks) => {
-	for (const sink of sinks) if (sink && sink !== "ask") return sink;
-	return "";
-};
-/**
-* Kind override → first non-`ask` channel → default for that surface/kind.
-*/
-var resolveOpenPolicy = (policy, surface, kind, channels = "open") => {
-	const surf = normalizeOpenSurface(surface);
-	if (!surf) return "ask";
-	const block = mergeOpenPolicy$1(policy)[surf] || {};
-	const kinds = block.kinds || {};
-	const chans = block.channels || {};
-	const kindSink = kind && kinds[kind] ? kinds[kind] : void 0;
-	const channelSinks = (Array.isArray(channels) ? channels : [channels]).map((ch) => normalizeOpenChannel(ch)).filter((ch) => Boolean(ch)).map((ch) => chans[ch]);
-	return firstNonAsk(kindSink, ...channelSinks) || kindSink || channelSinks[0] || "ask";
-};
-var sinkToDestination = (sink, fallback) => {
-	if (sink === "viewer" || sink === "document") return "viewer";
-	if (sink === "explorer") return "explorer";
-	if (sink === "workcenter") return "workcenter";
-	if (sink === "transfer") return "network";
-	if (sink === "wallpaper") return "home";
-	if (sink === "display") return fallback;
-	return fallback;
-};
-var sinkToAction = (sink, fallback = "open") => {
-	if (sink === "workcenter") return "process";
-	if (sink === "viewer" || sink === "display" || sink === "document" || sink === "transfer") return "open";
-	if (sink === "explorer") return "open";
-	if (sink === "wallpaper") return "wallpaper";
-	return fallback;
-};
-/** Sibling SKU for a sink. `viewer` / `display` stay in this app. */
-var skuForOpenSink = (sink) => {
-	if (sink === "document") return "document";
-	if (sink === "workcenter") return "process";
-	if (sink === "transfer") return "transfer";
-	if (sink === "explorer") return "explorer";
-	return "";
-};
-var inferIngressChannels = (source, native) => {
-	const src = String(source || "").toLowerCase();
-	const out = [];
-	if (native && (src === "launch-queue" || src === "share-target" || src === "capacitor")) out.push("capacitor");
-	if (src === "share-target") out.push("share-target");
-	else if (src === "launch-queue") out.push("launch-queue");
-	else if (src === "snip") out.push("snip");
-	else out.push("open");
-	return out;
-};
-//#endregion
 //#region src/shared/other/config/SettingsTypes.ts
 var BUILTIN_AI_MODELS = ["gpt-5.6-luna"];
 var defaultSpeechLanguage$1 = () => {
@@ -2141,6 +2220,7 @@ var DEFAULT_SETTINGS$1 = {
 		iconScale: "fill"
 	},
 	openPolicy: DEFAULT_OPEN_POLICY$1,
+	openPolicyByHost: {},
 	appMenu: {
 		sortBy: "name",
 		sortDir: "asc"
@@ -5748,7 +5828,11 @@ var mergeAppSettingsShape$1 = (base, patch) => {
 			...base.shell || {},
 			...patch.shell || {}
 		},
-		openPolicy: mergeOpenPolicy$1(base.openPolicy, patch.openPolicy)
+		openPolicyByHost: mergeOpenPolicyByHost$1(base.openPolicyByHost, patch.openPolicyByHost),
+		openPolicy: resolveHostOpenPolicy$1({
+			openPolicy: mergeOpenPolicy$1(base.openPolicy, patch.openPolicy),
+			openPolicyByHost: mergeOpenPolicyByHost$1(base.openPolicyByHost, patch.openPolicyByHost)
+		})
 	};
 };
 var getWebDavCreateClient$1 = async () => {
@@ -6131,7 +6215,11 @@ var loadSettings$1 = async (opts) => {
 					...DEFAULT_SETTINGS$1.explorer,
 					...stored?.explorer
 				},
-				openPolicy: mergeOpenPolicy$1(DEFAULT_SETTINGS$1.openPolicy, stored?.openPolicy)
+				openPolicyByHost: mergeOpenPolicyByHost$1(stored?.openPolicyByHost),
+				openPolicy: resolveHostOpenPolicy$1({
+					openPolicy: stored?.openPolicy,
+					openPolicyByHost: stored?.openPolicyByHost
+				})
 			};
 			try {
 				if (opts?.nativeOverlay !== false && isCwsNativeIpcAvailable$1()) {
@@ -6307,7 +6395,15 @@ var saveSettings$1 = async (settings) => {
 			...current.explorer || {},
 			...settings.explorer || {}
 		},
-		openPolicy: mergeOpenPolicy$1(DEFAULT_SETTINGS$1.openPolicy, current.openPolicy, settings.openPolicy)
+		openPolicyByHost: (() => {
+			const host = detectSettingsHost$1();
+			const next = mergeOpenPolicy$1(DEFAULT_SETTINGS$1.openPolicy, current.openPolicy, settings.openPolicy);
+			return mergeOpenPolicyByHost$1(current.openPolicyByHost, settings.openPolicyByHost, { [host]: next });
+		})(),
+		openPolicy: resolveHostOpenPolicy$1({
+			openPolicy: mergeOpenPolicy$1(DEFAULT_SETTINGS$1.openPolicy, current.openPolicy, settings.openPolicy),
+			openPolicyByHost: mergeOpenPolicyByHost$1(current.openPolicyByHost, settings.openPolicyByHost, { [detectSettingsHost$1()]: mergeOpenPolicy$1(DEFAULT_SETTINGS$1.openPolicy, current.openPolicy, settings.openPolicy) })
+		})
 	};
 	if (merged.core) {
 		const canonicalUserId = normalizePersistedClientId$1(merged.core.userId);
@@ -6390,7 +6486,7 @@ var isServiceWorkerScope$1 = () => {
 };
 var loadLureFs$1 = () => {
 	if (isServiceWorkerScope$1()) return Promise.reject(/* @__PURE__ */ new Error("@fest-lib/lure FS unavailable in ServiceWorkerGlobalScope"));
-	if (!lureFsPromise$1) lureFsPromise$1 = __vitePreload(() => import("../com/app.js").then((n) => n.St).then((m) => ({
+	if (!lureFsPromise$1) lureFsPromise$1 = __vitePreload(() => import("../com/app.js").then((n) => n.Dt).then((m) => ({
 		getDirectoryHandle: m.getDirectoryHandle,
 		readFile: m.readFile
 	})), __vite__mapDeps([1,2]), import.meta.url);
@@ -6556,6 +6652,99 @@ if (!isContentScriptContext$1()) {
 	})();
 }
 //#endregion
+//#region src/shared/routing/core/view-transitions.ts
+/**
+* Canonical view order used to determine navigation direction.
+* Earlier index = "back", later index = "forward".
+*/
+var VIEW_ORDER = [
+	"home",
+	"viewer",
+	"editor",
+	"explorer",
+	"workcenter",
+	"history",
+	"settings",
+	"print"
+];
+/** `true` when `document.startViewTransition` is available (Chrome 111+). */
+var supportsViewTransitions = () => typeof document !== "undefined" && "startViewTransition" in document;
+/**
+* WHY: Neutralino / WebNative WebViews have flaky View Transition teardown —
+* a stuck `::view-transition` layer makes the whole shell unclickable.
+* Prefer an instant DOM swap there.
+*/
+function shouldSkipViewTransitions() {
+	try {
+		const g = globalThis;
+		if (g.__CWS_NEUTRALINO_BOOT__ || g.__CWS_WEBNATIVE_BOOT__) return true;
+		if (g.NL_OS || g.Neutralino) return true;
+		if (typeof document !== "undefined" && document.documentElement?.dataset?.cwspDisableVt === "1") return true;
+	} catch {}
+	return false;
+}
+/**
+* Compute navigation direction based on the ordered view list.
+*
+* Unknown view IDs fall back to `"fade"` (no slide animation).
+*/
+function getTransitionDirection(from, to) {
+	const fi = VIEW_ORDER.indexOf(from);
+	const ti = VIEW_ORDER.indexOf(to);
+	if (fi === -1 || ti === -1 || fi === ti) return "fade";
+	return fi < ti ? "forward" : "backward";
+}
+/**
+* Wrap a DOM mutation in a View Transition, with a transparent fallback.
+*
+* Before starting the transition, `data-vt-direction` is set on `:root` so
+* CSS `::view-transition-old/new(active-view)` can select the right keyframe
+* animation via inherited CSS custom properties.
+*
+* If a transition is already running, the browser will abort the previous one
+* and start the new one — this is intentional and handled gracefully.
+*/
+async function withViewTransition(update, options = {}) {
+	const finishOnce = () => {
+		try {
+			options.onTransitionFinished?.();
+		} catch (error) {
+			console.warn("[view-transition] onTransitionFinished error:", error);
+		}
+	};
+	let finishedCalled = false;
+	const guardedFinish = () => {
+		if (finishedCalled) return;
+		finishedCalled = true;
+		finishOnce();
+	};
+	if (!supportsViewTransitions() || shouldSkipViewTransitions()) {
+		await update();
+		requestAnimationFrame(() => requestAnimationFrame(guardedFinish));
+		return;
+	}
+	const { direction = "fade", types } = options;
+	document.documentElement.dataset.vtDirection = direction;
+	const doc = document;
+	const transition = types?.length ? doc.startViewTransition({
+		update,
+		types
+	}) : doc.startViewTransition(update);
+	transition.finished.then(guardedFinish).catch(guardedFinish);
+	globalThis.setTimeout?.(() => {
+		try {
+			transition.skipTransition();
+		} catch {}
+		guardedFinish();
+	}, 900);
+	try {
+		await (transition.updateCallbackDone ?? transition.finished);
+	} catch {} finally {
+		delete document.documentElement.dataset.vtDirection;
+	}
+	transition.finished.catch(() => {});
+}
+//#endregion
 //#region src/shared/other/utils/appearance-base-color.ts
 /**
 * Resolve `--color-primary` / `--base-color` for veela.
@@ -6643,6 +6832,18 @@ var rgbToHex$1 = (css) => {
 		m[3]
 	].map((n) => Math.max(0, Math.min(255, Math.round(Number(n)))).toString(16).padStart(2, "0")).join("")}`;
 };
+var registerColorProperty$1 = (name, initialValue = "#5a9ec8") => {
+	try {
+		CSS?.registerProperty?.({
+			name,
+			syntax: "<color>",
+			inherits: true,
+			initialValue
+		});
+	} catch (error) {
+		console.debug(error);
+	}
+};
 var seedHosts$1 = () => {
 	const nodes = /* @__PURE__ */ new Set();
 	if (typeof document === "undefined") return [];
@@ -6659,6 +6860,14 @@ var SEED_PROPS$1 = [
 	"--primary",
 	"--current"
 ];
+var isValidColor$1 = (color) => {
+	try {
+		rgbToHex$1(color);
+		return true;
+	} catch {
+		return false;
+	}
+};
 var applyBaseColorSeed$1 = (hex, source, extras) => {
 	if (typeof document === "undefined") return;
 	const seed = normalizeHexColor$1(hex) || "#5a9ec8";
@@ -6667,6 +6876,15 @@ var applyBaseColorSeed$1 = (hex, source, extras) => {
 	const concrete = source === "user" ? "custom" : source === "system" ? "material-you" : source;
 	document.documentElement.dataset.baseSource = String(concrete);
 	document.documentElement.dataset.colorSource = String(concrete);
+	if (!isValidColor$1(seed)) return;
+	if (!isValidColor$1(secondary)) return;
+	if (!isValidColor$1(tertiary)) return;
+	registerColorProperty$1("--color-primary", seed);
+	registerColorProperty$1("--base-color", seed);
+	registerColorProperty$1("--color-secondary", secondary);
+	registerColorProperty$1("--color-tertiary", tertiary);
+	registerColorProperty$1("--secondary", secondary);
+	registerColorProperty$1("--tertiary", tertiary);
 	for (const host of seedHosts$1()) {
 		for (const prop of SEED_PROPS$1) host.style.setProperty(prop, seed);
 		host.style.setProperty("--color-secondary", secondary);
@@ -6674,6 +6892,13 @@ var applyBaseColorSeed$1 = (hex, source, extras) => {
 		host.style.setProperty("--secondary", secondary);
 		host.style.setProperty("--tertiary", tertiary);
 	}
+	const globalQuery = Q("body, html, .wf-demo-root, ui-window, .view-explorer, [data-view='explorer'], .view-viewer, [data-view='viewer'], .view-settings, [data-view='settings'], .cw-network-view, .cw-network-view-host");
+	globalQuery.style.setProperty("--color-primary", seed);
+	globalQuery.style.setProperty("--base-color", seed);
+	globalQuery.style.setProperty("--color-secondary", secondary);
+	globalQuery.style.setProperty("--color-tertiary", tertiary);
+	globalQuery.style.setProperty("--secondary", secondary);
+	globalQuery.style.setProperty("--tertiary", tertiary);
 };
 /** CSS `AccentColor` when the engine maps it to a real system accent (not generic link blue). */
 var readCssAccentColor$1 = () => {
@@ -6720,7 +6945,7 @@ var cachedWallpaperPrimary$1 = () => {
 var extractFromImage$1 = async (src) => {
 	try {
 		const { applyThemeFromWallpaper } = await __vitePreload(async () => {
-			const { applyThemeFromWallpaper } = await import("../com/app.js").then((n) => n.C);
+			const { applyThemeFromWallpaper } = await import("../com/app.js").then((n) => n.w);
 			return { applyThemeFromWallpaper };
 		}, __vite__mapDeps([1,2]), import.meta.url);
 		return normalizeHexColor$1((await applyThemeFromWallpaper(src, { force: false }))?.primary);
@@ -6745,7 +6970,7 @@ var colorFromAppWallpaper$1 = async () => {
 	if (cached) return cached;
 	try {
 		const { resolveAppWallpaperUrl } = await __vitePreload(async () => {
-			const { resolveAppWallpaperUrl } = await import("../com/app.js").then((n) => n.C);
+			const { resolveAppWallpaperUrl } = await import("../com/app.js").then((n) => n.w);
 			return { resolveAppWallpaperUrl };
 		}, __vite__mapDeps([1,2]), import.meta.url);
 		const url = await resolveAppWallpaperUrl();
@@ -6833,6 +7058,8 @@ var Theme_exports = /* @__PURE__ */ __exportAll({
 	bindQuickSettingsThemePersistence: () => bindQuickSettingsThemePersistence$1,
 	cssBackgroundToOpaqueHex: () => cssBackgroundToOpaqueHex$1,
 	initTheme: () => initTheme,
+	installThemeLifecycleResync: () => installThemeLifecycleResync$1,
+	resumeThemeAfterForeground: () => resumeThemeAfterForeground$1,
 	resyncThemeAfterAdoptedViewSheet: () => resyncThemeAfterAdoptedViewSheet,
 	samplePwaToolbarBackgroundColor: () => samplePwaToolbarBackgroundColor$1,
 	sampleSurfaceBackgroundColor: () => sampleSurfaceBackgroundColor$1,
@@ -7001,8 +7228,10 @@ var syncBrowserChromeTheme$1 = (resolved, preference) => {
 	syncShellHostVisualScheme$1(resolved);
 };
 var applyTheme$1 = (settings) => {
-	if (typeof document === "undefined" || !settings) return;
+	if (typeof document === "undefined") return;
 	bindQuickSettingsThemePersistence$1();
+	installThemeLifecycleResync$1();
+	if (!settings) return;
 	const root = document.documentElement;
 	const theme = settings.appearance?.theme || "auto";
 	const resolvedScheme = resolveColorScheme$1(theme);
@@ -7053,6 +7282,82 @@ var resyncThemeAfterAdoptedViewSheet = () => {
 			});
 		});
 	})();
+};
+var restampExplorerShellScheme$1 = () => {
+	if (typeof document === "undefined") return;
+	try {
+		document.querySelectorAll(".view-explorer").forEach((el) => {
+			const scheme = el.dataset.explorerColorScheme;
+			if (scheme !== "light" && scheme !== "dark") return;
+			if (el.getAttribute("data-theme") !== scheme) el.setAttribute("data-theme", scheme);
+			el.style.setProperty("color-scheme", `${scheme} only`);
+		});
+	} catch {}
+};
+var themeResumeAt$1 = 0;
+var themeLifecycleBound$1 = false;
+var sawBackground$1 = false;
+var restampChromeScheme$1 = () => {
+	restampExplorerShellScheme$1();
+	try {
+		const root = document.documentElement;
+		const pinned = root.getAttribute("data-theme");
+		if (pinned === "light" || pinned === "dark") {
+			root.style.colorScheme = pinned;
+			if (document.body) document.body.style.colorScheme = pinned;
+		}
+		root.offsetHeight;
+	} catch {}
+};
+/**
+* Restore chrome after Android recents / Home.
+* INVARIANT: never rewrite constructable sheets on cold start — first onResume/focus wiped UI.
+*/
+var resumeThemeAfterForeground$1 = (force = false) => {
+	if (typeof document === "undefined") return;
+	if (!force && document.visibilityState === "hidden") return;
+	const now = Date.now();
+	if (now - themeResumeAt$1 < 240) return;
+	themeResumeAt$1 = now;
+	restampChromeScheme$1();
+	if (!sawBackground$1) return;
+	(async () => {
+		try {
+			const { rehydrateAdoptedStyleSheets } = await __vitePreload(async () => {
+				const { rehydrateAdoptedStyleSheets } = await import("../com/app.js").then((n) => n.Dt);
+				return { rehydrateAdoptedStyleSheets };
+			}, __vite__mapDeps([1,2]), import.meta.url);
+			rehydrateAdoptedStyleSheets();
+		} catch {}
+		restampChromeScheme$1();
+		try {
+			document.dispatchEvent(new CustomEvent("cwsp:theme-resume"));
+		} catch {}
+	})();
+};
+/** Bind visibility / pageshow / Capacitor appState + expose `__CWSP_THEME_RESUME__` for Java onResume. */
+var installThemeLifecycleResync$1 = () => {
+	if (themeLifecycleBound$1 || typeof document === "undefined") return;
+	themeLifecycleBound$1 = true;
+	globalThis.__CWSP_THEME_RESUME__ = resumeThemeAfterForeground$1;
+	document.addEventListener("visibilitychange", () => {
+		if (document.visibilityState === "hidden") {
+			sawBackground$1 = true;
+			return;
+		}
+		resumeThemeAfterForeground$1();
+	});
+	document.addEventListener("resume", () => resumeThemeAfterForeground$1());
+	globalThis.addEventListener?.("pageshow", () => resumeThemeAfterForeground$1());
+	try {
+		globalThis.Capacitor?.Plugins?.App?.addListener?.("appStateChange", (state) => {
+			if (state?.isActive === false) {
+				sawBackground$1 = true;
+				return;
+			}
+			if (state?.isActive) resumeThemeAfterForeground$1();
+		});
+	} catch {}
 };
 var initTheme = async () => {
 	try {
@@ -9760,10 +10065,301 @@ function initializeLayers() {
 	console.log(`[LayerManager] Initialized ${layerNames.length} layers`);
 }
 //#endregion
+//#region ../../modules/projects/subsystem/src/other/config/ecosystem-skus.ts
+var ecosystem_skus_exports = /* @__PURE__ */ __exportAll({
+	CWSP_SKU_HANDOFF_KEY: () => CWSP_SKU_HANDOFF_KEY,
+	ECOSYSTEM_SKUS: () => ECOSYSTEM_SKUS,
+	HUB_PUBLIC_HOSTS: () => HUB_PUBLIC_HOSTS,
+	SKU_HUB_PATHS: () => SKU_HUB_PATHS,
+	SKU_LOCAL_NAV_VIEWS: () => SKU_LOCAL_NAV_VIEWS,
+	SKU_PUBLIC_HOSTS: () => SKU_PUBLIC_HOSTS,
+	VIEW_TO_SIBLING_SKU: () => VIEW_TO_SIBLING_SKU,
+	androidPackageForSku: () => androidPackageForSku,
+	applyCwspSku: () => applyCwspSku,
+	ensureCwspSkuFromLocation: () => ensureCwspSkuFromLocation,
+	inferCwspSkuFromLocation: () => inferCwspSkuFromLocation,
+	isCwspNativeHost: () => isCwspNativeHost,
+	isCwspSku: () => isCwspSku,
+	isHubPublicHost: () => isHubPublicHost,
+	isViewLocalToSurface: () => isViewLocalToSurface,
+	readCwspSku: () => readCwspSku,
+	siblingSkuForView: () => siblingSkuForView,
+	skuForHubPathSegment: () => skuForHubPathSegment,
+	stashSkuHandoff: () => stashSkuHandoff
+});
+var ECOSYSTEM_SKUS = {
+	launcher: {
+		sku: "launcher",
+		androidPackage: "space.u2re.cw",
+		scheme: "space.u2re.cw",
+		phosphorIcon: "cross",
+		defaultView: "home",
+		shell: "environment",
+		apkManifest: "latest-launcher.json",
+		apkName: "cwsp-launcher.apk"
+	},
+	transfer: {
+		sku: "transfer",
+		androidPackage: "space.u2re.cwsp",
+		scheme: "space.u2re.cwsp",
+		phosphorIcon: "drone",
+		defaultView: "network",
+		shell: "minimal",
+		apkManifest: "latest.json",
+		apkName: "cwsp.apk"
+	},
+	explorer: {
+		sku: "explorer",
+		androidPackage: "space.u2re.explorer",
+		scheme: "space.u2re.explorer",
+		phosphorIcon: "folder",
+		defaultView: "explorer",
+		shell: "minimal",
+		apkManifest: "latest-explorer.json",
+		apkName: "cwsp-explorer.apk"
+	},
+	document: {
+		sku: "document",
+		androidPackage: "space.u2re.document",
+		scheme: "space.u2re.document",
+		phosphorIcon: "books",
+		defaultView: "viewer",
+		shell: "minimal",
+		apkManifest: "latest-document.json",
+		apkName: "cwsp-document.apk"
+	},
+	process: {
+		sku: "process",
+		androidPackage: "space.u2re.process",
+		scheme: "space.u2re.process",
+		phosphorIcon: "magic-wand",
+		defaultView: "workcenter",
+		shell: "minimal",
+		apkManifest: "latest-process.json",
+		apkName: "cwsp-process.apk"
+	},
+	crx: {
+		sku: "crx",
+		androidPackage: null,
+		scheme: "chrome-extension",
+		phosphorIcon: "cross",
+		defaultView: "home",
+		shell: "environment",
+		apkManifest: "",
+		apkName: ""
+	}
+};
+var SKU_SET = new Set(Object.keys(ECOSYSTEM_SKUS));
+/** Views that leave the launcher APK and open a sibling SKU. */
+var VIEW_TO_SIBLING_SKU = {
+	explorer: "explorer",
+	viewer: "document",
+	editor: "document",
+	markdown: "document",
+	print: "document",
+	workcenter: "process",
+	network: "transfer"
+};
+var isCwspSku = (value) => typeof value === "string" && SKU_SET.has(value);
+var readCwspSku = () => {
+	try {
+		const raw = String(document.documentElement?.dataset?.cwspSku || "").trim().toLowerCase();
+		return isCwspSku(raw) ? raw : "";
+	} catch {
+		return "";
+	}
+};
+/** Stamp `data-cwsp-sku` so Settings / openView / APK update resolve the same host. */
+var applyCwspSku = (sku) => {
+	try {
+		document.documentElement.dataset.cwspSku = sku;
+		const rec = ECOSYSTEM_SKUS[sku];
+		if (rec.defaultView && !document.documentElement.dataset.cwspDefaultView) document.documentElement.dataset.cwspDefaultView = rec.defaultView;
+	} catch {}
+};
+var siblingSkuForView = (view) => {
+	return VIEW_TO_SIBLING_SKU[String(view || "").trim().toLowerCase()] || null;
+};
+var HUB_PUBLIC_HOSTS = ["u2re.space", "www.u2re.space"];
+var SKU_PUBLIC_HOSTS = {
+	document: ["md.u2re.space", "www.md.u2re.space"],
+	explorer: ["explorer.u2re.space", "www.explorer.u2re.space"],
+	process: ["process.u2re.space", "workcenter.u2re.space"],
+	transfer: [
+		"cwsp.u2re.space",
+		"www.cwsp.u2re.space",
+		"transfer.u2re.space"
+	]
+};
+/** Hub/LAN Fastify prefixes — never nest (`/viewer/explorer`). */
+var SKU_HUB_PATHS = {
+	document: [
+		"markdown",
+		"document",
+		"viewer"
+	],
+	explorer: [
+		"explorer",
+		"files",
+		"fm"
+	],
+	process: ["workcenter", "process"],
+	transfer: ["cwsp", "transfer"]
+};
+/** Specialized chrome. Empty list = hub/CRX keeps every view. */
+var SKU_LOCAL_NAV_VIEWS = {
+	launcher: [],
+	crx: [],
+	document: [
+		"viewer",
+		"editor",
+		"print",
+		"settings",
+		"history"
+	],
+	explorer: [
+		"explorer",
+		"settings",
+		"history"
+	],
+	process: [
+		"workcenter",
+		"settings",
+		"history"
+	],
+	transfer: [
+		"network",
+		"settings",
+		"history"
+	]
+};
+var currentHostname = () => {
+	try {
+		return String(globalThis.location?.hostname || "").toLowerCase();
+	} catch {
+		return "";
+	}
+};
+var firstPathSegment = () => {
+	try {
+		return (String(globalThis.location?.pathname || "/").split("?")[0] || "/").split("/").filter(Boolean)[0]?.toLowerCase() || "";
+	} catch {
+		return "";
+	}
+};
+var isLanOrLoopbackHost = (host) => host === "localhost" || host === "127.0.0.1" || host === "::1" || /^\d{1,3}(\.\d{1,3}){3}$/.test(host);
+var isHubPublicHost = (hostname) => {
+	const host = String(hostname || currentHostname()).toLowerCase();
+	return HUB_PUBLIC_HOSTS.includes(host);
+};
+var skuForHubPathSegment = (segment) => {
+	const seg = String(segment || "").trim().toLowerCase();
+	if (!seg) return "";
+	for (const sku of Object.keys(SKU_HUB_PATHS)) if (SKU_HUB_PATHS[sku].includes(seg)) return sku;
+	return "";
+};
+/** Host + hub/LAN path mount → SKU. `u2re.space/` stays launcher (full chrome). */
+var inferCwspSkuFromLocation = () => {
+	const stamped = readCwspSku();
+	if (stamped) return stamped;
+	const host = currentHostname();
+	for (const sku of Object.keys(SKU_PUBLIC_HOSTS)) if (SKU_PUBLIC_HOSTS[sku].includes(host)) return sku;
+	const fromPath = skuForHubPathSegment(firstPathSegment());
+	if (fromPath) return fromPath;
+	if (isHubPublicHost(host) || isLanOrLoopbackHost(host)) return "launcher";
+	return "";
+};
+var ensureCwspSkuFromLocation = () => {
+	const sku = inferCwspSkuFromLocation();
+	if (sku) applyCwspSku(sku);
+	return sku;
+};
+var normalizeNavViewId = (view) => {
+	const key = String(view || "").trim().toLowerCase();
+	if (key === "markdown" || key === "document" || key === "md") return "viewer";
+	if (key === "process") return "workcenter";
+	if (key === "files" || key === "fm") return "explorer";
+	if (key === "transfer") return "network";
+	return key;
+};
+/** False on a specialized host/mount for views that belong to another SKU. */
+var isViewLocalToSurface = (view, sku = inferCwspSkuFromLocation()) => {
+	const id = normalizeNavViewId(view);
+	if (!id) return false;
+	if (!sku || sku === "launcher" || sku === "crx") return true;
+	const local = SKU_LOCAL_NAV_VIEWS[sku];
+	if (!local.length) return true;
+	return local.includes(id);
+};
+var isCwspNativeHost = () => {
+	try {
+		const g = globalThis;
+		const platform = g.Capacitor?.getPlatform?.();
+		return Boolean(g.Capacitor?.isNativePlatform?.() || platform === "android" || platform === "ios" || g.__CWS_NATIVE__ === true);
+	} catch {
+		return false;
+	}
+};
+var CWSP_SKU_HANDOFF_KEY = "cwsp-sku-handoff";
+var stashSkuHandoff = (payload) => {
+	const json = JSON.stringify({
+		...payload,
+		ts: Date.now()
+	});
+	try {
+		globalThis.sessionStorage?.setItem?.(CWSP_SKU_HANDOFF_KEY, json);
+	} catch {}
+	try {
+		globalThis.localStorage?.setItem?.(CWSP_SKU_HANDOFF_KEY, json);
+	} catch {}
+};
+try {
+	ensureCwspSkuFromLocation();
+} catch {}
+var androidPackageForSku = (sku) => ECOSYSTEM_SKUS[sku]?.androidPackage ?? null;
+//#endregion
+//#region ../../modules/projects/subsystem/src/other/config/settings-host.ts
+var SETTINGS_HOSTS = [
+	"capacitor",
+	"crx",
+	"pwa",
+	"web"
+];
+var isCrxHost = () => {
+	try {
+		const proto = String(globalThis.location?.protocol || "").toLowerCase();
+		if (proto === "chrome-extension:" || proto === "moz-extension:") return true;
+		return Boolean(globalThis.chrome?.runtime?.id);
+	} catch {
+		return false;
+	}
+};
+var isPwaStandalone = () => {
+	try {
+		if (String(document.documentElement?.dataset?.cwspSurface || "").toLowerCase().includes("pwa")) return true;
+		const standalone = globalThis.matchMedia?.("(display-mode: standalone)").matches || globalThis.navigator.standalone === true;
+		return Boolean(standalone);
+	} catch {
+		return false;
+	}
+};
+/**
+* INVARIANT: Capacitor wins over standalone (WebView is also standalone).
+* CRX wins over PWA. Web and PWA on the same origin keep different slices.
+*/
+var detectSettingsHost = () => {
+	if (isCwspNativeHost()) return "capacitor";
+	if (isCrxHost()) return "crx";
+	if (isPwaStandalone()) return "pwa";
+	return "web";
+};
+//#endregion
 //#region ../../modules/projects/subsystem/src/other/config/open-policy.ts
 /**
 * What to do with a file or payload, per surface / channel / kind.
-* INVARIANT: `ask` keeps the current SKU / content-type router. Kind beats channel.
+* INVARIANT: `ask` keeps the current SKU / content-type router.
+* Explorer: Web uses `channels`/`kinds`/`placement`. Capacitor uses `nativeOpen`/`nativeKinds` only.
+* Host slices live in `openPolicyByHost` (`settings-host.ts`).
 */
 var OPEN_KINDS = [
 	"markdown",
@@ -9801,6 +10397,12 @@ var OPEN_SURFACES = [
 	"process",
 	"transfer"
 ];
+/** How Explorer presents markdown/images in the browser (not Capacitor). */
+var OPEN_PLACEMENTS = [
+	"inline",
+	"native-window",
+	"new-tab"
+];
 new Set(OPEN_KINDS);
 var SINK_SET = new Set(OPEN_SINKS);
 new Set(OPEN_CHANNELS);
@@ -9824,13 +10426,23 @@ var DEFAULT_OPEN_POLICY = {
 	},
 	explorer: {
 		channels: {
-			open: "ask",
-			dblclick: "ask",
-			"share-target": "ask",
-			"launch-queue": "ask",
-			capacitor: "ask"
+			open: "viewer",
+			dblclick: "viewer",
+			"share-target": "viewer",
+			"launch-queue": "viewer",
+			capacitor: "document"
 		},
+		placement: "inline",
 		kinds: {
+			markdown: "ask",
+			text: "ask",
+			document: "ask",
+			image: "ask",
+			url: "ask",
+			other: "ask"
+		},
+		nativeOpen: "document",
+		nativeKinds: {
 			markdown: "ask",
 			text: "ask",
 			document: "ask",
@@ -9916,6 +10528,14 @@ var normalizeOpenSink = (raw, fallback = "ask") => {
 	if (v === "browser" || v === "new-tab" || v === "tab") return "external";
 	return SINK_SET.has(v) ? v : fallback;
 };
+var normalizeOpenPlacement = (raw, fallback = "inline") => {
+	const v = String(raw || "").trim().toLowerCase();
+	if (!v) return fallback;
+	if (v === "in-shell" || v === "env" || v === "shell" || v === "iframe") return "inline";
+	if (v === "native" || v === "popup" || v === "app-window" || v === "detached" || v === "separate") return "native-window";
+	if (v === "tab" || v === "browser" || v === "as-is" || v === "browser-tab") return "new-tab";
+	return OPEN_PLACEMENTS.includes(v) ? v : fallback;
+};
 var normalizeKinds = (raw) => {
 	const out = {};
 	if (!raw || typeof raw !== "object") return out;
@@ -9942,6 +10562,10 @@ var mergeOpenPolicy = (...parts) => {
 		const base = DEFAULT_OPEN_POLICY[surface] || {};
 		let channels = { ...base.channels || {} };
 		let kinds = { ...base.kinds || {} };
+		let placement = normalizeOpenPlacement(base.placement, "inline");
+		let nativeOpen = normalizeOpenSink(base.nativeOpen, surface === "explorer" ? "document" : "ask");
+		let nativeKinds = { ...base.nativeKinds || {} };
+		let nativeOpenSaved = false;
 		for (const part of parts) {
 			const src = part?.[surface];
 			if (!src) continue;
@@ -9953,17 +10577,49 @@ var mergeOpenPolicy = (...parts) => {
 				...kinds,
 				...normalizeKinds(src.kinds)
 			};
+			if (src.placement != null && src.placement !== "") placement = normalizeOpenPlacement(src.placement, placement);
+			if (src.nativeOpen != null && src.nativeOpen !== "") {
+				nativeOpenSaved = true;
+				nativeOpen = normalizeOpenSink(src.nativeOpen, nativeOpen);
+			}
+			if (src.nativeKinds) nativeKinds = {
+				...nativeKinds,
+				...normalizeKinds(src.nativeKinds)
+			};
 		}
-		out[surface] = {
+		if (!nativeOpenSaved && surface === "explorer") {
+			const legacy = channels.open;
+			if (legacy === "system" || legacy === "transfer" || legacy === "workcenter") nativeOpen = legacy;
+		}
+		out[surface] = surface === "explorer" ? {
 			channels,
-			kinds
+			kinds,
+			placement,
+			nativeOpen,
+			nativeKinds
+		} : {
+			channels,
+			kinds,
+			placement
 		};
 	}
 	return out;
 };
-var normalizeOpenPolicy = (raw) => mergeOpenPolicy(raw && typeof raw === "object" ? raw : void 0);
+var mergeOpenPolicyByHost = (...parts) => {
+	const out = {};
+	for (const host of SETTINGS_HOSTS) {
+		const slices = parts.map((part) => part?.[host]).filter((p) => Boolean(p));
+		if (slices.length) out[host] = mergeOpenPolicy(...slices);
+	}
+	return out;
+};
+/** Host slice wins over a leftover flat `openPolicy` so Capacitor cannot clobber Web. */
+var resolveHostOpenPolicy = (settings) => {
+	const host = detectSettingsHost();
+	return mergeOpenPolicy(settings?.openPolicy, settings?.openPolicyByHost?.[host]);
+};
 var rememberOpenPolicyFromSettings = (settings) => {
-	cachedPolicy = normalizeOpenPolicy(settings?.openPolicy);
+	cachedPolicy = resolveHostOpenPolicy(settings);
 	return cachedPolicy;
 };
 //#endregion
@@ -10147,6 +10803,7 @@ var DEFAULT_SETTINGS = {
 		iconScale: "fill"
 	},
 	openPolicy: DEFAULT_OPEN_POLICY,
+	openPolicyByHost: {},
 	appMenu: {
 		sortBy: "name",
 		sortDir: "asc"
@@ -11273,7 +11930,11 @@ var mergeAppSettingsShape = (base, patch) => {
 			...base.shell || {},
 			...patch.shell || {}
 		},
-		openPolicy: mergeOpenPolicy(base.openPolicy, patch.openPolicy)
+		openPolicyByHost: mergeOpenPolicyByHost(base.openPolicyByHost, patch.openPolicyByHost),
+		openPolicy: resolveHostOpenPolicy({
+			openPolicy: mergeOpenPolicy(base.openPolicy, patch.openPolicy),
+			openPolicyByHost: mergeOpenPolicyByHost(base.openPolicyByHost, patch.openPolicyByHost)
+		})
 	};
 };
 var getWebDavCreateClient = async () => {
@@ -11576,7 +12237,11 @@ var loadSettings = async (opts) => {
 					...DEFAULT_SETTINGS.explorer,
 					...stored?.explorer
 				},
-				openPolicy: mergeOpenPolicy(DEFAULT_SETTINGS.openPolicy, stored?.openPolicy)
+				openPolicyByHost: mergeOpenPolicyByHost(stored?.openPolicyByHost),
+				openPolicy: resolveHostOpenPolicy({
+					openPolicy: stored?.openPolicy,
+					openPolicyByHost: stored?.openPolicyByHost
+				})
 			};
 			try {
 				if (opts?.nativeOverlay !== false && isCwsNativeIpcAvailable()) {
@@ -11752,7 +12417,15 @@ var saveSettings = async (settings) => {
 			...current.explorer || {},
 			...settings.explorer || {}
 		},
-		openPolicy: mergeOpenPolicy(DEFAULT_SETTINGS.openPolicy, current.openPolicy, settings.openPolicy)
+		openPolicyByHost: (() => {
+			const host = detectSettingsHost();
+			const next = mergeOpenPolicy(DEFAULT_SETTINGS.openPolicy, current.openPolicy, settings.openPolicy);
+			return mergeOpenPolicyByHost(current.openPolicyByHost, settings.openPolicyByHost, { [host]: next });
+		})(),
+		openPolicy: resolveHostOpenPolicy({
+			openPolicy: mergeOpenPolicy(DEFAULT_SETTINGS.openPolicy, current.openPolicy, settings.openPolicy),
+			openPolicyByHost: mergeOpenPolicyByHost(current.openPolicyByHost, settings.openPolicyByHost, { [detectSettingsHost()]: mergeOpenPolicy(DEFAULT_SETTINGS.openPolicy, current.openPolicy, settings.openPolicy) })
+		})
 	};
 	if (merged.core) {
 		const canonicalUserId = normalizePersistedClientId(merged.core.userId);
@@ -11835,7 +12508,7 @@ var isServiceWorkerScope = () => {
 };
 var loadLureFs = () => {
 	if (isServiceWorkerScope()) return Promise.reject(/* @__PURE__ */ new Error("@fest-lib/lure FS unavailable in ServiceWorkerGlobalScope"));
-	if (!lureFsPromise) lureFsPromise = __vitePreload(() => import("../com/app.js").then((n) => n.St).then((m) => ({
+	if (!lureFsPromise) lureFsPromise = __vitePreload(() => import("../com/app.js").then((n) => n.Dt).then((m) => ({
 		getDirectoryHandle: m.getDirectoryHandle,
 		readFile: m.readFile
 	})), __vite__mapDeps([1,2]), import.meta.url);
@@ -12080,6 +12753,18 @@ var rgbToHex = (css) => {
 		m[3]
 	].map((n) => Math.max(0, Math.min(255, Math.round(Number(n)))).toString(16).padStart(2, "0")).join("")}`;
 };
+var registerColorProperty = (name, initialValue = "#5a9ec8") => {
+	try {
+		CSS?.registerProperty?.({
+			name,
+			syntax: "<color>",
+			inherits: true,
+			initialValue
+		});
+	} catch (error) {
+		console.debug(error);
+	}
+};
 var seedHosts = () => {
 	const nodes = /* @__PURE__ */ new Set();
 	if (typeof document === "undefined") return [];
@@ -12096,6 +12781,14 @@ var SEED_PROPS = [
 	"--primary",
 	"--current"
 ];
+var isValidColor = (color) => {
+	try {
+		rgbToHex(color);
+		return true;
+	} catch {
+		return false;
+	}
+};
 var applyBaseColorSeed = (hex, source, extras) => {
 	if (typeof document === "undefined") return;
 	const seed = normalizeHexColor(hex) || "#5a9ec8";
@@ -12104,6 +12797,15 @@ var applyBaseColorSeed = (hex, source, extras) => {
 	const concrete = source === "user" ? "custom" : source === "system" ? "material-you" : source;
 	document.documentElement.dataset.baseSource = String(concrete);
 	document.documentElement.dataset.colorSource = String(concrete);
+	if (!isValidColor(seed)) return;
+	if (!isValidColor(secondary)) return;
+	if (!isValidColor(tertiary)) return;
+	registerColorProperty("--color-primary", seed);
+	registerColorProperty("--base-color", seed);
+	registerColorProperty("--color-secondary", secondary);
+	registerColorProperty("--color-tertiary", tertiary);
+	registerColorProperty("--secondary", secondary);
+	registerColorProperty("--tertiary", tertiary);
 	for (const host of seedHosts()) {
 		for (const prop of SEED_PROPS) host.style.setProperty(prop, seed);
 		host.style.setProperty("--color-secondary", secondary);
@@ -12111,6 +12813,13 @@ var applyBaseColorSeed = (hex, source, extras) => {
 		host.style.setProperty("--secondary", secondary);
 		host.style.setProperty("--tertiary", tertiary);
 	}
+	const globalQuery = Q("body, html, .wf-demo-root, ui-window, .view-explorer, [data-view='explorer'], .view-viewer, [data-view='viewer'], .view-settings, [data-view='settings'], .cw-network-view, .cw-network-view-host");
+	globalQuery.style.setProperty("--color-primary", seed);
+	globalQuery.style.setProperty("--base-color", seed);
+	globalQuery.style.setProperty("--color-secondary", secondary);
+	globalQuery.style.setProperty("--color-tertiary", tertiary);
+	globalQuery.style.setProperty("--secondary", secondary);
+	globalQuery.style.setProperty("--tertiary", tertiary);
 };
 /** CSS `AccentColor` when the engine maps it to a real system accent (not generic link blue). */
 var readCssAccentColor = () => {
@@ -12157,7 +12866,7 @@ var cachedWallpaperPrimary = () => {
 var extractFromImage = async (src) => {
 	try {
 		const { applyThemeFromWallpaper } = await __vitePreload(async () => {
-			const { applyThemeFromWallpaper } = await import("../com/app.js").then((n) => n.C);
+			const { applyThemeFromWallpaper } = await import("../com/app.js").then((n) => n.w);
 			return { applyThemeFromWallpaper };
 		}, __vite__mapDeps([1,2]), import.meta.url);
 		return normalizeHexColor((await applyThemeFromWallpaper(src, { force: false }))?.primary);
@@ -12182,7 +12891,7 @@ var colorFromAppWallpaper = async () => {
 	if (cached) return cached;
 	try {
 		const { resolveAppWallpaperUrl } = await __vitePreload(async () => {
-			const { resolveAppWallpaperUrl } = await import("../com/app.js").then((n) => n.C);
+			const { resolveAppWallpaperUrl } = await import("../com/app.js").then((n) => n.w);
 			return { resolveAppWallpaperUrl };
 		}, __vite__mapDeps([1,2]), import.meta.url);
 		const url = await resolveAppWallpaperUrl();
@@ -12428,8 +13137,10 @@ var syncBrowserChromeTheme = (resolved, preference) => {
 	syncShellHostVisualScheme(resolved);
 };
 var applyTheme = (settings) => {
-	if (typeof document === "undefined" || !settings) return;
+	if (typeof document === "undefined") return;
 	bindQuickSettingsThemePersistence();
+	installThemeLifecycleResync();
+	if (!settings) return;
 	const root = document.documentElement;
 	const theme = settings.appearance?.theme || "auto";
 	const resolvedScheme = resolveColorScheme(theme);
@@ -12441,6 +13152,82 @@ var applyTheme = (settings) => {
 		syncBrowserChromeTheme(resolvedScheme, theme);
 	});
 	if (settings.grid) applyGridSettings(settings);
+};
+var restampExplorerShellScheme = () => {
+	if (typeof document === "undefined") return;
+	try {
+		document.querySelectorAll(".view-explorer").forEach((el) => {
+			const scheme = el.dataset.explorerColorScheme;
+			if (scheme !== "light" && scheme !== "dark") return;
+			if (el.getAttribute("data-theme") !== scheme) el.setAttribute("data-theme", scheme);
+			el.style.setProperty("color-scheme", `${scheme} only`);
+		});
+	} catch {}
+};
+var themeResumeAt = 0;
+var themeLifecycleBound = false;
+var sawBackground = false;
+var restampChromeScheme = () => {
+	restampExplorerShellScheme();
+	try {
+		const root = document.documentElement;
+		const pinned = root.getAttribute("data-theme");
+		if (pinned === "light" || pinned === "dark") {
+			root.style.colorScheme = pinned;
+			if (document.body) document.body.style.colorScheme = pinned;
+		}
+		root.offsetHeight;
+	} catch {}
+};
+/**
+* Restore chrome after Android recents / Home.
+* INVARIANT: never rewrite constructable sheets on cold start — first onResume/focus wiped UI.
+*/
+var resumeThemeAfterForeground = (force = false) => {
+	if (typeof document === "undefined") return;
+	if (!force && document.visibilityState === "hidden") return;
+	const now = Date.now();
+	if (now - themeResumeAt < 240) return;
+	themeResumeAt = now;
+	restampChromeScheme();
+	if (!sawBackground) return;
+	(async () => {
+		try {
+			const { rehydrateAdoptedStyleSheets } = await __vitePreload(async () => {
+				const { rehydrateAdoptedStyleSheets } = await import("../com/app.js").then((n) => n.Dt);
+				return { rehydrateAdoptedStyleSheets };
+			}, __vite__mapDeps([1,2]), import.meta.url);
+			rehydrateAdoptedStyleSheets();
+		} catch {}
+		restampChromeScheme();
+		try {
+			document.dispatchEvent(new CustomEvent("cwsp:theme-resume"));
+		} catch {}
+	})();
+};
+/** Bind visibility / pageshow / Capacitor appState + expose `__CWSP_THEME_RESUME__` for Java onResume. */
+var installThemeLifecycleResync = () => {
+	if (themeLifecycleBound || typeof document === "undefined") return;
+	themeLifecycleBound = true;
+	globalThis.__CWSP_THEME_RESUME__ = resumeThemeAfterForeground;
+	document.addEventListener("visibilitychange", () => {
+		if (document.visibilityState === "hidden") {
+			sawBackground = true;
+			return;
+		}
+		resumeThemeAfterForeground();
+	});
+	document.addEventListener("resume", () => resumeThemeAfterForeground());
+	globalThis.addEventListener?.("pageshow", () => resumeThemeAfterForeground());
+	try {
+		globalThis.Capacitor?.Plugins?.App?.addListener?.("appStateChange", (state) => {
+			if (state?.isActive === false) {
+				sawBackground = true;
+				return;
+			}
+			if (state?.isActive) resumeThemeAfterForeground();
+		});
+	} catch {}
 };
 //#endregion
 //#region ../../modules/projects/subsystem/src/boot/veela-variant-runtime.ts
@@ -15696,256 +16483,6 @@ async function applyHubSocketFromSettings(settings) {
 	initWebSocket(null);
 	connectWS();
 }
-//#endregion
-//#region ../../modules/projects/subsystem/src/other/config/ecosystem-skus.ts
-var ecosystem_skus_exports = /* @__PURE__ */ __exportAll({
-	CWSP_SKU_HANDOFF_KEY: () => CWSP_SKU_HANDOFF_KEY,
-	ECOSYSTEM_SKUS: () => ECOSYSTEM_SKUS,
-	HUB_PUBLIC_HOSTS: () => HUB_PUBLIC_HOSTS,
-	SKU_HUB_PATHS: () => SKU_HUB_PATHS,
-	SKU_LOCAL_NAV_VIEWS: () => SKU_LOCAL_NAV_VIEWS,
-	SKU_PUBLIC_HOSTS: () => SKU_PUBLIC_HOSTS,
-	VIEW_TO_SIBLING_SKU: () => VIEW_TO_SIBLING_SKU,
-	androidPackageForSku: () => androidPackageForSku,
-	applyCwspSku: () => applyCwspSku,
-	ensureCwspSkuFromLocation: () => ensureCwspSkuFromLocation,
-	inferCwspSkuFromLocation: () => inferCwspSkuFromLocation,
-	isCwspNativeHost: () => isCwspNativeHost,
-	isCwspSku: () => isCwspSku,
-	isHubPublicHost: () => isHubPublicHost,
-	isViewLocalToSurface: () => isViewLocalToSurface,
-	readCwspSku: () => readCwspSku,
-	siblingSkuForView: () => siblingSkuForView,
-	skuForHubPathSegment: () => skuForHubPathSegment,
-	stashSkuHandoff: () => stashSkuHandoff
-});
-var ECOSYSTEM_SKUS = {
-	launcher: {
-		sku: "launcher",
-		androidPackage: "space.u2re.cw",
-		scheme: "space.u2re.cw",
-		phosphorIcon: "cross",
-		defaultView: "home",
-		shell: "environment",
-		apkManifest: "latest-launcher.json",
-		apkName: "cwsp-launcher.apk"
-	},
-	transfer: {
-		sku: "transfer",
-		androidPackage: "space.u2re.cwsp",
-		scheme: "space.u2re.cwsp",
-		phosphorIcon: "drone",
-		defaultView: "network",
-		shell: "minimal",
-		apkManifest: "latest.json",
-		apkName: "cwsp.apk"
-	},
-	explorer: {
-		sku: "explorer",
-		androidPackage: "space.u2re.explorer",
-		scheme: "space.u2re.explorer",
-		phosphorIcon: "folder",
-		defaultView: "explorer",
-		shell: "minimal",
-		apkManifest: "latest-explorer.json",
-		apkName: "cwsp-explorer.apk"
-	},
-	document: {
-		sku: "document",
-		androidPackage: "space.u2re.document",
-		scheme: "space.u2re.document",
-		phosphorIcon: "books",
-		defaultView: "viewer",
-		shell: "minimal",
-		apkManifest: "latest-document.json",
-		apkName: "cwsp-document.apk"
-	},
-	process: {
-		sku: "process",
-		androidPackage: "space.u2re.process",
-		scheme: "space.u2re.process",
-		phosphorIcon: "magic-wand",
-		defaultView: "workcenter",
-		shell: "minimal",
-		apkManifest: "latest-process.json",
-		apkName: "cwsp-process.apk"
-	},
-	crx: {
-		sku: "crx",
-		androidPackage: null,
-		scheme: "chrome-extension",
-		phosphorIcon: "cross",
-		defaultView: "home",
-		shell: "environment",
-		apkManifest: "",
-		apkName: ""
-	}
-};
-var SKU_SET = new Set(Object.keys(ECOSYSTEM_SKUS));
-/** Views that leave the launcher APK and open a sibling SKU. */
-var VIEW_TO_SIBLING_SKU = {
-	explorer: "explorer",
-	viewer: "document",
-	editor: "document",
-	markdown: "document",
-	print: "document",
-	workcenter: "process",
-	network: "transfer"
-};
-var isCwspSku = (value) => typeof value === "string" && SKU_SET.has(value);
-var readCwspSku = () => {
-	try {
-		const raw = String(document.documentElement?.dataset?.cwspSku || "").trim().toLowerCase();
-		return isCwspSku(raw) ? raw : "";
-	} catch {
-		return "";
-	}
-};
-/** Stamp `data-cwsp-sku` so Settings / openView / APK update resolve the same host. */
-var applyCwspSku = (sku) => {
-	try {
-		document.documentElement.dataset.cwspSku = sku;
-		const rec = ECOSYSTEM_SKUS[sku];
-		if (rec.defaultView && !document.documentElement.dataset.cwspDefaultView) document.documentElement.dataset.cwspDefaultView = rec.defaultView;
-	} catch {}
-};
-var siblingSkuForView = (view) => {
-	return VIEW_TO_SIBLING_SKU[String(view || "").trim().toLowerCase()] || null;
-};
-var HUB_PUBLIC_HOSTS = ["u2re.space", "www.u2re.space"];
-var SKU_PUBLIC_HOSTS = {
-	document: ["md.u2re.space", "www.md.u2re.space"],
-	explorer: ["explorer.u2re.space", "www.explorer.u2re.space"],
-	process: ["process.u2re.space", "workcenter.u2re.space"],
-	transfer: [
-		"cwsp.u2re.space",
-		"www.cwsp.u2re.space",
-		"transfer.u2re.space"
-	]
-};
-/** Hub/LAN Fastify prefixes — never nest (`/viewer/explorer`). */
-var SKU_HUB_PATHS = {
-	document: [
-		"markdown",
-		"document",
-		"viewer"
-	],
-	explorer: [
-		"explorer",
-		"files",
-		"fm"
-	],
-	process: ["workcenter", "process"],
-	transfer: ["cwsp", "transfer"]
-};
-/** Specialized chrome. Empty list = hub/CRX keeps every view. */
-var SKU_LOCAL_NAV_VIEWS = {
-	launcher: [],
-	crx: [],
-	document: [
-		"viewer",
-		"editor",
-		"print",
-		"settings",
-		"history"
-	],
-	explorer: [
-		"explorer",
-		"viewer",
-		"settings",
-		"history"
-	],
-	process: [
-		"workcenter",
-		"settings",
-		"history"
-	],
-	transfer: [
-		"network",
-		"settings",
-		"history"
-	]
-};
-var currentHostname = () => {
-	try {
-		return String(globalThis.location?.hostname || "").toLowerCase();
-	} catch {
-		return "";
-	}
-};
-var firstPathSegment = () => {
-	try {
-		return (String(globalThis.location?.pathname || "/").split("?")[0] || "/").split("/").filter(Boolean)[0]?.toLowerCase() || "";
-	} catch {
-		return "";
-	}
-};
-var isLanOrLoopbackHost = (host) => host === "localhost" || host === "127.0.0.1" || host === "::1" || /^\d{1,3}(\.\d{1,3}){3}$/.test(host);
-var isHubPublicHost = (hostname) => {
-	const host = String(hostname || currentHostname()).toLowerCase();
-	return HUB_PUBLIC_HOSTS.includes(host);
-};
-var skuForHubPathSegment = (segment) => {
-	const seg = String(segment || "").trim().toLowerCase();
-	if (!seg) return "";
-	for (const sku of Object.keys(SKU_HUB_PATHS)) if (SKU_HUB_PATHS[sku].includes(seg)) return sku;
-	return "";
-};
-/** Host + hub/LAN path mount → SKU. `u2re.space/` stays launcher (full chrome). */
-var inferCwspSkuFromLocation = () => {
-	const stamped = readCwspSku();
-	if (stamped) return stamped;
-	const host = currentHostname();
-	for (const sku of Object.keys(SKU_PUBLIC_HOSTS)) if (SKU_PUBLIC_HOSTS[sku].includes(host)) return sku;
-	const fromPath = skuForHubPathSegment(firstPathSegment());
-	if (fromPath) return fromPath;
-	if (isHubPublicHost(host) || isLanOrLoopbackHost(host)) return "launcher";
-	return "";
-};
-var ensureCwspSkuFromLocation = () => {
-	const sku = inferCwspSkuFromLocation();
-	if (sku) applyCwspSku(sku);
-	return sku;
-};
-var normalizeNavViewId = (view) => {
-	const key = String(view || "").trim().toLowerCase();
-	if (key === "markdown" || key === "document" || key === "md") return "viewer";
-	if (key === "process") return "workcenter";
-	if (key === "files" || key === "fm") return "explorer";
-	if (key === "transfer") return "network";
-	return key;
-};
-/** False on a specialized host/mount for views that belong to another SKU. */
-var isViewLocalToSurface = (view, sku = inferCwspSkuFromLocation()) => {
-	const id = normalizeNavViewId(view);
-	if (!id) return false;
-	if (!sku || sku === "launcher" || sku === "crx") return true;
-	const local = SKU_LOCAL_NAV_VIEWS[sku];
-	if (!local.length) return true;
-	return local.includes(id);
-};
-var isCwspNativeHost = () => {
-	try {
-		const g = globalThis;
-		const platform = g.Capacitor?.getPlatform?.();
-		return Boolean(g.Capacitor?.isNativePlatform?.() || platform === "android" || platform === "ios" || g.__CWS_NATIVE__ === true);
-	} catch {
-		return false;
-	}
-};
-var CWSP_SKU_HANDOFF_KEY = "cwsp-sku-handoff";
-var stashSkuHandoff = (payload) => {
-	try {
-		globalThis.sessionStorage?.setItem?.(CWSP_SKU_HANDOFF_KEY, JSON.stringify({
-			...payload,
-			ts: Date.now()
-		}));
-	} catch {}
-};
-try {
-	ensureCwspSkuFromLocation();
-} catch {}
-var androidPackageForSku = (sku) => ECOSYSTEM_SKUS[sku]?.androidPackage ?? null;
 [
 	"cw-shell-base",
 	"cw-shell-window",
@@ -16204,6 +16741,10 @@ var STYLE_CONFIGS = {
 				await shell.navigate(config.defaultView, bootParams);
 			}
 			this.setPhase("ready");
+			try {
+				if (typeof document !== "undefined") document.documentElement.dataset.cwspBoot = "ready";
+				globalThis.dispatchEvent?.(new CustomEvent("cwsp:boot-ready"));
+			} catch {}
 			if (config.rememberChoice) this.savePreferences(config);
 			console.log("[BootLoader] Boot complete");
 			return shell;
@@ -16537,4 +17078,4 @@ function navigateToView(view, params) {
 	});
 }
 //#endregion
-export { CORE_ENTITY_EXTRACTION_INSTRUCTION as $, enqueuePendingMessage as $n, isCapacitorCwsNativeShell$1 as $t, canonicalHubSettingsSection$1 as A, splitMultiValueList as An, getAirPadTransportMode as At, visibleHubSettingsSections as B, normalizeOpenSink$1 as Bn, isClipboardHubBootstrapEnabled as Bt, applyTheme as C, buildEndpointOriginCandidates as Cn, getAccessToken as Ct, DEFAULT_SETTINGS as D, resolveCwspUrlFields as Dn, getAirPadHandshakeArchetype as Dt, shouldDeferCrxHubSocketBootstrap as E, probeEndpointOriginReport as En, getAirPadEndpointUrl as Et, readSettingsAreaSection as F, classifyOpenKind as Fn, getClipboardPushIntervalMs as Ft, defaultTheme as G, sinkToAction as Gn, isPushLocalClipboardToLanEnabled as Gt, ShellRegistry as H, peekOpenPolicy as Hn, isMaintainHubSocketConnectionEnabled as Ht, rememberSettingsAreaSection as I, classifyOpenKindFromPayload as In, getRemoteHost as It, startImplicitViewMessagingBridge as J, surfaceForSku as Jn, CwsBridge$1 as Jt, initializeRegistries as K, sinkToDestination as Kn, isShellRemoteClipboardBridgeEnabled as Kt, resolveEffectiveHubSettingsSection as L, inferIngressChannels as Ln, getRemoteProtocol as Lt, hasBuiltInSettingsPanel as M, DEFAULT_SETTINGS$1 as Mn, getAssociatedClientToken as Mt, hubSettingsSectionPath$1 as N, normalizeEcosystemToken$1 as Nn, getClientAccessToken as Nt, initializeLayers as O, resolveFleetWanGatewayHost as On, getAirPadHandshakeConnectionType as Ot, pruneBuiltInSettingsTabs as P, resolveEcosystemToken$1 as Pn, getClipboardBroadcastWireTargets as Pt, templates_exports as Q, createMessageWithOverrides as Qn, invokeCwsPlatformIPC$1 as Qt, resolveSettingsShellProfile as R, looksLikePreviewableBinary as Rn, getRemoteRouteTarget as Rt, loadStyleSystem as S, CWSP_FLEET_WAN_GATEWAY_HOST_FALLBACK as Sn, applyAirpadRuntimeFromAppSettings as St, loadSettings as T, parseConnectHostInput as Tn, getAirPadDirectTargetUrl as Tt, ViewRegistry as U, rememberOpenPolicyFromSettings$1 as Un, isNeutralinoNodeClipboardHubOwned as Ut, scheduleViewModulePrefetch as V, open_policy_exports as Vn, isClipboardSenderAllowedForInbound as Vt, darkTheme as W, resolveOpenPolicy as Wn, isPreferNativeWebsocketEnabled as Wt, unifiedMessaging as X, withViewTransition as Xn, initCwsNativeBridge$1 as Xt, ingressStampWasSuperseded as Y, getTransitionDirection as Yn, cws_bridge_exports as Yt, DEFAULT_INSTRUCTION_TEMPLATES as Z, UnifiedMessaging_exports as Zn, invokeCwsNative as Zt, clipboard_device_exports as _, shouldFleetDeskGatewayProbeFallbacks as _n, persistSpeedDialItems as _r, ensureCrxCwspSettingsSeeded as _t, disconnectWS as a, isAssociableFleetWireNodeId as an, sendProtocolMessage as ar, isEnabledView as at, writeClipboardImageToDevice as b, CWSP_DEFAULT_HTTP_PORTS as bn, canParseURL as br, noteSettingsControlSync as bt, onWSConnectionChange as c, isGatewayHttpsOrigin as cn, BROADCAST_CHANNELS$1 as cr, applyTheme$1 as ct, annotatePacketWireHash as d, isOffHomeFleetNetwork as dn, normalizeDestination$1 as dr, FALLBACK_BASE_COLOR$1 as dt, Capacitor as en, hasPendingMessages as er, buildShareDataFromCachedPayload as et, inferWireDedupeCategory as f, isOnHomeFleetLanPageHost as fn, viewBroadcastChannelName as fr, defaultColorSource$1 as ft, annotatePacketWireTime64 as g, shouldConnectViaFleetGateway as gn, ensureSpeedDialMeta as gr, ensureCapacitorCwspSettingsSeeded$1 as gt, shouldAnnotateCoordinatorPayload as h, sanitizeFleetSelfWireNodeId as hn, createEmptySpeedDialItem as hr, Settings_exports as ht, connectWS as i, airpad_cwsp_client_parity_exports as in, sendMessage as ir, settleIngressPaintForMinimalShell as it, defaultSettingsTabForProfile as j, BUILTIN_AI_MODELS as jn, getAirPadTransportSecret as jt, SIBLING_HUB_SETTINGS_SECTIONS$1 as k, splitConnectHostList as kn, getAirPadPeerInstanceId as kt, websocket_exports as l, isGuestPrivateLanIpv4 as ln, ROUTE_HASHES$1 as lr, resyncThemeAfterAdoptedViewSheet as lt, annotateCoordinatorPayload as m, sanitizeFleetRouteTarget as mn, addSpeedDialItem as mr, normalizeHexColor$1 as mt, ecosystem_skus_exports as n, DEFAULT_DESK_WIRE_NODE_ID as nn, processInitialContent as nr, storeShareTargetPayloadToCache as nt, initWebSocket as o, isFleetDeskWireNodeId as on, unifiedMessaging$1 as or, pickEnabledView as ot, packetWireDedupeGuard as p, normalizeWireNodeIdForWire as pn, resolveProcessApiUrl$1 as pr, isAppearanceColorSource$1 as pt, lightTheme as q, skuForOpenSink as qn, setAirpadCredentialInvalidator as qt, hub_socket_boot_exports as r, FLEET_GATEWAY_WIRE_NODE_ID as rn, registerComponent$1 as rr, serviceChannels as rt, isWSConnected as s, isFleetGatewayWireNodeId as sn, API_ENDPOINTS as sr, Theme_exports as st, navigateToView as t, dist_exports as tn, initializeComponent$1 as tr, consumeCachedShareTargetPayload as tt, ensureAppLayers as u, isHomeFleetLanHost as un, getBroadcastChannelForDestination as ur, syncBrowserChromeTheme$1 as ut, isCapacitorNativeShell as v, shouldPreferWanGatewayForAirpad as vn, persistSpeedDialMeta as vr, getLastSettingsSaveReport as vt, ensureCapacitorCwspSettingsSeeded as w, collectEndpointProbeCandidates as wn, getAirPadClientId as wt, writeClipboardTextToDevice as x, CWSP_FLEET_LAN_GATEWAY_HOST as xn, saveSettings$1 as xt, readClipboardTextFromDevice as y, CWSP_DEFAULT_HTTPS_PORTS as yn, speedDialItems as yr, loadSettings$1 as yt, skuForHubSettingsSection as z, mergeOpenPolicy$1 as zn, isApplyRemoteClipboardToDeviceEnabled as zt };
+export { CORE_ENTITY_EXTRACTION_INSTRUCTION as $, resolveProcessApiUrl$1 as $n, invokeCwsNative as $t, canonicalHubSettingsSection$1 as A, resolveFleetWanGatewayHost as An, getAirPadHandshakeConnectionType as At, visibleHubSettingsSections as B, hasPendingMessages as Bn, getRemoteRouteTarget as Bt, ensureCapacitorCwspSettingsSeeded as C, CWSP_FLEET_LAN_GATEWAY_HOST as Cn, ensureSpeedDialMeta as Cr, saveSettings$1 as Ct, ecosystem_skus_exports as D, parseConnectHostInput as Dn, canParseURL as Dr, getAirPadDirectTargetUrl as Dt, DEFAULT_SETTINGS as E, collectEndpointProbeCandidates as En, speedDialItems as Er, getAirPadClientId as Et, readSettingsAreaSection as F, normalizeEcosystemToken$1 as Fn, getClientAccessToken as Ft, defaultTheme as G, sendProtocolMessage as Gn, isNeutralinoNodeClipboardHubOwned as Gt, ShellRegistry as H, processInitialContent as Hn, isClipboardHubBootstrapEnabled as Ht, rememberSettingsAreaSection as I, resolveEcosystemToken$1 as In, getClipboardBroadcastWireTargets as It, startImplicitViewMessagingBridge as J, BROADCAST_CHANNELS$1 as Jn, isShellRemoteClipboardBridgeEnabled as Jt, initializeRegistries as K, unifiedMessaging$1 as Kn, isPreferNativeWebsocketEnabled as Kt, resolveEffectiveHubSettingsSection as L, UnifiedMessaging_exports as Ln, getClipboardPushIntervalMs as Lt, hasBuiltInSettingsPanel as M, splitMultiValueList as Mn, getAirPadTransportMode as Mt, hubSettingsSectionPath$1 as N, BUILTIN_AI_MODELS as Nn, getAirPadTransportSecret as Nt, initializeLayers as O, probeEndpointOriginReport as On, getAirPadEndpointUrl as Ot, pruneBuiltInSettingsTabs as P, DEFAULT_SETTINGS$1 as Pn, getAssociatedClientToken as Pt, templates_exports as Q, viewBroadcastChannelName as Qn, initCwsNativeBridge$1 as Qt, resolveSettingsShellProfile as R, createMessageWithOverrides as Rn, getRemoteHost as Rt, applyTheme as S, CWSP_DEFAULT_HTTP_PORTS as Sn, createEmptySpeedDialItem as Sr, noteSettingsControlSync as St, shouldDeferCrxHubSocketBootstrap as T, buildEndpointOriginCandidates as Tn, persistSpeedDialMeta as Tr, getAccessToken as Tt, ViewRegistry as U, registerComponent$1 as Un, isClipboardSenderAllowedForInbound as Ut, scheduleViewModulePrefetch as V, initializeComponent$1 as Vn, isApplyRemoteClipboardToDeviceEnabled as Vt, darkTheme as W, sendMessage as Wn, isMaintainHubSocketConnectionEnabled as Wt, unifiedMessaging as X, getBroadcastChannelForDestination as Xn, CwsBridge$1 as Xt, ingressStampWasSuperseded as Y, ROUTE_HASHES$1 as Yn, setAirpadCredentialInvalidator as Yt, DEFAULT_INSTRUCTION_TEMPLATES as Z, normalizeDestination$1 as Zn, cws_bridge_exports as Zt, isCapacitorNativeShell as _, sanitizeFleetSelfWireNodeId as _n, skuForOpenSink as _r, Settings_exports as _t, initWebSocket as a, FLEET_GATEWAY_WIRE_NODE_ID as an, mergeOpenPolicy$1 as ar, isEnabledView as at, writeClipboardTextToDevice as b, shouldPreferWanGatewayForAirpad as bn, viewIdForOpenSink as br, getLastSettingsSaveReport as bt, websocket_exports as c, isFleetDeskWireNodeId as cn, peekOpenPolicy as cr, applyTheme$1 as ct, inferWireDedupeCategory as d, isGuestPrivateLanIpv4 as dn, resolveHostOpenPolicy$1 as dr, FALLBACK_BASE_COLOR$1 as dt, invokeCwsPlatformIPC$1 as en, classifyOpenKind as er, buildShareDataFromCachedPayload as et, packetWireDedupeGuard as f, isHomeFleetLanHost as fn, resolveOpenPlacement as fr, defaultColorSource$1 as ft, clipboard_device_exports as g, sanitizeFleetRouteTarget as gn, sinkToOpenLinkTarget as gr, withViewTransition as gt, annotatePacketWireTime64 as h, normalizeWireNodeIdForWire as hn, sinkToDestination as hr, getTransitionDirection as ht, disconnectWS as i, DEFAULT_DESK_WIRE_NODE_ID as in, looksLikePreviewableBinary as ir, settleIngressPaintForMinimalShell as it, defaultSettingsTabForProfile as j, splitConnectHostList as jn, getAirPadPeerInstanceId as jt, SIBLING_HUB_SETTINGS_SECTIONS$1 as k, resolveCwspUrlFields as kn, getAirPadHandshakeArchetype as kt, ensureAppLayers as l, isFleetGatewayWireNodeId as ln, rememberOpenPolicyFromSettings$1 as lr, resyncThemeAfterAdoptedViewSheet as lt, shouldAnnotateCoordinatorPayload as m, isOnHomeFleetLanPageHost as mn, sinkToAction as mr, normalizeHexColor$1 as mt, hub_socket_boot_exports as n, Capacitor as nn, classifyOpenKindFromPayload as nr, storeShareTargetPayloadToCache as nt, isWSConnected as o, airpad_cwsp_client_parity_exports as on, normalizeOpenSink$1 as or, pickEnabledView as ot, annotateCoordinatorPayload as p, isOffHomeFleetNetwork as pn, resolveOpenPolicy as pr, isAppearanceColorSource$1 as pt, lightTheme as q, API_ENDPOINTS as qn, isPushLocalClipboardToLanEnabled as qt, connectWS as r, dist_exports as rn, inferIngressChannels as rr, serviceChannels as rt, onWSConnectionChange as s, isAssociableFleetWireNodeId as sn, open_policy_exports as sr, Theme_exports as st, navigateToView as t, isCapacitorCwsNativeShell$1 as tn, classifyOpenKindFromName as tr, consumeCachedShareTargetPayload as tt, annotatePacketWireHash as u, isGatewayHttpsOrigin as un, resolveExplorerOpenSink as ur, syncBrowserChromeTheme$1 as ut, readClipboardTextFromDevice as v, shouldConnectViaFleetGateway as vn, stampHostOpenPolicy as vr, ensureCapacitorCwspSettingsSeeded$1 as vt, loadSettings as w, CWSP_FLEET_WAN_GATEWAY_HOST_FALLBACK as wn, persistSpeedDialItems as wr, applyAirpadRuntimeFromAppSettings as wt, loadStyleSystem as x, CWSP_DEFAULT_HTTPS_PORTS as xn, addSpeedDialItem as xr, loadSettings$1 as xt, writeClipboardImageToDevice as y, shouldFleetDeskGatewayProbeFallbacks as yn, surfaceForSku as yr, ensureCrxCwspSettingsSeeded as yt, skuForHubSettingsSection as z, enqueuePendingMessage as zn, getRemoteProtocol as zt };

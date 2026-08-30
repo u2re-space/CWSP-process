@@ -1,7 +1,7 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../shells/boot-index.js","./rolldown-runtime.js","../shells/boot-history-base.js","../com/app.js","../fest/core.js","../com/service.js","../fest/veela.js","./BootLoader.js","../shells/preference.js","./capacitor-settings-permissions.js","./capacitor-permissions.js","./RuntimeSettings.js","./sku-ingress.js"])))=>i.map(i=>d[i]);
-import { c as isCwspNativeHost, n as SKU_HUB_PATHS, s as inferCwspSkuFromLocation } from "../shells/boot-history-base.js";
-import { Ut as parseDataUrl, Vt as isBase64Like, ar as __vitePreload, hn as initClipboardReceiver, mn as copy, wt as bindDirectoryForLaunchedFiles } from "../com/app.js";
-import { X as unifiedMessaging$1, cr as BROADCAST_CHANNELS, et as buildShareDataFromCachedPayload, nt as storeShareTargetPayloadToCache, or as unifiedMessaging, pr as resolveProcessApiUrl, tt as consumeCachedShareTargetPayload, yt as loadSettings } from "../shells/boot-index.js";
+import { _ as stashSkuHandoff, c as isCwspNativeHost, n as SKU_HUB_PATHS, s as inferCwspSkuFromLocation } from "../shells/boot-history-base.js";
+import { Jt as parseDataUrl, Kt as isBase64Like, Sn as initClipboardReceiver, kt as bindDirectoryForLaunchedFiles, ur as __vitePreload, xn as copy } from "../com/app.js";
+import { $n as resolveProcessApiUrl, Jn as BROADCAST_CHANNELS, Kn as unifiedMessaging, X as unifiedMessaging$1, et as buildShareDataFromCachedPayload, nt as storeShareTargetPayloadToCache, tt as consumeCachedShareTargetPayload, xt as loadSettings } from "../shells/boot-index.js";
 import { t as summarizeForLog$1 } from "./LogSanitizer.js";
 import { applyLauncherIngress, installShellImageOpenListener, refineLauncherImageIngress, skuIngressHint } from "./sku-ingress.js";
 import { classifyIngressFile, classifyIngressFromBasename, dispatchViewTransfer } from "./ViewTransferRouting.js";
@@ -1437,7 +1437,7 @@ var routeToTransferView = async (shareData, source, hint, pending = false) => {
 		const settings = await loadSettings().catch(() => null);
 		autoProcessShared = (settings?.ai?.autoProcessShared ?? true) !== false;
 		const { rememberOpenPolicyFromSettings } = await __vitePreload(async () => {
-			const { rememberOpenPolicyFromSettings } = await import("../shells/boot-index.js").then((n) => n.Vn);
+			const { rememberOpenPolicyFromSettings } = await import("../shells/boot-index.js").then((n) => n.sr);
 			return { rememberOpenPolicyFromSettings };
 		}, __vite__mapDeps([0,1,2,3,4,5,6]), import.meta.url);
 		rememberOpenPolicyFromSettings(settings);
@@ -1629,7 +1629,25 @@ var ingestSharePayload = async (shareData, source = "share-target") => {
 			}
 		});
 	} catch {}
-	return routeToTransferView(shareData, source, extractTransferHint(shareData), false);
+	const file = files[0];
+	try {
+		const content = !!file && (/^text\/|json|markdown|xml|javascript|typescript/i.test(String(file.type || "")) || /\.(?:md|markdown|txt|json|html?|css|js|ts|tsx|yml|yaml|csv|log|xml)$/i.test(file.name)) && file ? await file.text() : String(shareData.text || "");
+		if (content.trim() || file?.name) stashSkuHandoff({
+			dest: "viewer",
+			content,
+			filename: String(file?.name || shareData.title || ""),
+			src: String(shareData.url || shareData.sharedUrl || "")
+		});
+	} catch {}
+	const native = (() => {
+		try {
+			const c = globalThis.Capacitor;
+			return typeof c?.isNativePlatform === "function" && Boolean(c.isNativePlatform());
+		} catch {
+			return false;
+		}
+	})();
+	return routeToTransferView(shareData, source, extractTransferHint(shareData), native);
 };
 /**
 * Extract processable content from share data

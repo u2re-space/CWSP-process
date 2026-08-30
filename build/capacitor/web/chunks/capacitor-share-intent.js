@@ -1,13 +1,15 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../shells/boot-index.js","./rolldown-runtime.js","../shells/boot-history-base.js","../com/app.js","../fest/core.js","../com/service.js","../fest/veela.js","./sku-ingress.js","./sw-handling.js","./LogSanitizer.js","./ViewTransferRouting.js"])))=>i.map(i=>d[i]);
 const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
-import { An as splitMultiValueList } from "../shells/boot-index.js";
+import { Mn as splitMultiValueList } from "../shells/boot-index.js";
 import { n as isCapacitorNative } from "./capacitor-permissions.js";
 //#region src/frontend/boot/capacitor-share-intent.ts
 /**
 * Capacitor share / process-text bridge (Android → WebView).
+* FIND:open-policy
 *
 * Fans out to the clipboard bus and runs the SKU share pipeline
 * (process → AI/attach, document → viewer, explorer → path/ask, shell → pin/wallpaper).
+* Document SKU does not ack pending-share — the viewer pull paints then acks.
 */
 var parseSharePayload = (detail) => {
 	if (detail == null) return {
@@ -60,10 +62,17 @@ var readDestinationNodes = (settings) => {
 	if (raw === "*" || raw.toLowerCase() === "any") return ["*"];
 	return splitMultiValueList(raw);
 };
+var isDocumentSku = () => {
+	try {
+		return String(document.documentElement?.dataset?.cwspSku || "").trim() === "document";
+	} catch {
+		return false;
+	}
+};
 var consumeNativePendingShare = async () => {
 	try {
 		const { invokeCwsPlatformIPC } = await __vitePreload(async () => {
-			const { invokeCwsPlatformIPC } = await import("../shells/boot-index.js").then((n) => n.Yt);
+			const { invokeCwsPlatformIPC } = await import("../shells/boot-index.js").then((n) => n.Zt);
 			return { invokeCwsPlatformIPC };
 		}, __vite__mapDeps([0,1,2,3,4,5,6]), import.meta.url);
 		const peek = await invokeCwsPlatformIPC({ channel: "launcher:pending-share" });
@@ -123,7 +132,7 @@ var installCapacitorShareIntentBridge = () => {
 		(async () => {
 			const { text, title, asset, pending } = parseSharePayload(ev.detail);
 			try {
-				const [{ loadSettings }, ws] = await Promise.all([__vitePreload(() => import("../shells/boot-index.js").then((n) => n.ht), __vite__mapDeps([0,1,2,3,4,5,6]), import.meta.url), __vitePreload(() => import("../shells/boot-index.js").then((n) => n.l), __vite__mapDeps([0,1,2,3,4,5,6]), import.meta.url)]);
+				const [{ loadSettings }, ws] = await Promise.all([__vitePreload(() => import("../shells/boot-index.js").then((n) => n._t), __vite__mapDeps([0,1,2,3,4,5,6]), import.meta.url), __vitePreload(() => import("../shells/boot-index.js").then((n) => n.c), __vite__mapDeps([0,1,2,3,4,5,6]), import.meta.url)]);
 				const nodes = readDestinationNodes(loadSettings());
 				ws.connectWS();
 				if (asset) ws.sendCoordinatorAct("clipboard:update", {
@@ -137,6 +146,7 @@ var installCapacitorShareIntentBridge = () => {
 			} catch {}
 			enqueueShareIngest(async () => {
 				try {
+					if (pending && isDocumentSku()) return;
 					if (pending) {
 						const native = await consumeNativePendingShare();
 						if (native) {
@@ -165,6 +175,22 @@ var installCapacitorShareIntentBridge = () => {
 	};
 	window.addEventListener("cws:shareIntent", handler);
 	enqueueShareIngest(async () => {
+		await new Promise((resolve) => {
+			const done = () => resolve();
+			try {
+				if (document.documentElement?.dataset?.cwspBoot === "ready") {
+					done();
+					return;
+				}
+			} catch {}
+			const onReady = () => {
+				window.removeEventListener("cwsp:boot-ready", onReady);
+				done();
+			};
+			window.addEventListener("cwsp:boot-ready", onReady);
+			window.setTimeout(done, 4e3);
+		});
+		if (isDocumentSku()) return;
 		const native = await consumeNativePendingShare().catch(() => null);
 		if (native) await ingestParsedShare(native);
 	});

@@ -634,7 +634,7 @@ function startCapacitorTransferHistory() {
 	window.addEventListener("cws:transferHistory", onCapWindowEvent);
 	document.addEventListener("cws:transferHistory", onCapWindowEvent);
 	__vitePreload(async () => {
-		const { CwsBridge } = await import("../shells/boot-index.js").then((n) => n.Yt);
+		const { CwsBridge } = await import("../shells/boot-index.js").then((n) => n.Zt);
 		return { CwsBridge };
 	}, __vite__mapDeps([0,1,2,3,4,5,6]), import.meta.url).then(async ({ CwsBridge }) => {
 		try {
@@ -793,7 +793,7 @@ async function dispatchHistoryAction(entry, action) {
 			localFilePath: entry.localFilePath || ""
 		};
 		const { invokeCwsNative } = await __vitePreload(async () => {
-			const { invokeCwsNative } = await import("../shells/boot-index.js").then((n) => n.Yt);
+			const { invokeCwsNative } = await import("../shells/boot-index.js").then((n) => n.Zt);
 			return { invokeCwsNative };
 		}, __vite__mapDeps([0,1,2,3,4,5,6]), import.meta.url);
 		if ((await invokeCwsNative({

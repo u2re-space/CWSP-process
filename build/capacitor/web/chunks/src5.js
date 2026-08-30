@@ -1,4 +1,4 @@
-import { Tn as H, Xn as removeAdopted, qn as loadAsAdopted } from "../com/app.js";
+import { Mn as H, lr as removeAdopted, or as loadAsAdopted } from "../com/app.js";
 import { i as HistoryChannelAction } from "../views/viewer.js";
 import { a as transferProgressRatio, dispatchHistoryAction, getTransferHistoryStore, historyImageSrc, i as isMutedHistoryStatus, n as formatTransferBytes, r as formatTransferSpeed, setTransferHistoryUiActive, startCapacitorTransferHistory, startNeutralinoTransferHistory, t as actionsForEntry } from "./transfer-history-runtime.js";
 //#region ../../modules/views/history-view/src/scss/history.scss?inline

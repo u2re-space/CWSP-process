@@ -1,4 +1,4 @@
-import { Zt as registerDirectoryRoot, _n as registerTransientOverlay, in as placeOverlay, vn as resolveOverlayHost } from "../com/app.js";
+import { Tn as resolveOverlayHost, an as registerDirectoryRoot, fn as placeOverlay, wn as registerTransientOverlay } from "../com/app.js";
 //#region src/frontend/shells/environment/components/explorer/fs-backend.ts
 function normalizeVirtualPath(path, asDirectory = true) {
 	let p = String(path || "/").trim() || "/";
@@ -235,6 +235,21 @@ var capacitorInvoke = async (channel, payload = {}) => {
 	});
 	return r?.echo || r || {};
 };
+var parseNativeStoragePath = (virtualPath) => {
+	const raw = String(virtualPath || "").trim();
+	if (!raw) return null;
+	const root = raw === "/saf" || raw.startsWith("/saf/") ? "saf" : raw === "/sdcard" || raw.startsWith("/sdcard/") ? "sdcard" : "";
+	if (!root) return null;
+	if (raw === `/${root}`) return {
+		root,
+		rel: "/"
+	};
+	const prefix = root === "saf" ? "/saf/" : "/sdcard/";
+	return {
+		root,
+		rel: (raw.startsWith(prefix) ? raw.slice(prefix.length - 1) : raw) || "/"
+	};
+};
 var isNativeStorageAvailable = () => {
 	if (api?.list) return true;
 	try {
@@ -265,18 +280,31 @@ var dataUrlToFile = async (dataUrl, name, mime) => {
 };
 /** Read one `/sdcard/` or `/saf/` file through CwsBridge (`storage:read`). */
 var readNativeStorageFile = async (virtualPath) => {
-	const raw = String(virtualPath || "").trim();
-	if (!raw) return null;
-	const root = raw === "/saf" || raw.startsWith("/saf/") ? "saf" : raw === "/sdcard" || raw.startsWith("/sdcard/") ? "sdcard" : "";
-	if (!root) return null;
-	const prefix = root === "saf" ? "/saf/" : "/sdcard/";
+	const parsed = parseNativeStoragePath(virtualPath);
+	if (!parsed) return null;
 	const echo = await capacitorInvoke("storage:read", {
-		root,
-		path: (raw.startsWith(prefix) ? raw.slice(prefix.length - 1) : raw) || "/"
+		root: parsed.root,
+		path: parsed.rel
 	});
 	const data = String(echo.data || echo.dataUrl || "");
 	if (!data) return null;
-	return dataUrlToFile(data, String(echo.name || raw.split("/").filter(Boolean).pop() || "file"), String(echo.mime || echo.mimeType || "application/octet-stream"));
+	return dataUrlToFile(data, String(echo.name || virtualPath.split("/").filter(Boolean).pop() || "file"), String(echo.mime || echo.mimeType || "application/octet-stream"));
+};
+/** Delete a `/sdcard/` or `/saf/` file or folder through CwsBridge (`storage:delete`). */
+var removeNativeStorage = async (virtualPath) => {
+	const parsed = parseNativeStoragePath(virtualPath);
+	if (!parsed) throw new Error("not native storage");
+	const plugin = globalThis.Capacitor?.Plugins?.CwsBridge;
+	if (typeof plugin?.invoke !== "function") throw new Error("no native storage");
+	const r = await plugin.invoke({
+		channel: "storage:delete",
+		payload: {
+			root: parsed.root,
+			path: parsed.rel
+		}
+	});
+	const echo = r?.echo || {};
+	if (r?.ok === false || echo.deleted !== true) throw new Error(String(echo.error || "delete failed"));
 };
 //#endregion
 //#region src/frontend/shells/environment/components/explorer/backends/native-fs-backend.ts
@@ -294,13 +322,16 @@ var toEntries = (path, rows) => {
 };
 var createNativeFsBackend = (root) => ({
 	root,
-	writable: root === "/sdcard/",
+	writable: true,
 	async list(path) {
 		const rel = normalizeVirtualPath(path, true).slice(root.length - 1) || "/";
 		return toEntries(path, await listNativeStorage(root === "/saf/" ? "saf" : "sdcard", rel));
 	},
 	async readFile(path) {
 		return readNativeStorageFile(path);
+	},
+	async remove(path, _recursive) {
+		await removeNativeStorage(path);
 	}
 });
 //#endregion
@@ -612,6 +643,26 @@ function ensureDefaultFsBackends() {
 		writable: true,
 		async list(path) {
 			return listOpfsUserDirectory(path);
+		},
+		async readFile(path) {
+			const nav = typeof navigator !== "undefined" ? navigator : null;
+			const getDir = nav?.storage?.getDirectory;
+			if (typeof getDir !== "function") return null;
+			const root = await getDir.call(nav.storage).catch(() => null);
+			if (!root) return null;
+			const segments = stripUserPrefix(path).split("/").filter(Boolean);
+			if (!segments.length) return null;
+			let dir = root;
+			for (const seg of segments.slice(0, -1)) try {
+				dir = await dir.getDirectoryHandle(seg, { create: false });
+			} catch {
+				return null;
+			}
+			try {
+				return await (await dir.getFileHandle(segments[segments.length - 1], { create: false })).getFile();
+			} catch {
+				return null;
+			}
 		}
 	});
 	if (!resolveFsBackend("/assets/")) registerFsBackend({
@@ -619,6 +670,19 @@ function ensureDefaultFsBackends() {
 		writable: false,
 		async list() {
 			return [];
+		},
+		async readFile(path) {
+			const p = String(path || "").trim();
+			if (!p || p.endsWith("/")) return null;
+			try {
+				const r = await fetch(p);
+				if (!r?.ok) return null;
+				const blob = await r.blob();
+				const name = p.slice(p.lastIndexOf("/") + 1) || "asset";
+				return new File([blob], name, { type: blob.type || "" });
+			} catch {
+				return null;
+			}
 		}
 	});
 	if (!resolveFsBackend("/bookmarks/")) {

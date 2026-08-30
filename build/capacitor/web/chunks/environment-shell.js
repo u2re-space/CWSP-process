@@ -1,5 +1,5 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./src7.js","../com/app.js","./rolldown-runtime.js","../shells/boot-index.js","../shells/boot-history-base.js","../fest/core.js","../com/service.js","../fest/veela.js","./frontend-debug-capture.js","./src8.js","../views/viewer.js","../vendor/dompurify.js","./storage.js","./capacitor-permissions.js","./capacitor-settings-permissions.js","./admin-doors.js","./CustomInstructions.js","./utils.js","./src.js","./src9.js","./src5.js","./transfer-history-runtime.js","./src10.js","./WorkCenter.js","../vendor/marked.js","../vendor/katex.js","../vendor/marked-katex-extension.js","./LogSanitizer.js","./ShareTargetGateway.js","./entities.js","./AIResponseParser.js","../vendor/@toon-format_toon.js","./unified.js","./RuntimeSettings.js","./WorkCenterState.js","./WorkCenterDataProcessing.js","./src4.js","./src6.js","./launcher-state.js"])))=>i.map(i=>d[i]);
-import { A as restoreWallpaperThemeCache, D as refreshAppWallpaperPaint, Dn as closeHighestPriority, E as initializeAppCanvasLayer, Hn as ref, Jn as loadInlineStyle, On as hasActiveCloseable, Yn as preloadStyle, ar as __vitePreload, z as ensureStyleSheet } from "../com/app.js";
+import { B as ensureStyleSheet, D as initializeAppCanvasLayer, Fn as hasActiveCloseable, O as refreshAppWallpaperPaint, Pn as closeHighestPriority, cr as preloadStyle, j as restoreWallpaperThemeCache, nr as ref, sr as loadInlineStyle, ur as __vitePreload } from "../com/app.js";
 import { at as isEnabledView } from "../shells/boot-index.js";
 import { n as initBootShellWindowActivity } from "../shells/preference.js";
 import { t as ShellBase } from "./shells.js";
@@ -423,8 +423,7 @@ var EnvironmentShell = class extends ShellBase {
 		const id = String(viewId || "").trim().toLowerCase();
 		if (!id || id === "airpad") return;
 		const withNative = mergeNativeOpt(id, opts);
-		if (id === "browser" || id === "web" || id === "iframe" || id === "webview") this.windowLayer?.shellContext.openView?.(id, withNative);
-		else if (!this.windowLayer?.focusWindow(id)) this.windowLayer?.shellContext.openView?.(id, withNative);
+		this.windowLayer?.shellContext.openView?.(id, withNative);
 		if (wantsNative(withNative)) {
 			const promote = () => {
 				this.windowLayer?.enterNative?.(id);

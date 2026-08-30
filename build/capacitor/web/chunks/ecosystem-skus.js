@@ -170,11 +170,15 @@ var isCwspNativeHost = () => {
 };
 var CWSP_SKU_HANDOFF_KEY = "cwsp-sku-handoff";
 var stashSkuHandoff = (payload) => {
+	const json = JSON.stringify({
+		...payload,
+		ts: Date.now()
+	});
 	try {
-		globalThis.sessionStorage?.setItem?.(CWSP_SKU_HANDOFF_KEY, JSON.stringify({
-			...payload,
-			ts: Date.now()
-		}));
+		globalThis.sessionStorage?.setItem?.(CWSP_SKU_HANDOFF_KEY, json);
+	} catch {}
+	try {
+		globalThis.localStorage?.setItem?.(CWSP_SKU_HANDOFF_KEY, json);
 	} catch {}
 };
 try {

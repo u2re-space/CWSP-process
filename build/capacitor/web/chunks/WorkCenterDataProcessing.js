@@ -1,5 +1,5 @@
 import { n as __exportAll } from "./rolldown-runtime.js";
-import { gn as writeText } from "../com/app.js";
+import { Cn as writeText } from "../com/app.js";
 import "../shells/boot-index.js";
 import { t as purify } from "../vendor/dompurify.js";
 import { t as f } from "../vendor/marked.js";

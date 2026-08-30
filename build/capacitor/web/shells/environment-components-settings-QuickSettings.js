@@ -1,4 +1,4 @@
-import { An as navigate, F as __decorate, N as UIElement, S as getSpeedDialViewOpener, Tn as H, Yn as preloadStyle, nr as MOCElement, wn as defineElement } from "../com/app.js";
+import { C as getSpeedDialViewOpener, I as __decorate, Ln as navigate, Mn as H, P as UIElement, cr as preloadStyle, jn as defineElement, qn as MOCElement } from "../com/app.js";
 import { i as positionFlyout, n as closeChromeFlyout, o as toggleChromeFlyout, r as ensureOverlayRoot } from "./environment-components-calendar-CalendarFlyout.js";
 //#endregion
 //#region src/frontend/shells/environment/components/settings/QuickSettings.ts

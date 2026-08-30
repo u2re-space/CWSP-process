@@ -1,5 +1,5 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./environment-window-views-browser-view.js","../chunks/rolldown-runtime.js"])))=>i.map(i=>d[i]);
-import { Ln as effect, Rn as booleanRef, ar as __vitePreload, b as tryLaunchSiblingView, zn as numberRef } from "../com/app.js";
+import { $n as numberRef, Qn as booleanRef, Zn as effect, ur as __vitePreload, x as tryLaunchSiblingView } from "../com/app.js";
 import { a as SHELL_SLOT, i as isEnvironmentShellContainerHost, o as resolveOverlayMountPoint, s as resolveShellOverlaysMount, t as getOrCreateEnvironmentOverlayMount } from "./environment-environment-overlay.js";
 import { a as setChromeFlyoutShellHost } from "./environment-components-calendar-CalendarFlyout.js";
 import { t as restoreQuickFilters } from "./environment-components-settings-QuickSettings.js";
@@ -801,7 +801,9 @@ function createWorkspaceWindowLayer(workspace, options = {}) {
 		}
 		emitTasking();
 	};
-	const shellContext = {};
+	const shellContext = { showMessage: (msg) => {
+		console.log(`[environment] ${typeof msg === "string" ? msg : String(msg ?? "")}`);
+	} };
 	const envOverlayMount = options.overlayMountHost ? getOrCreateEnvironmentOverlayMount(options.overlayMountHost) : null;
 	shellContext.resolveOverlayMountPoint = (anchor) => {
 		if (envOverlayMount) return envOverlayMount;
@@ -902,6 +904,18 @@ function createWorkspaceWindowLayer(workspace, options = {}) {
 				existing.model.minimized.value = false;
 				existing.model.visible.value = true;
 				exitNativeExcept(managedKey);
+			}
+			if (isMarkdownViewManagedWindowKey(id)) {
+				const src = String(params.src || params.source || params.path || "").trim();
+				const filename = String(params.filename || params.name || "").trim();
+				const content = String(params.content || "");
+				if (src || content.trim()) try {
+					globalThis.dispatchEvent(new CustomEvent("cwsp:document-open", { detail: {
+						src,
+						filename,
+						content
+					} }));
+				} catch {}
 			}
 			if (id === "browser" && externalUrl) try {
 				const frame = findKeyedFrame(workspace, managedKey);
