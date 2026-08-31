@@ -1,6 +1,10 @@
-
+/**
+ * FIND:ai-routers
+ * TAG:process,ai
+ * WHY: SW AI routers SoT lives in CWSP-process; other apps symlink here.
+ */
 import { resolveEntity } from "com/service/service/EntityItemResolve";
-import { UnifiedAIService, type RecognizeByInstructionsOptions } from "com/service/AI-ops/service/RecognizeData2";
+import { UnifiedAIService, type RecognizeByInstructionsOptions } from "com/service/service/RecognizeData";
 import { getOrDefaultComputedOfDataSourceCache } from "../lib/DataSourceCache";
 import { GPTResponses } from "com/service/model/GPT-Responses";
 import type { AppSettings, CustomInstruction } from "com/config/SettingsTypes";

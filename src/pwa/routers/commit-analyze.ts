@@ -11,7 +11,7 @@ import { detectEntityTypeByJSON } from "com/template/EntityUtils";
 import { queueEntityForWriting, pushToIDBQueue } from "com/service/service/ServiceHelper";
 import { tryParseJSON } from "core/document/AIResponseParser";
 import { fileToDataUrl, isProcessableImage, isImageDataUrl } from "../lib/ImageUtils";
-import { recognizeByInstructions } from "com/service/AI-ops/service/RecognizeData2";
+import { recognizeByInstructions } from "com/service/service/RecognizeData";
 import { getUsableData } from "com/service/model/GPT-Responses";
 
 // IDB utilities for clipboard operations

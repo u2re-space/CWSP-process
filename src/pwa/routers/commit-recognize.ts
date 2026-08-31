@@ -13,7 +13,7 @@ import { pushToIDBQueue } from "com/service/service/ServiceHelper";
 import { loadSettings } from "com/config/Settings";
 import { getRuntimeSettings } from "com/config/RuntimeSettings";
 import { fileToDataUrl, isProcessableImage, isImageDataUrl } from "../lib/ImageUtils";
-import { recognizeByInstructions } from "com/service/AI-ops/service/RecognizeData2";
+import { recognizeByInstructions } from "com/service/service/RecognizeData";
 import { getUsableData } from "com/service/model/GPT-Responses";
 
 // IDB utilities for clipboard operations
