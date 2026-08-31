@@ -1,7 +1,7 @@
-import { n as __exportAll } from "./rolldown-runtime.js";
-import { Ct as saveSettings, xt as loadSettings } from "../shells/boot-index.js";
+import { r as __exportAll } from "./rolldown-runtime.js";
+import { bt as saveSettings, vt as loadSettings } from "../shells/boot-index.js";
 import { a as generateInstructionId } from "./utils.js";
-//#region src/shared/service/instructions/CustomInstructions.ts
+//#region src/service/instructions/CustomInstructions.ts
 var CustomInstructions_exports = /* @__PURE__ */ __exportAll({
 	addInstruction: () => addInstruction,
 	addInstructions: () => addInstructions,

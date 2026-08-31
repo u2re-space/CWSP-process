@@ -1,12 +1,12 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./CustomInstructions.js","./rolldown-runtime.js","../shells/boot-index.js","../shells/boot-history-base.js","../com/app.js","../fest/core.js","../com/service.js","../fest/veela.js","./utils.js"])))=>i.map(i=>d[i]);
-import { n as __exportAll } from "./rolldown-runtime.js";
+import { r as __exportAll } from "./rolldown-runtime.js";
 const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
-import { xt as loadSettings } from "../shells/boot-index.js";
-import { n as getRuntimeSettings } from "./RuntimeSettings.js";
+import { vt as loadSettings } from "../shells/boot-index.js";
 import { i as buildInstructionPrompt, n as SVG_GRAPHICS_ADDON, o as getIntermediateRecognitionInstruction, r as TRANSLATE_INSTRUCTION, s as getOutputFormatInstruction, t as LANGUAGE_INSTRUCTIONS } from "./utils.js";
+import "./core.js";
 import { a as unwrapUnwantedCodeBlocks, i as isImageData, n as getGPTInstance, r as getResponseFormat } from "./entities.js";
-import "./AIResponseParser.js";
-//#region src/shared/service/processing/adapters.ts
+import { n as getRuntimeSettings } from "./RuntimeSettings.js";
+//#region src/service/processing/adapters.ts
 var detectPlatform = () => {
 	try {
 		if (typeof chrome !== "undefined" && chrome?.runtime?.id) return "crx";
@@ -18,7 +18,7 @@ var detectPlatform = () => {
 	}
 };
 //#endregion
-//#region src/shared/service/processing/settings.ts
+//#region src/service/processing/settings.ts
 var loadAISettings = async () => {
 	const platform = detectPlatform();
 	try {
@@ -60,7 +60,7 @@ var getSvgGraphicsAddon = async () => {
 	}
 };
 //#endregion
-//#region src/shared/service/recognition/cache.ts
+//#region src/service/recognition/cache.ts
 var RecognitionCache = class {
 	cache = /* @__PURE__ */ new Map();
 	maxEntries = 100;
@@ -108,7 +108,7 @@ var RecognitionCache = class {
 	}
 };
 //#endregion
-//#region src/shared/service/processing/unified.ts
+//#region src/service/processing/unified.ts
 var unified_exports = /* @__PURE__ */ __exportAll({
 	processDataWithInstruction: () => processDataWithInstruction,
 	recognizeByInstructions: () => recognizeByInstructions
@@ -116,7 +116,7 @@ var unified_exports = /* @__PURE__ */ __exportAll({
 var recognitionCache = new RecognitionCache();
 var processDataWithInstruction = async (input, options = {}, sendResponse) => {
 	const settings = (await loadSettings())?.ai;
-	const { instruction = "", outputFormat = "auto", outputLanguage = "auto", enableSVGImageGeneration = "auto", intermediateRecognition, processingEffort = "low", processingVerbosity = "low", customInstruction, useActiveInstruction = false, includeImageRecognition, dataType } = options;
+	const { instruction = "", outputFormat = "auto", outputLanguage = "auto", enableSVGImageGeneration = "auto", intermediateRecognition, processingEffort = "low", processingVerbosity = "low", customInstruction, useActiveInstruction = false, includeImageRecognition, dataType, signal } = options;
 	const token = settings?.apiKey;
 	if (!token) {
 		const result = {
@@ -130,6 +130,14 @@ var processDataWithInstruction = async (input, options = {}, sendResponse) => {
 		const result = {
 			ok: false,
 			error: "No input provided"
+		};
+		sendResponse?.(result);
+		return result;
+	}
+	if (signal?.aborted) {
+		const result = {
+			ok: false,
+			error: "Cancelled"
 		};
 		sendResponse?.(result);
 		return result;
@@ -224,7 +232,8 @@ var processDataWithInstruction = async (input, options = {}, sendResponse) => {
 	try {
 		response = await gpt?.sendRequest?.(processingEffort, processingVerbosity, null, {
 			responseFormat: getResponseFormat(outputFormat),
-			temperature: .3
+			temperature: .3,
+			signal
 		});
 	} catch (e) {
 		error = String(e);

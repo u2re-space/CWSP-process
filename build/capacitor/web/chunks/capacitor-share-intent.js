@@ -1,6 +1,6 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../shells/boot-index.js","./rolldown-runtime.js","../shells/boot-history-base.js","../com/app.js","../fest/core.js","../com/service.js","../fest/veela.js","./sku-ingress.js","./sw-handling.js","./LogSanitizer.js","./ViewTransferRouting.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../shells/boot-index.js","./rolldown-runtime.js","../shells/boot-history-base.js","../com/app.js","../fest/core.js","../com/service.js","../fest/veela.js","./sku-ingress.js","./sw-handling.js","./LogSanitizer.js","./ViewTransferRouting.js","./capacitor-settings-permissions.js","./capacitor-permissions.js"])))=>i.map(i=>d[i]);
 const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
-import { Mn as splitMultiValueList } from "../shells/boot-index.js";
+import { kn as splitMultiValueList } from "../shells/boot-index.js";
 import { n as isCapacitorNative } from "./capacitor-permissions.js";
 //#region src/frontend/boot/capacitor-share-intent.ts
 /**
@@ -72,7 +72,7 @@ var isDocumentSku = () => {
 var consumeNativePendingShare = async () => {
 	try {
 		const { invokeCwsPlatformIPC } = await __vitePreload(async () => {
-			const { invokeCwsPlatformIPC } = await import("../shells/boot-index.js").then((n) => n.Zt);
+			const { invokeCwsPlatformIPC } = await import("../shells/boot-index.js").then((n) => n.Jt);
 			return { invokeCwsPlatformIPC };
 		}, __vite__mapDeps([0,1,2,3,4,5,6]), import.meta.url);
 		const peek = await invokeCwsPlatformIPC({ channel: "launcher:pending-share" });
@@ -87,9 +87,9 @@ var consumeNativePendingShare = async () => {
 			const blob = read.echo || read;
 			if (blob?.data) {
 				const { dataUrlToFile } = await __vitePreload(async () => {
-					const { dataUrlToFile } = await import("./sku-ingress.js");
+					const { dataUrlToFile } = await import("./sku-ingress.js").then((n) => n.o);
 					return { dataUrlToFile };
-				}, __vite__mapDeps([7,2,3,1,0,4,5,6]), import.meta.url);
+				}, __vite__mapDeps([7,1,2,3,0,4,5,6]), import.meta.url);
 				const file = await dataUrlToFile(blob.data, String(blob.name || echo.name || "shared.bin"), String(blob.mime || echo.mime || "application/octet-stream"));
 				if (file) files.push(file);
 			}
@@ -132,17 +132,49 @@ var installCapacitorShareIntentBridge = () => {
 		(async () => {
 			const { text, title, asset, pending } = parseSharePayload(ev.detail);
 			try {
-				const [{ loadSettings }, ws] = await Promise.all([__vitePreload(() => import("../shells/boot-index.js").then((n) => n._t), __vite__mapDeps([0,1,2,3,4,5,6]), import.meta.url), __vitePreload(() => import("../shells/boot-index.js").then((n) => n.c), __vite__mapDeps([0,1,2,3,4,5,6]), import.meta.url)]);
-				const nodes = readDestinationNodes(loadSettings());
-				ws.connectWS();
-				if (asset) ws.sendCoordinatorAct("clipboard:update", {
-					asset,
-					source: "android-share"
-				}, nodes);
-				if (text) ws.sendCoordinatorAct("clipboard:update", {
+				const [{ loadSettings }, ws, { classifyOpenKindFromPayload }, ingress] = await Promise.all([
+					__vitePreload(() => import("../shells/boot-index.js").then((n) => n.mt), __vite__mapDeps([0,1,2,3,4,5,6]), import.meta.url),
+					__vitePreload(() => import("../shells/boot-index.js").then((n) => n.c), __vite__mapDeps([0,1,2,3,4,5,6]), import.meta.url),
+					__vitePreload(() => import("../shells/boot-index.js").then((n) => n.hr), __vite__mapDeps([0,1,2,3,4,5,6]), import.meta.url),
+					__vitePreload(() => import("../shells/boot-index.js").then((n) => n.In), __vite__mapDeps([0,1,2,3,4,5,6]), import.meta.url)
+				]);
+				const settings = await loadSettings();
+				ingress.rememberProcessIngressSettings(settings);
+				const files = [];
+				if (asset?.data) {
+					const { dataUrlToFile } = await __vitePreload(async () => {
+						const { dataUrlToFile } = await import("./sku-ingress.js").then((n) => n.o);
+						return { dataUrlToFile };
+					}, __vite__mapDeps([7,1,2,3,0,4,5,6]), import.meta.url);
+					const file = await dataUrlToFile(asset.data, String(asset.name || "shared.bin"), String(asset.mimeType || asset.type || "application/octet-stream"));
+					if (file) files.push(file);
+				}
+				const kind = classifyOpenKindFromPayload({
 					text,
-					source: "android-share"
-				}, nodes);
+					title,
+					files,
+					source: "share-target"
+				});
+				const row = ingress.resolveProcessIngressKind(settings, kind);
+				if (row.backgroundClipboard) {
+					const { ensureCapacitorBridgeDaemonStarted } = await __vitePreload(async () => {
+						const { ensureCapacitorBridgeDaemonStarted } = await import("./capacitor-settings-permissions.js").then((n) => n.t);
+						return { ensureCapacitorBridgeDaemonStarted };
+					}, __vite__mapDeps([11,1,12]), import.meta.url);
+					await ensureCapacitorBridgeDaemonStarted(settings);
+				}
+				if (!(row.mode === "process" && row.copyToClipboard !== false)) {
+					const nodes = readDestinationNodes(settings);
+					ws.connectWS();
+					if (asset) ws.sendCoordinatorAct("clipboard:update", {
+						asset,
+						source: "android-share"
+					}, nodes);
+					if (text) ws.sendCoordinatorAct("clipboard:update", {
+						text,
+						source: "android-share"
+					}, nodes);
+				}
 			} catch {}
 			enqueueShareIngest(async () => {
 				try {
@@ -155,9 +187,9 @@ var installCapacitorShareIntentBridge = () => {
 						}
 					}
 					const { dataUrlToFile } = await __vitePreload(async () => {
-						const { dataUrlToFile } = await import("./sku-ingress.js");
+						const { dataUrlToFile } = await import("./sku-ingress.js").then((n) => n.o);
 						return { dataUrlToFile };
-					}, __vite__mapDeps([7,2,3,1,0,4,5,6]), import.meta.url);
+					}, __vite__mapDeps([7,1,2,3,0,4,5,6]), import.meta.url);
 					const files = [];
 					if (asset?.data) {
 						const file = await dataUrlToFile(asset.data, String(asset.name || "shared.bin"), String(asset.mimeType || asset.type || "application/octet-stream"));

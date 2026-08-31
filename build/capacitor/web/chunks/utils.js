@@ -1,4 +1,4 @@
-//#region src/shared/service/instructions/utils.ts
+//#region src/service/instructions/utils.ts
 var buildInstructionPrompt = (baseInstruction, customInstruction) => {
 	if (!customInstruction?.trim()) return baseInstruction;
 	return `${baseInstruction}

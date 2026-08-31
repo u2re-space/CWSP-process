@@ -1,41 +1,333 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./WorkCenterState.js","./rolldown-runtime.js","../shells/boot-index.js","../shells/boot-history-base.js","../com/app.js","../fest/core.js","../com/service.js","../fest/veela.js","./WorkCenterDataProcessing.js","../vendor/dompurify.js","../vendor/marked.js","./AIResponseParser.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./WorkCenterState.js","./rolldown-runtime.js","./templates.js","./core.js","../shells/boot-index.js","../shells/boot-history-base.js","../com/app.js","../fest/core.js","../com/service.js","../fest/veela.js","../vendor/pdfjs-dist.js","../vendor/mammoth.js","../vendor/lop.js","../vendor/bluebird.js","../vendor/base64-js.js","../vendor/jszip.js","../vendor/@xmldom_xmldom.js","../vendor/dingbat-to-unicode.js","../vendor/xlsx.js"])))=>i.map(i=>d[i]);
+import { o as __toESM, r as __exportAll } from "./rolldown-runtime.js";
 import { _ as stashSkuHandoff, h as shouldHandoffViewToSibling } from "../shells/boot-history-base.js";
-import { Jt as parseDataUrl, Kt as isBase64Like, Mn as H, qt as normalizeDataAsset, ur as __vitePreload } from "../com/app.js";
-import { Un as registerComponent, Vn as initializeComponent, Wn as sendMessage, Yn as ROUTE_HASHES } from "../shells/boot-index.js";
+import { $t as isBase64Like, An as writeText, Dr as __vitePreload, a as f, c as collectAttachmentCandidates, en as normalizeDataAsset, in as createContentAddressedStore, n as renderMathInElement, r as src_default, s as purify, t as renderSafeMarkdown, tn as parseDataUrl, zn as H } from "../com/app.js";
+import { Jn as initializeComponent, Xn as registerComponent, Zn as sendMessage, nr as ROUTE_HASHES } from "../shells/boot-index.js";
 import { i as validateReadableFileForIngress } from "../com/service.js";
-import { t as f } from "../vendor/marked.js";
-import { t as renderMathInElement } from "../vendor/katex.js";
-import { t as src_default } from "../vendor/marked-katex-extension.js";
-import { t as summarizeForLog } from "./LogSanitizer.js";
-import { n as fetchCachedShareFiles, t as consumeCachedShareTargetPayload } from "./ShareTargetGateway.js";
 import { i as buildInstructionPrompt } from "./utils.js";
 import { a as getCustomInstructions, o as getInstructionRegistry, s as setActiveInstruction } from "./CustomInstructions.js";
-import { o as toBase64 } from "./entities.js";
+import { o as extractJSONFromAIResponse } from "./entities.js";
 import { t as processDataWithInstruction } from "./unified.js";
+import { t as summarizeForLog } from "./LogSanitizer.js";
+import { s as takeHeldIngressFiles } from "./sku-ingress.js";
+import { n as fetchCachedShareFiles, t as consumeCachedShareTargetPayload } from "./ShareTargetGateway.js";
 import { t as WorkCenterStateManager } from "./WorkCenterState.js";
-import { t as WorkCenterDataProcessing } from "./WorkCenterDataProcessing.js";
+//#endregion
 //#region ../../modules/views/workcenter-view/src/ts/WorkCenterUI.ts
-/**
-* DOM composition layer for the Work Center view.
-*
-* This class assembles the visual shell around attachments, prompts, results,
-* and history submodules so the higher-level controller can coordinate one
-* unified AI workspace without hardcoding markup in every collaborator.
-*/
-/** View-composition facade for the Work Center feature. */
+var icon = (name, size = "18") => {
+	const element = document.createElement("ui-icon");
+	element.setAttribute("icon", name);
+	element.setAttribute("icon-style", "duotone");
+	element.setAttribute("size", size);
+	element.setAttribute("aria-hidden", "true");
+	return element;
+};
+var button = (action, label, iconName, className = "wc-icon-button") => {
+	const element = document.createElement("button");
+	element.type = "button";
+	element.className = className;
+	element.dataset.action = action;
+	element.setAttribute("aria-label", label);
+	element.title = label;
+	element.append(icon(iconName));
+	return element;
+};
+var formatFileSize = (bytes) => {
+	if (bytes < 1024) return `${bytes} B`;
+	if (bytes < 1048576) return `${(bytes / 1024).toFixed(1)} KB`;
+	return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+};
+var appendAttachmentCard = (target, attachment, presentation, removable = false) => {
+	const card = document.createElement("div");
+	card.className = "wc-attachment-chip";
+	card.dataset.attachmentHash = attachment.hash;
+	const file = presentation?.fileFor(attachment) ?? null;
+	const preview = file ? presentation?.getPreviewUrl(file) : null;
+	if (preview) {
+		const image = document.createElement("img");
+		image.className = "wc-attachment-chip__preview";
+		image.src = preview;
+		image.alt = "";
+		image.decoding = "async";
+		image.loading = "lazy";
+		card.append(image);
+	} else card.append(icon(attachment.url ? "link" : "paperclip", "16"));
+	const label = document.createElement(attachment.url ? "a" : "span");
+	label.className = "wc-attachment-chip__label";
+	label.textContent = attachment.url || attachment.name;
+	if (attachment.url) {
+		const link = label;
+		link.href = attachment.url;
+		link.target = "_blank";
+		link.rel = "noreferrer";
+	}
+	card.append(label);
+	const meta = document.createElement("span");
+	meta.className = "wc-attachment-chip__meta";
+	meta.textContent = attachment.error || formatFileSize(attachment.size);
+	card.append(meta);
+	if (removable) {
+		const remove = button("remove-draft-attachment", `Remove ${attachment.name}`, "x", "wc-chip-remove");
+		remove.dataset.attachmentHash = attachment.hash;
+		card.append(remove);
+	}
+	target.append(card);
+};
+var appendMessage = (transcript, message, presentation) => {
+	const item = document.createElement("article");
+	item.className = `workcenter-message workcenter-message--${message.role} is-${message.status}`;
+	item.dataset.workcenterMessage = "";
+	item.dataset.messageId = message.id;
+	const header = document.createElement("div");
+	header.className = "workcenter-message__header";
+	const author = document.createElement("span");
+	author.className = "workcenter-message__author";
+	author.textContent = message.role === "user" ? "You" : "Work Center";
+	header.append(author);
+	item.append(header);
+	const body = document.createElement("div");
+	body.className = "workcenter-message__body";
+	if (message.role === "assistant" && message.status === "complete") body.innerHTML = renderSafeMarkdown(message.content);
+	else if (message.status === "pending") {
+		body.textContent = "Thinking…";
+		body.setAttribute("aria-busy", "true");
+	} else if (message.status === "failed") body.textContent = message.error || "The response could not be completed.";
+	else if (message.status === "cancelled") body.textContent = "Cancelled";
+	else body.textContent = message.content;
+	item.append(body);
+	if (message.attachments.length) {
+		const attachments = document.createElement("div");
+		attachments.className = "workcenter-message__attachments";
+		for (const attachment of message.attachments) appendAttachmentCard(attachments, attachment, presentation);
+		item.append(attachments);
+	}
+	if (message.role === "assistant" && message.status === "pending") {
+		const actions = document.createElement("div");
+		actions.className = "workcenter-message__actions";
+		const cancel = button("cancel-turn", "Cancel response", "stop-circle", "wc-quiet-button");
+		cancel.dataset.turnId = message.id;
+		actions.append(cancel);
+		item.append(actions);
+	}
+	if (message.role === "assistant" && message.status === "failed") {
+		const actions = document.createElement("div");
+		actions.className = "workcenter-message__actions";
+		const retry = button("retry-turn", "Retry response", "arrow-clockwise", "wc-quiet-button");
+		retry.dataset.turnId = message.id;
+		actions.append(retry);
+		item.append(actions);
+	}
+	if (message.role === "assistant" && message.status === "complete") {
+		const actions = document.createElement("div");
+		actions.className = "workcenter-message__actions";
+		const copy = button("copy-turn", "Copy response", "copy", "wc-quiet-button");
+		copy.dataset.turnId = message.id;
+		actions.append(copy);
+		item.append(actions);
+	}
+	transcript.append(item);
+};
+var createRequestOptions = (state) => {
+	const panel = document.createElement("section");
+	panel.className = "workcenter-request-options";
+	panel.dataset.workcenterRequestOptions = "";
+	panel.hidden = true;
+	panel.setAttribute("aria-label", "Response options");
+	const instructionLabel = document.createElement("label");
+	instructionLabel.textContent = "Instruction";
+	const instructionSelect = document.createElement("select");
+	instructionSelect.className = "instruction-select";
+	instructionSelect.setAttribute("data-action", "select-instruction");
+	const emptyInstruction = document.createElement("option");
+	emptyInstruction.value = "";
+	emptyInstruction.textContent = "None (default)";
+	instructionSelect.append(emptyInstruction);
+	instructionLabel.append(instructionSelect);
+	panel.append(instructionLabel);
+	const templateLabel = document.createElement("label");
+	templateLabel.textContent = "Template";
+	const templateSelect = document.createElement("select");
+	templateSelect.className = "template-select";
+	const emptyTemplate = document.createElement("option");
+	emptyTemplate.value = "";
+	emptyTemplate.textContent = "No template";
+	templateSelect.append(emptyTemplate);
+	for (const template of state.promptTemplates) {
+		const option = document.createElement("option");
+		option.value = template.prompt;
+		option.textContent = template.name;
+		option.selected = template.prompt === state.selectedTemplate;
+		templateSelect.append(option);
+	}
+	templateLabel.append(templateSelect);
+	panel.append(templateLabel);
+	panel.append(button("edit-templates", "Edit templates", "gear", "wc-quiet-button"));
+	const fields = [
+		[
+			"Output",
+			"format-select",
+			state.outputFormat,
+			[
+				["auto", "Auto"],
+				["markdown", "Markdown"],
+				["json", "JSON"],
+				["code", "Code"],
+				["raw", "Raw text"],
+				["text", "Plain text"],
+				["html", "HTML"]
+			]
+		],
+		[
+			"Language",
+			"language-select",
+			state.selectedLanguage,
+			[
+				["auto", "Auto"],
+				["en", "English"],
+				["ru", "Русский"]
+			]
+		],
+		[
+			"Recognition",
+			"recognition-select",
+			state.recognitionFormat,
+			[
+				["auto", "Auto"],
+				["most-suitable", "Most suitable"],
+				["most-optimized", "Most optimized"],
+				["most-legibility", "Most legible"],
+				["markdown", "Markdown"],
+				["html", "HTML"],
+				["text", "Plain text"],
+				["json", "JSON"]
+			]
+		],
+		[
+			"Processing",
+			"processing-select",
+			state.processingFormat,
+			[
+				["markdown", "Markdown"],
+				["html", "HTML"],
+				["json", "JSON"],
+				["text", "Plain text"],
+				["typescript", "TypeScript"],
+				["javascript", "JavaScript"],
+				["python", "Python"],
+				["java", "Java"],
+				["cpp", "C++"],
+				["csharp", "C#"],
+				["php", "PHP"],
+				["ruby", "Ruby"],
+				["go", "Go"],
+				["rust", "Rust"],
+				["xml", "XML"],
+				["yaml", "YAML"],
+				["css", "CSS"],
+				["scss", "SCSS"]
+			]
+		]
+	];
+	for (const [labelText, className, value, options] of fields) {
+		const label = document.createElement("label");
+		label.textContent = labelText;
+		const select = document.createElement("select");
+		select.className = className;
+		for (const [optionValue, optionText] of options) {
+			const option = document.createElement("option");
+			option.value = optionValue;
+			option.textContent = optionText;
+			option.selected = optionValue === value;
+			select.append(option);
+		}
+		label.append(select);
+		panel.append(label);
+	}
+	return panel;
+};
+/** Build a stateless, accessible Work Center chat shell for rendering or tests. */
+var createWorkCenterChatShell = (options) => {
+	const root = document.createElement("div");
+	root.className = "workcenter-view workcenter-chat";
+	root.dataset.view = "workcenter";
+	root.setAttribute("role", "main");
+	root.setAttribute("aria-labelledby", "workcenter-title");
+	const header = document.createElement("header");
+	header.className = "workcenter-header";
+	const title = document.createElement("h2");
+	title.id = "workcenter-title";
+	title.textContent = options.title;
+	header.append(title);
+	const headerActions = document.createElement("div");
+	headerActions.className = "workcenter-header__actions";
+	headerActions.append(button("new-chat", "New chat", "plus"), button("open-secondary", "Open activity", "clock-counter-clockwise"), button("open-request-options", "Response options", "sliders-horizontal"));
+	header.append(headerActions);
+	root.append(header);
+	if (options.settings) root.append(createRequestOptions(options.settings));
+	const transcript = document.createElement("section");
+	transcript.className = "workcenter-transcript";
+	transcript.dataset.workcenterTranscript = "";
+	transcript.setAttribute("role", "log");
+	transcript.setAttribute("aria-live", "polite");
+	transcript.setAttribute("aria-relevant", "additions text");
+	if (!options.messages.length) {
+		const empty = document.createElement("p");
+		empty.className = "workcenter-transcript__empty";
+		empty.textContent = "Start with a question or attach something to review.";
+		transcript.append(empty);
+	} else for (const message of options.messages) appendMessage(transcript, message, options.attachments);
+	root.append(transcript);
+	const composer = document.createElement("form");
+	composer.className = "workcenter-composer";
+	composer.dataset.workcenterComposer = "";
+	composer.setAttribute("aria-label", "Message composer");
+	const chips = document.createElement("div");
+	chips.className = "workcenter-composer__attachments";
+	chips.dataset.draftAttachments = "";
+	for (const attachment of options.draft.attachments) appendAttachmentCard(chips, attachment, options.attachments, true);
+	composer.append(chips);
+	const inputRow = document.createElement("div");
+	inputRow.className = "workcenter-composer__input-row";
+	const prompt = document.createElement("textarea");
+	prompt.className = "prompt-input";
+	prompt.name = "prompt";
+	prompt.rows = 1;
+	prompt.placeholder = "Message Work Center…";
+	prompt.value = options.draft.content;
+	prompt.setAttribute("aria-label", "Message Work Center");
+	inputRow.append(prompt);
+	inputRow.append(button("select-files", "Attach files", "paperclip"));
+	inputRow.append(button("voice-input", "Voice input", "microphone"));
+	const send = button("execute", "Send message", "arrow-up", "wc-send-button");
+	send.type = "submit";
+	inputRow.append(send);
+	composer.append(inputRow);
+	root.append(composer);
+	const secondary = document.createElement("aside");
+	secondary.className = "workcenter-secondary-panel";
+	secondary.dataset.workcenterSecondary = "";
+	secondary.hidden = true;
+	secondary.setAttribute("aria-label", "Work Center activity");
+	secondary.append(button("view-action-history", "View technical activity", "clock-counter-clockwise", "wc-quiet-button"));
+	root.append(secondary);
+	return root;
+};
+/** Presentation facade that keeps legacy callers working while the view uses chat state. */
 var WorkCenterUI = class {
-	container = null;
 	deps;
 	attachments;
 	prompts;
 	results;
 	history;
-	constructor(dependencies, attachments, prompts, results, history) {
-		this.deps = dependencies;
+	presentation;
+	container = null;
+	constructor(deps, attachments, prompts, results, history, presentation) {
+		this.deps = deps;
 		this.attachments = attachments;
 		this.prompts = prompts;
 		this.results = results;
 		this.history = history;
+		this.presentation = presentation;
 	}
 	setContainer(container) {
 		this.container = container;
@@ -47,255 +339,40 @@ var WorkCenterUI = class {
 	getContainer() {
 		return this.container;
 	}
-	/** Render the top-level Work Center layout and wire child modules to the new container. */
 	renderWorkCenterView(state) {
-		const container = H`<div class="workcenter-view" data-view="workcenter">
-      <div class="workcenter-header">
-        <h2>AI Work Center</h2>
-        <div class="header-controls" aria-label="AI work center output and processing options">
-          <div class="control-selectors">
-          <div class="format-selector">
-            <label title="Output format for AI responses">Output</label>
-            <select class="format-select">
-              <option value="auto" ${state.outputFormat === "auto" ? "selected" : ""}>Auto</option>
-              <option value="markdown" ${state.outputFormat === "markdown" ? "selected" : ""}>Markdown</option>
-              <option value="json" ${state.outputFormat === "json" ? "selected" : ""}>JSON</option>
-              <option value="code" ${state.outputFormat === "code" ? "selected" : ""}>Code</option>
-              <option value="raw" ${state.outputFormat === "raw" ? "selected" : ""}>Raw Text</option>
-              <option value="text" ${state.outputFormat === "text" ? "selected" : ""}>Plain Text</option>
-              <option value="html" ${state.outputFormat === "html" ? "selected" : ""}>HTML</option>
-            </select>
-          </div>
-          <div class="language-selector">
-            <label title="Response language">Language</label>
-            <select class="language-select">
-              <option value="auto" ${state.selectedLanguage === "auto" ? "selected" : ""}>Auto</option>
-              <option value="en" ${state.selectedLanguage === "en" ? "selected" : ""}>English</option>
-              <option value="ru" ${state.selectedLanguage === "ru" ? "selected" : ""}>Русский</option>
-            </select>
-          </div>
-          <div class="recognition-selector">
-            <label title="How to recognize incoming content">Recognize</label>
-            <select class="recognition-select">
-              <option value="auto" ${state.recognitionFormat === "auto" ? "selected" : ""}>Auto</option>
-              <option value="most-suitable" ${state.recognitionFormat === "most-suitable" ? "selected" : ""}>Most Suitable</option>
-              <option value="most-optimized" ${state.recognitionFormat === "most-optimized" ? "selected" : ""}>Most Optimized</option>
-              <option value="most-legibility" ${state.recognitionFormat === "most-legibility" ? "selected" : ""}>Most Legible</option>
-              <option value="markdown" ${state.recognitionFormat === "markdown" ? "selected" : ""}>Markdown</option>
-              <option value="html" ${state.recognitionFormat === "html" ? "selected" : ""}>HTML</option>
-              <option value="text" ${state.recognitionFormat === "text" ? "selected" : ""}>Plain Text</option>
-              <option value="json" ${state.recognitionFormat === "json" ? "selected" : ""}>JSON</option>
-            </select>
-          </div>
-          <div class="processing-selector">
-            <label title="Treat content as this format when processing">Process</label>
-            <select class="processing-select">
-              <option value="markdown" ${state.processingFormat === "markdown" ? "selected" : ""}>Markdown</option>
-              <option value="html" ${state.processingFormat === "html" ? "selected" : ""}>HTML</option>
-              <option value="json" ${state.processingFormat === "json" ? "selected" : ""}>JSON</option>
-              <option value="text" ${state.processingFormat === "text" ? "selected" : ""}>Plain Text</option>
-              <option value="typescript" ${state.processingFormat === "typescript" ? "selected" : ""}>TypeScript</option>
-              <option value="javascript" ${state.processingFormat === "javascript" ? "selected" : ""}>JavaScript</option>
-              <option value="python" ${state.processingFormat === "python" ? "selected" : ""}>Python</option>
-              <option value="java" ${state.processingFormat === "java" ? "selected" : ""}>Java</option>
-              <option value="cpp" ${state.processingFormat === "cpp" ? "selected" : ""}>C++</option>
-              <option value="csharp" ${state.processingFormat === "csharp" ? "selected" : ""}>C#</option>
-              <option value="php" ${state.processingFormat === "php" ? "selected" : ""}>PHP</option>
-              <option value="ruby" ${state.processingFormat === "ruby" ? "selected" : ""}>Ruby</option>
-              <option value="go" ${state.processingFormat === "go" ? "selected" : ""}>Go</option>
-              <option value="rust" ${state.processingFormat === "rust" ? "selected" : ""}>Rust</option>
-              <option value="xml" ${state.processingFormat === "xml" ? "selected" : ""}>XML</option>
-              <option value="yaml" ${state.processingFormat === "yaml" ? "selected" : ""}>YAML</option>
-              <option value="css" ${state.processingFormat === "css" ? "selected" : ""}>CSS</option>
-              <option value="scss" ${state.processingFormat === "scss" ? "selected" : ""}>SCSS</option>
-            </select>
-          </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="workcenter-content">
-        <div class="workcenter-layout">
-
-          <!-- Results & Processing Section -->
-          <div class="workcenter-block results-block">
-            <div class="results-section">
-              ${this.renderResultsTabs(state)}
-            </div>
-          </div>
-
-          <!-- Input Prompts Section -->
-          <div class="workcenter-block prompts-block">
-            ${this.renderInputTabs(state)}
-          </div>
-        </div>
-      </div>
-    </div>`;
-		this.container = container;
-		this.attachments.setContainer(container);
-		this.prompts.setContainer(container);
-		this.results.setContainer(container);
-		this.history.setContainer(container);
-		this.initializeUI(state);
+		const container = createWorkCenterChatShell({
+			title: "AI Work Center",
+			draft: state.draft,
+			messages: state.messages,
+			attachments: this.presentation,
+			settings: state
+		});
+		this.setContainer(container);
 		return container;
 	}
-	/** Synchronize child widgets after the root container has been created or replaced. */
-	initializeUI(state) {
-		this.attachments.setupDropZone(state);
-		this.attachments.updateFileList(state);
-		this.attachments.updateFileCounter(state);
-		this.prompts.updatePromptFileCount(state);
-		this.updateInputTabFileCount(state);
-		this.updateResultsPipelineTabState(state);
-		this.history.updateRecentHistory(state);
-	}
 	updateFileCounter(state) {
-		this.attachments.updateFileCounter(state);
-		this.prompts.updatePromptFileCount(state);
-		this.updateInputTabFileCount(state);
+		const attachments = this.container?.querySelector("[data-draft-attachments]");
+		if (!attachments) return;
+		attachments.replaceChildren();
+		for (const attachment of state.draft.attachments) appendAttachmentCard(attachments, attachment, this.presentation, true);
 	}
 	updateFileList(state) {
-		this.attachments.updateFileList(state);
-		this.prompts.updatePromptFileCount(state);
-		this.updateInputTabFileCount(state);
+		this.updateFileCounter(state);
 	}
 	updatePromptInput(state) {
-		this.prompts.updatePromptInput(state);
+		const input = this.container?.querySelector(".prompt-input");
+		if (input) input.value = state.draft.content;
 	}
-	updateTemplateSelect(state) {
-		this.prompts.updateTemplateSelect(state);
-	}
-	updateVoiceButton(state) {
-		this.prompts.updateVoiceButton(state);
-	}
-	updateDataPipeline(state) {
-		this.results.updateDataPipeline(state);
-		this.updateResultsPipelineTabState(state);
-	}
-	updateDataCounters(state) {
-		this.attachments.updateDataCounters(state);
-	}
-	showProcessingMessage(message) {
-		this.results.showProcessingMessage(message);
-	}
-	showResult(state) {
-		this.results.showResult(state);
-	}
-	showError(error) {
-		this.results.showError(error);
-	}
-	clearResults() {
-		this.results.clearResults();
-	}
-	revokeAllPreviewUrls(state) {
-		this.attachments.revokeAllPreviewUrls(state);
-	}
-	renderInputTabs(state) {
-		const activeTab = state.activeInputTab || "prompt";
-		return `
-            <div class="input-tabs-section" data-input-tabs data-active-tab="${activeTab}">
-                <div class="wc-block-header">
-                    <div class="input-tab-actions">
-                        <button class="tab-btn ${activeTab === "prompt" ? "is-active" : ""}" data-action="switch-input-tab" data-tab="prompt" aria-selected="${activeTab === "prompt"}">Prompt</button>
-                        <button class="tab-btn ${activeTab === "attachments" ? "is-active" : ""}" data-action="switch-input-tab" data-tab="attachments" aria-selected="${activeTab === "attachments"}">Files (${state.files.length})</button>
-                    </div>
-                    <h3>Work Inputs</h3>
-                    <div class="file-actions">
-                        <button class="btn btn-icon" data-action="select-files" title="Choose Files">
-                            <ui-icon icon="folder-open" size="18" icon-style="duotone"></ui-icon>
-                            <span class="btn-text">Add Files</span>
-                        </button>
-                        <button class="btn btn-icon" data-action="clear-all-files" title="Clear All Files">
-                            <ui-icon icon="trash" size="18" icon-style="duotone"></ui-icon>
-                            <span class="btn-text">Clear All</span>
-                        </button>
-                    </div>
-                </div>
-                <div class="input-tab-panels">
-                    <section class="tab-panel ${activeTab === "prompt" ? "is-active" : ""}" data-tab-panel="prompt">
-                        ${this.prompts.renderPromptPanel(state)}
-                    </section>
-                    <section class="tab-panel ${activeTab === "attachments" ? "is-active" : ""}" data-tab-panel="attachments">
-                        ${this.attachments.renderAttachmentsSection(state)}
-                    </section>
-                </div>
-            </div>
-        `;
-	}
-	renderResultsTabs(state) {
-		const hasPipelineData = Boolean(state.recognizedData || state.processedData && state.processedData.length > 0);
-		const pipelineCount = (state.recognizedData ? 1 : 0) + (state.processedData?.length || 0);
-		const activeTab = state.activeResultsTab === "pipeline" && !hasPipelineData ? "output" : state.activeResultsTab;
-		return `
-            <div class="results-tabs-section" data-results-tabs data-active-tab="${activeTab}">
-                <div class="wc-block-header results-tabs-header">
-                    <div class="results-tab-actions">
-                        <button class="tab-btn ${activeTab === "output" ? "is-active" : ""}" data-action="switch-results-tab" data-tab="output" aria-selected="${activeTab === "output"}">Output</button>
-                        <button class="tab-btn ${activeTab === "pipeline" ? "is-active" : ""}" data-action="switch-results-tab" data-tab="pipeline" aria-selected="${activeTab === "pipeline"}"${hasPipelineData ? "" : " disabled"}>Pipeline (${pipelineCount})</button>
-                        <button class="tab-btn ${activeTab === "history" ? "is-active" : ""}" data-action="switch-results-tab" data-tab="history" aria-selected="${activeTab === "history"}">History</button>
-                    </div>
-                    <h3>Results & Processing</h3>
-                    ${this.results.renderOutputHeader()}
-                </div>
-                <div class="results-tab-panels">
-                    <section class="results-tab-panel ${activeTab === "output" ? "is-active" : ""}" data-results-tab-panel="output">
-                        <div class="wc-output-section">
-                            ${this.results.renderOutputContent()}
-                        </div>
-                    </section>
-                    <section class="results-tab-panel ${activeTab === "pipeline" ? "is-active" : ""}" data-results-tab-panel="pipeline">
-                        ${hasPipelineData ? this.results.renderDataPipeline(state) : "<div class=\"wc-results-empty\">No data pipeline yet</div>"}
-                    </section>
-                    <section class="results-tab-panel ${activeTab === "history" ? "is-active" : ""}" data-results-tab-panel="history">
-                        <div class="history-section">
-                            <div class="history-header">
-                                <h4>Recent Activity</h4>
-                                <div class="result-actions">
-                                    <button class="btn btn-icon" data-action="view-action-history" title="View Action History">
-                                        <ui-icon icon="history" size="18" icon-style="duotone"></ui-icon>
-                                        <span class="btn-text">History</span>
-                                    </button>
-                                    <button class="btn" data-action="view-full-history">View All History</button>
-                                </div>
-                            </div>
-                            <div class="recent-history" data-recent-history></div>
-                            <div class="action-stats" data-action-stats style="display: none;"></div>
-                        </div>
-                    </section>
-                </div>
-            </div>
-        `;
-	}
-	updateInputTabFileCount(state) {
-		if (!this.container) return;
-		const filesTabBtn = this.container.querySelector("[data-action=\"switch-input-tab\"][data-tab=\"attachments\"]");
-		if (filesTabBtn) filesTabBtn.textContent = `Files (${state.files.length})`;
-	}
-	updateResultsPipelineTabState(state) {
-		if (!this.container) return;
-		const hasPipelineData = Boolean(state.recognizedData || state.processedData && state.processedData.length > 0);
-		const pipelineCount = (state.recognizedData ? 1 : 0) + (state.processedData?.length || 0);
-		const tabsRoot = this.container.querySelector("[data-results-tabs]");
-		const pipelineTabBtn = this.container.querySelector("[data-action=\"switch-results-tab\"][data-tab=\"pipeline\"]");
-		if (!tabsRoot || !pipelineTabBtn) return;
-		pipelineTabBtn.textContent = `Pipeline (${pipelineCount})`;
-		pipelineTabBtn.disabled = !hasPipelineData;
-		const activeTab = tabsRoot.getAttribute("data-active-tab") || "output";
-		if (!hasPipelineData && activeTab === "pipeline") {
-			tabsRoot.setAttribute("data-active-tab", "output");
-			state.activeResultsTab = "output";
-			const outputBtn = this.container.querySelector("[data-action=\"switch-results-tab\"][data-tab=\"output\"]");
-			if (outputBtn) {
-				outputBtn.classList.add("is-active");
-				outputBtn.setAttribute("aria-selected", "true");
-			}
-			pipelineTabBtn.classList.remove("is-active");
-			pipelineTabBtn.setAttribute("aria-selected", "false");
-			const outputPanel = this.container.querySelector("[data-results-tab-panel=\"output\"]");
-			const pipelinePanel = this.container.querySelector("[data-results-tab-panel=\"pipeline\"]");
-			outputPanel?.classList.add("is-active");
-			pipelinePanel?.classList.remove("is-active");
-		}
+	updateTemplateSelect(_state) {}
+	updateVoiceButton(_state) {}
+	updateDataPipeline(_state) {}
+	updateDataCounters(_state) {}
+	showProcessingMessage(_message) {}
+	showResult(_state) {}
+	showError(_error) {}
+	clearResults() {}
+	revokeAllPreviewUrls(_state) {
+		this.attachments.revokeAllPreviewUrls(_state);
 	}
 };
 //#endregion
@@ -511,9 +588,11 @@ var WorkCenterFileOps = class {
 var WorkCenterShareTarget = class {
 	deps;
 	_fileOps;
-	constructor(dependencies, fileOps) {
+	ingestInput;
+	constructor(dependencies, fileOps, ingestInput) {
 		this.deps = dependencies;
 		this._fileOps = fileOps;
+		this.ingestInput = ingestInput;
 		this._fileOps;
 	}
 	initShareTargetListener(_state) {
@@ -581,6 +660,10 @@ var WorkCenterShareTarget = class {
 	}
 	async addShareTargetInput(state, inputData) {
 		console.log("[WorkCenter] Adding share target input:", summarizeForLog(inputData));
+		if (this.ingestInput) {
+			await this.ingestInput(inputData);
+			return;
+		}
 		try {
 			let filesAdded = 0;
 			let textAdded = false;
@@ -835,9 +918,9 @@ var WorkCenterTemplates = class {
 	/** Get default instruction templates (for seeding). Dynamic import avoids TDZ when workcenter loads before `com/app` finishes. */
 	async getDefaultTemplates() {
 		const { DEFAULT_INSTRUCTION_TEMPLATES } = await __vitePreload(async () => {
-			const { DEFAULT_INSTRUCTION_TEMPLATES } = await import("../shells/boot-index.js").then((n) => n.Q);
+			const { DEFAULT_INSTRUCTION_TEMPLATES } = await import("./templates.js").then((n) => n.n);
 			return { DEFAULT_INSTRUCTION_TEMPLATES };
-		}, __vite__mapDeps([2,1,3,4,5,6,7]), import.meta.url);
+		}, __vite__mapDeps([2,1,3]), import.meta.url);
 		return DEFAULT_INSTRUCTION_TEMPLATES;
 	}
 	renderInstructionPanel(state) {
@@ -861,6 +944,32 @@ var WorkCenterTemplates = class {
             </div>
         `;
 	}
+	async fillInstructionSelects(root, state) {
+		if (!root) return;
+		const instructions = await this.loadInstructions();
+		const hasStored = Boolean(state.selectedInstruction) && instructions.some((item) => item.id === state.selectedInstruction);
+		const selectedId = hasStored ? state.selectedInstruction : this.cachedActiveInstructionId;
+		if ((!state.selectedInstruction || !hasStored) && selectedId) state.selectedInstruction = selectedId;
+		root.querySelectorAll(".instruction-select").forEach((select) => {
+			select.replaceChildren();
+			const empty = document.createElement("option");
+			empty.value = "";
+			empty.textContent = "None (default)";
+			select.append(empty);
+			for (const item of instructions) {
+				const option = document.createElement("option");
+				option.value = item.id;
+				option.textContent = item.label || item.id;
+				option.selected = item.id === selectedId;
+				select.append(option);
+			}
+			select.value = selectedId || "";
+		});
+	}
+	async applyInstruction(state, instructionId) {
+		state.selectedInstruction = instructionId;
+		await this.setActiveInstruction(instructionId || null);
+	}
 	showTemplateEditor(state, container) {
 		const modal = H`<div class="template-editor-modal">
       <div class="modal-content">
@@ -873,6 +982,7 @@ var WorkCenterTemplates = class {
           ${state.promptTemplates.map((template, index) => H`<div class="template-item" data-index="${index}">
               <div class="template-item-header">
                 <input type="text" class="template-name" value="${template.name}" data-index="${index}" placeholder="Template name...">
+                <button class="btn small" data-action="use-template" data-index="${index}" title="Use this template">Use</button>
                 <button class="btn small btn-danger remove-template" data-index="${index}" title="Remove template">
                   <ui-icon icon="trash" size="14"></ui-icon>
                 </button>
@@ -902,7 +1012,15 @@ var WorkCenterTemplates = class {
 			const target = e.target;
 			const action = target.closest("[data-action]")?.getAttribute("data-action");
 			const index = target.closest("[data-index]")?.getAttribute("data-index");
-			if (action === "add-template") {
+			if (action === "refresh-instructions") await this.fillInstructionSelects(modal, state);
+			else if (action === "use-template" && index) {
+				const template = state.promptTemplates[Number(index)];
+				if (template) {
+					this.selectTemplate(state, template.prompt);
+					modal.remove();
+					this.deps.render?.();
+				}
+			} else if (action === "add-template") {
 				this.addTemplate(state);
 				modal.remove();
 				this.showTemplateEditor(state, container);
@@ -925,6 +1043,11 @@ var WorkCenterTemplates = class {
 			if (e.target === modal) modal.remove();
 		});
 		container.append(modal);
+		const instruction = modal.querySelector(".instruction-select");
+		instruction?.addEventListener("change", () => {
+			this.applyInstruction(state, instruction.value);
+		});
+		this.fillInstructionSelects(modal, state);
 	}
 	addTemplate(state) {
 		state.promptTemplates.push({
@@ -1038,1021 +1161,142 @@ var WorkCenterVoice = class {
 	}
 };
 //#endregion
-//#region src/shared/service/misc/ActionHistory.ts
-/** In-memory history store with optional browser persistence and lightweight filtering. */
-var ActionHistoryStore = class {
-	state;
-	storageKey = "rs-action-history";
-	constructor(maxEntries = 500, autoSave = true) {
-		this.state = {
-			entries: [],
-			maxEntries,
-			autoSave,
-			filters: {}
-		};
-		this.loadHistory();
-	}
-	/** Insert a new entry at the front of the timeline and enforce the retention limit. */
-	addEntry(entry) {
-		const fullEntry = {
-			...entry,
-			id: this.generateId(),
-			timestamp: Date.now()
-		};
-		this.state.entries.unshift(fullEntry);
-		if (this.state.entries.length > this.state.maxEntries) this.state.entries = this.state.entries.slice(0, this.state.maxEntries);
-		return fullEntry;
-	}
-	/**
-	* Update an existing entry
-	*/
-	updateEntry(id, updates) {
-		const index = this.state.entries.findIndex((entry) => entry.id === id);
-		if (index === -1) return false;
-		Object.assign(this.state.entries[index], updates);
-		return true;
-	}
-	/**
-	* Get entry by ID
-	*/
-	getEntry(id) {
-		return this.state.entries.find((entry) => entry.id === id);
-	}
-	/** Return entries matching the supplied filters without mutating store state. */
-	getEntries(filters) {
-		let entries = [...this.state.entries];
-		if (filters?.source) entries = entries.filter((entry) => entry.context.source === filters.source);
-		if (filters?.action) entries = entries.filter((entry) => entry.action === filters.action);
-		if (filters?.status) entries = entries.filter((entry) => entry.status === filters.status);
-		if (filters?.dateRange) entries = entries.filter((entry) => entry.timestamp >= filters.dateRange.start && entry.timestamp <= filters.dateRange.end);
-		return entries;
-	}
-	/**
-	* Get recent entries
-	*/
-	getRecentEntries(limit = 50) {
-		return this.state.entries.slice(0, limit);
-	}
-	/**
-	* Remove entry
-	*/
-	removeEntry(id) {
-		const index = this.state.entries.findIndex((entry) => entry.id === id);
-		if (index === -1) return false;
-		this.state.entries.splice(index, 1);
-		return true;
-	}
-	/**
-	* Clear all entries
-	*/
-	clearEntries() {
-		this.state.entries = [];
-	}
-	/**
-	* Set filters
-	*/
-	setFilters(filters) {
-		Object.assign(this.state.filters, filters);
-	}
-	/** Summarize history health and distribution by source/action. */
-	getStats() {
-		const entries = this.state.entries;
-		const total = entries.length;
-		const completed = entries.filter((e) => e.status === "completed").length;
-		const failed = entries.filter((e) => e.status === "failed").length;
-		const pending = entries.filter((e) => e.status === "pending" || e.status === "processing").length;
-		const bySource = entries.reduce((acc, entry) => {
-			acc[entry.context.source] = (acc[entry.context.source] || 0) + 1;
-			return acc;
-		}, {});
-		const byAction = entries.reduce((acc, entry) => {
-			acc[entry.action] = (acc[entry.action] || 0) + 1;
-			return acc;
-		}, {});
-		return {
-			total,
-			completed,
-			failed,
-			pending,
-			successRate: total > 0 ? completed / total * 100 : 0,
-			bySource,
-			byAction
-		};
-	}
-	/**
-	* Export entries
-	*/
-	exportEntries(format = "json", filters) {
-		const entries = this.getEntries(filters);
-		if (format === "csv") return [[
-			"ID",
-			"Timestamp",
-			"Source",
-			"Action",
-			"Status",
-			"Input Type",
-			"Result Type",
-			"Processing Time"
-		], ...entries.map((entry) => [
-			entry.id,
-			new Date(entry.timestamp).toISOString(),
-			entry.context.source,
-			entry.action,
-			entry.status,
-			entry.input.type,
-			entry.result?.type || "",
-			entry.result?.processingTime || ""
-		])].map((row) => row.map((cell) => `"${cell}"`).join(",")).join("\n");
-		return JSON.stringify(entries, null, 2);
-	}
-	/**
-	* Import entries
-	*/
-	importEntries(data, format = "json") {
-		let entries = [];
-		if (format === "json") try {
-			entries = JSON.parse(data);
-		} catch (e) {
-			throw new Error("Invalid JSON format");
-		}
-		else throw new Error("CSV import not implemented yet");
-		const validEntries = entries.filter((entry) => entry.id && entry.timestamp && entry.context && entry.action);
-		validEntries.forEach((entry) => {
-			if (!this.getEntry(entry.id)) this.state.entries.push(entry);
-		});
-		this.state.entries.sort((a, b) => b.timestamp - a.timestamp);
-		if (this.state.entries.length > this.state.maxEntries) this.state.entries = this.state.entries.slice(0, this.state.maxEntries);
-		this.saveHistory();
-		return validEntries.length;
-	}
-	generateId() {
-		return `action_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-	}
-	loadHistory() {
-		try {
-			if (typeof localStorage === "undefined") return;
-			const stored = localStorage.getItem(this.storageKey);
-			if (stored) {
-				const data = JSON.parse(stored);
-				if (Array.isArray(data)) this.state.entries = data.map((entry) => ({
-					...entry,
-					context: entry.context || { source: "unknown" },
-					input: entry.input || { type: "unknown" },
-					status: entry.status || "completed"
-				}));
-			}
-		} catch (e) {
-			console.warn("Failed to load action history:", e);
-			this.state.entries = [];
-		}
-	}
-	saveHistory() {
-		if (!this.state.autoSave) return;
-		try {
-			if (typeof localStorage === "undefined") return;
-			localStorage.setItem(this.storageKey, JSON.stringify(this.state.entries));
-		} catch (e) {
-			console.warn("Failed to save action history:", e);
-		}
-	}
-};
-var actionHistory = new ActionHistoryStore();
-//#endregion
-//#region src/shared/service/misc/ExecutionCore.ts
+//#region src/service/service/WorkCenterTurnInput.ts
 /**
-* Rule-based execution engine for recognition and post-processing flows.
+* Pure Responses-input builder for a Work Center turn.
 *
-* It selects the best rule for a given input/context pair, records execution
-* history, runs the processor, and optionally propagates clipboard/broadcast
-* side effects after success.
+* FIND:workcenter-turn-input
+* WHY: Keeping this free of settings and fetch code makes direct-file behavior
+* testable and lets the provider policy choose a local fallback deterministically.
 */
-/** Main rule engine shared by workcenter, share-target, launch-queue, and CRX flows. */
-var ExecutionCore = class {
-	rules = [];
-	ruleSets = /* @__PURE__ */ new Map();
-	constructor(rules) {
-		this.initializeDefaultRules(rules ?? {
-			recognitionFormat: "markdown",
-			processingFormat: "markdown"
-		});
+var attachmentLabel = (attachment) => `\n\n--- Attachment: ${attachment.original.name || attachment.attachmentId} ---\n`;
+var encodeBase64 = (bytes) => {
+	const BufferCtor = globalThis.Buffer;
+	if (BufferCtor) return BufferCtor.from(bytes).toString("base64");
+	let binary = "";
+	const chunkSize = 32768;
+	for (let offset = 0; offset < bytes.length; offset += chunkSize) {
+		const chunk = bytes.subarray(offset, offset + chunkSize);
+		binary += String.fromCharCode(...chunk);
 	}
-	/** Register one execution rule and keep rules sorted by descending priority. */
-	registerRule(rule) {
-		this.rules.push(rule);
-		this.rules.sort((a, b) => b.priority - a.priority);
-	}
-	/** Register a named rule subset for callers that want to restrict matching. */
-	registerRuleSet(name, rules) {
-		this.ruleSets.set(name, rules);
-	}
-	/**
-	* Resolve the best rule for this request, execute it, and mirror the result
-	* into action history plus any configured follow-up side effects.
-	*/
-	async execute(input, context, options = {}) {
-		const executionId = `exec_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-		const entry = {
-			context,
-			action: options.forceAction || "auto",
-			input,
-			status: "processing",
-			ruleSet: options.ruleSet,
-			executionId
+	return btoa(binary);
+};
+var fileDataUrl = async (file) => {
+	const buffer = await file.arrayBuffer();
+	return `data:${file.type || "application/octet-stream"};base64,${encodeBase64(new Uint8Array(buffer))}`;
+};
+var isDirectDocument = (attachment) => [
+	"pdf",
+	"docx",
+	"xlsx"
+].includes(attachment.kind) && !attachment.error && attachment.original.size <= 10485760;
+var fallbackParts = (attachment) => {
+	const text = attachment.fallbackText?.trim();
+	if (text) return [{
+		type: "input_text",
+		text: `${attachmentLabel(attachment)}${text}`
+	}];
+	return [{
+		type: "input_text",
+		text: `${attachmentLabel(attachment)}[Attachment could not be prepared: ${attachment.error || "no readable text"}]`
+	}];
+};
+/**
+* Produces Responses API message content with direct files only for eligible
+* document types. All other attachments have a readable local fallback.
+*/
+var buildWorkCenterTurnInput = async (request, options = {}) => {
+	const allowDirectFile = options.allowDirectFile !== false;
+	const directFileByteLimit = options.directFileByteLimit ?? 10485760;
+	const input = request.messages.map((message) => ({
+		type: "message",
+		role: message.role,
+		content: [{
+			type: "input_text",
+			text: message.content
+		}]
+	}));
+	let target = input.at(-1);
+	if (!target || target.role !== "user") {
+		target = {
+			type: "message",
+			role: "user",
+			content: []
 		};
-		const historyEntry = actionHistory.addEntry(entry);
-		try {
-			const rule = this.findMatchingRule(input, context, options);
-			if (!rule) throw new Error("No matching execution rule found");
-			actionHistory.updateEntry(historyEntry.id, { action: rule.action });
-			const startTime = Date.now();
-			const result = await rule.processor(input, context, options);
-			const processingTime = Date.now() - startTime;
-			const enhancedResult = {
-				...result,
-				processingTime,
-				autoCopied: rule.autoCopy
-			};
-			actionHistory.updateEntry(historyEntry.id, {
-				result: enhancedResult,
-				status: "completed",
-				dataCategory: enhancedResult.dataCategory
+		input.push(target);
+	}
+	const content = target.content ?? (target.content = []);
+	let usedDirectFile = false;
+	for (const attachment of request.attachments) {
+		if (attachment.kind === "image" && !attachment.error) {
+			content.push({
+				type: "input_image",
+				detail: "auto",
+				image_url: await fileDataUrl(attachment.original)
 			});
-			if (rule.autoCopy && enhancedResult.type !== "error") await this.autoCopyResult(enhancedResult, context);
-			return enhancedResult;
-		} catch (error) {
-			const errorMessage = error instanceof Error ? error.message : String(error);
-			actionHistory.updateEntry(historyEntry.id, {
-				status: "failed",
-				error: errorMessage
+			continue;
+		}
+		if (allowDirectFile && isDirectDocument(attachment) && attachment.original.size <= directFileByteLimit) {
+			content.push({
+				type: "input_file",
+				filename: attachment.original.name || "attachment",
+				file_data: await fileDataUrl(attachment.original)
 			});
-			return {
-				type: "error",
-				content: errorMessage
-			};
+			usedDirectFile = true;
+			continue;
 		}
+		content.push(...fallbackParts(attachment));
+		for (const image of attachment.images || []) content.push({
+			type: "input_image",
+			detail: "auto",
+			image_url: await fileDataUrl(image)
+		});
 	}
-	/**
-	* Find the best matching rule for the given input and context
-	*/
-	findMatchingRule(input, context, options) {
-		if (options.forceAction) {
-			const forcedRule = this.rules.find((rule) => rule.action === options.forceAction && rule.source === context.source && rule.inputTypes.includes(input.type));
-			if (forcedRule) return forcedRule;
-		}
-		if (options.ruleSet) {
-			const ruleSet = this.ruleSets.get(options.ruleSet);
-			if (ruleSet) {
-				const matchingRule = ruleSet.find((rule) => rule.source === context.source && rule.inputTypes.includes(input.type) && rule.condition(input, context));
-				if (matchingRule) return matchingRule;
-			}
-		}
-		return this.rules.find((rule) => rule.source === context.source && rule.inputTypes.includes(input.type) && rule.condition(input, context)) || null;
-	}
-	/**
-	* Auto-copy result to clipboard
-	*/
-	async autoCopyResult(result, context) {
-		try {
-			let textToCopy = "";
-			switch (result.type) {
-				case "markdown":
-				case "text":
-					textToCopy = result.content;
-					break;
-				case "json":
-					try {
-						const data = JSON.parse(result.content);
-						if (typeof data === "string") textToCopy = data;
-						else if (data.recognized_data) textToCopy = Array.isArray(data.recognized_data) ? data.recognized_data.join("\n\n") : String(data.recognized_data);
-						else textToCopy = result.content;
-					} catch {
-						textToCopy = result.content;
-					}
-					break;
-				case "html":
-					textToCopy = result.content.replace(/<[^>]*>/g, "");
-					break;
-				default: return;
-			}
-			if (textToCopy.trim()) {
-				if (context.source === "chrome-extension") {
-					if (typeof chrome !== "undefined" && chrome.runtime) return;
-				} else if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) await navigator.clipboard.writeText(textToCopy.trim());
-				else if (typeof document !== "undefined" && document.body) {
-					const textArea = document.createElement("textarea");
-					textArea.value = textToCopy.trim();
-					document.body.appendChild(textArea);
-					textArea.select();
-					document.body.removeChild(textArea);
-				} else {
-					console.log("[ExecutionCore] Cannot auto-copy in service worker context - DOM not available");
-					return;
-				}
-				this.notifyCopySuccess(context);
-			}
-		} catch (error) {
-			console.warn("Failed to auto-copy result:", error);
-		}
-	}
-	/**
-	* Notify about successful copy
-	*/
-	notifyCopySuccess(context) {
-		const message = {
-			type: "copy-success",
-			context
+	return {
+		input,
+		usedDirectFile
+	};
+};
+var isFileCapabilityRejection = (error) => /(?:input_file|file_data|unsupported\s+(?:file|input)|file\s+(?:input|type).*(?:unsupported|invalid))/i.test(String(error || ""));
+//#endregion
+//#region src/service/service/WorkCenterTurnPolicy.ts
+var cancelledResult = () => ({
+	ok: false,
+	error: "Cancelled"
+});
+/** Stateful provider policy with a one-way direct-file incompatibility cache. */
+var WorkCenterTurnService = class {
+	directFileUnsupported = false;
+	async run(request, execute) {
+		if (request.signal?.aborted) return cancelledResult();
+		const requestOptions = {
+			...request.options,
+			instruction: request.instruction,
+			signal: request.signal
 		};
-		if (context.source === "chrome-extension") {
-			if (typeof chrome !== "undefined" && chrome.runtime) chrome.runtime.sendMessage(message);
-		} else try {
-			const bc = new BroadcastChannel("rs-clipboard");
-			bc.postMessage(message);
-			bc.close();
-		} catch (e) {
-			console.warn("Failed to broadcast copy success:", e);
-		}
-	}
-	/**
-	* Initialize default execution rules
-	*/
-	initializeDefaultRules(options) {
-		this.registerRule({
-			id: "workcenter-text-files-source",
-			name: "Work Center Text File Source",
-			description: "Process text/markdown files as source data",
-			source: "workcenter",
-			inputTypes: ["files"],
-			action: "source",
-			condition: (input) => {
-				return input.files?.some((f) => f?.type?.startsWith?.("text/") || f?.type === "application/markdown" || f?.name?.endsWith?.(".md") || f?.name?.endsWith?.(".txt")) ?? false;
-			},
-			processor: async (input) => {
-				const textFiles = input.files.filter((f) => f?.type?.startsWith?.("text/") || f?.type === "application/markdown" || f?.name?.endsWith?.(".md") || f?.name?.endsWith?.(".txt"));
-				let combinedContent = "";
-				for (const file of textFiles) try {
-					const content = await file.text();
-					combinedContent += content + "\n\n";
-				} catch (error) {
-					console.warn(`Failed to read text file ${file?.name ?? "unknown file"}:`, error);
-				}
-				return {
-					type: "markdown",
-					content: combinedContent.trim(),
-					dataCategory: "recognized",
-					responseId: `source_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-				};
-			},
-			autoCopy: false,
-			autoSave: true,
-			priority: 11
-		});
-		this.registerRule({
-			id: "workcenter-files-recognize",
-			name: "Work Center File Recognition",
-			description: "Recognize content from uploaded files",
-			source: "workcenter",
-			inputTypes: ["files", "image"],
-			action: "recognize",
-			condition: (input) => Boolean((input?.files?.length ?? 0) > 0),
-			processor: async (input, context, options) => {
-				let result;
-				const formatInstruction = this.getRecognitionFormatInstruction(options?.recognitionFormat);
-				if (input.files.length > 1) {
-					const messages = [{
-						type: "message",
-						role: "user",
-						content: [{
-							type: "input_text",
-							text: `Analyze and recognize content from the following ${input.files.length} files. ${formatInstruction}`
-						}, ...(await Promise.all(input.files.map(async (file, index) => {
-							const FileCtor = globalThis.File;
-							const isFile = FileCtor && file instanceof FileCtor;
-							const header = {
-								type: "input_text",
-								text: `\n--- File ${index + 1}: ${file.name} ---\n`
-							};
-							if (isFile && file.type.startsWith("image/")) try {
-								const arrayBuffer = await file.arrayBuffer();
-								const bytes = new Uint8Array(arrayBuffer);
-								const base64 = toBase64(bytes);
-								return [header, {
-									type: "input_image",
-									detail: "auto",
-									image_url: `data:${file.type};base64,${base64}`
-								}];
-							} catch (error) {
-								console.warn(`Failed to process image ${file.name}:`, error);
-								return [header, {
-									type: "input_text",
-									text: `[Failed to process image: ${file.name}]`
-								}];
-							}
-							else try {
-								return [header, {
-									type: "input_text",
-									text: await file.text()
-								}];
-							} catch (error) {
-								console.warn(`Failed to read file ${file.name}:`, error);
-								return [header, {
-									type: "input_text",
-									text: `[Failed to read file: ${file.name}]`
-								}];
-							}
-						}))).flat()].filter((item) => item !== null)
-					}];
-					result = await processDataWithInstruction(messages, {
-						instruction: `Analyze and recognize content from the provided files. ${formatInstruction}`,
-						outputFormat: options?.recognitionFormat || "auto",
-						intermediateRecognition: { enabled: false }
-					});
-				} else {
-					const file = input.files[0];
-					const FileCtor = globalThis.File;
-					if (FileCtor && file instanceof FileCtor && file.type.startsWith("image/")) try {
-						const arrayBuffer = await file.arrayBuffer();
-						const bytes = new Uint8Array(arrayBuffer);
-						const base64 = toBase64(bytes);
-						const dataUrl = `data:${file.type};base64,${base64}`;
-						result = await processDataWithInstruction(dataUrl, {
-							instruction: `Analyze and recognize content from the provided image. ${formatInstruction}`,
-							outputFormat: options?.recognitionFormat || "auto",
-							intermediateRecognition: { enabled: false }
-						});
-					} catch (error) {
-						console.warn(`Failed to process image ${file?.name ?? "unknown file"}:`, error);
-						result = await processDataWithInstruction(file, {
-							instruction: `Analyze and recognize content from the provided file. ${formatInstruction}`,
-							outputFormat: options?.recognitionFormat || "auto",
-							intermediateRecognition: { enabled: false }
-						});
-					}
-					else result = await processDataWithInstruction(file, {
-						instruction: "Analyze and recognize content from the provided file",
-						outputFormat: options?.recognitionFormat || "auto",
-						intermediateRecognition: { enabled: false }
-					});
-				}
-				return {
-					type: this.detectResultFormat(result),
-					content: this.formatAIResult(result),
-					rawData: result,
-					responseId: result.responseId,
-					dataCategory: "recognized"
-				};
-			},
-			autoCopy: false,
-			autoSave: true,
-			priority: 10
-		});
-		this.registerRule({
-			id: "workcenter-text-analyze",
-			name: "Work Center Text Analysis",
-			description: "Analyze provided text content",
-			source: "workcenter",
-			inputTypes: ["text", "markdown"],
-			action: "analyze",
-			condition: (input) => Boolean(input.text || input.recognizedContent),
-			processor: async (input, context, options) => {
-				const content = input.recognizedContent || input.recognizedData?.content || input.text || "";
-				const hasImages = input.files?.some((f) => f.type.startsWith("image/") || f.type === "image/svg+xml") || false;
-				const hasSvgContent = typeof content === "string" && content.includes("<svg");
-				const instructions = input.text && input.text.trim() && input.text.trim() !== "Analyze and process the provided content intelligently" ? input?.text?.trim?.() : `Analyze the provided content. ${this.getProcessingFormatInstruction(options?.processingFormat)}`;
-				const result = await processDataWithInstruction(hasImages || hasSvgContent ? [content, ...input.files || []] : content, {
-					instruction: instructions,
-					outputFormat: options?.processingFormat || "auto",
-					outputLanguage: "auto",
-					enableSVGImageGeneration: "auto",
-					intermediateRecognition: {
-						enabled: hasImages,
-						outputFormat: options?.recognitionFormat || "markdown",
-						dataPriorityInstruction: void 0,
-						cacheResults: true
-					},
-					dataType: hasSvgContent ? "svg" : hasImages ? "image" : "text",
-					processingEffort: "medium",
-					processingVerbosity: "medium"
-				});
-				return {
-					type: this.detectResultFormat(result),
-					content: this.formatAIResult(result),
-					rawData: result,
-					responseId: result.responseId,
-					dataCategory: "processed"
-				};
-			},
-			autoCopy: false,
-			autoSave: true,
-			priority: 9
-		});
-		this.registerRule({
-			id: "share-target-text-files-source",
-			name: "Share Target Text File Source",
-			description: "Process shared text/markdown files as source data",
-			source: "share-target",
-			inputTypes: ["files"],
-			action: "source",
-			condition: (input) => {
-				return input.files?.some?.((f) => f?.type?.startsWith?.("text/") || f?.type === "application/markdown" || f?.name?.endsWith?.(".md") || f?.name?.endsWith?.(".txt")) ?? false;
-			},
-			processor: async (input) => {
-				const textFiles = input.files.filter?.((f) => f?.type?.startsWith?.("text/") || f?.type === "application/markdown" || f?.name?.endsWith?.(".md") || f?.name?.endsWith?.(".txt"));
-				let combinedContent = "";
-				for (const file of textFiles) try {
-					const content = await file.text();
-					combinedContent += content + "\n\n";
-				} catch (error) {
-					console.warn(`Failed to read text file ${file?.name ?? "unknown file"}:`, error);
-				}
-				return {
-					type: "markdown",
-					content: combinedContent.trim(),
-					dataCategory: "recognized",
-					responseId: `share_source_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-				};
-			},
-			autoCopy: false,
-			autoSave: true,
-			priority: 16
-		});
-		this.registerRule({
-			id: "share-target-images-recognize",
-			name: "Share Target Image Recognition",
-			description: "Recognize content from shared images",
-			source: "share-target",
-			inputTypes: ["image", "files"],
-			action: "recognize",
-			condition: (input) => input.files?.some((f) => f.type.startsWith("image/")) || false,
-			processor: async (input) => {
-				const imageFiles = input.files.filter((f) => f.type.startsWith("image/"));
-				let result;
-				if (imageFiles.length > 1) {
-					const messages = [{
-						type: "message",
-						role: "user",
-						content: [{
-							type: "input_text",
-							text: `Recognize and extract text/content from the following ${imageFiles.length} shared images:`
-						}, ...(await Promise.all(imageFiles.map(async (file, index) => {
-							try {
-								const arrayBuffer = await file.arrayBuffer();
-								const bytes = new Uint8Array(arrayBuffer);
-								const base64 = btoa(String.fromCharCode(...bytes));
-								return [{
-									type: "input_text",
-									text: `\n--- Image ${index + 1}: ${file?.name ?? "unknown file"} ---\n`
-								}, {
-									type: "input_image",
-									detail: "auto",
-									image_url: `data:${file.type};base64,${base64}`
-								}];
-							} catch (error) {
-								console.warn(`Failed to process image ${file?.name ?? "unknown file"}:`, error);
-								return [{
-									type: "input_text",
-									text: `\n--- Image ${index + 1}: ${file?.name ?? "unknown file"} ---\n`
-								}, {
-									type: "input_text",
-									text: `[Failed to process image: ${file?.name ?? "unknown file"}]`
-								}];
-							}
-						}))).flat()]
-					}];
-					result = await processDataWithInstruction(messages, {
-						instruction: "Recognize and extract text/content from the shared images",
-						outputFormat: options?.recognitionFormat || "auto",
-						intermediateRecognition: { enabled: false }
-					});
-				} else result = await processDataWithInstruction(imageFiles[0], {
-					instruction: "Recognize and extract text/content from the shared image",
-					outputFormat: options?.recognitionFormat || "auto",
-					intermediateRecognition: { enabled: false }
-				});
-				return {
-					type: this.detectResultFormat(result),
-					content: this.formatAIResult(result),
-					rawData: result,
-					responseId: result.responseId,
-					dataCategory: "recognized"
-				};
-			},
-			autoCopy: true,
-			autoSave: true,
-			priority: 15
-		});
-		this.registerRule({
-			id: "share-target-markdown-view",
-			name: "Share Target Markdown View",
-			description: "View shared markdown content",
-			source: "share-target",
-			inputTypes: ["text", "markdown"],
-			action: "view",
-			condition: (input) => this.isMarkdownContent(input.text || ""),
-			processor: async (input) => {
-				return {
-					type: "markdown",
-					content: input.text || ""
-				};
-			},
-			autoCopy: false,
-			autoSave: true,
-			priority: 14
-		});
-		this.registerRule({
-			id: "share-target-url-analyze",
-			name: "Share Target URL Analysis",
-			description: "Analyze shared URL content",
-			source: "share-target",
-			inputTypes: ["url"],
-			action: "analyze",
-			condition: () => true,
-			processor: async (input, context, options) => {
-				const instructions = `Analyze the content from this URL and provide insights. ${this.getProcessingFormatInstruction(options?.processingFormat)}`;
-				const result = await processDataWithInstruction(input.url, {
-					instruction: instructions,
-					outputFormat: options?.processingFormat || "auto",
-					outputLanguage: "auto",
-					enableSVGImageGeneration: "auto",
-					intermediateRecognition: { enabled: false },
-					dataType: "text"
-				});
-				return {
-					type: this.detectResultFormat(result),
-					content: this.formatAIResult(result),
-					rawData: result,
-					responseId: result.responseId,
-					dataCategory: "recognized"
-				};
-			},
-			autoCopy: true,
-			autoSave: true,
-			priority: 13
-		});
-		this.registerRule({
-			id: "chrome-extension-text-files-source",
-			name: "Chrome Extension Text File Source",
-			description: "Process Chrome extension text/markdown files as source data",
-			source: "chrome-extension",
-			inputTypes: ["files"],
-			action: "source",
-			condition: (input) => {
-				return input.files?.some((f) => f?.type?.startsWith?.("text/") || f?.type === "application/markdown" || f?.name?.endsWith?.(".md") || f?.name?.endsWith?.(".txt")) ?? false;
-			},
-			processor: async (input) => {
-				const textFiles = input.files.filter((f) => f?.type?.startsWith?.("text/") || f?.type === "application/markdown" || f?.name?.endsWith?.(".md") || f?.name?.endsWith?.(".txt"));
-				let combinedContent = "";
-				for (const file of textFiles) try {
-					const content = await file.text();
-					combinedContent += content + "\n\n";
-				} catch (error) {
-					console.warn(`Failed to read text file ${file?.name ?? "unknown file"}:`, error);
-				}
-				return {
-					type: "markdown",
-					content: combinedContent.trim(),
-					dataCategory: "recognized",
-					responseId: `crx_source_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-				};
-			},
-			autoCopy: true,
-			autoSave: true,
-			priority: 26
-		});
-		this.registerRule({
-			id: "chrome-extension-screenshot-recognize",
-			name: "Chrome Extension Screenshot Recognition",
-			description: "Recognize content from screenshot",
-			source: "chrome-extension",
-			inputTypes: ["image"],
-			action: "recognize",
-			condition: () => true,
-			processor: async (input) => {
-				let result;
-				if (input.files.length > 1) {
-					const messages = [{
-						type: "message",
-						role: "user",
-						content: [{
-							type: "input_text",
-							text: `Analyze the following ${input.files.length} screenshots and extract any visible text or content:`
-						}, ...(await Promise.all(input.files.map(async (file, index) => {
-							try {
-								const arrayBuffer = await file.arrayBuffer();
-								const bytes = new Uint8Array(arrayBuffer);
-								const base64 = toBase64(bytes);
-								return [{
-									type: "input_text",
-									text: `\n--- Screenshot ${index + 1}: ${file.name} ---\n`
-								}, {
-									type: "input_image",
-									detail: "auto",
-									image_url: `data:${file.type};base64,${base64}`
-								}];
-							} catch (error) {
-								console.warn(`Failed to process screenshot ${file.name}:`, error);
-								return [{
-									type: "input_text",
-									text: `\n--- Screenshot ${index + 1}: ${file.name} ---\n`
-								}, {
-									type: "input_text",
-									text: `[Failed to process screenshot: ${file.name}]`
-								}];
-							}
-						}))).flat()]
-					}];
-					result = await processDataWithInstruction(messages, {
-						instruction: "Analyze the screenshots and extract any visible text or content",
-						outputFormat: options?.recognitionFormat || "auto",
-						intermediateRecognition: { enabled: false }
-					});
-				} else {
-					const file = input.files[0];
-					const FileCtor = globalThis.File;
-					if (FileCtor && file instanceof FileCtor && file.type.startsWith("image/")) try {
-						const arrayBuffer = await file.arrayBuffer();
-						const bytes = new Uint8Array(arrayBuffer);
-						const base64 = toBase64(bytes);
-						const dataUrl = `data:${file.type};base64,${base64}`;
-						result = await processDataWithInstruction(dataUrl, {
-							instruction: "Analyze the screenshot and extract any visible text or content",
-							outputFormat: options?.recognitionFormat || "auto",
-							intermediateRecognition: { enabled: false }
-						});
-					} catch (error) {
-						console.warn(`Failed to process screenshot ${file?.name ?? "unknown file"}:`, error);
-						result = await processDataWithInstruction(file, {
-							instruction: "Analyze the screenshot and extract any visible text or content",
-							outputFormat: options?.recognitionFormat || "auto",
-							intermediateRecognition: { enabled: false }
-						});
-					}
-					else result = await processDataWithInstruction(file, {
-						instruction: "Analyze the screenshot and extract any visible text or content",
-						outputFormat: options?.recognitionFormat || "auto",
-						intermediateRecognition: { enabled: false }
-					});
-				}
-				return {
-					type: this.detectResultFormat(result),
-					content: this.formatAIResult(result),
-					rawData: result,
-					responseId: result.responseId,
-					dataCategory: "recognized"
-				};
-			},
-			autoCopy: true,
-			autoSave: true,
-			priority: 20
-		});
-		this.registerRule({
-			id: "launch-queue-text-files-source",
-			name: "Launch Queue Text File Source",
-			description: "Process launch queue text/markdown files as source data",
-			source: "launch-queue",
-			inputTypes: ["files"],
-			action: "source",
-			condition: (input) => {
-				return input.files?.some((f) => f.type.startsWith("text/") || f.type === "application/markdown" || f?.name?.endsWith?.(".md") || f?.name?.endsWith?.(".txt")) ?? false;
-			},
-			processor: async (input) => {
-				const textFiles = input.files.filter((f) => f.type.startsWith("text/") || f.type === "application/markdown" || f?.name?.endsWith?.(".md") || f?.name?.endsWith?.(".txt"));
-				let combinedContent = "";
-				for (const file of textFiles) try {
-					const content = await file.text();
-					combinedContent += content + "\n\n";
-				} catch (error) {
-					console.warn(`Failed to read text file ${file?.name ?? "unknown file"}:`, error);
-				}
-				return {
-					type: "markdown",
-					content: combinedContent.trim(),
-					dataCategory: "recognized",
-					responseId: `launch_source_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-				};
-			},
-			autoCopy: true,
-			autoSave: true,
-			priority: 21
-		});
-		this.registerRule({
-			id: "launch-queue-files-process",
-			name: "Launch Queue File Processing",
-			description: "Process files from launch queue",
-			source: "launch-queue",
-			inputTypes: ["files", "mixed"],
-			action: "process",
-			condition: () => true,
-			processor: async (input) => {
-				let result;
-				if (input.files.length > 1) {
-					const messages = [{
-						type: "message",
-						role: "user",
-						content: [{
-							type: "input_text",
-							text: `Process the following ${input.files.length} files:`
-						}, ...(await Promise.all(input.files.map(async (file, index) => {
-							const FileCtor = globalThis.File;
-							const isFile = FileCtor && file instanceof FileCtor;
-							const header = {
-								type: "input_text",
-								text: `\n--- File ${index + 1}: ${file.name} ---\n`
-							};
-							if (isFile && file.type.startsWith("image/")) try {
-								const arrayBuffer = await file.arrayBuffer();
-								const bytes = new Uint8Array(arrayBuffer);
-								const base64 = toBase64(bytes);
-								return [header, {
-									type: "input_image",
-									detail: "auto",
-									image_url: `data:${file.type};base64,${base64}`
-								}];
-							} catch (error) {
-								console.warn(`Failed to process file ${file.name}:`, error);
-								return [header, {
-									type: "input_text",
-									text: `[Failed to process file: ${file.name}]`
-								}];
-							}
-							else try {
-								return [header, {
-									type: "input_text",
-									text: await file.text()
-								}];
-							} catch (error) {
-								console.warn(`Failed to read file ${file.name}:`, error);
-								return [header, {
-									type: "input_text",
-									text: `[Failed to read file: ${file.name}]`
-								}];
-							}
-						}))).flat()]
-					}];
-					result = await processDataWithInstruction(messages, {
-						instruction: "Process the provided content",
-						outputFormat: options?.processingFormat || "auto",
-						intermediateRecognition: { enabled: false }
-					});
-				} else {
-					const file = input.files[0];
-					const FileCtor = globalThis.File;
-					if (FileCtor && file instanceof FileCtor && file.type.startsWith("image/")) try {
-						const arrayBuffer = await file.arrayBuffer();
-						const bytes = new Uint8Array(arrayBuffer);
-						const base64 = toBase64(bytes);
-						const dataUrl = `data:${file.type};base64,${base64}`;
-						result = await processDataWithInstruction(dataUrl, {
-							instruction: "Process the provided image content",
-							outputFormat: options?.processingFormat || "auto",
-							intermediateRecognition: { enabled: false }
-						});
-					} catch (error) {
-						console.warn(`Failed to process image ${file?.name ?? "unknown file"}:`, error);
-						result = await processDataWithInstruction(file, {
-							instruction: "Process the provided content",
-							outputFormat: options?.processingFormat || "auto",
-							intermediateRecognition: { enabled: false }
-						});
-					}
-					else result = await processDataWithInstruction(file, {
-						instruction: "Process the provided content",
-						outputFormat: options?.processingFormat || "auto",
-						intermediateRecognition: { enabled: false }
-					});
-				}
-				return {
-					type: this.detectResultFormat(result),
-					content: this.formatAIResult(result),
-					rawData: result,
-					responseId: result.responseId,
-					dataCategory: "recognized"
-				};
-			},
-			autoCopy: true,
-			autoSave: true,
-			priority: 12
-		});
-	}
-	/**
-	* Check if content is markdown
-	*/
-	isMarkdownContent(text) {
-		if (!text || typeof text !== "string") return false;
-		const trimmed = text.trim();
-		if (trimmed.startsWith("<") && trimmed.endsWith(">")) return false;
-		if (/<[a-zA-Z][^>]*>/.test(trimmed)) return false;
-		return [
-			/^---[\s\S]+?---/,
-			/^#{1,6}\s+.+$/m,
-			/^\s*[-*+]\s+\S+/m,
-			/^\s*\d+\.\s+\S+/m,
-			/`{1,3}[^`]*`{1,3}/,
-			/\[([^\]]+)\]\(([^)]+)\)/,
-			/!\[([^\]]+)\]\(([^)]+)\)/
-		].some((pattern) => pattern.test(text));
-	}
-	/**
-	* Format AI result for display
-	*/
-	detectResultFormat(result) {
-		if (!result) return "text";
-		try {
-			const data = result.data || result;
-			if (data && typeof data === "object") {
-				if ([
-					"recognized_data",
-					"verbose_data",
-					"keywords_and_tags",
-					"confidence",
-					"suggested_type",
-					"using_ready"
-				].some((field) => field in data)) return "json";
-				if (data.content || data.text || data.message) return "markdown";
-				return "json";
-			}
-			if (typeof data === "string") {
-				if (data.includes("\n") || data.includes("#") || data.includes("*") || data.includes("`")) return "markdown";
-				return "text";
-			}
-			return "json";
-		} catch (error) {
-			console.warn("Failed to detect result format:", error);
-			return "text";
-		}
-	}
-	formatAIResult(result) {
-		if (!result) return "No result";
-		try {
-			let content = "";
-			if (result.data) {
-				if (typeof result.data === "string") content = result.data;
-				else if (result.data.recognized_data) {
-					const recognized = result.data.recognized_data;
-					content = Array.isArray(recognized) ? recognized.join("\n\n") : String(recognized);
-				} else content = JSON.stringify(result.data, null, 2);
-			} else if (typeof result === "string") content = result;
-			else content = JSON.stringify(result, null, 2);
-			content = this.unwrapUnwantedCodeBlocks(content);
-			return content;
-		} catch (error) {
-			console.warn("Failed to format AI result:", error);
-			return String(result);
-		}
-	}
-	unwrapUnwantedCodeBlocks(content) {
-		if (!content) return content;
-		const match = content.trim().match(/^```(?:katex|md|markdown|html|xml|json|text)?\n([\s\S]*?)\n```$/);
-		if (match) {
-			const unwrapped = match[1].trim();
-			const lines = unwrapped.split("\n");
-			if (lines.length === 1 || unwrapped.includes("<math") || unwrapped.includes("<span class=\"katex") || unwrapped.includes("<content") || unwrapped.startsWith("<") && unwrapped.endsWith(">") || /^\s*<[^>]+>/.test(unwrapped)) {
-				console.log("[AI Response] Unwrapped unwanted code block formatting");
-				return unwrapped;
-			}
-			if (lines.length > 3 || lines.some((line) => line.match(/^\s{4,}/) || line.includes("function") || line.includes("const ") || line.includes("let "))) return content;
-			console.log("[AI Response] Unwrapped unwanted code block formatting");
-			return unwrapped;
-		}
-		return content;
-	}
-	getRecognitionFormatInstruction(format) {
-		if (!format || format === "auto") return "Output the content in the most appropriate format (markdown is preferred for structured content).";
-		switch (format) {
-			case "most-suitable": return "Analyze the content and output it in the most suitable format for its type and structure. Choose the format that best represents the content's nature and purpose.";
-			case "most-optimized": return "Output the content in the most optimized format for storage and transmission efficiency. Prefer compact representations while maintaining essential information.";
-			case "most-legibility": return "Output the content in the most human-readable and legible format. Prioritize clarity, readability, and ease of understanding over compactness.";
-			case "markdown": return "Output the recognized content in Markdown format.";
-			case "html": return "Output the recognized content in HTML format.";
-			case "text": return "Output the recognized content as plain text.";
-			case "json": return "Output the recognized content as structured JSON data.";
-			default: return "Output the content in the most appropriate format (markdown is preferred for structured content).";
-		}
-	}
-	getProcessingFormatInstruction(format) {
-		if (!format || format === "markdown") return "Output the processed result in Markdown format.";
-		switch (format) {
-			case "html": return "Output the processed result in HTML format.";
-			case "json": return "Output the processed result as structured JSON data.";
-			case "text": return "Output the processed result as plain text.";
-			case "typescript": return "Output the processed result as TypeScript code.";
-			case "javascript": return "Output the processed result as JavaScript code.";
-			case "python": return "Output the processed result as Python code.";
-			case "java": return "Output the processed result as Java code.";
-			case "cpp": return "Output the processed result as C++ code.";
-			case "csharp": return "Output the processed result as C# code.";
-			case "php": return "Output the processed result as PHP code.";
-			case "ruby": return "Output the processed result as Ruby code.";
-			case "go": return "Output the processed result as Go code.";
-			case "rust": return "Output the processed result as Rust code.";
-			case "xml": return "Output the processed result in XML format.";
-			case "yaml": return "Output the processed result in YAML format.";
-			case "css": return "Output the processed result as CSS code.";
-			case "scss": return "Output the processed result as SCSS code.";
-			default: return "Output the processed result in Markdown format.";
-		}
+		const direct = await buildWorkCenterTurnInput(request, { allowDirectFile: !this.directFileUnsupported });
+		if (request.signal?.aborted) return cancelledResult();
+		const result = await execute(direct.input, requestOptions, { usedDirectFile: direct.usedDirectFile });
+		if (result.ok || !direct.usedDirectFile || request.signal?.aborted || !isFileCapabilityRejection(result.error)) return request.signal?.aborted ? cancelledResult() : result;
+		this.directFileUnsupported = true;
+		const fallback = await buildWorkCenterTurnInput(request, { allowDirectFile: false });
+		if (request.signal?.aborted) return cancelledResult();
+		return execute(fallback.input, requestOptions, { usedDirectFile: false });
 	}
 };
-var executionCore = new ExecutionCore();
+//#endregion
+//#region src/service/service/WorkCenterTurn.ts
+/**
+* Public Work Center turn entry point.
+*
+* FIND:workcenter-turn
+* WHY: Keep provider execution separate from the pure request builder so UI
+* contracts can be verified without loading application settings or workers.
+*/
+var defaultExecutor = async (input, options) => processDataWithInstruction(input, options);
+var defaultService = new WorkCenterTurnService();
+/** Execute one turn using the app's shared direct-file capability cache. */
+var runWorkCenterTurn = (request) => defaultService.run(request, defaultExecutor);
 //#endregion
 //#region ../../modules/views/workcenter-view/src/ts/WorkCenterActions.ts
 var WorkCenterActions = class {
@@ -2063,7 +1307,9 @@ var WorkCenterActions = class {
 	results;
 	history;
 	templates;
-	constructor(dependencies, ui, fileOps, dataProcessing, results, history, templates) {
+	conversation;
+	activeTurns = /* @__PURE__ */ new Map();
+	constructor(dependencies, ui, fileOps, dataProcessing, results, history, templates, conversation) {
 		this.deps = dependencies;
 		this.ui = ui;
 		this.fileOps = fileOps;
@@ -2071,8 +1317,13 @@ var WorkCenterActions = class {
 		this.results = results;
 		this.history = history;
 		this.templates = templates;
+		this.conversation = conversation;
 	}
 	async executeUnifiedAction(state) {
+		if (this.conversation) {
+			await this.executeConversationTurn(state);
+			return;
+		}
 		if (this.fileOps.getFilesForProcessing(state).length === 0 && !state.currentPrompt.trim() && !state.recognizedData) {
 			this.deps.showMessage("Please select files or enter a prompt first");
 			return;
@@ -2167,6 +1418,165 @@ var WorkCenterActions = class {
 		this.ui.updateDataPipeline(state);
 		this.ui.updateDataCounters(state);
 	}
+	async persistDraft(state) {
+		const conversation = this.conversation;
+		if (!conversation) return;
+		state.currentPrompt = state.draft.content;
+		conversation.session.setDraft(state.draft);
+		await conversation.session.persistDraft();
+	}
+	requestOptions(state) {
+		return {
+			outputFormat: state.outputFormat,
+			language: state.selectedLanguage,
+			recognitionFormat: state.recognitionFormat,
+			processingFormat: state.processingFormat
+		};
+	}
+	async conversationInstruction(state) {
+		const base = state.selectedTemplate.trim() || "Answer the newest user message using its attached content as context.";
+		let instruction = this.templates.resolveInstruction(state.selectedInstruction);
+		if (!instruction && !state.selectedInstruction) instruction = await this.templates.getActiveInstruction();
+		return this.templates.buildPromptWithInstruction(base, instruction);
+	}
+	syncConversationState(state) {
+		const conversation = this.conversation;
+		if (!conversation) return;
+		const snapshot = conversation.session.snapshot();
+		state.messages = snapshot.messages;
+		state.draft = snapshot.draft;
+		state.currentPrompt = snapshot.draft.content;
+		state.sessionEpoch = snapshot.epoch;
+		conversation.syncFromSession();
+	}
+	async executeConversationTurn(state) {
+		const conversation = this.conversation;
+		if (!conversation) return;
+		if (this.activeTurns.size > 0) {
+			this.deps.showMessage("Wait for the current response before sending another message");
+			return;
+		}
+		if (!state.draft.content.trim() && state.draft.attachments.length === 0) {
+			this.deps.showMessage("Enter a prompt or attach a file first");
+			return;
+		}
+		await this.persistDraft(state);
+		const submitted = await conversation.session.submitDraft(this.requestOptions(state));
+		state.files = [];
+		this.syncConversationState(state);
+		const controller = new AbortController();
+		this.activeTurns.set(submitted.assistant.id, controller);
+		await this.runConversationTurn(state, submitted.user, submitted.assistant, controller);
+	}
+	async retryConversationTurn(state, assistantId) {
+		const conversation = this.conversation;
+		if (!conversation || this.activeTurns.size > 0) return;
+		try {
+			const retry = await conversation.session.retry(assistantId);
+			this.syncConversationState(state);
+			const controller = new AbortController();
+			this.activeTurns.set(retry.assistant.id, controller);
+			await this.runConversationTurn(state, retry.user, retry.assistant, controller);
+		} catch (error) {
+			this.deps.showMessage(error instanceof Error ? error.message : "Unable to retry this message");
+		}
+	}
+	async cancelConversationTurn(state, assistantId) {
+		const conversation = this.conversation;
+		if (!conversation) return;
+		this.activeTurns.get(assistantId)?.abort();
+		this.activeTurns.delete(assistantId);
+		await conversation.session.cancel(assistantId);
+		this.syncConversationState(state);
+	}
+	async startNewConversation(state) {
+		const conversation = this.conversation;
+		if (!conversation) return;
+		for (const controller of this.activeTurns.values()) controller.abort();
+		this.activeTurns.clear();
+		conversation.attachments.revokeAllPreviews();
+		await conversation.session.newChat();
+		state.files = [];
+		this.syncConversationState(state);
+	}
+	async runConversationTurn(state, user, assistant, controller) {
+		const conversation = this.conversation;
+		if (!conversation) return;
+		const epoch = conversation.session.epoch();
+		try {
+			const prepared = [];
+			for (const ref of user.attachments) {
+				const file = await conversation.attachments.resolve(ref);
+				if (!file) {
+					await conversation.session.markAttachmentError(user.id, ref.hash, "Attachment data is unavailable");
+					prepared.push({
+						attachmentId: ref.hash,
+						original: new File([], ref.name, { type: ref.type }),
+						kind: "unknown",
+						images: [],
+						error: "Attachment data is unavailable"
+					});
+					continue;
+				}
+				const preparedAttachment = await conversation.documentPreparer.prepare(file);
+				if (preparedAttachment.error) await conversation.session.markAttachmentError(user.id, ref.hash, preparedAttachment.error);
+				prepared.push({
+					attachmentId: ref.hash,
+					...preparedAttachment
+				});
+			}
+			const result = await runWorkCenterTurn({
+				messages: conversation.session.snapshot().messages.filter((message) => message.status === "complete").map((message) => ({
+					role: message.role,
+					content: message.content
+				})),
+				attachments: prepared,
+				instruction: await this.conversationInstruction(state),
+				options: {
+					outputFormat: state.processingFormat,
+					outputLanguage: state.selectedLanguage,
+					processingEffort: "medium",
+					processingVerbosity: "medium"
+				},
+				signal: controller.signal
+			});
+			if (epoch !== conversation.session.epoch()) return;
+			if (controller.signal.aborted || result.error === "Cancelled") await conversation.session.cancel(assistant.id);
+			else if (result.ok) {
+				const content = String(result.data || "");
+				await conversation.session.completeAssistant(assistant.id, {
+					status: "complete",
+					content,
+					rawResult: result
+				});
+				state.lastRawResult = result;
+				state.recognizedData = {
+					content,
+					timestamp: Date.now(),
+					source: user.attachments.length ? "files" : "text",
+					recognizedAs: "markdown",
+					responseId: result.responseId || void 0
+				};
+			} else await conversation.session.completeAssistant(assistant.id, {
+				status: "failed",
+				content: "",
+				error: result.error || "The request did not return a response"
+			});
+		} catch (error) {
+			if (epoch === conversation.session.epoch()) await conversation.session.completeAssistant(assistant.id, {
+				status: controller.signal.aborted ? "cancelled" : "failed",
+				content: "",
+				error: controller.signal.aborted ? "Cancelled" : error instanceof Error ? error.message : "Failed to process message"
+			});
+		} finally {
+			if (this.activeTurns.get(assistant.id) === controller) this.activeTurns.delete(assistant.id);
+			if (epoch === conversation.session.epoch()) {
+				this.syncConversationState(state);
+				this.history.updateRecentHistory(state);
+				this.ui.updateDataPipeline(state);
+			}
+		}
+	}
 	getLastSuccessfulPrompt() {
 		return this.history.getLastSuccessfulPrompt();
 	}
@@ -2183,6 +1593,16 @@ var WorkCenterActions = class {
 			this.deps.showMessage("Failed to copy results");
 		}
 	}
+	async copyConversationTurn(state, turnId) {
+		const message = state.messages.find((candidate) => candidate.id === turnId && candidate.role === "assistant");
+		if (!message) return;
+		try {
+			await this.dataProcessing.copyResultsToClipboard(message.rawResult ?? { content: message.content }, state.outputFormat);
+			this.deps.showMessage("Response copied to clipboard");
+		} catch {
+			this.deps.showMessage("Failed to copy response");
+		}
+	}
 	async viewResultsInViewer(state) {
 		if (!state.lastRawResult) {
 			this.deps.showMessage("No results to view");
@@ -2190,9 +1610,9 @@ var WorkCenterActions = class {
 		}
 		try {
 			const { unifiedMessaging } = await __vitePreload(async () => {
-				const { unifiedMessaging } = await import("../shells/boot-index.js").then((n) => n.Ln);
+				const { unifiedMessaging } = await import("../shells/boot-index.js").then((n) => n.Wn);
 				return { unifiedMessaging };
-			}, __vite__mapDeps([2,1,3,4,5,6,7]), import.meta.url);
+			}, __vite__mapDeps([4,1,5,6,7,8,9]), import.meta.url);
 			let resultContent = typeof state.lastRawResult === "string" ? state.lastRawResult : JSON.stringify(state.lastRawResult, null, 2);
 			try {
 				resultContent = JSON.parse(resultContent)?.data || resultContent;
@@ -2251,9 +1671,9 @@ var WorkCenterActions = class {
 		}
 		try {
 			const { unifiedMessaging } = await __vitePreload(async () => {
-				const { unifiedMessaging } = await import("../shells/boot-index.js").then((n) => n.Ln);
+				const { unifiedMessaging } = await import("../shells/boot-index.js").then((n) => n.Wn);
 				return { unifiedMessaging };
-			}, __vite__mapDeps([2,1,3,4,5,6,7]), import.meta.url);
+			}, __vite__mapDeps([4,1,5,6,7,8,9]), import.meta.url);
 			const resultContent = typeof state.lastRawResult === "string" ? state.lastRawResult : JSON.stringify(state.lastRawResult, null, 2);
 			await unifiedMessaging.sendMessage({
 				id: crypto.randomUUID(),
@@ -2281,32 +1701,348 @@ var WorkCenterActions = class {
 	}
 };
 //#endregion
+//#region ../../modules/views/workcenter-view/src/ts/WorkCenterDataProcessing.ts
+var WorkCenterDataProcessing = class {
+	formatResult(result, format, outputFormat) {
+		if (format === "auto") {
+			const rawData = result?.rawData || result;
+			let data = extractJSONFromAIResponse(rawData)?.data || rawData;
+			if (typeof data === "string") try {
+				const parsed = JSON.parse(data);
+				if (parsed && typeof parsed === "object") data = parsed;
+			} catch {}
+			if (data && typeof data === "object" && (data.recognized_data || data.verbose_data || data.keywords_and_tags || data.suggested_type)) {
+				const content = [];
+				if (data.recognized_data) {
+					const recognized = Array.isArray(data.recognized_data) ? data.recognized_data : [data.recognized_data];
+					content.push(...recognized.map((item) => String(item)));
+				}
+				if (data.verbose_data) content.push(String(data.verbose_data));
+				if (data.keywords_and_tags && Array.isArray(data.keywords_and_tags) && data.keywords_and_tags.length > 0) content.push(`\n**Keywords:** ${data.keywords_and_tags.join(", ")}`);
+				if (data.confidence || data.suggested_type) {
+					const info = [];
+					if (data.confidence) info.push(`Confidence: ${Math.round(data.confidence * 100)}%`);
+					if (data.suggested_type) info.push(`Type: ${data.suggested_type}`);
+					if (info.length > 0) content.push(`\n*${info.join(" • ")}*`);
+				}
+				if (content.length > 0) return `<div class="markdown-result structured-content">${content.join("\n\n")}</div>`;
+			}
+			if (data && typeof data === "object") return this.formatResult(result, "json");
+			return this.formatResult(result, "markdown");
+		}
+		if (format === "json") {
+			const rawData = result?.rawData || result;
+			let data = extractJSONFromAIResponse(rawData)?.data || rawData;
+			if (typeof data === "string") try {
+				const parsed = JSON.parse(data);
+				if (parsed && typeof parsed === "object") data = parsed;
+			} catch {}
+			return this.renderAsJSON(data);
+		}
+		if (format === "markdown") {
+			const rawData = result?.rawData || result;
+			let data = extractJSONFromAIResponse(rawData)?.data || rawData;
+			if (typeof data === "string") try {
+				const parsed = JSON.parse(data);
+				if (parsed && typeof parsed === "object") data = parsed;
+			} catch {}
+			if (data && typeof data === "object" && (data.recognized_data || data.verbose_data || data.keywords_and_tags || data.suggested_type)) {
+				const content = [];
+				if (data.recognized_data) {
+					const recognized = Array.isArray(data.recognized_data) ? data.recognized_data : [data.recognized_data];
+					content.push(...recognized.map((item) => String(item)));
+				}
+				if (data.verbose_data) content.push(String(data.verbose_data));
+				if (data.keywords_and_tags && Array.isArray(data.keywords_and_tags) && data.keywords_and_tags.length > 0) content.push(`\n**Keywords:** ${data.keywords_and_tags.join(", ")}`);
+				if (data.confidence || data.suggested_type) {
+					const info = [];
+					if (data.confidence) info.push(`Confidence: ${Math.round(data.confidence * 100)}%`);
+					if (data.suggested_type) info.push(`Type: ${data.suggested_type}`);
+					if (info.length > 0) content.push(`\n*${info.join(" • ")}*`);
+				}
+				if (content.length > 0) return `<div class="markdown-result structured-content">${content.join("\n\n")}</div>`;
+			}
+		}
+		const normalizedData = this.normalizeResultData(result);
+		if (!normalizedData) return "<div class=\"no-result\">No result</div>";
+		switch (format) {
+			case "code": return this.renderAsCode(normalizedData);
+			case "raw": return this.renderAsRaw(result?.rawData || result);
+			case "html": return this.renderAsHTML(normalizedData);
+			case "text": return this.renderAsText(normalizedData);
+			default: return this.renderAsMarkdown(normalizedData);
+		}
+	}
+	normalizeResultData(result) {
+		if (!result) return null;
+		let data = extractJSONFromAIResponse(result)?.data || result;
+		if (data && typeof data === "object") {
+			if (data.data !== void 0) data = data.data;
+			if (typeof data === "string") try {
+				const parsed = JSON.parse(data);
+				if (parsed && typeof parsed === "object") data = parsed;
+			} catch {}
+		}
+		if (typeof data !== "object" || data === null) data = { recognized_data: [String(data)] };
+		return data;
+	}
+	renderAsJSON(data) {
+		try {
+			const createFormattedJSON = (obj, indent = 0) => {
+				const spaces = "  ".repeat(indent);
+				if (obj === null) return "null";
+				if (typeof obj === "boolean") return obj ? "true" : "false";
+				if (typeof obj === "number") return String(obj);
+				if (typeof obj === "string") {
+					if (obj.includes("<math") || obj.includes("class=\"katex\"") || obj.includes("<span>")) {
+						const placeholder = `__HTML_CONTENT_${Math.random().toString(36).substr(2, 9)}__`;
+						htmlPlaceholders[placeholder] = obj;
+						return `"${placeholder}"`;
+					}
+					return JSON.stringify(obj);
+				}
+				if (Array.isArray(obj)) {
+					if (obj.length === 0) return "[]";
+					const items = obj.map((item) => createFormattedJSON(item, indent + 1));
+					return `[\n${"  ".repeat(indent + 1)}${items.join(`,\n${"  ".repeat(indent + 1)}`)}\n${spaces}]`;
+				}
+				if (typeof obj === "object") {
+					const keys = Object.keys(obj);
+					if (keys.length === 0) return "{}";
+					const items = keys.map((key) => {
+						const formattedValue = createFormattedJSON(obj[key], indent + 1);
+						return `${JSON.stringify(key)}: ${formattedValue}`;
+					});
+					return `{\n${"  ".repeat(indent + 1)}${items.join(`,\n${"  ".repeat(indent + 1)}`)}\n${spaces}}`;
+				}
+				return String(obj);
+			};
+			const htmlPlaceholders = {};
+			let finalHTML = `<div class="json-result"><pre>${createFormattedJSON(data)}</pre></div>`;
+			for (const [placeholder, htmlContent] of Object.entries(htmlPlaceholders)) {
+				const tempDiv = document.createElement("div");
+				tempDiv.innerHTML = htmlContent;
+				const renderedHTML = tempDiv.innerHTML;
+				finalHTML = finalHTML.replace(`"${placeholder}"`, `<span class="json-html-content">${renderedHTML}</span>`);
+			}
+			return finalHTML;
+		} catch (error) {
+			return `<div class="error">Failed to format JSON: ${error}</div>`;
+		}
+	}
+	renderAsHTML(data) {
+		const renderedContent = this.extractContentItems(data).map((item) => this.renderContentItem(item, "html")).join("");
+		if (!renderedContent) return `<div class="html-result">${this.renderMathAsHTML(this.extractTextContent(data))}</div>`;
+		return `<div class="html-result">${renderedContent}</div>`;
+	}
+	renderAsText(data) {
+		const renderedContent = this.extractContentItems(data).map((item) => this.renderContentItem(item, "text")).join("\n\n");
+		if (!renderedContent.trim()) return `<pre class="text-result">${this.escapeHtml(this.extractTextContent(data))}</pre>`;
+		return `<pre class="text-result">${this.escapeHtml(renderedContent)}</pre>`;
+	}
+	renderAsRaw(data) {
+		let rawText = "";
+		if (typeof data === "string") rawText = data;
+		else try {
+			rawText = JSON.stringify(data, null, 2);
+		} catch {
+			rawText = String(data ?? "");
+		}
+		return `<pre class="raw-result">${this.escapeHtml(rawText)}</pre>`;
+	}
+	renderAsCode(data) {
+		const content = this.extractContentItems(data).join("\n\n").trim() || this.extractTextContent(data);
+		const code = this.extractLikelyCode(content);
+		const language = this.detectCodeLanguage(content);
+		return `<pre class="code-result"><code data-lang="${this.escapeHtml(language)}">${this.escapeHtml(code)}</code></pre>`;
+	}
+	renderAsMarkdown(data) {
+		const renderedContent = this.extractContentItems(data).map((item) => this.renderContentItem(item, "markdown")).join("\n\n");
+		if (!renderedContent.trim()) try {
+			const textContent = this.extractTextContent(data);
+			const html = f.parse(textContent);
+			return purify.sanitize(html);
+		} catch (error) {
+			console.warn("Markdown parsing failed, falling back to simple rendering:", error);
+			return this.renderMathAsHTML(renderedContent);
+		}
+		try {
+			const html = f.parse(renderedContent);
+			return purify.sanitize(html);
+		} catch (error) {
+			console.warn("Markdown parsing failed, falling back to simple rendering:", error);
+			return this.renderMathAsHTML(renderedContent);
+		}
+	}
+	extractContentItems(data) {
+		const items = [];
+		if (data.recognized_data) {
+			const recognized = Array.isArray(data.recognized_data) ? data.recognized_data : [data.recognized_data];
+			items.push(...recognized.map((item) => String(item)));
+		}
+		if (data.verbose_data) items.push(String(data.verbose_data));
+		if (items.length === 0) {
+			for (const field of [
+				"content",
+				"text",
+				"message",
+				"result",
+				"response",
+				"description"
+			]) if (data[field]) {
+				const content = Array.isArray(data[field]) ? data[field] : [data[field]];
+				items.push(...content.map((item) => String(item)));
+				break;
+			}
+		}
+		if (items.length === 0) {
+			const textContent = this.extractTextContent(data);
+			if (textContent) items.push(textContent);
+		}
+		return items;
+	}
+	renderContentItem(item, format) {
+		switch (format) {
+			case "html": return `<div class="recognized-item">${this.renderMathAsHTML(item)}</div>`;
+			case "text": return this.stripMarkdown(item);
+			case "markdown": return item;
+			default: return item;
+		}
+	}
+	renderMathAsHTML(content) {
+		let result = content;
+		result = result.replace(/\$\$([^$]+)\$\$/g, (match, math) => {
+			try {
+				return f.parse(`$$${math}$$`).replace(/<p>|<\/p>/g, "").trim();
+			} catch {
+				return `<span class="math-display">${this.escapeHtml(`$$${math}$$`)}</span>`;
+			}
+		});
+		result = result.replace(/\$([^$]+)\$/g, (match, math) => {
+			try {
+				return f.parse(`$${math}$`).replace(/<p>|<\/p>/g, "").trim();
+			} catch {
+				return `<span class="math-inline">${this.escapeHtml(`$${math}$`)}</span>`;
+			}
+		});
+		result = result.replace(/\n/g, "<br>");
+		return result;
+	}
+	stripMarkdown(content) {
+		return content.replace(/#{1,6}\s*/g, "").replace(/\*\*(.*?)\*\*/g, "$1").replace(/\*(.*?)\*/g, "$1").replace(/`(.*?)`/g, "$1").replace(/^\s*[-*+]\s+/gm, "").replace(/^\s*\d+\.\s+/gm, "").replace(/\[([^\]]+)\]\([^\)]+\)/g, "$1").replace(/!\[([^\]]+)\]\([^\)]+\)/g, "$1").trim();
+	}
+	extractLikelyCode(content) {
+		const fenced = content.match(/```[\t ]*([a-zA-Z0-9_-]+)?\n([\s\S]*?)```/);
+		if (fenced?.[2]) return fenced[2].trim();
+		return content;
+	}
+	detectCodeLanguage(content) {
+		const fencedLanguage = content.match(/```[\t ]*([a-zA-Z0-9_-]+)?\n/)?.[1];
+		if (fencedLanguage) return fencedLanguage.toLowerCase();
+		if (/\b(interface|type|const|let|=>|import\s+type)\b/.test(content)) return "typescript";
+		if (/\b(function|const|let|var|import|export)\b/.test(content)) return "javascript";
+		if (/\b(def |import |from |class )/.test(content)) return "python";
+		if (/\b<[^>]+>/.test(content)) return "html";
+		return "text";
+	}
+	extractTextContent(data) {
+		if (data == null) return "";
+		if (typeof data === "string") return data;
+		if (typeof data === "number" || typeof data === "boolean") return String(data);
+		if (Array.isArray(data)) return data.map((item) => this.extractTextContent(item)).join("\n");
+		if (typeof data === "object") {
+			for (const field of [
+				"verbose_data",
+				"recognized_data",
+				"content",
+				"text",
+				"message",
+				"result",
+				"response",
+				"data"
+			]) if (data[field] != null) {
+				const content = this.extractTextContent(data[field]);
+				if (content) return content;
+			}
+			try {
+				return JSON.stringify(data, null, 2);
+			} catch {
+				return "[Complex Object]";
+			}
+		}
+		return String(data);
+	}
+	escapeHtml(text) {
+		const div = document.createElement("div");
+		div.textContent = text;
+		return div.innerHTML;
+	}
+	copyResultsToClipboard(result, format) {
+		let textToCopy = "";
+		if (format === "auto" && result) {
+			const rawData = result?.rawData || result;
+			let data = extractJSONFromAIResponse(rawData)?.data || rawData;
+			if (typeof data === "string") try {
+				const parsed = JSON.parse(data);
+				if (parsed && typeof parsed === "object") data = parsed;
+			} catch {}
+			if (data && typeof data === "object" && (data.recognized_data || data.verbose_data)) {
+				const contentItems = [];
+				if (data.recognized_data) {
+					const recognized = Array.isArray(data.recognized_data) ? data.recognized_data : [data.recognized_data];
+					contentItems.push(...recognized.map((item) => String(item)));
+				}
+				if (data.verbose_data) contentItems.push(String(data.verbose_data));
+				textToCopy = contentItems.join("\n\n");
+			} else {
+				const normalizedData = this.normalizeResultData(result);
+				textToCopy = this.extractContentItems(normalizedData).join("\n\n");
+			}
+		} else if ((format === "markdown" || format === "html") && result) {
+			const normalizedData = this.normalizeResultData(result);
+			textToCopy = this.extractContentItems(normalizedData).join("\n\n");
+		} else if (format === "json" && result) {
+			const normalizedData = this.normalizeResultData(result);
+			textToCopy = this.extractContentItems(normalizedData).join("\n\n");
+		} else if ((format === "raw" || format === "code") && result) {
+			const rawData = result?.rawData || result;
+			textToCopy = typeof rawData === "string" ? rawData : JSON.stringify(rawData, null, 2);
+		} else textToCopy = result?.textContent || "";
+		return writeText(textToCopy).then((result) => {
+			if (!result.ok) throw new Error(result.error || "Clipboard write failed");
+		});
+	}
+};
+//#endregion
 //#region ../../modules/views/workcenter-view/src/ts/WorkCenterEvents.ts
+/** Any file — size/type checks happen in attachment ingress, not the picker. */
+var FILE_ACCEPT = "*/*";
+var isHttpUrl = (value) => {
+	try {
+		const url = new URL(value);
+		return url.protocol === "http:" || url.protocol === "https:";
+	} catch {
+		return false;
+	}
+};
+/** Binds the chat composer once per rendered Work Center root. */
 var WorkCenterEvents = class {
 	deps;
-	ui;
-	fileOps;
 	actions;
 	templates;
 	voice;
-	shareTarget;
 	history;
-	attachments;
-	prompts;
+	ingress;
 	state;
 	container = null;
-	isHandlingPaste = false;
-	constructor(dependencies, ui, fileOps, actions, templates, voice, shareTarget, history, attachments, prompts, state) {
-		this.deps = dependencies;
-		this.ui = ui;
-		this.fileOps = fileOps;
+	draftPersistTimer = null;
+	constructor(deps, actions, templates, voice, history, ingress, state) {
+		this.deps = deps;
 		this.actions = actions;
 		this.templates = templates;
 		this.voice = voice;
-		this.shareTarget = shareTarget;
 		this.history = history;
-		this.attachments = attachments;
-		this.prompts = prompts;
+		this.ingress = ingress;
 		this.state = state;
 	}
 	setContainer(container) {
@@ -2314,497 +2050,210 @@ var WorkCenterEvents = class {
 	}
 	setupWorkCenterEvents() {
 		if (!this.container) return;
-		this.setupFileSelection();
-		this.setupPasteSupport();
-		this.setupTemplateSelection();
-		this.setupInstructionSelection();
-		this.setupPromptInput();
-		this.setupPromptDropzone();
+		this.setupFilePicker();
+		this.setupComposerInput();
+		this.setupClipboardIngress();
+		this.setupDropIngress();
+		this.setupRequestOptions();
 		this.setupVoiceInput();
-		this.setupInputTabs();
-		this.setupResultsTabs();
-		this.setupFormatSelectors();
-		this.setupAutoActionCheckbox();
-		this.setupActionButtons();
-		this.setupPipelineRestoration();
+		this.setupActions();
 	}
-	setupFileSelection() {
+	setupFilePicker() {
 		if (!this.container) return;
-		const fileSelectBtns = Array.from(this.container.querySelectorAll("[data-action=\"select-files\"]"));
-		const fileInput = document.createElement("input");
-		fileInput.type = "file";
-		fileInput.multiple = true;
-		fileInput.accept = "image/*,.pdf,.txt,.md,.json,.html,.css,.js,.ts";
-		fileInput.style.display = "none";
-		this.container.append(fileInput);
-		for (const btn of fileSelectBtns) btn.addEventListener("click", () => fileInput.click());
-		fileInput.addEventListener("change", async (e) => {
-			const files = Array.from(e.target.files || []);
-			this.fileOps.addFilesFromInput(this.state, files);
-			this.ui.updateFileList(this.state);
-			this.ui.updateFileCounter(this.state);
-			this.deps.onFilesChanged?.();
-			if (files.filter((f) => f.type.startsWith("text/") || f.type === "application/markdown" || f.name.endsWith(".md") || f.name.endsWith(".txt")).length > 0 && this.state.selectedTemplate && this.state.selectedTemplate.trim()) {
-				console.log("[WorkCenter] Auto-processing text/markdown files with template:", this.state.selectedTemplate);
-				setTimeout(async () => {
-					await this.actions.executeUnifiedAction(this.state);
-				}, 100);
+		const input = document.createElement("input");
+		input.type = "file";
+		input.multiple = true;
+		input.accept = FILE_ACCEPT;
+		input.hidden = true;
+		input.dataset.workcenterFilePicker = "";
+		input.addEventListener("change", async () => {
+			const files = Array.from(input.files || []);
+			input.value = "";
+			if (!files.length) return;
+			if (!(await this.ingress.addFiles(files)).length) this.deps.showMessage?.("Could not attach that file");
+		});
+		this.container.append(input);
+	}
+	setupComposerInput() {
+		const input = this.container?.querySelector(".prompt-input");
+		const composer = this.container?.querySelector("[data-workcenter-composer]");
+		if (!input || !composer) return;
+		input.addEventListener("input", () => {
+			this.state.draft.content = input.value;
+			this.state.currentPrompt = input.value;
+			this.scheduleDraftPersistence();
+		});
+		input.addEventListener("keydown", (event) => {
+			if (event.key === "Enter" && !event.shiftKey && !event.isComposing) {
+				event.preventDefault();
+				this.actions.executeUnifiedAction(this.state);
+			}
+		});
+		composer.addEventListener("submit", (event) => {
+			event.preventDefault();
+			this.actions.executeUnifiedAction(this.state);
+		});
+	}
+	setupClipboardIngress() {
+		this.container?.addEventListener("paste", (event) => {
+			const data = event.clipboardData;
+			if (!data) return;
+			const target = event.target;
+			const editable = this.isEditableTarget(target);
+			const candidates = collectAttachmentCandidates(data, "paste");
+			const files = candidates.filter((candidate) => candidate.kind === "file").map((candidate) => candidate.file);
+			const urls = candidates.filter((candidate) => candidate.kind === "url").map((candidate) => candidate.url);
+			if (files.length) {
+				event.preventDefault();
+				this.ingress.addFiles(files);
+				return;
+			}
+			if (!editable && urls.length) {
+				event.preventDefault();
+				Promise.all(urls.map((url) => this.ingress.addUrl(url)));
+				return;
+			}
+			if (editable) return;
+			const text = data.getData("text/plain").trim();
+			if (text) {
+				event.preventDefault();
+				this.appendDraftText(text);
 			}
 		});
 	}
-	setupPasteSupport() {
-		if (!this.container) return;
-		this.container.addEventListener("paste", async (e) => {
-			if (this.isHandlingPaste) return;
-			if (!e.clipboardData) return;
-			const target = e.target;
-			const isEditableTarget = this.isEditableTarget(target);
-			const hasClipboardFiles = this.hasClipboardFiles(e.clipboardData);
-			if (isEditableTarget && !hasClipboardFiles) return;
-			let contentAdded = false;
-			this.isHandlingPaste = true;
-			try {
-				const itemFiles = [];
-				for (const item of Array.from(e.clipboardData.items || [])) {
-					if (item.kind !== "file" || !item.getAsFile) continue;
-					const file = item.getAsFile();
-					if (file) itemFiles.push(file);
-				}
-				if (itemFiles.length > 0) {
-					e.preventDefault();
-					this.fileOps.addFilesFromInput(this.state, itemFiles);
-					this.ui.updateFileList(this.state);
-					this.ui.updateFileCounter(this.state);
-					this.deps.onFilesChanged?.();
-					contentAdded = true;
-				}
-				if (!contentAdded) {
-					const files = Array.from(e.clipboardData.files || []);
-					if (files.length > 0) {
-						e.preventDefault();
-						this.fileOps.addFilesFromInput(this.state, files);
-						this.ui.updateFileList(this.state);
-						this.ui.updateFileCounter(this.state);
-						this.deps.onFilesChanged?.();
-						contentAdded = true;
-					}
-				}
-				if (!contentAdded) {
-					const textContent = e.clipboardData.getData("text/plain")?.trim();
-					if (textContent) {
-						e.preventDefault();
-						await new Promise((resolve) => globalThis.setTimeout(resolve, 0));
-						await this.fileOps.handlePastedContent(this.state, textContent, "text");
-						contentAdded = true;
-					}
-				}
-				if (!contentAdded) {
-					const htmlContent = e.clipboardData.getData("text/html");
-					if (htmlContent) {
-						e.preventDefault();
-						const tempDiv = document.createElement("div");
-						tempDiv.innerHTML = htmlContent;
-						const extractedText = tempDiv.textContent || tempDiv.innerText || "";
-						if (extractedText.trim()) {
-							await new Promise((resolve) => globalThis.setTimeout(resolve, 0));
-							await this.fileOps.handlePastedContent(this.state, extractedText.trim(), "html");
-							contentAdded = true;
-						}
-					}
-				}
-				if (!contentAdded) {
-					e.preventDefault();
-					this.deps.showMessage?.("Clipboard content detected but no supported payload was extracted");
-				}
-			} finally {
-				this.isHandlingPaste = false;
+	setupDropIngress() {
+		const composer = this.container?.querySelector("[data-workcenter-composer]");
+		if (!composer) return;
+		composer.addEventListener("dragover", (event) => {
+			event.preventDefault();
+			composer.classList.add("is-dragging");
+		});
+		composer.addEventListener("dragleave", (event) => {
+			if (event.relatedTarget instanceof Node && composer.contains(event.relatedTarget)) return;
+			composer.classList.remove("is-dragging");
+		});
+		composer.addEventListener("drop", (event) => {
+			event.preventDefault();
+			composer.classList.remove("is-dragging");
+			const data = event.dataTransfer;
+			if (!data) return;
+			const candidates = collectAttachmentCandidates(data, "drop");
+			const files = candidates.filter((candidate) => candidate.kind === "file").map((candidate) => candidate.file);
+			const urls = candidates.filter((candidate) => candidate.kind === "url").map((candidate) => candidate.url);
+			if (files.length) this.ingress.addFiles(files);
+			if (urls.length) Promise.all(urls.map((url) => this.ingress.addUrl(url)));
+			if (files.length || urls.length) return;
+			const text = data.getData("text/plain").trim();
+			if (!text) return;
+			if (isHttpUrl(text)) {
+				this.ingress.addUrl(text);
+				return;
 			}
+			this.appendDraftText(text);
 		});
 	}
-	isEditableTarget(target) {
-		if (!(target instanceof HTMLElement)) return false;
-		if (target.isContentEditable) return true;
-		if (target.closest("[contenteditable=\"true\"]")) return true;
-		return target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement;
-	}
-	hasClipboardFiles(clipboardData) {
-		if ((clipboardData.files || []).length > 0) return true;
-		return Array.from(clipboardData.items || []).some((item) => item.kind === "file");
-	}
-	setupTemplateSelection() {
-		if (!this.container) return;
-		const templateSelect = this.container.querySelector(".template-select");
-		templateSelect?.addEventListener("change", async () => {
-			const selectedPrompt = templateSelect.value;
-			this.templates.selectTemplate(this.state, selectedPrompt);
-			if (selectedPrompt) {
-				this.prompts.updatePromptInput(this.state);
-				if (this.state.recognizedData || this.fileOps.hasFiles(this.state)) {
-					console.log("[WorkCenter] Auto-processing with selected template:", selectedPrompt);
-					await this.actions.executeUnifiedAction(this.state);
-				}
+	setupRequestOptions() {
+		for (const [selector, property] of [
+			[".format-select", "outputFormat"],
+			[".language-select", "selectedLanguage"],
+			[".recognition-select", "recognitionFormat"],
+			[".processing-select", "processingFormat"]
+		]) {
+			const select = this.container?.querySelector(selector);
+			select?.addEventListener("change", () => {
+				this.state[property] = select.value;
+				WorkCenterStateManager.saveState(this.state);
+			});
+		}
+		const template = this.container?.querySelector(".template-select");
+		template?.addEventListener("change", () => {
+			this.state.selectedTemplate = template.value;
+			if (template.value) {
+				this.state.draft.content = template.value;
+				this.state.currentPrompt = template.value;
 			}
-			const { WorkCenterStateManager } = await __vitePreload(async () => {
-				const { WorkCenterStateManager } = await import("./WorkCenterState.js").then((n) => n.n);
-				return { WorkCenterStateManager };
-			}, __vite__mapDeps([0,1]), import.meta.url);
 			WorkCenterStateManager.saveState(this.state);
+			this.actions.persistDraft(this.state);
+			this.deps.render?.();
 		});
-	}
-	setupInstructionSelection() {
-		if (!this.container) return;
-		this.prompts.populateInstructionSelect(this.state).then(async () => {
-			const { WorkCenterStateManager } = await __vitePreload(async () => {
-				const { WorkCenterStateManager } = await import("./WorkCenterState.js").then((n) => n.n);
-				return { WorkCenterStateManager };
-			}, __vite__mapDeps([0,1]), import.meta.url);
+		const instruction = this.container?.querySelector(".instruction-select");
+		instruction?.addEventListener("change", () => {
+			this.templates.applyInstruction(this.state, instruction.value);
 			WorkCenterStateManager.saveState(this.state);
-		});
-		const instructionSelect = this.container.querySelector(".instruction-select");
-		instructionSelect?.addEventListener("change", async () => {
-			const selectedId = instructionSelect.value;
-			this.prompts.handleInstructionSelection(this.state, selectedId);
-			await this.templates.setActiveInstruction(selectedId || null);
-			const { WorkCenterStateManager } = await __vitePreload(async () => {
-				const { WorkCenterStateManager } = await import("./WorkCenterState.js").then((n) => n.n);
-				return { WorkCenterStateManager };
-			}, __vite__mapDeps([0,1]), import.meta.url);
-			WorkCenterStateManager.saveState(this.state);
-		});
-	}
-	setupPromptInput() {
-		if (!this.container) return;
-		const promptInput = this.container.querySelector(".prompt-input");
-		if (!promptInput) return;
-		promptInput.addEventListener("input", async () => {
-			this.state.currentPrompt = promptInput.value;
-			const { WorkCenterStateManager } = await __vitePreload(async () => {
-				const { WorkCenterStateManager } = await import("./WorkCenterState.js").then((n) => n.n);
-				return { WorkCenterStateManager };
-			}, __vite__mapDeps([0,1]), import.meta.url);
-			WorkCenterStateManager.saveState(this.state);
-			if (this.state.recognizedData && promptInput.value.trim()) {
-				console.log("[WorkCenter] Auto-processing recognized data with manual prompt");
-				clearTimeout(this.container._autoProcessTimeout);
-				this.container._autoProcessTimeout = setTimeout(async () => {
-					await this.actions.executeUnifiedAction(this.state);
-				}, 1e3);
-			}
 		});
 	}
 	setupVoiceInput() {
-		if (!this.container) return;
-		const voiceBtn = this.container.querySelector("[data-action=\"voice-input\"]");
-		if (!voiceBtn) return;
-		voiceBtn.addEventListener("mousedown", () => this.voice.startVoiceRecording(this.state));
-		voiceBtn.addEventListener("mouseup", () => {
-			this.voice.stopVoiceRecording(this.state);
-			this.ui.updateVoiceButton(this.state);
-		});
-		voiceBtn.addEventListener("mouseleave", () => {
-			this.voice.stopVoiceRecording(this.state);
-			this.ui.updateVoiceButton(this.state);
-		});
+		const voice = this.container?.querySelector("[data-action=\"voice-input\"]");
+		if (!voice) return;
+		voice.addEventListener("mousedown", () => this.voice.startVoiceRecording(this.state));
+		const stop = () => this.voice.stopVoiceRecording(this.state);
+		voice.addEventListener("mouseup", stop);
+		voice.addEventListener("mouseleave", stop);
 	}
-	setupFormatSelectors() {
-		if (!this.container) return;
-		const formatSelect = this.container.querySelector(".format-select");
-		if (!formatSelect) return;
-		formatSelect.addEventListener("change", async () => {
-			const newFormat = formatSelect.value;
-			this.state.outputFormat = newFormat;
-			const { WorkCenterStateManager } = await __vitePreload(async () => {
-				const { WorkCenterStateManager } = await import("./WorkCenterState.js").then((n) => n.n);
-				return { WorkCenterStateManager };
-			}, __vite__mapDeps([0,1]), import.meta.url);
-			WorkCenterStateManager.saveState(this.state);
-			if (this.state.lastRawResult) {
-				const outputContent = this.container?.querySelector("[data-output]");
-				const { WorkCenterDataProcessing } = await __vitePreload(async () => {
-					const { WorkCenterDataProcessing } = await import("./WorkCenterDataProcessing.js").then((n) => n.n);
-					return { WorkCenterDataProcessing };
-				}, __vite__mapDeps([8,1,4,2,3,5,6,7,9,10,11]), import.meta.url);
-				outputContent.innerHTML = `<div class="result-content">${new WorkCenterDataProcessing().formatResult(this.state.lastRawResult, newFormat)}</div>`;
-			}
-		});
-		const languageSelect = this.container.querySelector(".language-select");
-		if (!languageSelect) return;
-		languageSelect.addEventListener("change", async () => {
-			this.state.selectedLanguage = languageSelect.value;
-			const { WorkCenterStateManager } = await __vitePreload(async () => {
-				const { WorkCenterStateManager } = await import("./WorkCenterState.js").then((n) => n.n);
-				return { WorkCenterStateManager };
-			}, __vite__mapDeps([0,1]), import.meta.url);
-			WorkCenterStateManager.saveState(this.state);
-		});
-		const recognitionSelect = this.container.querySelector(".recognition-select");
-		if (!recognitionSelect) return;
-		recognitionSelect.addEventListener("change", async () => {
-			this.state.recognitionFormat = recognitionSelect.value;
-			const { WorkCenterStateManager } = await __vitePreload(async () => {
-				const { WorkCenterStateManager } = await import("./WorkCenterState.js").then((n) => n.n);
-				return { WorkCenterStateManager };
-			}, __vite__mapDeps([0,1]), import.meta.url);
-			WorkCenterStateManager.saveState(this.state);
-		});
-		const processingSelect = this.container.querySelector(".processing-select");
-		if (!processingSelect) return;
-		processingSelect.addEventListener("change", async () => {
-			this.state.processingFormat = processingSelect.value;
-			const { WorkCenterStateManager } = await __vitePreload(async () => {
-				const { WorkCenterStateManager } = await import("./WorkCenterState.js").then((n) => n.n);
-				return { WorkCenterStateManager };
-			}, __vite__mapDeps([0,1]), import.meta.url);
-			WorkCenterStateManager.saveState(this.state);
-		});
-	}
-	setupAutoActionCheckbox() {
-		if (!this.container) return;
-		const autoCheckbox = this.container.querySelector(".auto-action-checkbox");
-		if (!autoCheckbox) return;
-		autoCheckbox.addEventListener("change", async () => {
-			this.state.autoAction = autoCheckbox.checked;
-			const { WorkCenterStateManager } = await __vitePreload(async () => {
-				const { WorkCenterStateManager } = await import("./WorkCenterState.js").then((n) => n.n);
-				return { WorkCenterStateManager };
-			}, __vite__mapDeps([0,1]), import.meta.url);
-			WorkCenterStateManager.saveState(this.state);
-		});
-	}
-	setupActionButtons() {
-		if (!this.container) return;
-		this.container.addEventListener("click", async (e) => {
-			const target = e.target;
-			const action = target.closest("[data-action]")?.getAttribute("data-action");
-			if (!action) return;
+	setupActions() {
+		this.container?.addEventListener("click", (event) => {
+			const actionElement = event.target.closest("[data-action]");
+			const action = actionElement?.dataset.action;
+			if (!action || !actionElement) return;
 			switch (action) {
-				case "edit-templates":
-					this.templates.showTemplateEditor(this.state, this.container);
+				case "select-files":
+					(this.container?.querySelector("[data-workcenter-file-picker]"))?.click();
+					break;
+				case "new-chat":
+					this.actions.startNewConversation(this.state);
+					break;
+				case "cancel-turn":
+					this.actions.cancelConversationTurn(this.state, actionElement.dataset.turnId || "");
+					break;
+				case "retry-turn":
+					this.actions.retryConversationTurn(this.state, actionElement.dataset.turnId || "");
+					break;
+				case "copy-turn":
+					this.actions.copyConversationTurn(this.state, actionElement.dataset.turnId || "");
+					break;
+				case "remove-draft-attachment":
+					this.ingress.remove(actionElement.dataset.attachmentHash || "");
+					break;
+				case "open-request-options":
+					this.togglePanel("[data-workcenter-request-options]", actionElement);
+					this.templates.fillInstructionSelects(this.container, this.state);
 					break;
 				case "refresh-instructions":
-					await this.prompts.populateInstructionSelect(this.state);
-					this.prompts.updateInstructionSelect(this.state);
+					this.templates.fillInstructionSelects(this.container, this.state);
 					break;
-				case "clear-prompt":
-					this.prompts.clearPrompt(this.state);
-					break;
-				case "copy-results":
-					await this.actions.copyResults(this.state);
-					break;
-				case "view-output":
-					await this.actions.viewResultsInViewer(this.state);
-					break;
-				case "save-to-explorer":
-					await this.actions.saveResultsToExplorer(this.state);
-					break;
-				case "clear-results":
-					this.actions.clearResults(this.state);
-					break;
-				case "clear-all-files":
-					this.attachments.clearAllFiles(this.state);
-					break;
-				case "view-full-history":
-					this.deps.state.view = "history";
-					this.deps.render();
+				case "open-secondary":
+					this.togglePanel("[data-workcenter-secondary]", actionElement);
 					break;
 				case "view-action-history":
-					this.showActionHistory();
+					this.history.showActionHistory();
 					break;
-				case "execute":
-					await this.actions.executeUnifiedAction(this.state);
-					break;
-				case "switch-input-tab":
-					this.switchInputTab(String(target.closest("[data-tab]")?.getAttribute("data-tab") || "prompt"));
-					break;
-				case "switch-results-tab":
-					this.switchResultsTab(String(target.closest("[data-tab]")?.getAttribute("data-tab") || "output"));
-					break;
-				case "clear-recognized":
-					const { WorkCenterStateManager: StateManager1 } = await __vitePreload(async () => {
-						const { WorkCenterStateManager: StateManager1 } = await import("./WorkCenterState.js").then((n) => n.n);
-						return { WorkCenterStateManager: StateManager1 };
-					}, __vite__mapDeps([0,1]), import.meta.url);
-					StateManager1.clearRecognizedData(this.state);
-					const statusElement = this.container?.querySelector(".wc-recognized-status");
-					if (statusElement) statusElement.remove();
-					this.ui.updateDataPipeline(this.state);
-					break;
-				case "clear-pipeline":
-					const { WorkCenterStateManager: StateManager2 } = await __vitePreload(async () => {
-						const { WorkCenterStateManager: StateManager2 } = await import("./WorkCenterState.js").then((n) => n.n);
-						return { WorkCenterStateManager: StateManager2 };
-					}, __vite__mapDeps([0,1]), import.meta.url);
-					StateManager2.clearRecognizedData(this.state);
-					this.ui.revokeAllPreviewUrls(this.state);
-					this.state.files = [];
-					this.ui.updateFileList(this.state);
-					this.ui.updateFileCounter(this.state);
-					this.deps.onFilesChanged?.();
-					const statusEl = this.container?.querySelector(".wc-recognized-status");
-					if (statusEl) statusEl.remove();
-					this.ui.updateDataPipeline(this.state);
+				case "edit-templates": this.templates.showTemplateEditor(this.state, this.container);
 			}
 		});
 	}
-	setupPipelineRestoration() {
-		if (!this.container) return;
-		this.container.addEventListener("click", async (e) => {
-			const stepIndex = e.target.getAttribute("data-restore-step");
-			if (stepIndex !== null) {
-				const index = parseInt(stepIndex);
-				if (this.state.processedData && this.state.processedData[index]) {
-					const step = this.state.processedData[index];
-					const outputContent = this.container?.querySelector("[data-output]");
-					const { WorkCenterDataProcessing } = await __vitePreload(async () => {
-						const { WorkCenterDataProcessing } = await import("./WorkCenterDataProcessing.js").then((n) => n.n);
-						return { WorkCenterDataProcessing };
-					}, __vite__mapDeps([8,1,4,2,3,5,6,7,9,10,11]), import.meta.url);
-					outputContent.innerHTML = `<div class="result-content">${new WorkCenterDataProcessing().formatResult({ content: step.content }, this.state.outputFormat)}</div>`;
-					this.state.lastRawResult = { data: step.content };
-				}
-			}
-		});
+	appendDraftText(text) {
+		const next = [this.state.draft.content, text].filter(Boolean).join(this.state.draft.content ? "\n" : "");
+		this.state.draft.content = next;
+		this.state.currentPrompt = next;
+		this.actions.persistDraft(this.state);
+		this.deps.render?.();
 	}
-	setupInputTabs() {
-		if (!this.container) return;
-		this.switchInputTab(this.state.activeInputTab || "prompt");
+	scheduleDraftPersistence() {
+		if (this.draftPersistTimer) clearTimeout(this.draftPersistTimer);
+		this.draftPersistTimer = setTimeout(() => {
+			this.draftPersistTimer = null;
+			this.actions.persistDraft(this.state);
+		}, 180);
 	}
-	setupResultsTabs() {
-		if (!this.container) return;
-		this.switchResultsTab(this.state.activeResultsTab || "output");
+	togglePanel(selector, trigger) {
+		const panel = this.container?.querySelector(selector);
+		if (!panel) return;
+		panel.hidden = !panel.hidden;
+		trigger.setAttribute("aria-expanded", String(!panel.hidden));
 	}
-	switchInputTab(tab) {
-		if (!this.container) return;
-		if (!["prompt", "attachments"].includes(tab)) return;
-		this.state.activeInputTab = tab;
-		this.container.querySelector("[data-input-tabs]")?.setAttribute("data-active-tab", tab);
-		const tabButtons = this.container.querySelectorAll("[data-action=\"switch-input-tab\"][data-tab]");
-		for (const tabButton of Array.from(tabButtons)) {
-			const btn = tabButton;
-			const isActive = btn.getAttribute("data-tab") === tab;
-			btn.classList.toggle("is-active", isActive);
-			btn.setAttribute("aria-selected", String(isActive));
-		}
-		const tabPanels = this.container.querySelectorAll("[data-tab-panel]");
-		for (const panel of Array.from(tabPanels)) {
-			const el = panel;
-			const isActive = el.getAttribute("data-tab-panel") === tab;
-			el.classList.toggle("is-active", isActive);
-		}
-		__vitePreload(async () => {
-			const { WorkCenterStateManager } = await import("./WorkCenterState.js").then((n) => n.n);
-			return { WorkCenterStateManager };
-		}, __vite__mapDeps([0,1]), import.meta.url).then(({ WorkCenterStateManager }) => WorkCenterStateManager.saveState(this.state)).catch(() => {});
-	}
-	switchResultsTab(tab) {
-		if (!this.container) return;
-		if (![
-			"output",
-			"pipeline",
-			"history"
-		].includes(tab)) return;
-		const hasPipelineData = Boolean(this.state.recognizedData || this.state.processedData && this.state.processedData.length > 0);
-		const nextTab = tab === "pipeline" && !hasPipelineData ? "output" : tab;
-		this.state.activeResultsTab = nextTab;
-		this.container.querySelector("[data-results-tabs]")?.setAttribute("data-active-tab", nextTab);
-		const tabButtons = this.container.querySelectorAll("[data-action=\"switch-results-tab\"][data-tab]");
-		for (const tabButton of Array.from(tabButtons)) {
-			const btn = tabButton;
-			const isActive = btn.getAttribute("data-tab") === nextTab;
-			btn.classList.toggle("is-active", isActive);
-			btn.setAttribute("aria-selected", String(isActive));
-		}
-		const tabPanels = this.container.querySelectorAll("[data-results-tab-panel]");
-		for (const panel of Array.from(tabPanels)) {
-			const el = panel;
-			const isActive = el.getAttribute("data-results-tab-panel") === nextTab;
-			el.classList.toggle("is-active", isActive);
-		}
-		__vitePreload(async () => {
-			const { WorkCenterStateManager } = await import("./WorkCenterState.js").then((n) => n.n);
-			return { WorkCenterStateManager };
-		}, __vite__mapDeps([0,1]), import.meta.url).then(({ WorkCenterStateManager }) => WorkCenterStateManager.saveState(this.state)).catch(() => {});
-	}
-	setupPromptDropzone() {
-		if (!this.container) return;
-		const promptDropzone = this.container.querySelector("[data-prompt-dropzone]");
-		if (!promptDropzone) return;
-		const overlay = this.container.querySelector("[data-prompt-drop-hint]");
-		promptDropzone.addEventListener("dragover", (e) => {
-			e.preventDefault();
-			promptDropzone.classList.add("drag-over");
-			overlay?.classList.add("visible");
-		});
-		promptDropzone.addEventListener("dragleave", (e) => {
-			const rect = promptDropzone.getBoundingClientRect();
-			const x = e.clientX;
-			const y = e.clientY;
-			if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
-				promptDropzone.classList.remove("drag-over");
-				overlay?.classList.remove("visible");
-			}
-		});
-		promptDropzone.addEventListener("drop", async (e) => {
-			e.preventDefault();
-			promptDropzone.classList.remove("drag-over");
-			overlay?.classList.remove("visible");
-			const dt = e.dataTransfer;
-			if (!dt) return;
-			const files = Array.from(dt.files || []);
-			if (files.length > 0) {
-				this.fileOps.addFilesFromInput(this.state, files);
-				this.ui.updateFileList(this.state);
-				this.ui.updateFileCounter(this.state);
-				this.deps.onFilesChanged?.();
-				return;
-			}
-			if (dt.types.includes("text/plain")) {
-				const text = dt.getData("text/plain")?.trim();
-				if (text) {
-					await this.fileOps.handleDroppedContent(this.state, text, "text");
-					this.ui.updateFileList(this.state);
-					this.ui.updateFileCounter(this.state);
-					this.deps.onFilesChanged?.();
-					return;
-				}
-			}
-			if (dt.types.includes("text/uri-list")) {
-				const firstUrl = dt.getData("text/uri-list").split("\n").filter((url) => url.trim() && !url.startsWith("#"))[0]?.trim();
-				if (firstUrl) {
-					await this.fileOps.handleDroppedContent(this.state, firstUrl, "url");
-					this.ui.updateFileList(this.state);
-					this.ui.updateFileCounter(this.state);
-					this.deps.onFilesChanged?.();
-					return;
-				}
-			}
-			if (dt.types.includes("text/html")) {
-				const html = dt.getData("text/html");
-				if (html) {
-					const temp = document.createElement("div");
-					temp.innerHTML = html;
-					const extracted = (temp.textContent || temp.innerText || "").trim();
-					if (extracted) {
-						await this.fileOps.handleDroppedContent(this.state, extracted, "html");
-						this.ui.updateFileList(this.state);
-						this.ui.updateFileCounter(this.state);
-						this.deps.onFilesChanged?.();
-						return;
-					}
-				}
-			}
-		});
-	}
-	showActionHistory() {
-		this.history.showActionHistory();
-	}
-	isValidUrl(string) {
-		try {
-			new URL(string);
-			return true;
-		} catch {
-			return false;
-		}
+	isEditableTarget(target) {
+		if (!target) return false;
+		return target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target.isContentEditable || !!target.closest("[contenteditable='true']");
 	}
 };
 //#endregion
@@ -3492,6 +2941,186 @@ var WorkCenterPrompts = class {
 	}
 };
 //#endregion
+//#region src/service/misc/ActionHistory.ts
+/** In-memory history store with optional browser persistence and lightweight filtering. */
+var ActionHistoryStore = class {
+	state;
+	storageKey = "rs-action-history";
+	constructor(maxEntries = 500, autoSave = true) {
+		this.state = {
+			entries: [],
+			maxEntries,
+			autoSave,
+			filters: {}
+		};
+		this.loadHistory();
+	}
+	/** Insert a new entry at the front of the timeline and enforce the retention limit. */
+	addEntry(entry) {
+		const fullEntry = {
+			...entry,
+			id: this.generateId(),
+			timestamp: Date.now()
+		};
+		this.state.entries.unshift(fullEntry);
+		if (this.state.entries.length > this.state.maxEntries) this.state.entries = this.state.entries.slice(0, this.state.maxEntries);
+		return fullEntry;
+	}
+	/**
+	* Update an existing entry
+	*/
+	updateEntry(id, updates) {
+		const index = this.state.entries.findIndex((entry) => entry.id === id);
+		if (index === -1) return false;
+		Object.assign(this.state.entries[index], updates);
+		return true;
+	}
+	/**
+	* Get entry by ID
+	*/
+	getEntry(id) {
+		return this.state.entries.find((entry) => entry.id === id);
+	}
+	/** Return entries matching the supplied filters without mutating store state. */
+	getEntries(filters) {
+		let entries = [...this.state.entries];
+		if (filters?.source) entries = entries.filter((entry) => entry.context.source === filters.source);
+		if (filters?.action) entries = entries.filter((entry) => entry.action === filters.action);
+		if (filters?.status) entries = entries.filter((entry) => entry.status === filters.status);
+		if (filters?.dateRange) entries = entries.filter((entry) => entry.timestamp >= filters.dateRange.start && entry.timestamp <= filters.dateRange.end);
+		return entries;
+	}
+	/**
+	* Get recent entries
+	*/
+	getRecentEntries(limit = 50) {
+		return this.state.entries.slice(0, limit);
+	}
+	/**
+	* Remove entry
+	*/
+	removeEntry(id) {
+		const index = this.state.entries.findIndex((entry) => entry.id === id);
+		if (index === -1) return false;
+		this.state.entries.splice(index, 1);
+		return true;
+	}
+	/**
+	* Clear all entries
+	*/
+	clearEntries() {
+		this.state.entries = [];
+	}
+	/**
+	* Set filters
+	*/
+	setFilters(filters) {
+		Object.assign(this.state.filters, filters);
+	}
+	/** Summarize history health and distribution by source/action. */
+	getStats() {
+		const entries = this.state.entries;
+		const total = entries.length;
+		const completed = entries.filter((e) => e.status === "completed").length;
+		const failed = entries.filter((e) => e.status === "failed").length;
+		const pending = entries.filter((e) => e.status === "pending" || e.status === "processing").length;
+		const bySource = entries.reduce((acc, entry) => {
+			acc[entry.context.source] = (acc[entry.context.source] || 0) + 1;
+			return acc;
+		}, {});
+		const byAction = entries.reduce((acc, entry) => {
+			acc[entry.action] = (acc[entry.action] || 0) + 1;
+			return acc;
+		}, {});
+		return {
+			total,
+			completed,
+			failed,
+			pending,
+			successRate: total > 0 ? completed / total * 100 : 0,
+			bySource,
+			byAction
+		};
+	}
+	/**
+	* Export entries
+	*/
+	exportEntries(format = "json", filters) {
+		const entries = this.getEntries(filters);
+		if (format === "csv") return [[
+			"ID",
+			"Timestamp",
+			"Source",
+			"Action",
+			"Status",
+			"Input Type",
+			"Result Type",
+			"Processing Time"
+		], ...entries.map((entry) => [
+			entry.id,
+			new Date(entry.timestamp).toISOString(),
+			entry.context.source,
+			entry.action,
+			entry.status,
+			entry.input.type,
+			entry.result?.type || "",
+			entry.result?.processingTime || ""
+		])].map((row) => row.map((cell) => `"${cell}"`).join(",")).join("\n");
+		return JSON.stringify(entries, null, 2);
+	}
+	/**
+	* Import entries
+	*/
+	importEntries(data, format = "json") {
+		let entries = [];
+		if (format === "json") try {
+			entries = JSON.parse(data);
+		} catch (e) {
+			throw new Error("Invalid JSON format");
+		}
+		else throw new Error("CSV import not implemented yet");
+		const validEntries = entries.filter((entry) => entry.id && entry.timestamp && entry.context && entry.action);
+		validEntries.forEach((entry) => {
+			if (!this.getEntry(entry.id)) this.state.entries.push(entry);
+		});
+		this.state.entries.sort((a, b) => b.timestamp - a.timestamp);
+		if (this.state.entries.length > this.state.maxEntries) this.state.entries = this.state.entries.slice(0, this.state.maxEntries);
+		this.saveHistory();
+		return validEntries.length;
+	}
+	generateId() {
+		return `action_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+	}
+	loadHistory() {
+		try {
+			if (typeof localStorage === "undefined") return;
+			const stored = localStorage.getItem(this.storageKey);
+			if (stored) {
+				const data = JSON.parse(stored);
+				if (Array.isArray(data)) this.state.entries = data.map((entry) => ({
+					...entry,
+					context: entry.context || { source: "unknown" },
+					input: entry.input || { type: "unknown" },
+					status: entry.status || "completed"
+				}));
+			}
+		} catch (e) {
+			console.warn("Failed to load action history:", e);
+			this.state.entries = [];
+		}
+	}
+	saveHistory() {
+		if (!this.state.autoSave) return;
+		try {
+			if (typeof localStorage === "undefined") return;
+			localStorage.setItem(this.storageKey, JSON.stringify(this.state.entries));
+		} catch (e) {
+			console.warn("Failed to save action history:", e);
+		}
+	}
+};
+var actionHistory = new ActionHistoryStore();
+//#endregion
 //#region ../../modules/views/workcenter-view/src/ts/WorkCenterHistory.ts
 var WorkCenterHistory = class {
 	container = null;
@@ -3774,7 +3403,419 @@ var WorkCenterHistory = class {
 	}
 };
 //#endregion
+//#region ../../modules/views/workcenter-view/src/ts/WorkCenterSession.ts
+var emptySnapshot = () => ({
+	version: 1,
+	draft: {
+		content: "",
+		attachments: []
+	},
+	messages: [],
+	epoch: 0
+});
+var createId = (prefix) => `${prefix}-${globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`}`;
+var cloneRef = (attachment) => ({ ...attachment });
+var cloneMessage = (message) => ({
+	...message,
+	attachments: message.attachments.map(cloneRef),
+	request: message.request ? { ...message.request } : void 0
+});
+var cloneSnapshot = (snapshot) => ({
+	version: 1,
+	epoch: snapshot.epoch,
+	draft: {
+		content: snapshot.draft.content,
+		attachments: snapshot.draft.attachments.map(cloneRef)
+	},
+	messages: snapshot.messages.map(cloneMessage)
+});
+var isSnapshot = (value) => {
+	if (!value || typeof value !== "object") return false;
+	const candidate = value;
+	return candidate.version === 1 && Array.isArray(candidate.messages) && !!candidate.draft && typeof candidate.draft.content === "string" && Array.isArray(candidate.draft.attachments);
+};
+/** Conversation mutation facade that persists every durable transition. */
+var WorkCenterSession = class {
+	persistence;
+	state = emptySnapshot();
+	constructor(persistence) {
+		this.persistence = persistence;
+	}
+	async hydrate() {
+		const restored = await this.persistence.load();
+		this.state = isSnapshot(restored) ? cloneSnapshot(restored) : emptySnapshot();
+		return this.snapshot();
+	}
+	snapshot() {
+		return cloneSnapshot(this.state);
+	}
+	epoch() {
+		return this.state.epoch;
+	}
+	setDraft(draft) {
+		this.state.draft = {
+			content: String(draft.content || ""),
+			attachments: (draft.attachments || []).map(cloneRef)
+		};
+	}
+	async persistDraft() {
+		await this.persist();
+	}
+	async submitDraft(request) {
+		const now = Date.now();
+		const user = {
+			id: createId("user"),
+			role: "user",
+			createdAt: now,
+			content: this.state.draft.content,
+			attachments: this.state.draft.attachments.map(cloneRef),
+			status: "complete",
+			request: { ...request }
+		};
+		const assistant = {
+			id: createId("assistant"),
+			role: "assistant",
+			createdAt: now,
+			content: "",
+			attachments: [],
+			status: "pending",
+			request: { ...request },
+			parentId: user.id
+		};
+		this.state.messages.push(user, assistant);
+		this.state.draft = {
+			content: "",
+			attachments: []
+		};
+		await this.persist();
+		return {
+			user: cloneMessage(user),
+			assistant: cloneMessage(assistant)
+		};
+	}
+	async completeAssistant(id, completion) {
+		const message = this.state.messages.find((entry) => entry.id === id && entry.role === "assistant");
+		if (!message) return null;
+		message.status = completion.status;
+		if (completion.content !== void 0) message.content = completion.content;
+		if (completion.rawResult !== void 0) message.rawResult = completion.rawResult;
+		if (completion.error !== void 0) message.error = completion.error;
+		await this.persist();
+		return cloneMessage(message);
+	}
+	async markAttachmentError(messageId, attachmentHash, error) {
+		const attachment = this.state.messages.find((entry) => entry.id === messageId)?.attachments.find((entry) => entry.hash === attachmentHash);
+		if (!attachment) return false;
+		attachment.error = error;
+		await this.persist();
+		return true;
+	}
+	async retry(assistantId) {
+		const original = this.state.messages.find((entry) => entry.id === assistantId && entry.role === "assistant");
+		const user = original?.parentId ? this.state.messages.find((entry) => entry.id === original.parentId) : void 0;
+		if (!original || !user) throw new Error("The original Work Center turn is unavailable");
+		const assistant = {
+			id: createId("assistant"),
+			role: "assistant",
+			createdAt: Date.now(),
+			content: "",
+			attachments: [],
+			status: "pending",
+			request: original.request ? { ...original.request } : void 0,
+			parentId: user.id
+		};
+		this.state.messages.push(assistant);
+		await this.persist();
+		return {
+			user: cloneMessage(user),
+			assistant: cloneMessage(assistant)
+		};
+	}
+	async cancel(assistantId) {
+		return this.completeAssistant(assistantId, {
+			status: "cancelled",
+			content: "",
+			error: "Cancelled"
+		});
+	}
+	/** Visible note for share-target / AI results (legacy pipeline is not in the chat shell). */
+	async appendAssistantNote(content) {
+		const message = {
+			id: createId("assistant"),
+			role: "assistant",
+			createdAt: Date.now(),
+			content: String(content || "").trim(),
+			attachments: [],
+			status: "complete"
+		};
+		this.state.messages.push(message);
+		await this.persist();
+		return cloneMessage(message);
+	}
+	async newChat() {
+		this.state = {
+			...emptySnapshot(),
+			epoch: this.state.epoch + 1
+		};
+		await this.persistence.clear();
+	}
+	async persist() {
+		await this.persistence.save(this.snapshot());
+	}
+};
+//#endregion
+//#region ../../modules/views/workcenter-view/src/ts/WorkCenterAttachmentIngress.ts
+/**
+* Work Center's single attachment mutation path.
+*
+* FIND:workcenter-attachment-ingress
+* INVARIANT: Validation and persistence finish before a draft receives a new
+* reference, preventing partial attachments after a failed paste or drop.
+*/
+var toRef = (ref) => ({ ...ref });
+var nameForUrl = (url) => {
+	try {
+		return new URL(url).hostname || "link";
+	} catch {
+		return "link";
+	}
+};
+/** Owns draft attachment state, file identity, and preview URL lifecycle. */
+var WorkCenterAttachmentIngress = class {
+	options;
+	previewUrls = /* @__PURE__ */ new WeakMap();
+	filesByHash = /* @__PURE__ */ new Map();
+	constructor(options) {
+		this.options = options;
+	}
+	async addFiles(files) {
+		const added = [];
+		for (const file of files) {
+			const validation = validateReadableFileForIngress(file);
+			if (!validation.ok) {
+				this.options.onRejected?.(validation.reason || "Unsupported file");
+				continue;
+			}
+			try {
+				const ref = toRef(await this.options.store.put(file));
+				if (this.options.state.draft.attachments.some((item) => item.hash === ref.hash)) continue;
+				this.options.state.draft.attachments.push(ref);
+				this.options.state.files.push(file);
+				this.filesByHash.set(ref.hash, file);
+				added.push(ref);
+			} catch (error) {
+				this.options.onRejected?.(error instanceof Error ? error.message : "Unable to store attachment");
+			}
+		}
+		if (added.length) this.options.onChanged?.();
+		return added;
+	}
+	/** Store a URL as a local text file while retaining link-card metadata. */
+	async addUrl(url) {
+		try {
+			const parsed = new URL(url);
+			if (!["http:", "https:"].includes(parsed.protocol)) return null;
+			const file = new File([parsed.toString()], `${nameForUrl(parsed.toString())}.url`, { type: "text/uri-list" });
+			const [ref] = await this.addFiles([file]);
+			if (!ref) return null;
+			ref.url = parsed.toString();
+			const draftRef = this.options.state.draft.attachments.find((item) => item.hash === ref.hash);
+			if (draftRef) draftRef.url = ref.url;
+			this.options.onChanged?.();
+			return ref;
+		} catch {
+			this.options.onRejected?.("Invalid URL attachment");
+			return null;
+		}
+	}
+	async hydrate(refs) {
+		const files = [];
+		for (const ref of refs) {
+			const file = await this.resolve(ref);
+			if (!file) continue;
+			files.push(file);
+		}
+		return files;
+	}
+	async resolve(ref) {
+		const cached = this.filesByHash.get(ref.hash);
+		if (cached) return cached;
+		const file = await this.options.store.get(ref);
+		if (file) this.filesByHash.set(ref.hash, file);
+		return file;
+	}
+	remove(hash) {
+		const file = this.filesByHash.get(hash);
+		if (file) this.revokePreview(file);
+		this.filesByHash.delete(hash);
+		this.options.state.draft.attachments = this.options.state.draft.attachments.filter((attachment) => attachment.hash !== hash);
+		this.options.state.files = this.options.state.files.filter((candidate) => candidate !== file);
+		this.options.onChanged?.();
+	}
+	getPreviewUrl(file) {
+		if (!file.type.startsWith("image/")) return null;
+		const existing = this.previewUrls.get(file);
+		if (existing) return existing;
+		try {
+			const url = URL.createObjectURL(file);
+			this.previewUrls.set(file, url);
+			return url;
+		} catch {
+			return null;
+		}
+	}
+	revokePreview(file) {
+		const url = this.previewUrls.get(file);
+		if (url) URL.revokeObjectURL(url);
+		this.previewUrls.delete(file);
+	}
+	revokeAllPreviews() {
+		for (const file of this.filesByHash.values()) this.revokePreview(file);
+	}
+	fileFor(ref) {
+		return this.filesByHash.get(ref.hash) || null;
+	}
+};
+//#endregion
+//#region ../../modules/views/workcenter-view/src/ts/WorkCenterSessionPersistence.ts
+/**
+* OPFS adapter for the single persisted Work Center conversation.
+*
+* FIND:workcenter-session-persistence
+* WHY: The state machine remains testable against memory while this adapter
+* owns the physical OPFS namespace and never serializes File bytes to JSON.
+*/
+var WORKCENTER_OPFS_NAMESPACE = "/user/workcenter";
+var MANIFEST_PATH = "session.json";
+var createWorkCenterSessionPersistence = (store = createContentAddressedStore(WORKCENTER_OPFS_NAMESPACE)) => ({
+	load: () => store.readJson(MANIFEST_PATH),
+	save: (snapshot) => store.writeJson(MANIFEST_PATH, snapshot),
+	clear: () => store.clear()
+});
+var createWorkCenterAttachmentStore = () => createContentAddressedStore(WORKCENTER_OPFS_NAMESPACE);
+//#endregion
+//#region ../../modules/views/workcenter-view/src/ts/WorkCenterDocumentPreparation.ts
+var extensionOf = (file) => file.name.split(".").pop()?.trim().toLowerCase() || "";
+var kindOf = (file) => {
+	const type = file.type.toLowerCase();
+	const extension = extensionOf(file);
+	if (type.startsWith("image/")) return "image";
+	if (type.startsWith("text/") || [
+		"json",
+		"xml",
+		"yaml",
+		"yml",
+		"toml",
+		"ini",
+		"cfg",
+		"conf",
+		"js",
+		"ts",
+		"tsx",
+		"jsx",
+		"css",
+		"scss",
+		"html",
+		"htm",
+		"md"
+	].includes(extension)) return "text";
+	if (type === "application/pdf" || extension === "pdf") return "pdf";
+	if (type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" || extension === "docx") return "docx";
+	if (type === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" || extension === "xlsx") return "xlsx";
+	return "unknown";
+};
+var dataUrlToFile = async (url, name) => {
+	try {
+		const blob = await (await fetch(url)).blob();
+		return new File([blob], name, { type: blob.type || "image/png" });
+	} catch {
+		return null;
+	}
+};
+var extractPdf = async (file) => {
+	const [{ getDocument, GlobalWorkerOptions }, worker] = await Promise.all([__vitePreload(() => import("../vendor/pdfjs-dist.js").then((n) => n.n), __vite__mapDeps([10,1,6]), import.meta.url), __vitePreload(() => import("../vendor/pdfjs-dist.js").then((n) => n.t), __vite__mapDeps([10,1,6]), import.meta.url)]);
+	if (!GlobalWorkerOptions.workerSrc) GlobalWorkerOptions.workerSrc = worker.default;
+	const document = await getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise;
+	const pages = [];
+	for (let pageNumber = 1; pageNumber <= document.numPages; pageNumber += 1) {
+		const text = (await (await document.getPage(pageNumber)).getTextContent()).items.map((item) => "str" in item ? item.str : "").join(" ").trim();
+		if (text) pages.push(`## Page ${pageNumber}\n${text}`);
+	}
+	return { text: pages.join("\n\n") };
+};
+var extractDocx = async (file) => {
+	const mammothModule = await __vitePreload(() => import("../vendor/mammoth.js").then((n) => /* @__PURE__ */ __toESM(n.t(), 1)), __vite__mapDeps([11,1,12,13,14,15,16,17]), import.meta.url);
+	const html = (await (mammothModule.default ?? mammothModule).convertToHtml({ arrayBuffer: await file.arrayBuffer() })).value;
+	const document = new DOMParser().parseFromString(html, "text/html");
+	const images = await Promise.all([...document.querySelectorAll("img[src^='data:image/']")].map((image, index) => dataUrlToFile(image.getAttribute("src") || "", `${file.name.replace(/\.docx$/i, "")}-image-${index + 1}.png`)));
+	return {
+		text: document.body.textContent?.trim() || "",
+		images: images.filter((image) => image instanceof File)
+	};
+};
+var extractXlsx = async (file) => {
+	const xlsxModule = await __vitePreload(() => import("../vendor/xlsx.js").then((n) => n.t), __vite__mapDeps([18,1]), import.meta.url);
+	const xlsx = xlsxModule.default ?? xlsxModule;
+	const workbook = xlsx.read(await file.arrayBuffer(), { type: "array" });
+	return { text: workbook.SheetNames.map((name) => {
+		const sheet = workbook.Sheets[name];
+		return `## Sheet: ${name}\n${sheet ? xlsx.utils.sheet_to_csv(sheet) : ""}`.trim();
+	}).filter(Boolean).join("\n\n") };
+};
+var defaultParsers = {
+	pdf: extractPdf,
+	docx: extractDocx,
+	xlsx: extractXlsx
+};
+/** Local document preparation facade with injectable parsers for contract tests. */
+var WorkCenterDocumentPreparer = class {
+	parsers;
+	constructor(parsers = {}) {
+		this.parsers = {
+			...defaultParsers,
+			...parsers
+		};
+	}
+	async prepare(original) {
+		const kind = kindOf(original);
+		try {
+			if (kind === "image") return {
+				original,
+				kind,
+				images: []
+			};
+			if (kind === "text") return {
+				original,
+				kind,
+				fallbackText: await original.text(),
+				images: []
+			};
+			if (kind === "unknown") return {
+				original,
+				kind,
+				images: [],
+				error: `Unsupported attachment type: ${original.type || original.name}`
+			};
+			const result = await this.parsers[kind](original);
+			return {
+				original,
+				kind,
+				fallbackText: result.text,
+				images: result.images ?? []
+			};
+		} catch (error) {
+			return {
+				original,
+				kind,
+				images: [],
+				error: error instanceof Error ? error.message : String(error)
+			};
+		}
+	}
+};
+//#endregion
 //#region ../../modules/views/workcenter-view/src/ts/WorkCenter.ts
+var WorkCenter_exports = /* @__PURE__ */ __exportAll({ WorkCenterManager: () => WorkCenterManager });
 var MATH_DELIMITER_PATTERN = /\$\$[\s\S]*?\$\$|\\\[[\s\S]*?\\\]|(?<!\$)\$[^$\n]+\$|\\\([\s\S]*?\\\)/;
 var FENCED_CODE_PATTERN = /(^|\n)(`{3,}|~{3,})[^\n]*\n[\s\S]*?\n\2(?=\n|$)/g;
 var INLINE_CODE_PATTERN = /`[^`\n]+`/g;
@@ -3852,10 +3893,33 @@ var WorkCenterManager = class {
 	results;
 	history;
 	events;
+	session;
+	attachmentIngress;
+	documentPreparer;
+	sessionReady;
 	processedMessageIds = /* @__PURE__ */ new Set();
 	constructor(dependencies) {
 		this.deps = dependencies;
 		this.state = WorkCenterStateManager.createDefaultState();
+		this.session = new WorkCenterSession(createWorkCenterSessionPersistence());
+		this.attachmentIngress = new WorkCenterAttachmentIngress({
+			state: this.state,
+			store: createWorkCenterAttachmentStore(),
+			onChanged: () => {
+				this.session.setDraft(this.state.draft);
+				this.session.persistDraft().catch(() => {
+					this.deps.showMessage("Unable to save the attachment draft");
+				});
+				this.deps.onFilesChanged?.();
+				if ((this.ui?.getContainer())?.isConnected) {
+					this.ui.updateFileCounter(this.state);
+					this.ui.updatePromptInput(this.state);
+				} else this.deps.render?.();
+			},
+			onRejected: (reason) => this.deps.showMessage(reason)
+		});
+		this.documentPreparer = new WorkCenterDocumentPreparer();
+		this.sessionReady = this.hydrateSession();
 		this.dataProcessing = new WorkCenterDataProcessing();
 		this.templates = new WorkCenterTemplates(dependencies);
 		this.voice = new WorkCenterVoice(dependencies);
@@ -3864,13 +3928,21 @@ var WorkCenterManager = class {
 		this.attachments = new WorkCenterAttachments(dependencies, this.fileOps);
 		this.prompts = new WorkCenterPrompts(dependencies, this.templates, this.voice);
 		this.results = new WorkCenterResults(dependencies, this.dataProcessing);
-		this.ui = new WorkCenterUI(dependencies, this.attachments, this.prompts, this.results, this.history);
-		this.shareTarget = new WorkCenterShareTarget(dependencies, this.fileOps);
-		this.actions = new WorkCenterActions(dependencies, this.ui, this.fileOps, this.dataProcessing, this.results, this.history, this.templates);
-		this.events = new WorkCenterEvents(dependencies, this.ui, this.fileOps, this.actions, this.templates, this.voice, this.shareTarget, this.history, this.attachments, this.prompts, this.state);
+		this.ui = new WorkCenterUI(dependencies, this.attachments, this.prompts, this.results, this.history, {
+			fileFor: (ref) => this.attachmentIngress.fileFor(ref),
+			getPreviewUrl: (file) => this.attachmentIngress.getPreviewUrl(file)
+		});
+		this.shareTarget = new WorkCenterShareTarget(dependencies, this.fileOps, async (input) => this.handleIncomingContent(input, "text"));
+		this.actions = new WorkCenterActions(dependencies, this.ui, this.fileOps, this.dataProcessing, this.results, this.history, this.templates, {
+			session: this.session,
+			attachments: this.attachmentIngress,
+			documentPreparer: this.documentPreparer,
+			syncFromSession: () => this.syncStateFromSession()
+		});
+		this.events = new WorkCenterEvents(dependencies, this.actions, this.templates, this.voice, this.history, this.attachmentIngress, this.state);
 		this.shareTarget.initShareTargetListener(this.state);
 		registerComponent("workcenter-core", "workcenter");
-		this.shareTarget.processQueuedMessages(this.state);
+		this.sessionReady.then(() => this.shareTarget.processQueuedMessages(this.state));
 		const pendingMessages = initializeComponent("workcenter-core");
 		for (const message of pendingMessages) {
 			console.log(`[WorkCenter] Processing pending message:`, message);
@@ -3880,62 +3952,89 @@ var WorkCenterManager = class {
 			this.attachments.updateDropHint?.();
 		});
 	}
+	async hydrateSession() {
+		try {
+			const snapshot = await this.session.hydrate();
+			if (snapshot.messages.length > 0 || Boolean(snapshot.draft.content) || snapshot.draft.attachments.length > 0) this.state.files = await this.attachmentIngress.hydrate(snapshot.draft.attachments);
+			else if (this.state.draft.content) {
+				this.session.setDraft(this.state.draft);
+				await this.session.persistDraft();
+			}
+			this.syncStateFromSession(false);
+		} catch (error) {
+			console.warn("[WorkCenter] Failed to hydrate local session:", error);
+			this.state.sessionHydrated = true;
+		} finally {
+			this.deps.render?.();
+		}
+	}
+	syncStateFromSession(render = true) {
+		const snapshot = this.session.snapshot();
+		const liveAttachments = this.state.draft?.attachments || [];
+		this.state.messages = snapshot.messages;
+		this.state.draft = snapshot.draft;
+		for (const ref of liveAttachments) if (!this.state.draft.attachments.some((item) => item.hash === ref.hash)) this.state.draft.attachments.push(ref);
+		this.state.currentPrompt = snapshot.draft.content;
+		this.state.sessionEpoch = snapshot.epoch;
+		this.state.sessionHydrated = true;
+		this.deps.onFilesChanged?.();
+		if (render) this.deps.render?.();
+	}
+	async addFiles(files) {
+		await this.sessionReady;
+		await this.attachmentIngress.addFiles(files);
+	}
+	async setPrompt(prompt) {
+		await this.sessionReady;
+		this.state.draft.content = String(prompt || "");
+		this.state.currentPrompt = this.state.draft.content;
+		this.session.setDraft(this.state.draft);
+		await this.session.persistDraft();
+		this.deps.render?.();
+	}
 	async handleDroppedContent(content, sourceType) {
-		return this.fileOps.handleDroppedContent(this.state, content, sourceType);
+		await this.sessionReady;
+		if (sourceType === "url") {
+			await this.attachmentIngress.addUrl(content);
+			return;
+		}
+		await this.appendDraftText(content);
 	}
 	async handlePastedContent(content, sourceType) {
-		return this.fileOps.handlePastedContent(this.state, content, sourceType);
+		return this.handleDroppedContent(content, sourceType);
 	}
-	fingerprintIncomingFile(file) {
-		return `${String(file.name || "").trim().toLowerCase()}::${Number(file.size || 0)}::${String(file.type || "").trim().toLowerCase()}`;
+	async appendDraftText(content) {
+		const text = String(content || "").trim();
+		if (!text) return;
+		this.state.draft.content = [this.state.draft.content, text].filter(Boolean).join(this.state.draft.content ? "\n" : "");
+		this.state.currentPrompt = this.state.draft.content;
+		this.session.setDraft(this.state.draft);
+		await this.session.persistDraft();
+		this.deps.render?.();
 	}
-	pushUniqueIncomingFile(file) {
-		if (!file) return false;
-		const key = this.fingerprintIncomingFile(file);
-		for (const existing of this.state.files) if (this.fingerprintIncomingFile(existing) === key) return false;
-		this.state.files.push(file);
-		return true;
-	}
+	/** Normalize all channel/share payloads into the active conversation draft. */
 	async handleIncomingContent(data, contentType) {
+		await this.sessionReady;
 		try {
-			let attached = false;
-			if (Array.isArray(data.files) && data.files.length > 0) {
-				const filesFromArray = data.files.filter((x) => x instanceof File);
-				for (const f of filesFromArray) {
-					const chk = validateReadableFileForIngress(f);
-					if (!chk.ok) {
-						console.warn("[WorkCenter] Skipping oversized/invalid ingress file:", chk.reason, f.name);
-						continue;
-					}
-					if (this.pushUniqueIncomingFile(f)) attached = true;
-				}
+			const files = [];
+			if (Array.isArray(data?.files)) files.push(...data.files.filter((entry) => entry instanceof File));
+			if (data?.file instanceof File) files.push(data.file);
+			if (typeof Blob !== "undefined" && data?.blob instanceof Blob) files.push(new File([data.blob], String(data.filename || `attachment-${Date.now()}.${contentType === "markdown" ? "md" : "txt"}`), { type: data.blob.type || "application/octet-stream" }));
+			if (Array.isArray(data?.attachments)) for (const attachment of data.attachments) {
+				const candidate = attachment?.data;
+				if (candidate instanceof File) files.push(candidate);
+				else if (typeof Blob !== "undefined" && candidate instanceof Blob) files.push(new File([candidate], String(attachment?.name || `attachment-${Date.now()}`), { type: candidate.type || "application/octet-stream" }));
 			}
-			let fileToAttach = null;
-			if (!attached && data.file instanceof File) fileToAttach = data.file;
-			else if (!attached && data.blob instanceof Blob) {
-				const filename = data.filename || `attachment-${Date.now()}.${contentType === "markdown" ? "md" : "txt"}`;
-				fileToAttach = new File([data.blob], filename, { type: data.blob.type });
-			} else if (!attached && (data.text || data.content)) {
-				const content = data.text || data.content;
-				const textContent = typeof content === "string" ? content : JSON.stringify(content, null, 2);
-				const filename = data.filename || `content-${Date.now()}.${contentType === "markdown" ? "md" : "txt"}`;
-				fileToAttach = new File([textContent], filename, { type: contentType === "markdown" ? "text/markdown" : "text/plain" });
-			}
-			if (fileToAttach) {
-				const chk = validateReadableFileForIngress(fileToAttach);
-				if (!chk.ok) {
-					console.warn("[WorkCenter] Rejecting primary attachment:", chk.reason);
-					fileToAttach = null;
-				}
-			}
-			if (fileToAttach && this.pushUniqueIncomingFile(fileToAttach)) attached = true;
-			if (attached) {
-				this.ui.updateFileList(this.state);
-				this.ui.updateFileCounter(this.state);
-				this.deps.showMessage(fileToAttach ? `Attached ${fileToAttach.name} to Work Center` : "Attached files to Work Center");
-			}
+			if (!files.length) files.push(...takeHeldIngressFiles());
+			const rawText = data?.text ?? data?.content;
+			const text = rawText === void 0 || rawText === null ? "" : typeof rawText === "string" ? rawText : JSON.stringify(rawText, null, 2);
+			if (!files.length && (String(data?.filename || "").trim() || text.trim())) files.push(new File([text], String(data?.filename || data?.title || `shared-${Date.now()}.txt`), { type: contentType === "markdown" ? "text/markdown" : "text/plain" }));
+			const attached = await this.attachmentIngress.addFiles(files);
+			if (typeof data?.url === "string") await this.attachmentIngress.addUrl(data.url);
+			if (text.trim() && attached.length === 0) await this.appendDraftText(text);
+			if (attached.length) this.deps.showMessage(attached.length === 1 ? `Attached ${attached[0]?.name || "file"}` : `Attached ${attached.length} files`);
 		} catch (error) {
-			console.warn("[WorkCenter] Failed to handle incoming content:", error);
+			console.warn("[WorkCenter] Failed to attach incoming content:", error);
 			this.deps.showMessage("Failed to attach content");
 		}
 	}
@@ -3945,6 +4044,7 @@ var WorkCenterManager = class {
 	*/
 	async handleExternalMessage(message) {
 		if (!message) return;
+		await this.sessionReady;
 		const messageId = typeof message?.id === "string" ? message.id : "";
 		if (messageId) {
 			if (this.processedMessageIds.has(messageId)) return;
@@ -3955,18 +4055,25 @@ var WorkCenterManager = class {
 			}
 		}
 		if (message.type === "share-target-input" && message.data) {
-			await this.shareTarget.addShareTargetInput(this.state, message.data);
-			this.ui.updateFileList(this.state);
-			this.ui.updateFileCounter(this.state);
-			this.ui.updateDataPipeline(this.state);
+			await this.handleIncomingContent(message.data, message.contentType || "text");
 			return;
 		}
 		if (message.type === "share-target-result" && message.data) {
+			const note = String(message.data.content ?? message.data.rawData ?? "").trim();
+			if (note) {
+				await this.session.appendAssistantNote(note);
+				this.syncStateFromSession(false);
+			}
 			await this.shareTarget.addShareTargetResult(this.state, message.data);
 			this.ui.updateDataPipeline(this.state);
 			return;
 		}
 		if (message.type === "ai-result" && message.data) {
+			const note = String(message.data.data ?? message.data.content ?? message.data.text ?? "").trim();
+			if (note && message.data.success !== false) {
+				await this.session.appendAssistantNote(note);
+				this.syncStateFromSession(false);
+			}
 			await this.shareTarget.handleAIResult(this.state, message.data);
 			this.ui.updateDataPipeline(this.state);
 			return;
@@ -3985,6 +4092,7 @@ var WorkCenterManager = class {
 		this.prompts.setContainer(null);
 		this.results.setContainer(null);
 		this.history.setContainer(null);
+		this.attachmentIngress.revokeAllPreviews();
 		console.log("[WorkCenter] WorkCenterManager destroyed");
 	}
 	renderWorkCenterView() {
@@ -3994,8 +4102,9 @@ var WorkCenterManager = class {
 		this.ui.updateFileList(this.state);
 		this.ui.updateFileCounter(this.state);
 		this.history.updateRecentHistory(this.state);
+		this.templates.fillInstructionSelects(container, this.state);
 		return container;
 	}
 };
 //#endregion
-export { WorkCenterManager };
+export { WorkCenter_exports as n, WorkCenterManager as t };

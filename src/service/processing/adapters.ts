@@ -90,7 +90,7 @@ const createCrxAdapter = (): PlatformAdapter => ({
 				return dataUrl;
 			}
 
-			const { encodeWithJSquash, removeAnyPrefix } = await import("../../shared/routing/workers/ImageProcess");
+			const { encodeWithJSquash, removeAnyPrefix } = await import("core/workers/ImageProcess");
 			const SIZE_THRESHOLD = 2 * 1024 * 1024;
 			if (dataUrl.length <= SIZE_THRESHOLD) return dataUrl;
 

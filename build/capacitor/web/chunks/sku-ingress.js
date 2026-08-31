@@ -1,9 +1,33 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../com/app.js","./rolldown-runtime.js","./ViewTransferRouting.js","../shells/boot-history-base.js","../shells/boot-index.js","../fest/core.js","../com/service.js","../fest/veela.js","./LogSanitizer.js"])))=>i.map(i=>d[i]);
+import { r as __exportAll } from "./rolldown-runtime.js";
 import { s as inferCwspSkuFromLocation } from "../shells/boot-history-base.js";
 const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
-import { cr as peekOpenPolicy, hr as sinkToDestination, mr as sinkToAction, nr as classifyOpenKindFromPayload, pr as resolveOpenPolicy, rr as inferIngressChannels, yr as surfaceForSku } from "../shells/boot-index.js";
+import { Cr as sinkToDestination, Dr as surfaceForSku, Fn as peekProcessIngressSettings, Rn as resolveProcessIngressKind, Sr as sinkToAction, dr as inferIngressChannels, gr as peekOpenPolicy, ur as classifyOpenKindFromPayload, xr as resolveOpenPolicy } from "../shells/boot-index.js";
 //#region src/shared/routing/channel/sku-ingress.ts
-var loadLauncherState = () => __vitePreload(() => import("../com/app.js").then((n) => n.Q), __vite__mapDeps([0,1]), import.meta.url);
+var sku_ingress_exports = /* @__PURE__ */ __exportAll({
+	applyLauncherIngress: () => applyLauncherIngress,
+	dataUrlToFile: () => dataUrlToFile,
+	holdIngressFiles: () => holdIngressFiles,
+	installShellImageOpenListener: () => installShellImageOpenListener,
+	isWallpaperCompatible: () => isWallpaperCompatible,
+	looksLikeDirectoryPath: () => looksLikeDirectoryPath,
+	looksLikeWallpaperFile: () => looksLikeWallpaperFile,
+	refineLauncherImageIngress: () => refineLauncherImageIngress,
+	skuIngressHint: () => skuIngressHint,
+	takeHeldIngressFiles: () => takeHeldIngressFiles
+});
+/**
+* Same-tab File objects die when unified messaging queues through IDB/JSON.
+* Hold them in memory so Work Center can still attach the real blobs.
+*/
+var heldIngressFiles = [];
+var holdIngressFiles = (files) => {
+	heldIngressFiles.length = 0;
+	if (!Array.isArray(files)) return;
+	for (const file of files) if (file instanceof File) heldIngressFiles.push(file);
+};
+var takeHeldIngressFiles = () => heldIngressFiles.splice(0, heldIngressFiles.length);
+var loadLauncherState = () => __vitePreload(() => import("../com/app.js").then((n) => n.ct), __vite__mapDeps([0,1]), import.meta.url);
 var WALLPAPER_EXT = /* @__PURE__ */ new Set([
 	"png",
 	"jpg",
@@ -96,6 +120,7 @@ var skuDefaultDestination = (sku) => {
 };
 var skuIngressHint = (payload, opts) => {
 	const sku = opts?.sku || inferCwspSkuFromLocation();
+	const settings = opts?.settings || peekProcessIngressSettings();
 	const file = firstFile(payload);
 	const path = pathProbe(payload);
 	const filename = payload.hint?.filename || file?.name || "";
@@ -114,8 +139,23 @@ var skuIngressHint = (payload, opts) => {
 			source: path || payload.hint?.source,
 			contentType: kind
 		};
+		const destination = sinkToDestination(sink, skuDest || "workcenter");
+		if (destination === "workcenter") {
+			const row = resolveProcessIngressKind(settings, kind);
+			const hinted = payload.hint?.action;
+			return {
+				destination,
+				action: hinted === "attach" || hinted === "process" ? hinted : opts?.autoProcessShared === false ? "attach" : row.mode,
+				filename,
+				source: path || payload.hint?.source,
+				contentType: kind,
+				sink,
+				instructionId: row.instructionId,
+				copyToClipboard: row.copyToClipboard
+			};
+		}
 		return {
-			destination: sinkToDestination(sink, skuDest || "workcenter"),
+			destination,
 			action: sinkToAction(sink, sku === "process" ? "process" : "open"),
 			filename,
 			source: path || payload.hint?.source,
@@ -125,12 +165,15 @@ var skuIngressHint = (payload, opts) => {
 	}
 	if (!sku || sku === "crx" || sku === "transfer") return void 0;
 	if (sku === "process") {
+		const row = resolveProcessIngressKind(settings, kind);
 		const hinted = payload.hint?.action;
 		return {
 			destination: "workcenter",
-			action: hinted === "attach" || hinted === "process" ? hinted : opts?.autoProcessShared !== false ? "process" : "attach",
+			action: hinted === "attach" || hinted === "process" ? hinted : opts?.autoProcessShared === false ? "attach" : row.mode,
 			filename,
-			contentType: kind
+			contentType: kind,
+			instructionId: row.instructionId,
+			copyToClipboard: row.copyToClipboard
 		};
 	}
 	if (sku === "document") return {
@@ -201,7 +244,7 @@ var applyLauncherIngress = async (payload) => {
 	const image = files.find((f) => looksLikeWallpaperFile(f));
 	if ((payload.action === "wallpaper" || !payload.action) && image && await isWallpaperCompatible(image)) {
 		const { setAppWallpaperFromBlob, getWallpaperStoragePointer, WALLPAPER_IDB_MARKER } = await __vitePreload(async () => {
-			const { setAppWallpaperFromBlob, getWallpaperStoragePointer, WALLPAPER_IDB_MARKER } = await import("../com/app.js").then((n) => n.w);
+			const { setAppWallpaperFromBlob, getWallpaperStoragePointer, WALLPAPER_IDB_MARKER } = await import("../com/app.js").then((n) => n.I);
 			return {
 				setAppWallpaperFromBlob,
 				getWallpaperStoragePointer,
@@ -281,7 +324,7 @@ var openShellImageInViewer = async (file) => {
 var applyShellWallpaper = async (file) => {
 	if (!await isWallpaperCompatible(file)) return false;
 	const { setAppWallpaperFromBlob, getWallpaperStoragePointer, WALLPAPER_IDB_MARKER } = await __vitePreload(async () => {
-		const { setAppWallpaperFromBlob, getWallpaperStoragePointer, WALLPAPER_IDB_MARKER } = await import("../com/app.js").then((n) => n.w);
+		const { setAppWallpaperFromBlob, getWallpaperStoragePointer, WALLPAPER_IDB_MARKER } = await import("../com/app.js").then((n) => n.I);
 		return {
 			setAppWallpaperFromBlob,
 			getWallpaperStoragePointer,
@@ -308,11 +351,11 @@ var installShellImageOpenListener = () => {
 		(async () => {
 			try {
 				const { loadSettings } = await __vitePreload(async () => {
-					const { loadSettings } = await import("../shells/boot-index.js").then((n) => n._t);
+					const { loadSettings } = await import("../shells/boot-index.js").then((n) => n.mt);
 					return { loadSettings };
 				}, __vite__mapDeps([4,1,3,0,5,6,7]), import.meta.url);
 				const { peekOpenPolicy, rememberOpenPolicyFromSettings, resolveOpenPolicy } = await __vitePreload(async () => {
-					const { peekOpenPolicy, rememberOpenPolicyFromSettings, resolveOpenPolicy } = await import("../shells/boot-index.js").then((n) => n.sr);
+					const { peekOpenPolicy, rememberOpenPolicyFromSettings, resolveOpenPolicy } = await import("../shells/boot-index.js").then((n) => n.hr);
 					return {
 						peekOpenPolicy,
 						rememberOpenPolicyFromSettings,
@@ -378,4 +421,4 @@ var installShellImageOpenListener = () => {
 	});
 };
 //#endregion
-export { applyLauncherIngress, dataUrlToFile, installShellImageOpenListener, refineLauncherImageIngress, skuIngressHint };
+export { skuIngressHint as a, refineLauncherImageIngress as i, holdIngressFiles as n, sku_ingress_exports as o, installShellImageOpenListener as r, takeHeldIngressFiles as s, applyLauncherIngress as t };

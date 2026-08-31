@@ -1,4 +1,4 @@
-import { n as __exportAll } from "../chunks/rolldown-runtime.js";
+import { r as __exportAll } from "../chunks/rolldown-runtime.js";
 //#region ../../node_modules/parchment/dist/parchment.js
 var parchment_exports = /* @__PURE__ */ __exportAll({
 	Attributor: () => Attributor,

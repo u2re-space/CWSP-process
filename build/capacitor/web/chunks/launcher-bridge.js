@@ -1,4 +1,4 @@
-import { en as invokeCwsPlatformIPC } from "../shells/boot-index.js";
+import { Zt as invokeCwsPlatformIPC } from "../shells/boot-index.js";
 //#region src/shared/routing/native/launcher-bridge.ts
 async function launcherIsDefault() {
 	return false;

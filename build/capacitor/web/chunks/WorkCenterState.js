@@ -1,14 +1,23 @@
-import { n as __exportAll } from "./rolldown-runtime.js";
+import { r as __exportAll } from "./rolldown-runtime.js";
 //#region ../../modules/views/workcenter-view/src/ts/WorkCenterState.ts
 var WorkCenterState_exports = /* @__PURE__ */ __exportAll({ WorkCenterStateManager: () => WorkCenterStateManager });
 var WorkCenterStateManager = class {
 	static STORAGE_KEY = "rs-workcenter-state";
 	static TEMPLATES_STORAGE_KEY = "rs-workcenter-templates";
 	static createDefaultState() {
+		const legacy = this.loadWorkCenterState();
+		const legacyPrompt = String(legacy.currentPrompt || "");
 		return {
 			files: [],
 			selectedFiles: [],
-			currentPrompt: "",
+			currentPrompt: legacyPrompt,
+			draft: {
+				content: legacyPrompt,
+				attachments: []
+			},
+			messages: [],
+			sessionEpoch: 0,
+			sessionHydrated: false,
 			autoAction: false,
 			selectedInstruction: "",
 			outputFormat: "auto",
@@ -24,13 +33,12 @@ var WorkCenterStateManager = class {
 			recognizedData: null,
 			processedData: null,
 			currentProcessingStep: 0,
-			...this.loadWorkCenterState()
+			...legacy
 		};
 	}
 	static saveState(state) {
 		try {
 			const stateToSave = {
-				currentPrompt: state.currentPrompt,
 				autoAction: state.autoAction,
 				selectedInstruction: state.selectedInstruction,
 				outputFormat: state.outputFormat,

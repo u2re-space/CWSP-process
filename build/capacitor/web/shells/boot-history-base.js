@@ -96,7 +96,11 @@ var HUB_PUBLIC_HOSTS = ["u2re.space", "www.u2re.space"];
 var SKU_PUBLIC_HOSTS = {
 	document: ["md.u2re.space", "www.md.u2re.space"],
 	explorer: ["explorer.u2re.space", "www.explorer.u2re.space"],
-	process: ["process.u2re.space", "workcenter.u2re.space"],
+	process: [
+		"process.u2re.space",
+		"workcenter.u2re.space",
+		"ai.u2re.space"
+	],
 	transfer: [
 		"cwsp.u2re.space",
 		"www.cwsp.u2re.space",
@@ -115,7 +119,11 @@ var SKU_HUB_PATHS = {
 		"files",
 		"fm"
 	],
-	process: ["workcenter", "process"],
+	process: [
+		"workcenter",
+		"process",
+		"ai"
+	],
 	transfer: ["cwsp", "transfer"]
 };
 /** Specialized chrome. Empty list = hub/CRX keeps every view. */

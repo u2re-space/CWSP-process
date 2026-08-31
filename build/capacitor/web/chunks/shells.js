@@ -1,6 +1,6 @@
 import { h as shouldHandoffViewToSibling, p as publicHrefForView } from "../shells/boot-history-base.js";
-import { B as ensureStyleSheet, cr as preloadStyle, dn as dynamicTheme, nr as ref, sr as loadInlineStyle } from "../com/app.js";
-import { A as canonicalHubSettingsSection, Ct as saveSettings, L as resolveEffectiveHubSettingsSection, N as hubSettingsSectionPath, U as ViewRegistry, V as scheduleViewModulePrefetch, at as isEnabledView, ct as applyTheme, gt as withViewTransition, ht as getTransitionDirection, lt as resyncThemeAfterAdoptedViewSheet, rt as serviceChannels, ut as syncBrowserChromeTheme, xt as loadSettings } from "../shells/boot-index.js";
+import { X as ensureStyleSheet, br as preloadStyle, fr as ref, vn as dynamicTheme, yr as loadInlineStyle } from "../com/app.js";
+import { A as canonicalHubSettingsSection, L as resolveEffectiveHubSettingsSection, N as hubSettingsSectionPath, U as ViewRegistry, V as scheduleViewModulePrefetch, at as applyTheme, bt as saveSettings, et as serviceChannels, ft as getTransitionDirection, nt as isEnabledView, ot as resyncThemeAfterAdoptedViewSheet, pt as withViewTransition, st as syncBrowserChromeTheme, vt as loadSettings } from "../shells/boot-index.js";
 import { a as stripHistoryBase, i as pathForSkuHostView, n as initBootShellWindowActivity, o as withHistoryBase, r as ensureHistoryBaseDataset } from "../shells/preference.js";
 import { o as resolveOverlayMountPoint } from "../shells/environment-environment-overlay.js";
 //#region src/frontend/boot/shell-elements.ts
@@ -751,7 +751,11 @@ var ShellBase = class {
 			const toolbar = view.getToolbar();
 			this.setViewToolbar(toolbar);
 		}
-		if (view.lifecycle?.onMount) await view.lifecycle.onMount();
+		if (view.lifecycle?.onMount) try {
+			await view.lifecycle.onMount();
+		} catch (err) {
+			console.error(`[${this.id}] onMount(${viewId}) failed:`, err);
+		}
 		return element;
 	}
 	setTheme(theme) {

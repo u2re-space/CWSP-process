@@ -1,4 +1,4 @@
-import { i as __toESM, t as __commonJSMin } from "../chunks/rolldown-runtime.js";
+import { o as __toESM, t as __commonJSMin } from "../chunks/rolldown-runtime.js";
 import { n as isEqual, r as cloneDeep, t as merge } from "./lodash-es.js";
 import { a as ContainerBlot$1, c as LeafBlot$1, d as Scope, f as ScrollBlot$1, h as parchment_exports, i as ClassAttributor$1, l as ParentBlot$1, m as TextBlot$1, n as AttributorStore$1, o as EmbedBlot$1, p as StyleAttributor$1, r as BlockBlot$1, s as InlineBlot$1, t as Attributor, u as Registry } from "./parchment.js";
 import { t as require_diff } from "./fast-diff.js";

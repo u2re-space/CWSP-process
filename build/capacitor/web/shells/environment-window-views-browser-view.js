@@ -1,4 +1,4 @@
-import { n as __exportAll } from "../chunks/rolldown-runtime.js";
+import { r as __exportAll } from "../chunks/rolldown-runtime.js";
 //#region src/frontend/shells/environment/window/views/browser-view.ts
 var browser_view_exports = /* @__PURE__ */ __exportAll({
 	createBrowserView: () => createBrowserView,

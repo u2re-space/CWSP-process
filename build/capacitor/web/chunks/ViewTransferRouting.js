@@ -1,9 +1,9 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./launcher-bridge.js","../shells/boot-index.js","./rolldown-runtime.js","../shells/boot-history-base.js","../com/app.js","../fest/core.js","../com/service.js","../fest/veela.js"])))=>i.map(i=>d[i]);
 import { _ as stashSkuHandoff, c as isCwspNativeHost, f as publicHrefForSku, g as siblingSkuForView, h as shouldHandoffViewToSibling, m as readCwspSku, o as ensureCwspSkuFromLocation, r as androidPackageForSku, s as inferCwspSkuFromLocation, t as ECOSYSTEM_SKUS } from "../shells/boot-history-base.js";
 const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
-import { Gn as sendProtocolMessage, Qn as viewBroadcastChannelName, Zn as normalizeDestination, _r as skuForOpenSink, cr as peekOpenPolicy, hr as sinkToDestination, nr as classifyOpenKindFromPayload, or as normalizeOpenSink, pr as resolveOpenPolicy, rr as inferIngressChannels, yr as surfaceForSku, zn as enqueuePendingMessage } from "../shells/boot-index.js";
+import { Cr as sinkToDestination, Dr as surfaceForSku, Fn as peekProcessIngressSettings, Kn as enqueuePendingMessage, Qn as sendProtocolMessage, Tr as skuForOpenSink, ar as viewBroadcastChannelName, dr as inferIngressChannels, gr as peekOpenPolicy, ir as normalizeDestination, mr as normalizeOpenSink, ur as classifyOpenKindFromPayload, xr as resolveOpenPolicy } from "../shells/boot-index.js";
 import { t as summarizeForLog } from "./LogSanitizer.js";
-import { skuIngressHint } from "./sku-ingress.js";
+import { a as skuIngressHint, n as holdIngressFiles } from "./sku-ingress.js";
 //#region src/shared/routing/channel/ViewTransferRouting.ts
 /**
 * Canonical classification for share-target / launch-queue files (extension often beats flaky MIME).
@@ -78,7 +78,7 @@ var isNativeCapacitor = () => {
 };
 var pickDestination = (payload, contentType) => {
 	ensureCwspSkuFromLocation();
-	const skuHint = skuIngressHint(payload);
+	const skuHint = skuIngressHint(payload, { settings: peekProcessIngressSettings() });
 	if (skuHint?.destination) return skuHint.destination;
 	const sku = inferCwspSkuFromLocation();
 	const surface = surfaceForSku(sku) || "shell";
@@ -110,7 +110,7 @@ var toMessageType = (destination, hint) => {
 };
 var resolveViewTransfer = (payload) => {
 	const contentType = getContentType(payload);
-	const skuHint = skuIngressHint(payload);
+	const skuHint = skuIngressHint(payload, { settings: peekProcessIngressSettings() });
 	const destination = pickDestination(payload, contentType);
 	const hint = skuHint ? {
 		...payload.hint,
@@ -283,7 +283,8 @@ var dispatchViewTransfer = async (payload) => {
 			resolved
 		};
 	}
-	Array.isArray(payload.files) && payload.files;
+	const files = Array.isArray(payload.files) ? payload.files : [];
+	holdIngressFiles(files);
 	const hasBinaryPayload = resolved.contentType === "image" || resolved.contentType === "file";
 	const message = {
 		id: crypto.randomUUID(),
