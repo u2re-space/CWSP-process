@@ -204,7 +204,120 @@ const createMarkdownSpaConfig = async (mode) => {
     };
 };
 
-const PROCESS_CAPACITOR_VIEWS = ["minimal", "workcenter", "settings", "history"];
+/**
+ * VDS PWA for process.u2re.space / ai.u2re.space and hub `/process` `/workcenter` `/ai`.
+ * WHY: Capacitor mode strips the PWA plugin; public hosts need installable index.html.
+ */
+const createProcessSpaConfig = async (_mode) => {
+    const { viteStaticCopy } = await import("vite-plugin-static-copy");
+    const { VitePWA } = await import("vite-plugin-pwa");
+    const outDir = resolve(__dirname, "./build/cw-process");
+    const platformRoot = __dirname;
+    const enabledViews = PROCESS_VIEWS;
+
+    const isPwaPlugin = (plugin) => {
+        const name = plugin?.name;
+        return typeof name === "string" && (name === "vite-plugin-pwa" || name.startsWith("vite-plugin-pwa:"));
+    };
+    const isStaticCopyPlugin = (plugin) => {
+        const name = plugin?.name;
+        return typeof name === "string" && name.startsWith("vite-plugin-static-copy:");
+    };
+    const isMcpPlugin = (plugin) => {
+        const name = plugin?.name;
+        return typeof name === "string" && name.toLowerCase().includes("mcp");
+    };
+
+    const basePlugins =
+        (baseConfig?.plugins || [])
+            .flat?.(Infinity)
+            ?.filter?.(
+                (plugin) =>
+                    plugin?.name !== "vite:singlefile" &&
+                    !isPwaPlugin(plugin) &&
+                    !isStaticCopyPlugin(plugin) &&
+                    !isMcpPlugin(plugin)
+            ) ?? [];
+
+    const baseRollup = baseConfig?.build?.rollupOptions ?? {};
+    const baseOutput = Array.isArray(baseRollup.output) ? baseRollup.output[0] : (baseRollup.output ?? {});
+
+    return {
+        ...baseConfig,
+        root: platformRoot,
+        base: "./",
+        cacheDir: resolve(__dirname, "node_modules/.vite-cw-process"),
+        define: {
+            ...(baseConfig?.define ?? {}),
+            ...toViewDefineEntries(enabledViews),
+            __RS_DEFAULT_VIEW__: JSON.stringify("workcenter"),
+            "import.meta.env.VITE_ENABLED_VIEWS": JSON.stringify(enabledViews.join(","))
+        },
+        plugins: [
+            ...basePlugins,
+            viteStaticCopy({
+                targets: [
+                    { src: resolve(__dirname, "./src/pwa/manifest.json"), dest: "pwa" },
+                    { src: resolve(__dirname, "./src/pwa/icons/*"), dest: "pwa/icons" },
+                    { src: resolve(__dirname, "./src/pwa/screenshots/*"), dest: "pwa/screenshots" }
+                ]
+            }),
+            VitePWA({
+                srcDir: resolve(__dirname, "./src/pwa"),
+                filename: "sw.ts",
+                outDir,
+                registerType: "autoUpdate",
+                strategies: "injectManifest",
+                injectRegister: null,
+                selfDestroying: false,
+                injectManifest: {
+                    rollupFormat: "iife",
+                    injectionPoint: "self.__WB_MANIFEST",
+                    maximumFileSizeToCacheInBytes: 1024 * 1024 * 16,
+                    globPatterns: ["**/*.{js,css,html,png,svg,json,jpg,jpeg,webp}"],
+                    globIgnores: ["**/node_modules/**/*", "**/*.map", "**/stats.html", "**/report.html"]
+                },
+                manifest: false,
+                devOptions: { enabled: false }
+            })
+        ],
+        build: {
+            ...(baseConfig?.build ?? {}),
+            lib: false,
+            outDir,
+            emptyOutDir: true,
+            minify: false,
+            cssMinify: false,
+            terserOptions: undefined,
+            cssCodeSplit: false,
+            modulePreload: true,
+            rollupOptions: {
+                ...baseRollup,
+                input: resolve(platformRoot, "index.html"),
+                output: {
+                    ...baseOutput,
+                    dir: outDir,
+                    entryFileNames: "assets/[name]-[hash].js",
+                    chunkFileNames: distChunkFileNames,
+                    assetFileNames: distAssetFileNames(NAME)
+                }
+            },
+            rolldownOptions: {
+                ...(baseConfig?.build?.rolldownOptions ?? {}),
+                input: resolve(platformRoot, "index.html"),
+                output: {
+                    ...baseOutput,
+                    dir: outDir,
+                    entryFileNames: "assets/[name]-[hash].js",
+                    chunkFileNames: distChunkFileNames,
+                    assetFileNames: distAssetFileNames(NAME)
+                }
+            }
+        }
+    };
+};
+
+const PROCESS_CAPACITOR_VIEWS = ["workcenter", "settings", "history"];
 
 /**
  * Process Capacitor host — WorkCenter + AI settings only.
@@ -295,6 +408,9 @@ export default async ({ mode } = {}) => {
     }
     if (mode === "capacitor-explorer") {
         throw new Error("[CWSP-process] Explorer APK lives in apps/CWSP-explorer.");
+    }
+    if (mode === "cw-process" || mode === "process" || mode === "workcenter") {
+        return createProcessSpaConfig(mode);
     }
     if (mode === "capacitor" || mode === "capacitor-process") {
         return createCapacitorSkuConfig();

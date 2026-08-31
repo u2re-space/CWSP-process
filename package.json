@@ -23,7 +23,7 @@
         "test:dev": "npm run dev",
         "test:test": "echo 'No tests configured for cwsp-process' && exit 0",
         "build:capacitor:web": "node ./scripts/run-vite.mjs build --config vite.config.js --mode capacitor",
-        "build:cw-workcenter": "npm run build:capacitor:web && node ./scripts/stage-cw-workcenter.mjs",
+        "build:cw-workcenter": "rm -rf ./build/cw-process && node ./scripts/run-vite.mjs build --config vite.config.js --mode cw-process && node ./scripts/normalize-worker-names.mjs --dir build/cw-process && node ./scripts/stage-cw-workcenter.mjs",
         "stage:cw-workcenter": "node ./scripts/stage-cw-workcenter.mjs",
         "build:capacitor": "node ./scripts/build-capacitor.mjs",
         "sync:capacitor:icons": "node ./scripts/sync-capacitor-android-icons.mjs",

@@ -1,7 +1,7 @@
 {
-    "name": "cw.u2re.space",
-    "short_name": "CW-i1",
-    "description": "AI-and-control-toolset",
+    "name": "Work Center",
+    "short_name": "Process",
+    "description": "CWSP-process — Work Center PWA (process.u2re.space / ai.u2re.space)",
     "start_url": "../",
     "scope": "../",
     "display": "standalone",
