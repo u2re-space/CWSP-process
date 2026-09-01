@@ -1,0 +1,112 @@
+{
+    "name": "CWSP-process",
+    "short_name": "Process",
+    "description": "CWSP-process Work Center (process.u2re.space / ai.u2re.space)",
+    "start_url": "../",
+    "scope": "../",
+    "display": "standalone",
+    "display_override": [
+        "window-controls-overlay",
+        "fullscreen",
+        "standalone"
+    ],
+    "background_color": "#1f2225",
+    "theme_color": "#1f2225",
+    "categories": [
+        "utilities",
+        "productivity",
+        "lifestyle",
+        "finance",
+        "navigation",
+        "education"
+    ],
+    "icons": [
+        {
+            "src": "icons/icon.svg",
+            "sizes": "512x512",
+            "type": "image/svg+xml",
+            "purpose": "any"
+        },
+        {
+            "src": "icons/icon.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "icons/maskable.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ],
+    "screenshots": [
+        {
+            "src": "screenshots/wide.png",
+            "sizes": "1280x720",
+            "type": "image/png",
+            "form_factor": "wide",
+            "label": "CWSP-process (desktop)"
+        },
+        {
+            "src": "screenshots/mobile.png",
+            "sizes": "540x960",
+            "type": "image/png",
+            "form_factor": "narrow",
+            "label": "CWSP-process (mobile)"
+        }
+    ],
+    "shortcuts": [
+        {
+            "name": "Viewer (MD)",
+            "short_name": "viewer",
+            "url": "../viewer",
+            "description": "Markdown Viewer",
+            "icons": [
+                {
+                    "src": "icons/icon-96.png",
+                    "sizes": "96x96",
+                    "type": "image/png"
+                }
+            ]
+        },
+        {
+            "name": "Work Center (AI)",
+            "short_name": "Analyze",
+            "url": "../workcenter",
+            "description": "AI-powered processing",
+            "icons": [
+                {
+                    "src": "icons/icon-96.png",
+                    "sizes": "96x96",
+                    "type": "image/png"
+                }
+            ]
+        }
+    ],
+    "file_handlers": [
+        {
+            "action": "../",
+            "accept": {
+                "text/*": [".txt", ".text", ".log", ".csv", ".tsv", ".md", ".markdown", ".mdx"],
+                "text/markdown": [".md", ".markdown", ".mdx"],
+                "application/json": [".json"],
+                "application/pdf": [".pdf"],
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [".docx"],
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [".xlsx"],
+                "application/msword": [".doc"],
+                "image/*": [".png", ".jpg", ".jpeg", ".webp", ".svg", ".gif"]
+            }
+        }
+    ],
+    "handle_links": "preferred",
+    "launch_handler": {
+        "client_mode": "focus-existing"
+    },
+    "orientation": "natural",
+    "edge_side": "left",
+    "edge_side_delegate": {
+        "url": "../",
+        "edge_side": "left"
+    }
+}

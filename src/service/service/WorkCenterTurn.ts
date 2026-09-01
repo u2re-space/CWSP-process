@@ -8,6 +8,7 @@
  */
 import { loadSettings } from "com/config/Settings";
 import {
+    isProcessApiUnavailable,
     postProcessApi,
     processApiAuthFromSettings,
     readProcessApiResultText
@@ -62,7 +63,7 @@ const tryProcessApiTurn = async (
         auth,
         { signal: options.signal }
     );
-    if (!posted.json) return null;
+    if (isProcessApiUnavailable(posted) || !posted.json) return null;
     const json = posted.json as { ok?: boolean; error?: string };
     if (json.ok === false) {
         const error = String(json.error || "");
