@@ -14,6 +14,7 @@
         "preview": "node ./scripts/run-vite.mjs preview",
         "start": "npm run dev",
         "dev": "VITE_MCP_DISABLE=1 node ./scripts/run-vite.mjs dev",
+        "start:channels": "CWS_SKU_CHANNEL=process tsx ../../runtime/fastify/scripts/start-sku-channels.mjs",
         "dev:8434": "VITE_MCP_DISABLE=1 VITE_DEV_PORT=8434 node ./scripts/run-vite.mjs dev",
         "dev:clean": "rm -rf node_modules/.vite && npm run dev",
         "dev:full": "node ./scripts/run-vite.mjs dev",

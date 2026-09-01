@@ -278,7 +278,11 @@ const createProcessSpaConfig = async (_mode) => {
                     globIgnores: ["**/node_modules/**/*", "**/*.map", "**/stats.html", "**/report.html"]
                 },
                 manifest: false,
-                devOptions: { enabled: false }
+                devOptions: {
+                    enabled: process.env.VITE_PWA_DEV_DISABLE !== "1",
+                    type: "module",
+                    navigateFallback: "index.html"
+                }
             })
         ],
         build: {

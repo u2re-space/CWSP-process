@@ -42,6 +42,7 @@ import {
 } from 'com/config/Names';
 import { summarizeForLog } from 'com/core/LogSanitizer';
 import * as FestCore from "@fest-lib/core";
+import { handleProcessApiFetch, isProcessApiRequest } from "com/routing/api/process-api-sw";
 
 // ============================================================================
 // SERVICE WORKER CONTENT ASSOCIATION SYSTEM
@@ -1355,6 +1356,12 @@ registerRoute(
 // Never cache/proxy local-network control channels.
 // WHY: connection bugs here often look like "socket transport failed" even when
 // the real issue is the service worker intercepting probe/control traffic.
+// INVARIANT: Process API must run before the /api NetworkOnly bypass.
+registerRoute(
+    ({ url, request }) => isProcessApiRequest(url?.pathname || "", request?.method),
+    async ({ request }) => handleProcessApiFetch(request)
+);
+
 registerRoute(
     ({ url }) => {
         const host = url?.hostname || '';
@@ -1577,97 +1584,7 @@ registerRoute(
     }
 );
 
-// Unified Processing API (for PWA processing support)
-registerRoute(
-    ({ url, request }) =>
-        (url?.pathname === '/api/processing' || url?.pathname === '/process/processing') &&
-        request?.method === 'POST',
-    async ({ request }) => {
-        try {
-            console.log('[SW] Processing API request received');
-
-            // Try to proxy to backend first
-            try {
-                const backendUrl = new URL(request.url);
-                // Use same origin but ensure it's the backend
-                backendUrl.protocol = location.protocol;
-                backendUrl.host = location.host;
-
-                console.log('[SW] Proxying processing request to backend:', backendUrl.href);
-
-                const response = await fetch(backendUrl.href, {
-                    method: 'POST',
-                    headers: request.headers,
-                    body: request.body,
-                    // Add timeout for processing requests
-                    signal: AbortSignal.timeout(30000) // 30 second timeout
-                });
-
-                if (response.ok) {
-                    // Cache successful processing results for offline use
-                    const cache = await caches.open('processing-cache');
-                    cache.put(request, response.clone());
-
-                    console.log('[SW] Processing completed via backend, cached result');
-                    return response;
-                } else {
-                    console.warn('[SW] Backend processing failed:', response.status);
-                }
-            } catch (backendError) {
-                console.warn('[SW] Backend processing unavailable:', backendError);
-            }
-
-            // Backend unavailable - try cached responses for similar requests
-            const cache = await caches.open('processing-cache');
-
-            // Try to find a cached response with similar content
-            const cacheKeys = await cache.keys();
-            for (const cacheRequest of cacheKeys) {
-                try {
-                    // Check if the request body is similar (basic heuristic)
-                    const cachedResponse = await safeCacheMatch(cache, cacheRequest);
-                    if (cachedResponse) {
-                        console.log('[SW] Serving cached processing result');
-                        return cachedResponse;
-                    }
-                } catch (cacheError) {
-                    console.warn('[SW] Cache lookup failed:', cacheError);
-                }
-            }
-
-            // No cached response available - return offline response
-            console.log('[SW] Processing unavailable offline');
-            return new Response(JSON.stringify({
-                success: false,
-                error: 'Processing unavailable offline',
-                message: 'AI processing requires internet connection',
-                code: 'OFFLINE_UNAVAILABLE',
-                offline: true,
-                timestamp: new Date().toISOString()
-            }), {
-                status: 503,
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Offline': 'true'
-                }
-            });
-
-        } catch (error) {
-            console.error('[SW] Processing API error:', error);
-            const msg = error instanceof Error ? error.message : String(error);
-            return new Response(JSON.stringify({
-                success: false,
-                error: 'Processing failed',
-                message: msg,
-                code: 'PROCESSING_ERROR',
-                timestamp: new Date().toISOString()
-            }), {
-                status: 500,
-                headers: { 'Content-Type': 'application/json' }
-            });
-        }
-    }
-);
+/* Process API: see earlier `isProcessApiRequest` route (local-first, then network). */
 
 // Analysis API (lighter processing for quick analysis)
 registerRoute(

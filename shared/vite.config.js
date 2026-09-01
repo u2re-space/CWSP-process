@@ -18,6 +18,8 @@ import postcssConfig from "../postcss.config.js";
 import { viteStaticCopy } from 'vite-plugin-static-copy';
 import { VitePWA } from 'vite-plugin-pwa'
 import { createLogger, searchForWorkspaceRoot } from "vite";
+import { ssreVite } from "../../../modules/projects/ssr.e/src/ssre/vite/plugin.ts";
+import { processApiVite } from "../../../modules/projects/subsystem/src/routing/api/process-api-vite.ts";
 import { ViteMcp } from 'vite-plugin-mcp'
 import { compression } from 'vite-plugin-compression2'
 
@@ -537,6 +539,16 @@ export const initiate = (NAME = "generic", tsconfig = {}, __dirname = resolve(".
         servePwaSrcAsDistPlugin(__dirname),
         // SPA fallback for PWA routes (share-target, etc.)
         spaFallbackPlugin(),
+        /* WHY: Vite Dev hosts `/ssre/channel` + injects into existing index.html. Listen :8455 stays off core :8434. */
+        ssreVite({
+            htmlAsBase: true,
+            pages: {
+                "/": resolve(__dirname, "./index.html"),
+                "/index.html": resolve(__dirname, "./index.html"),
+            },
+            channelPath: "/ssre/channel",
+        }),
+        processApiVite(),
         relocateWorkerBundleAssetsPlugin(),
         rewriteVitePreloadPlugin(),
         /*jspmPlugin({
