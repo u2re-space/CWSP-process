@@ -60,27 +60,33 @@ for (const name of fs.readdirSync(src)) {
     }
 }
 
+// INVARIANT: SKU src/pwa/icons wins over Vite-nested leftovers (old shared cross).
 {
-    const icons = path.join(dest, "pwa", "icons");
     const srcIcons = path.join(root, "src", "pwa", "icons");
-    if (!fs.existsSync(path.join(icons, "icon.svg")) && fs.existsSync(srcIcons)) {
-        fs.mkdirSync(icons, { recursive: true });
-        fs.cpSync(srcIcons, icons, { recursive: true });
+    const destIcons = path.join(dest, "pwa", "icons");
+    if (fs.existsSync(srcIcons)) {
+        fs.mkdirSync(destIcons, { recursive: true });
+        fs.cpSync(srcIcons, destIcons, { recursive: true });
     }
     const srcManifest = path.join(root, "src", "pwa", "manifest.json");
     const destManifest = path.join(dest, "pwa", "manifest.json");
-    if (!fs.existsSync(destManifest) && fs.existsSync(srcManifest)) {
+    if (fs.existsSync(srcManifest)) {
         fs.mkdirSync(path.dirname(destManifest), { recursive: true });
         fs.cpSync(srcManifest, destManifest);
     }
     const copyFav = (fromName, toName) => {
-        const from = path.join(icons, fromName);
+        const from = path.join(destIcons, fromName);
         if (!fs.existsSync(from)) return;
         fs.cpSync(from, path.join(dest, toName));
     };
     copyFav("icon.svg", "favicon.svg");
     copyFav("icon.png", "favicon.png");
     copyFav("favicon.ico", "favicon.ico");
+    const destAlias = path.join(dest, "icons");
+    if (fs.existsSync(destIcons)) {
+        fs.mkdirSync(destAlias, { recursive: true });
+        fs.cpSync(destIcons, destAlias, { recursive: true });
+    }
 }
 
 fs.writeFileSync(

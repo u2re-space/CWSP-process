@@ -1369,8 +1369,14 @@ registerRoute(
         );
         const isLocalHost = host === 'localhost' || host.endsWith('.local');
         const isSocketIoPath = pathname === '/socket.io' || pathname.startsWith('/socket.io/');
-        const isControlPath =
+        const isProcessApiPath =
             pathname.startsWith('/api/') ||
+            pathname.startsWith('/process/ai') ||
+            pathname.startsWith('/process/processing') ||
+            pathname.startsWith('/process/api') ||
+            pathname === '/process/health';
+        const isControlPath =
+            isProcessApiPath ||
             pathname === '/lna-probe' ||
             isSocketIoPath;
 
@@ -1380,6 +1386,9 @@ registerRoute(
 
         // LNA / PNA probe — same as socket.io: never let Workbox/cache touch it (any host).
         if (pathname === '/lna-probe') return true;
+
+        // INVARIANT: process.u2re.space / ai.u2re.space /api/process must hit VDS, not Workbox.
+        if (isProcessApiPath) return true;
 
         // Avoid swallowing app/view and /user/* requests on private-host deployments.
         return isControlPath && (isPrivateIp || isLocalHost);

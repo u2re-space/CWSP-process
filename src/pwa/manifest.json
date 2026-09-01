@@ -1,7 +1,7 @@
 {
-    "name": "Work Center",
+    "name": "CWSP-process",
     "short_name": "Process",
-    "description": "CWSP-process — Work Center PWA (process.u2re.space / ai.u2re.space)",
+    "description": "CWSP-process Work Center (process.u2re.space / ai.u2re.space)",
     "start_url": "../",
     "scope": "../",
     "display": "standalone",
@@ -46,149 +46,16 @@
             "sizes": "1280x720",
             "type": "image/png",
             "form_factor": "wide",
-            "label": "CWSP-document (desktop)"
+            "label": "CWSP-process (desktop)"
         },
         {
             "src": "screenshots/mobile.png",
             "sizes": "540x960",
             "type": "image/png",
             "form_factor": "narrow",
-            "label": "CWSP-document (mobile)"
+            "label": "CWSP-process (mobile)"
         }
     ],
-    "file_handlers": [
-        {
-            "action": "../",
-            "accept": {
-                "text/*": [
-                    ".txt",
-                    ".text",
-                    ".log",
-                    ".csv",
-                    ".tsv"
-                ],
-                "text/plain": [
-                    ".txt",
-                    ".text",
-                    ".log",
-                    ".csv",
-                    ".tsv",
-                    ".md",
-                    ".markdown",
-                    ".mdown",
-                    ".mdx"
-                ],
-                "application/pdf": [
-                    ".pdf"
-                ],
-                "application/json": [
-                    ".json"
-                ],
-                "application/xml": [
-                    ".xml"
-                ],
-                "application/javascript": [
-                    ".js"
-                ],
-                "application/typescript": [
-                    ".ts"
-                ],
-                "image/webp": [
-                    ".webp"
-                ],
-                "image/svg+xml": [
-                    ".svg"
-                ],
-                "image/jpeg": [
-                    ".jpg",
-                    ".jpeg"
-                ],
-                "image/png": [
-                    ".png"
-                ],
-                "text/markdown": [
-                    ".md",
-                    ".markdown",
-                    ".mdown",
-                    ".mdx",
-                    ".mkd",
-                    ".mkdn"
-                ],
-                "application/markdown": [
-                    ".md",
-                    ".markdown",
-                    ".mdown",
-                    ".mdx",
-                    ".mkd",
-                    ".mkdn"
-                ],
-                "text/x-markdown": [
-                    ".md",
-                    ".markdown",
-                    ".mdown",
-                    ".mdx",
-                    ".mkd",
-                    ".mkdn"
-                ],
-                "application/x-markdown": [
-                    ".md",
-                    ".markdown",
-                    ".mdown",
-                    ".mdx",
-                    ".mkd",
-                    ".mkdn"
-                ],
-                "application/md": [
-                    ".md",
-                    ".markdown",
-                    ".mdown",
-                    ".mdx",
-                    ".mkd",
-                    ".mkdn"
-                ],
-                "text/html": [
-                    ".html",
-                    ".htm"
-                ]
-            }
-        }
-    ],
-    "share_target": {
-        "action": "../share-target",
-        "method": "POST",
-        "enctype": "multipart/form-data",
-        "params": {
-            "title": "title",
-            "text": "text",
-            "url": "url",
-            "files": [
-                {
-                    "name": "mapped_files",
-                    "accept": [
-                        "text/plain",
-                        "text/markdown",
-                        "text/x-markdown",
-                        "text/html",
-                        "image/jpeg",
-                        "image/png",
-                        "image/webp",
-                        "image/*",
-                        "image/svg+xml",
-                        "text/*",
-                        "application/octet-stream",
-                        "application/x-markdown",
-                        "application/markdown",
-                        "application/md",
-                        "application/pdf",
-                        "application/xml",
-                        "application/javascript",
-                        "application/typescript",
-                        "application/json"
-                    ]
-                }
-            ]
-        }
-    },
     "shortcuts": [
         {
             "name": "Viewer (MD)",
@@ -215,6 +82,21 @@
                     "type": "image/png"
                 }
             ]
+        }
+    ],
+    "file_handlers": [
+        {
+            "action": "../",
+            "accept": {
+                "text/*": [".txt", ".text", ".log", ".csv", ".tsv", ".md", ".markdown", ".mdx"],
+                "text/markdown": [".md", ".markdown", ".mdx"],
+                "application/json": [".json"],
+                "application/pdf": [".pdf"],
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [".docx"],
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [".xlsx"],
+                "application/msword": [".doc"],
+                "image/*": [".png", ".jpg", ".jpeg", ".webp", ".svg", ".gif"]
+            }
         }
     ],
     "handle_links": "preferred",
