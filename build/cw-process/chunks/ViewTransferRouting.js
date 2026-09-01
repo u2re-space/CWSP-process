@@ -1,7 +1,7 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./launcher-bridge.js","../shells/boot-index.js","./rolldown-runtime.js","../com/app.js","../fest/core.js","../shells/boot-history-base.js","../com/service.js","../fest/veela.js"])))=>i.map(i=>d[i]);
 import { r as __exportAll } from "./rolldown-runtime.js";
 const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
-import { Dr as sinkToDestination, Jn as enqueuePendingMessage, Ln as peekProcessIngressSettings, Tr as resolveOpenPolicy, br as peekOpenPolicy, er as sendProtocolMessage, hr as inferIngressChannels, jr as surfaceForSku, kr as skuForOpenSink, mr as classifyOpenKindFromPayload, or as normalizeDestination, sr as viewBroadcastChannelName, vr as normalizeOpenSink } from "../shells/boot-index.js";
+import { Ar as sinkToDestination, Cr as peekOpenPolicy, Mr as skuForOpenSink, Or as resolveOpenPolicy, Pr as surfaceForSku, Xn as enqueuePendingMessage, _r as classifyOpenKindFromPayload, cr as normalizeDestination, lr as viewBroadcastChannelName, nr as sendProtocolMessage, vr as inferIngressChannels, xr as normalizeOpenSink, zn as peekProcessIngressSettings } from "../shells/boot-index.js";
 import { _ as stashSkuHandoff, c as isCwspNativeHost, f as publicHrefForSku, g as siblingSkuForView, h as shouldHandoffViewToSibling, m as readCwspSku, o as ensureCwspSkuFromLocation, r as androidPackageForSku, s as inferCwspSkuFromLocation, t as ECOSYSTEM_SKUS } from "../shells/boot-history-base.js";
 import { t as summarizeForLog } from "./LogSanitizer.js";
 import { a as skuIngressHint, n as holdIngressFiles } from "./sku-ingress.js";

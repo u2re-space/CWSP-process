@@ -84,6 +84,42 @@
             ]
         }
     ],
+    "share_target": {
+        "action": "../share-target",
+        "method": "POST",
+        "enctype": "multipart/form-data",
+        "params": {
+            "title": "title",
+            "text": "text",
+            "url": "url",
+            "files": [
+                {
+                    "name": "mapped_files",
+                    "accept": [
+                        "text/plain",
+                        "text/markdown",
+                        "text/x-markdown",
+                        "text/html",
+                        "image/jpeg",
+                        "image/png",
+                        "image/webp",
+                        "image/*",
+                        "image/svg+xml",
+                        "text/*",
+                        "application/octet-stream",
+                        "application/x-markdown",
+                        "application/markdown",
+                        "application/md",
+                        "application/pdf",
+                        "application/xml",
+                        "application/javascript",
+                        "application/typescript",
+                        "application/json"
+                    ]
+                }
+            ]
+        }
+    },
     "file_handlers": [
         {
             "action": "../",

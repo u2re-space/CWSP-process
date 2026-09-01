@@ -11945,6 +11945,13 @@ cacheWillUpdate: async ({ response }) => {
 			return `https://${bare}:${defaultPort}/`;
 		};
 		CWSP_REMOTE_CONFIG_SYNC_CHANNEL = "cwsp.remote.connection.v1";
+	})), PROCESS_API_PUBLIC_ORIGIN, isProcessApiPath;
+	var init_process_api_path = __esmMin((() => {
+		PROCESS_API_PUBLIC_ORIGIN = "https://process.u2re.space";
+		isProcessApiPath = (pathname) => {
+			const path = String(pathname || "").split("?")[0] || "/";
+			return path === "/api/process" || path.startsWith(`/api/process/`) || path === "/api/processing" || path.startsWith("/process/ai") || path.startsWith("/process/processing") || path.startsWith("/process/api") || path === "/process/health";
+		};
 	})), BROADCAST_CHANNELS, VIEW_POST_API_SEGMENTS, isViewPostApiPath, viewBroadcastChannelName, COMPONENTS, ROUTE_HASHES, DESTINATIONS, CANONICAL_VIEW_IDS, DESTINATION_ALIASES, DESTINATION_LOOKUP, normalizeDestination, getDestinationAliases, normalizeViewId;
 	var init_Names = __esmMin((() => {
 		BROADCAST_CHANNELS = {
@@ -12435,6 +12442,13 @@ cacheWillUpdate: async ({ response }) => {
 		init_airpad_cwsp_client_parity();
 		init_UniformInterop();
 		CwsBridgeWeb = class extends WebPlugin {
+			async processApi() {
+				return {
+					ok: false,
+					error: "web",
+					fallback: "none"
+				};
+			}
 			async getShellInfo() {
 				return {
 					shell: "browser",
@@ -49255,6 +49269,163 @@ Apply the user's custom instructions above when processing the data. Prioritize 
 		}, 0, /* @__PURE__ */ new WeakSet());
 	};
 	//#endregion
+	//#region src/shared/routing/api/process-local.ts
+	init_process_api_path();
+	var PROCESS_LOCAL_DEFAULT_BASE_URL = "https://api.proxyapi.ru/openai/v1";
+	var PROCESS_LOCAL_DEFAULT_MODEL = "gpt-5.6-luna";
+	var pick = (...values) => {
+		for (const value of values) {
+			const text = String(value || "").trim();
+			if (text) return text;
+		}
+		return "";
+	};
+	var processApiMissPayload = (source = "local") => ({
+		ok: false,
+		error: "Missing credentials",
+		layer: "api",
+		fallback: source
+	});
+	var processApiJsonResponse = (json, status = 200) => new Response(JSON.stringify(json), {
+		status,
+		headers: {
+			"Content-Type": "application/json; charset=utf-8",
+			"Cache-Control": "no-store"
+		}
+	});
+	/** OpenAI-compatible completion when CWSP core / VDS is down. */
+	var runLocalProcessFallback = async (body, source = "local") => {
+		if (!body || typeof body !== "object") return null;
+		const apiKey = pick(body.apiKey, body.bearerToken, body.token, body.provider?.apiKey);
+		if (!apiKey) return null;
+		const input = pick(body.input, body.text, body.url, body.content);
+		if (!input) return {
+			ok: false,
+			error: "Missing input (text/url/input)",
+			fallback: source
+		};
+		const baseUrl = pick(body.baseUrl, body.provider?.baseUrl, PROCESS_LOCAL_DEFAULT_BASE_URL).replace(/\/+$/, "");
+		const model = pick(body.model, body.provider?.model, PROCESS_LOCAL_DEFAULT_MODEL);
+		const instruction = pick(body.customInstruction);
+		const messages = [...instruction ? [{
+			role: "system",
+			content: instruction
+		}] : [], {
+			role: "user",
+			content: input
+		}];
+		try {
+			const res = await fetch(`${baseUrl}/chat/completions`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: `Bearer ${apiKey}`
+				},
+				body: JSON.stringify({
+					model,
+					messages
+				})
+			});
+			const json = await res.json().catch(() => null);
+			if (!res.ok) return {
+				ok: false,
+				error: String(json?.error?.message || `Provider ${res.status}`),
+				layer: "api",
+				fallback: source
+			};
+			const text = String(json?.choices?.[0]?.message?.content || "").trim();
+			if (!text) return {
+				ok: false,
+				error: "Empty provider response",
+				fallback: source
+			};
+			return {
+				ok: true,
+				mode: String(body.mode || "smartRecognize"),
+				customInstruction: Boolean(instruction),
+				provider: {
+					baseUrl,
+					model,
+					apiKeySource: "request"
+				},
+				result: {
+					ok: true,
+					text
+				},
+				fallback: source
+			};
+		} catch (error) {
+			return {
+				ok: false,
+				error: String(error instanceof Error ? error.message : error),
+				layer: "api",
+				fallback: source
+			};
+		}
+	};
+	//#endregion
+	//#region src/shared/routing/api/process-api-sw.ts
+	var pathOf = (url = "/") => {
+		try {
+			return new URL(url, "http://process.local").pathname;
+		} catch {
+			return url.split("?")[0] || "/";
+		}
+	};
+	var parseBody = (raw) => {
+		if (!raw.trim()) return null;
+		try {
+			const json = JSON.parse(raw);
+			return json && typeof json === "object" ? json : null;
+		} catch {
+			return null;
+		}
+	};
+	var isHealthPath = (pathname) => pathname === "/api/process" || pathname === "/api/process/health" || pathname === "/process/health";
+	/** Workbox / fetch handler. Local-first when the body carries an API key (same as Fastify). */
+	var handleProcessApiFetch = async (request) => {
+		const pathname = pathOf(request.url);
+		const method = String(request.method || "GET").toUpperCase();
+		if (method === "GET" || method === "HEAD") {
+			if (!isHealthPath(pathname) && !isProcessApiPath(pathname)) return processApiJsonResponse(processApiMissPayload("sw"), 404);
+			return processApiJsonResponse({
+				ok: true,
+				id: "cw-process-api",
+				fallback: "sw",
+				timestamp: (/* @__PURE__ */ new Date()).toISOString()
+			});
+		}
+		if (method !== "POST") return processApiJsonResponse({
+			ok: false,
+			error: "Method not allowed",
+			fallback: "sw"
+		}, 405);
+		const raw = await request.text();
+		const local = await runLocalProcessFallback(parseBody(raw), "sw");
+		if (local) return processApiJsonResponse(local);
+		try {
+			const publicPath = pathname.startsWith("/api/process") ? pathname : "/api/process/processing";
+			const net = await fetch(`${PROCESS_API_PUBLIC_ORIGIN}${publicPath}`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					Accept: "application/json"
+				},
+				body: raw || "{}",
+				cache: "no-store"
+			});
+			if (net.ok) {
+				if ((net.headers.get("content-type") || "").includes("json")) return net;
+			}
+		} catch {}
+		return processApiJsonResponse(processApiMissPayload("sw"));
+	};
+	var isProcessApiRequest = (pathname, method) => {
+		if (!isProcessApiPath(pathname)) return false;
+		const m = String(method || "GET").toUpperCase();
+		return m === "GET" || m === "HEAD" || m === "POST";
+	};
+	//#endregion
 	//#region src/pwa/sw.ts
 	init_Names();
 	init_src$6();
@@ -49742,7 +49913,7 @@ Apply the user's custom instructions above when processing the data. Prioritize 
 			console.warn("[SW-Broadcast] Failed to broadcast to clients:", error);
 		}
 	}
-	var manifest = [{"revision":"725fad53ea7e7faeed2eeddbf806fa14","url":"index.html"},{"revision":"528c7e9c0f8a41cfe096f0b1e888216e","url":"workers/opfs/OPFS.uniform.worker.js"},{"revision":"dbc3dccdec14fca97a7bc6499e137194","url":"views/viewer.js"},{"revision":"a997e10cbf0af544d2779305ec1d96c8","url":"vendor/xlsx.js"},{"revision":"aa689cfe66df50189e85b19ec9d610df","url":"vendor/quill.js"},{"revision":"42cf392cc1234965cec990cd219c6a2d","url":"vendor/pdfjs-dist.js"},{"revision":"0f6b08abc3a91a9507a21bf46fe88003","url":"vendor/parchment.js"},{"revision":"776f5bb08a28e6bdcb0d881bdc785f94","url":"vendor/mammoth.js"},{"revision":"0bfca535a8bbb58f4c148d97b4ac5522","url":"vendor/lop.js"},{"revision":"c8741cf7f91408ce1ef47278156eac8f","url":"vendor/lodash.isequal.js"},{"revision":"f6c6602c08733d2d5474a44523a2139b","url":"vendor/lodash.clonedeep.js"},{"revision":"39fac3d6fe673e3aeabac7945f320696","url":"vendor/lodash-es.js"},{"revision":"ad18e855753678d16b95237f6f4127db","url":"vendor/jszip.js"},{"revision":"3be6e1ff8ce12b780c1129848c497a55","url":"vendor/fast-diff.js"},{"revision":"6fb6b129de239a1607bc4b6b79f8b9fa","url":"vendor/eventemitter3.js"},{"revision":"07f1b9397af6f4ac29980c832d4f3ab1","url":"vendor/dingbat-to-unicode.js"},{"revision":"f7447ea6adf08ccc0a78f24beee529a9","url":"vendor/bluebird.js"},{"revision":"b8d53040e646cc14be10c6f973a285d8","url":"vendor/base64-js.js"},{"revision":"a7018ffb2f665a8ec0433dab1f4ea1d3","url":"vendor/@xmldom_xmldom.js"},{"revision":"4b8116a6fa1dee7d129870976062230b","url":"vendor/@toon-format_toon.js"},{"revision":"249121960f98591470b47ac91f40dbdb","url":"shells/preference.js"},{"revision":"2a0c3839ddf37788f8ff8085a1428f9d","url":"shells/environment-window-views-browser-view.js"},{"revision":"ccde8d1947e5d1afb5d157090dfe96b2","url":"shells/environment-scss-main.scss_inline.js"},{"revision":"61d77f45c2a320a4c7e1bd32091c12de","url":"shells/environment-index.js"},{"revision":"ec31446123f72c37ee2d1931b759a150","url":"shells/environment-environment-overlay.js"},{"revision":"85eac0ed52f366f1ade696168e16c004","url":"shells/environment-components-wallpaper.js"},{"revision":"3c815e5aca7556d9b595907ce499b633","url":"shells/environment-components-taskbar-element-TaskBar.js"},{"revision":"31ccdfa2dad18a00fe824ab897f5944b","url":"shells/environment-components-statusbar-capacitor-native-safe-area.js"},{"revision":"e2f194508097bb53ecc1eccf92831cb3","url":"shells/environment-components-settings-QuickSettings.js"},{"revision":"cc3250cc658b04c3b8e9021b4114f78b","url":"shells/environment-components-explorer-ContextMenu.js"},{"revision":"69991a62ff0c6b8548d46ad2a6ee08f4","url":"shells/environment-components-calendar-CalendarFlyout.js"},{"revision":"029ea94f5671e5f33812cd1b1eea43a1","url":"shells/environment-components-app-menu-AppMenu.js"},{"revision":"ffbc91c7e5160a49a448623175c61d97","url":"shells/boot-index.js"},{"revision":"7b91a175e47b27b1b844142dcbfcdb28","url":"shells/boot-history-base.js"},{"revision":"e8629f7ecfd4b2cb16d6d063708e1c0b","url":"pwa/manifest.json"},{"revision":"e8629f7ecfd4b2cb16d6d063708e1c0b","url":"pwa/src/pwa/manifest.json"},{"revision":"dbe5738443bd2f8968640f5f4a54cc3a","url":"pwa/screenshots/wide.png"},{"revision":"6abe53c0bc5b12ad1d599472cabe67a4","url":"pwa/screenshots/mobile.png"},{"revision":"dbe5738443bd2f8968640f5f4a54cc3a","url":"pwa/screenshots/src/pwa/screenshots/wide.png"},{"revision":"6abe53c0bc5b12ad1d599472cabe67a4","url":"pwa/screenshots/src/pwa/screenshots/mobile.png"},{"revision":"b2551f591bca6071a1817b562de415fd","url":"pwa/icons/web-app-manifest-512x512.png"},{"revision":"fd4b03e8560d1edbf07d3f5145dd097d","url":"pwa/icons/web-app-manifest-192x192.png"},{"revision":"3bce2e3833893e5a8a165101478b043c","url":"pwa/icons/transparent.svg"},{"revision":"b2551f591bca6071a1817b562de415fd","url":"pwa/icons/maskable.png"},{"revision":"c526291d3c869698ca3331bc9a49a79d","url":"pwa/icons/icon.svg"},{"revision":"1e50d9387b630062ac5c9b83c6ff78ea","url":"pwa/icons/icon.png"},{"revision":"85d33b738dd7f349f3f7b5a810a72993","url":"pwa/icons/icon-96.png"},{"revision":"74ba61fd7ca6dde80a0f7118ce562d79","url":"pwa/icons/favicon.svg"},{"revision":"53d98bfac7dda7b084baac936b146880","url":"pwa/icons/favicon-96x96.png"},{"revision":"cf552e9b17402324652bb0f58466481e","url":"pwa/icons/apple-touch-icon.png"},{"revision":"b2551f591bca6071a1817b562de415fd","url":"pwa/icons/src/pwa/icons/web-app-manifest-512x512.png"},{"revision":"fd4b03e8560d1edbf07d3f5145dd097d","url":"pwa/icons/src/pwa/icons/web-app-manifest-192x192.png"},{"revision":"3bce2e3833893e5a8a165101478b043c","url":"pwa/icons/src/pwa/icons/transparent.svg"},{"revision":"b2551f591bca6071a1817b562de415fd","url":"pwa/icons/src/pwa/icons/maskable.png"},{"revision":"c526291d3c869698ca3331bc9a49a79d","url":"pwa/icons/src/pwa/icons/icon.svg"},{"revision":"1e50d9387b630062ac5c9b83c6ff78ea","url":"pwa/icons/src/pwa/icons/icon.png"},{"revision":"85d33b738dd7f349f3f7b5a810a72993","url":"pwa/icons/src/pwa/icons/icon-96.png"},{"revision":"74ba61fd7ca6dde80a0f7118ce562d79","url":"pwa/icons/src/pwa/icons/favicon.svg"},{"revision":"53d98bfac7dda7b084baac936b146880","url":"pwa/icons/src/pwa/icons/favicon-96x96.png"},{"revision":"cf552e9b17402324652bb0f58466481e","url":"pwa/icons/src/pwa/icons/apple-touch-icon.png"},{"revision":"5af73a0d5467b1c9d0fb2c28d820f771","url":"fest/veela.js"},{"revision":"5900a0393b94b2a269dc100b457b9ca1","url":"fest/core.js"},{"revision":"bd016f7a514ca38a467d2fb6c629c97d","url":"com/service.js"},{"revision":"02c890a75e82bd7b0f20cac95e4ddeae","url":"com/app.js"},{"revision":"f541f98f5f2ede68e8618fd43230d992","url":"chunks/window.js"},{"revision":"146f7fbbc8e3a591e975fecabe8fec55","url":"chunks/vite-preload-BsPm7yBB.js"},{"revision":"af08c65caabe2ab2e4976229ef910ab2","url":"chunks/views.js"},{"revision":"2b65c36f4b63fe48d3aafecac3df4549","url":"chunks/utils.js"},{"revision":"a408b4492f67ef3c874415710f706682","url":"chunks/unified.js"},{"revision":"cac34cbe55775d65618a8c871d76212d","url":"chunks/transfer-history-runtime.js"},{"revision":"c31ed75217b6e53ac5aa4caf4ca276c0","url":"chunks/templates.js"},{"revision":"cf6bcf7c0aac40eb6c8377f2a6f8ca83","url":"chunks/tabbed.js"},{"revision":"ed4a9dba7694d3e967cb6091dd44ecce","url":"chunks/sw-handling.js"},{"revision":"e05ad8fe0c9d35fae03ac6c056a4030d","url":"chunks/src9.js"},{"revision":"5f04eaff702dd86e8bf4bdd155981947","url":"chunks/src8.js"},{"revision":"b20e6ef27ba20e39af020bd153037191","url":"chunks/src7.js"},{"revision":"7905e461b07e5f8f27632598a316911a","url":"chunks/src6.js"},{"revision":"8896e4d2afd379f4c50d24fd1d82efd5","url":"chunks/src5.js"},{"revision":"c9de3cd8d8c170e8d7f8665a3e8195ae","url":"chunks/src4.js"},{"revision":"f86c0259919a397412acf029244cb828","url":"chunks/src3.js"},{"revision":"ce77093c947f3c2aad27913575bf8548","url":"chunks/src2.js"},{"revision":"684fdcabda53fad243757c9a305f8b7a","url":"chunks/src11.js"},{"revision":"72f03a5d8539d8c9de5b3d57e607b849","url":"chunks/src10.js"},{"revision":"dd687ad82d12cc84a94cf9d82f647b95","url":"chunks/src.js"},{"revision":"9408b1e6a06555e61516f264fa834bd3","url":"chunks/sku-ingress.js"},{"revision":"c29a2391626cc5b13970331b36d2ad4c","url":"chunks/shells.js"},{"revision":"3e42fc809cbe4013901962c6339603b6","url":"chunks/rolldown-runtime.js"},{"revision":"f1f14cce8faa756a86f0d061687f78d6","url":"chunks/preview.js"},{"revision":"6b16aef581520b8074765aee6baf491c","url":"chunks/launcher-state.js"},{"revision":"5fb540421eed30ca723e772e49b94f6d","url":"chunks/launcher-bridge.js"},{"revision":"8e0e3f9eda0d89a30fa812a799158443","url":"chunks/frontend-debug-capture2.js"},{"revision":"5a9b640be91d3e6dc693815248db45ce","url":"chunks/frontend-debug-capture.js"},{"revision":"2804aa1e0899c472afd13700b82bf0a6","url":"chunks/environment.js"},{"revision":"18bc00f7f7bcaaa060063c0fa6c5bf8a","url":"chunks/environment-shell.js"},{"revision":"d8fc4779e917070a9b0ebf24da3997d4","url":"chunks/entities.js"},{"revision":"34c942400e7d33d4c807647c7b6d88b0","url":"chunks/ecosystem-skus.js"},{"revision":"82100a5cbf254a75a0bcc78475b72b05","url":"chunks/crx-control-session2.js"},{"revision":"4be124cadba155792d0eb60f9de2e7b2","url":"chunks/crx-control-session.js"},{"revision":"33b5dbbed488502e41e2270cf1b95da8","url":"chunks/crx-control-pair-modal2.js"},{"revision":"595ef65b24383b3cacccdccaf7a0a6ef","url":"chunks/crx-control-pair-modal.js"},{"revision":"37213ff4554815f6840b2acd5b0766ab","url":"chunks/core.js"},{"revision":"f97d2b3e28284090e8c1739f9cb1cecb","url":"chunks/channel-unknown.js"},{"revision":"de05c72eb353a23d1e1fdf7f1eb57c59","url":"chunks/capacitor-share-intent.js"},{"revision":"ab275a1ff82b33cf9790b1a6a8cefbe7","url":"chunks/capacitor-settings-permissions2.js"},{"revision":"b3244babed3d3e854c520d2e422bf295","url":"chunks/capacitor-settings-permissions.js"},{"revision":"dde4116eff49f3ca7507e7f17d295ecd","url":"chunks/capacitor-permissions2.js"},{"revision":"991e87b8a86bcc51cfceeda81a151f1e","url":"chunks/capacitor-permissions.js"},{"revision":"7f85be2acf402efcb37c5299c93233ec","url":"chunks/capacitor-clipboard-asset.js"},{"revision":"31f9228cb6e59c198269a076e8954385","url":"chunks/admin-doors.js"},{"revision":"7fe50fa9d7161ffa53e3764845b71207","url":"chunks/WorkCenterState.js"},{"revision":"f34b28a4e5a99cd3a584091c04da2654","url":"chunks/WorkCenter.js"},{"revision":"70643077eb73b70d7e26287fdfe12464","url":"chunks/ViewTransferRouting.js"},{"revision":"f0f447a7f3ab1f2a3737cea107431bfe","url":"chunks/ShareTargetGateway.js"},{"revision":"faecca44a73b4cf643a2a99ac22225ae","url":"chunks/RuntimeSettings.js"},{"revision":"47cafcb06882298623e06b7355c9caf1","url":"chunks/QuillEditor.js"},{"revision":"4290cdcdde2bb912063dc8adfc27baaa","url":"chunks/MarkdownEditor.js"},{"revision":"6836f885f88c862080d07e558ebfbebe","url":"chunks/LogSanitizer.js"},{"revision":"53db4b287a0c4afe25e54f0916a3ca55","url":"chunks/DocxExport.js"},{"revision":"d1229720762e04e6ccdb848a27bf2441","url":"chunks/CustomInstructions.js"},{"revision":"a95dfb0f7f64932a1176de071a8d486a","url":"chunks/BootLoader.js"},{"revision":null,"url":"assets/index-BqJHILTM.js"},{"revision":null,"url":"assets/crossword.css"},{"revision":null,"url":"assets/OPFS.uniform.worker.js"}];
+	var manifest = [{"revision":"725fad53ea7e7faeed2eeddbf806fa14","url":"index.html"},{"revision":"528c7e9c0f8a41cfe096f0b1e888216e","url":"workers/opfs/OPFS.uniform.worker.js"},{"revision":"5cb43eb73f2e6457d5acd0b75993481f","url":"views/viewer.js"},{"revision":"a997e10cbf0af544d2779305ec1d96c8","url":"vendor/xlsx.js"},{"revision":"aa689cfe66df50189e85b19ec9d610df","url":"vendor/quill.js"},{"revision":"42cf392cc1234965cec990cd219c6a2d","url":"vendor/pdfjs-dist.js"},{"revision":"0f6b08abc3a91a9507a21bf46fe88003","url":"vendor/parchment.js"},{"revision":"776f5bb08a28e6bdcb0d881bdc785f94","url":"vendor/mammoth.js"},{"revision":"0bfca535a8bbb58f4c148d97b4ac5522","url":"vendor/lop.js"},{"revision":"c8741cf7f91408ce1ef47278156eac8f","url":"vendor/lodash.isequal.js"},{"revision":"f6c6602c08733d2d5474a44523a2139b","url":"vendor/lodash.clonedeep.js"},{"revision":"39fac3d6fe673e3aeabac7945f320696","url":"vendor/lodash-es.js"},{"revision":"ad18e855753678d16b95237f6f4127db","url":"vendor/jszip.js"},{"revision":"3be6e1ff8ce12b780c1129848c497a55","url":"vendor/fast-diff.js"},{"revision":"6fb6b129de239a1607bc4b6b79f8b9fa","url":"vendor/eventemitter3.js"},{"revision":"07f1b9397af6f4ac29980c832d4f3ab1","url":"vendor/dingbat-to-unicode.js"},{"revision":"f7447ea6adf08ccc0a78f24beee529a9","url":"vendor/bluebird.js"},{"revision":"b8d53040e646cc14be10c6f973a285d8","url":"vendor/base64-js.js"},{"revision":"a7018ffb2f665a8ec0433dab1f4ea1d3","url":"vendor/@xmldom_xmldom.js"},{"revision":"4b8116a6fa1dee7d129870976062230b","url":"vendor/@toon-format_toon.js"},{"revision":"249121960f98591470b47ac91f40dbdb","url":"shells/preference.js"},{"revision":"2a0c3839ddf37788f8ff8085a1428f9d","url":"shells/environment-window-views-browser-view.js"},{"revision":"ccde8d1947e5d1afb5d157090dfe96b2","url":"shells/environment-scss-main.scss_inline.js"},{"revision":"61d77f45c2a320a4c7e1bd32091c12de","url":"shells/environment-index.js"},{"revision":"ec31446123f72c37ee2d1931b759a150","url":"shells/environment-environment-overlay.js"},{"revision":"85eac0ed52f366f1ade696168e16c004","url":"shells/environment-components-wallpaper.js"},{"revision":"3c815e5aca7556d9b595907ce499b633","url":"shells/environment-components-taskbar-element-TaskBar.js"},{"revision":"2be7fb241b057c44926ab5e9853f4805","url":"shells/environment-components-statusbar-capacitor-native-safe-area.js"},{"revision":"e2f194508097bb53ecc1eccf92831cb3","url":"shells/environment-components-settings-QuickSettings.js"},{"revision":"cc3250cc658b04c3b8e9021b4114f78b","url":"shells/environment-components-explorer-ContextMenu.js"},{"revision":"69991a62ff0c6b8548d46ad2a6ee08f4","url":"shells/environment-components-calendar-CalendarFlyout.js"},{"revision":"029ea94f5671e5f33812cd1b1eea43a1","url":"shells/environment-components-app-menu-AppMenu.js"},{"revision":"3dbcb4036a6bb0056547bedcd37948b9","url":"shells/boot-index.js"},{"revision":"7b91a175e47b27b1b844142dcbfcdb28","url":"shells/boot-history-base.js"},{"revision":"ee9e7e6d4f21bd22ca7229e89ceb2eb3","url":"pwa/manifest.json"},{"revision":"ee9e7e6d4f21bd22ca7229e89ceb2eb3","url":"pwa/src/pwa/manifest.json"},{"revision":"dbe5738443bd2f8968640f5f4a54cc3a","url":"pwa/screenshots/wide.png"},{"revision":"6abe53c0bc5b12ad1d599472cabe67a4","url":"pwa/screenshots/mobile.png"},{"revision":"dbe5738443bd2f8968640f5f4a54cc3a","url":"pwa/screenshots/src/pwa/screenshots/wide.png"},{"revision":"6abe53c0bc5b12ad1d599472cabe67a4","url":"pwa/screenshots/src/pwa/screenshots/mobile.png"},{"revision":"b2551f591bca6071a1817b562de415fd","url":"pwa/icons/web-app-manifest-512x512.png"},{"revision":"fd4b03e8560d1edbf07d3f5145dd097d","url":"pwa/icons/web-app-manifest-192x192.png"},{"revision":"3bce2e3833893e5a8a165101478b043c","url":"pwa/icons/transparent.svg"},{"revision":"b2551f591bca6071a1817b562de415fd","url":"pwa/icons/maskable.png"},{"revision":"c526291d3c869698ca3331bc9a49a79d","url":"pwa/icons/icon.svg"},{"revision":"1e50d9387b630062ac5c9b83c6ff78ea","url":"pwa/icons/icon.png"},{"revision":"85d33b738dd7f349f3f7b5a810a72993","url":"pwa/icons/icon-96.png"},{"revision":"74ba61fd7ca6dde80a0f7118ce562d79","url":"pwa/icons/favicon.svg"},{"revision":"53d98bfac7dda7b084baac936b146880","url":"pwa/icons/favicon-96x96.png"},{"revision":"cf552e9b17402324652bb0f58466481e","url":"pwa/icons/apple-touch-icon.png"},{"revision":"b2551f591bca6071a1817b562de415fd","url":"pwa/icons/src/pwa/icons/web-app-manifest-512x512.png"},{"revision":"fd4b03e8560d1edbf07d3f5145dd097d","url":"pwa/icons/src/pwa/icons/web-app-manifest-192x192.png"},{"revision":"3bce2e3833893e5a8a165101478b043c","url":"pwa/icons/src/pwa/icons/transparent.svg"},{"revision":"b2551f591bca6071a1817b562de415fd","url":"pwa/icons/src/pwa/icons/maskable.png"},{"revision":"c526291d3c869698ca3331bc9a49a79d","url":"pwa/icons/src/pwa/icons/icon.svg"},{"revision":"1e50d9387b630062ac5c9b83c6ff78ea","url":"pwa/icons/src/pwa/icons/icon.png"},{"revision":"85d33b738dd7f349f3f7b5a810a72993","url":"pwa/icons/src/pwa/icons/icon-96.png"},{"revision":"74ba61fd7ca6dde80a0f7118ce562d79","url":"pwa/icons/src/pwa/icons/favicon.svg"},{"revision":"53d98bfac7dda7b084baac936b146880","url":"pwa/icons/src/pwa/icons/favicon-96x96.png"},{"revision":"cf552e9b17402324652bb0f58466481e","url":"pwa/icons/src/pwa/icons/apple-touch-icon.png"},{"revision":"5af73a0d5467b1c9d0fb2c28d820f771","url":"fest/veela.js"},{"revision":"5900a0393b94b2a269dc100b457b9ca1","url":"fest/core.js"},{"revision":"bd016f7a514ca38a467d2fb6c629c97d","url":"com/service.js"},{"revision":"02c890a75e82bd7b0f20cac95e4ddeae","url":"com/app.js"},{"revision":"f541f98f5f2ede68e8618fd43230d992","url":"chunks/window.js"},{"revision":"146f7fbbc8e3a591e975fecabe8fec55","url":"chunks/vite-preload-BsPm7yBB.js"},{"revision":"af08c65caabe2ab2e4976229ef910ab2","url":"chunks/views.js"},{"revision":"2b65c36f4b63fe48d3aafecac3df4549","url":"chunks/utils.js"},{"revision":"845d446fa2593bf489582bace3b2536e","url":"chunks/unified.js"},{"revision":"08cf72c51d28642a7ec773dffd69e92d","url":"chunks/transfer-history-runtime.js"},{"revision":"c31ed75217b6e53ac5aa4caf4ca276c0","url":"chunks/templates.js"},{"revision":"cf6bcf7c0aac40eb6c8377f2a6f8ca83","url":"chunks/tabbed.js"},{"revision":"67a915de60655c223ef35751fa8f1392","url":"chunks/sw-handling.js"},{"revision":"6ea2dcbaebf8f1dd2570665aa6f13ca6","url":"chunks/src9.js"},{"revision":"ac35d049b9ef3af6fab5a21bd817b6e8","url":"chunks/src8.js"},{"revision":"b20e6ef27ba20e39af020bd153037191","url":"chunks/src7.js"},{"revision":"7905e461b07e5f8f27632598a316911a","url":"chunks/src6.js"},{"revision":"8896e4d2afd379f4c50d24fd1d82efd5","url":"chunks/src5.js"},{"revision":"c9de3cd8d8c170e8d7f8665a3e8195ae","url":"chunks/src4.js"},{"revision":"f86c0259919a397412acf029244cb828","url":"chunks/src3.js"},{"revision":"258f1edf92b50936278c4cb1d9322f92","url":"chunks/src2.js"},{"revision":"684fdcabda53fad243757c9a305f8b7a","url":"chunks/src11.js"},{"revision":"cd79798e62bd844ed84ba5f5d11714fa","url":"chunks/src10.js"},{"revision":"d9d1146188d84864fbe06e8ef3483cf4","url":"chunks/src.js"},{"revision":"dab881cc0652ea4007c1c213c997e088","url":"chunks/sku-ingress.js"},{"revision":"4bd63064ec125f902ef0b5e020663e67","url":"chunks/shells.js"},{"revision":"3e42fc809cbe4013901962c6339603b6","url":"chunks/rolldown-runtime.js"},{"revision":"18c6d3a83304a322fe6c7d72206f65c2","url":"chunks/preview.js"},{"revision":"6b16aef581520b8074765aee6baf491c","url":"chunks/launcher-state.js"},{"revision":"4c80e95d6e04bc36636f0096b99da790","url":"chunks/launcher-bridge.js"},{"revision":"16c44f2d5e5841370647594f502a763c","url":"chunks/frontend-debug-capture2.js"},{"revision":"baedf64ba535313b3cc2079f409552b0","url":"chunks/frontend-debug-capture.js"},{"revision":"2804aa1e0899c472afd13700b82bf0a6","url":"chunks/environment.js"},{"revision":"049a296d863fe524c77a4ea20bc505c4","url":"chunks/environment-shell.js"},{"revision":"f4e7156f0a88da01e523718f11538e3a","url":"chunks/entities.js"},{"revision":"34c942400e7d33d4c807647c7b6d88b0","url":"chunks/ecosystem-skus.js"},{"revision":"82100a5cbf254a75a0bcc78475b72b05","url":"chunks/crx-control-session2.js"},{"revision":"4be124cadba155792d0eb60f9de2e7b2","url":"chunks/crx-control-session.js"},{"revision":"33b5dbbed488502e41e2270cf1b95da8","url":"chunks/crx-control-pair-modal2.js"},{"revision":"595ef65b24383b3cacccdccaf7a0a6ef","url":"chunks/crx-control-pair-modal.js"},{"revision":"37213ff4554815f6840b2acd5b0766ab","url":"chunks/core.js"},{"revision":"27e59e0657ba13f3e2c8f4cee3e038c2","url":"chunks/channel-unknown.js"},{"revision":"5ea85c1f6c7848a76c3feabbe90feb29","url":"chunks/capacitor-share-intent.js"},{"revision":"ab275a1ff82b33cf9790b1a6a8cefbe7","url":"chunks/capacitor-settings-permissions2.js"},{"revision":"b3244babed3d3e854c520d2e422bf295","url":"chunks/capacitor-settings-permissions.js"},{"revision":"dde4116eff49f3ca7507e7f17d295ecd","url":"chunks/capacitor-permissions2.js"},{"revision":"991e87b8a86bcc51cfceeda81a151f1e","url":"chunks/capacitor-permissions.js"},{"revision":"7f85be2acf402efcb37c5299c93233ec","url":"chunks/capacitor-clipboard-asset.js"},{"revision":"31f9228cb6e59c198269a076e8954385","url":"chunks/admin-doors.js"},{"revision":"7fe50fa9d7161ffa53e3764845b71207","url":"chunks/WorkCenterState.js"},{"revision":"d80a2d649020a1e5f1a8086b0620e7cb","url":"chunks/WorkCenter.js"},{"revision":"86110ad965ff6ae3e5bec1dbc43d5c46","url":"chunks/ViewTransferRouting.js"},{"revision":"21368faf11684c279e23bd98d55808c4","url":"chunks/ShareTargetGateway.js"},{"revision":"441e53c95b07e79591ddebabe079da27","url":"chunks/RuntimeSettings.js"},{"revision":"47cafcb06882298623e06b7355c9caf1","url":"chunks/QuillEditor.js"},{"revision":"07f1250ba035e3ffb996595cbd438d66","url":"chunks/MarkdownEditor.js"},{"revision":"6836f885f88c862080d07e558ebfbebe","url":"chunks/LogSanitizer.js"},{"revision":"53db4b287a0c4afe25e54f0916a3ca55","url":"chunks/DocxExport.js"},{"revision":"3baf7e49ccf1e07ebb600ac506b3dbfd","url":"chunks/CustomInstructions.js"},{"revision":"4009bbaa5dceb34c319aafd36c545689","url":"chunks/BootLoader.js"},{"revision":null,"url":"assets/index-BqJHILTM.js"},{"revision":null,"url":"assets/crossword.css"},{"revision":null,"url":"assets/OPFS.uniform.worker.js"}];
 	cleanupOutdatedCaches();
 	if (manifest && true) precacheAndRoute(manifest.filter((entry) => {
 		const url = typeof entry === "string" ? entry : String(entry?.url || "");
@@ -50222,6 +50393,7 @@ Apply the user's custom instructions above when processing the data. Prioritize 
 		credentials: "same-origin",
 		cache: "no-store"
 	} }));
+	registerRoute(({ url, request }) => isProcessApiRequest(url?.pathname || "", request?.method), async ({ request }) => handleProcessApiFetch(request));
 	registerRoute(({ url }) => {
 		const host = url?.hostname || "";
 		const pathname = url?.pathname || "";
@@ -50337,69 +50509,6 @@ Apply the user's custom instructions above when processing the data. Prioritize 
 			timestamp: (/* @__PURE__ */ new Date()).toISOString(),
 			source: "service-worker"
 		}), { headers: { "Content-Type": "application/json" } });
-	});
-	registerRoute(({ url, request }) => (url?.pathname === "/api/processing" || url?.pathname === "/process/processing") && request?.method === "POST", async ({ request }) => {
-		try {
-			console.log("[SW] Processing API request received");
-			try {
-				const backendUrl = new URL(request.url);
-				backendUrl.protocol = location.protocol;
-				backendUrl.host = location.host;
-				console.log("[SW] Proxying processing request to backend:", backendUrl.href);
-				const response = await fetch(backendUrl.href, {
-					method: "POST",
-					headers: request.headers,
-					body: request.body,
-					signal: AbortSignal.timeout(3e4)
-				});
-				if (response.ok) {
-					(await caches.open("processing-cache")).put(request, response.clone());
-					console.log("[SW] Processing completed via backend, cached result");
-					return response;
-				} else console.warn("[SW] Backend processing failed:", response.status);
-			} catch (backendError) {
-				console.warn("[SW] Backend processing unavailable:", backendError);
-			}
-			const cache = await caches.open("processing-cache");
-			const cacheKeys = await cache.keys();
-			for (const cacheRequest of cacheKeys) try {
-				const cachedResponse = await safeCacheMatch(cache, cacheRequest);
-				if (cachedResponse) {
-					console.log("[SW] Serving cached processing result");
-					return cachedResponse;
-				}
-			} catch (cacheError) {
-				console.warn("[SW] Cache lookup failed:", cacheError);
-			}
-			console.log("[SW] Processing unavailable offline");
-			return new Response(JSON.stringify({
-				success: false,
-				error: "Processing unavailable offline",
-				message: "AI processing requires internet connection",
-				code: "OFFLINE_UNAVAILABLE",
-				offline: true,
-				timestamp: (/* @__PURE__ */ new Date()).toISOString()
-			}), {
-				status: 503,
-				headers: {
-					"Content-Type": "application/json",
-					"X-Offline": "true"
-				}
-			});
-		} catch (error) {
-			console.error("[SW] Processing API error:", error);
-			const msg = error instanceof Error ? error.message : String(error);
-			return new Response(JSON.stringify({
-				success: false,
-				error: "Processing failed",
-				message: msg,
-				code: "PROCESSING_ERROR",
-				timestamp: (/* @__PURE__ */ new Date()).toISOString()
-			}), {
-				status: 500,
-				headers: { "Content-Type": "application/json" }
-			});
-		}
 	});
 	registerRoute(({ url, request }) => url?.pathname === "/api/analyze" && request?.method === "POST", async ({ request }) => {
 		try {
