@@ -1,5 +1,5 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./launcher-bridge.js","../shells/boot-index.js","./rolldown-runtime.js","../com/app.js","../fest/core.js","../shells/boot-history-base.js","../com/service.js","../fest/veela.js"])))=>i.map(i=>d[i]);
-import { $ as openUnifiedContextMenu, At as ensureDefaultFsBackends, Dr as __vitePreload, Mt as resolveFsBackend, _r as unbakeScreenColors, ar as toExplorerStoragePath, et as isBookmarksPath, gr as scheduleBakeScreenColors, ur as observe, vr as loadAsAdopted, xr as removeAdopted } from "../com/app.js";
+import { $ as openUnifiedContextMenu, At as ensureDefaultFsBackends, Mt as resolveFsBackend, Or as __vitePreload, _r as unbakeScreenColors, ar as toExplorerStoragePath, et as isBookmarksPath, gr as scheduleBakeScreenColors, ur as observe, vr as loadAsAdopted, xr as removeAdopted } from "../com/app.js";
 import { c as sendViewProtocolMessage, l as createViewConstructor, r as ExplorerChannelAction } from "../views/viewer.js";
 import { Br as skuForOpenSink, Cr as classifyOpenKind, Dr as looksLikePreviewableBinary, Fr as resolveOpenPlacement, Gr as createEmptySpeedDialItem, Jr as persistSpeedDialMeta, Kr as ensureSpeedDialMeta, Mr as rememberOpenPolicyFromSettings, Nr as resolveExplorerOpenSink, Pr as resolveHostOpenPolicy, Ur as viewIdForOpenSink, Wr as addSpeedDialItem, Yr as speedDialItems, jr as peekOpenPolicy, jt as loadSettings, qr as persistSpeedDialItems, wr as classifyOpenKindFromName, zr as sinkToOpenLinkTarget } from "../shells/boot-index.js";
 import { _ as stashSkuHandoff, c as isCwspNativeHost, f as publicHrefForSku, h as shouldHandoffViewToSibling, p as publicHrefForView, r as androidPackageForSku, v as takeSkuHandoff } from "../shells/boot-history-base.js";
@@ -346,6 +346,7 @@ var writePersistedExplorerPath = (path) => {
 function loadLastPath(explorer, initialPath) {
 	try {
 		ensureDefaultFsBackends();
+		__vitePreload(() => import("../com/app.js").then((n) => n.Pt).then((m) => m.ensureRemoteMountedFs()), __vite__mapDeps([3,2]), import.meta.url).catch(() => {});
 	} catch {}
 	if (initialPath && initialPath.trim()) {
 		explorer.path = toExplorerStoragePath(initialPath) || initialPath.trim();

@@ -96,6 +96,7 @@ var styleCache = shared("lur.e@styleCache", () => /* @__PURE__ */ new Map());
 var styleElementCache = shared("lur.e@styleElementCache", () => /* @__PURE__ */ new WeakMap());
 var styleFlushPending = shared("style-lib@styleFlushPending", () => /* @__PURE__ */ new WeakSet());
 var registeredProperties = shared("style-lib@registeredProperties", () => /* @__PURE__ */ new Set());
+var animKeyframeRefs = shared("style.ts@animKeyframeRefs", () => /* @__PURE__ */ new Map());
 //#endregion
 //#region ../../modules/projects/style.ts/src/constants.ts
 var CSS_DIMENSION_UNITS_LIST = [
@@ -284,6 +285,8 @@ var BAKE_SCREEN_ALSO_SETTINGS = [
 ];
 var BAKE_SCREEN_ALSO = [...BAKE_SCREEN_ALSO_EXPLORER, ...BAKE_SCREEN_ALSO_SETTINGS];
 var ANIMATABLE_BRAND = Symbol.for("fest.animatable");
+var ANIM_LAYER = "ux-anim";
+var ANIM_TRIGGER_NAME = "--fest-t";
 var hasTypedOM = typeof CSSStyleValue !== "undefined" && typeof CSSUnitValue !== "undefined";
 //#endregion
 //#region ../../modules/projects/style.ts/src/utils.ts
@@ -575,37 +578,6 @@ var getOrCreateLayerRule = (sheet, layerName) => {
 	}
 };
 //#endregion
-//#region ../../modules/projects/core.ts/src/utils/Upsert.ts
-WeakMap.prototype.getOrInsert ??= function(key, defaultValue) {
-	if (!this.has(key)) this.set(key, defaultValue);
-	return this.get(key);
-};
-WeakMap.prototype.getOrInsertComputed ??= function(key, callbackFunction) {
-	if (!this.has(key)) this.set(key, callbackFunction(key));
-	return this.get(key);
-};
-Map.prototype.getOrInsert ??= function(key, defaultValue) {
-	if (!this.has(key)) this.set(key, defaultValue);
-	return this.get(key);
-};
-Map.prototype.getOrInsertComputed ??= function(key, callbackFunction) {
-	if (!this.has(key)) this.set(key, callbackFunction(key));
-	return this.get(key);
-};
-/**
-* Get a value from a Map, or insert a computed value if the key doesn't exist.
-* @template K - The key type
-* @template V - The value type
-* @param map - The Map to get or insert into
-* @param key - The key to look up
-* @param callbackFunction - A function that computes the value to insert based on the key
-* @returns The value from the map (existing or newly computed and inserted)
-*/
-var getOrInsertComputed = (map, key, callbackFunction = () => null) => {
-	if (!map?.has?.(key)) map?.set?.(key, callbackFunction?.(key));
-	return map?.get?.(key);
-};
-//#endregion
 //#region ../../modules/projects/core.ts/src/utils/Primitive.ts
 var $fxy = Symbol.for("@fix");
 var isObservable$1 = (observable) => {
@@ -780,6 +752,9 @@ var isCanJustReturn = (obj) => {
 var isTypedArray = (value) => {
 	return ArrayBuffer.isView(value) && !(value instanceof DataView);
 };
+var isPromise = (target) => {
+	return target instanceof Promise || typeof target?.then == "function";
+};
 var isCanTransfer = (obj) => {
 	return isPrimitive(obj) || typeof ArrayBuffer == "function" && obj instanceof ArrayBuffer || typeof MessagePort == "function" && obj instanceof MessagePort || typeof ReadableStream == "function" && obj instanceof ReadableStream || typeof WritableStream == "function" && obj instanceof WritableStream || typeof TransformStream == "function" && obj instanceof TransformStream || typeof ImageBitmap == "function" && obj instanceof ImageBitmap || typeof VideoFrame == "function" && obj instanceof VideoFrame || typeof OffscreenCanvas == "function" && obj instanceof OffscreenCanvas || typeof RTCDataChannel == "function" && obj instanceof RTCDataChannel || typeof AudioData == "function" && obj instanceof AudioData || typeof WebTransportReceiveStream == "function" && obj instanceof WebTransportReceiveStream || typeof WebTransportSendStream == "function" && obj instanceof WebTransportSendStream || typeof WebTransportReceiveStream == "function" && obj instanceof WebTransportReceiveStream;
 };
@@ -793,6 +768,103 @@ var defaultByType = (a) => {
 		case "symbol": return null;
 		case "bigint": return 0n;
 	}
+};
+//#endregion
+//#region ../../modules/projects/core.ts/src/utils/Resolved.ts
+var $promise$1 = Symbol.for("@promise");
+var SKIP_KEYS = /* @__PURE__ */ new Set([
+	Symbol.for("@extract"),
+	Symbol.for("@origin"),
+	Symbol.for("@registry"),
+	Symbol.for("@value"),
+	Symbol.for("@promise"),
+	Symbol.for("@behavior"),
+	Symbol.for("@trigger"),
+	Symbol.for("@subscribe"),
+	Symbol.for("@realProp"),
+	Symbol.for("@trigger-lock"),
+	Symbol.for("@trigger-less"),
+	Symbol.for("@trigger-control"),
+	Symbol.for("@isNotEqual"),
+	Symbol.for("@fix"),
+	Symbol.for("@target"),
+	Symbol.for("@resolved")
+]);
+var isThenable$2 = (value) => value instanceof Promise || typeof value?.then == "function";
+var settleOne = (value) => Promise.resolve(value).then((v) => ({
+	status: "fulfilled",
+	value: v
+}), (reason) => ({
+	status: "rejected",
+	reason
+}));
+var ownEnumerableKeys = (obj) => Reflect.ownKeys(obj).filter((key) => {
+	if (SKIP_KEYS.has(key)) return false;
+	const desc = Object.getOwnPropertyDescriptor(obj, key);
+	return desc !== void 0 && desc.enumerable;
+});
+/** True when a value (or a nested enumerable field) still needs a Promise combinator. */
+var hasPendingPromises = (value, seen) => {
+	if (value == null || isPrimitive(value)) return false;
+	if (isThenable$2(value) || isThenable$2(value?.[$promise$1])) return true;
+	if (typeof value != "object" && typeof value != "function") return false;
+	const seenSet = seen ?? /* @__PURE__ */ new WeakSet();
+	if (seenSet.has(value)) return false;
+	seenSet.add(value);
+	if (Array.isArray(value)) return value.some((item) => hasPendingPromises(item, seenSet));
+	if (value instanceof Map) return [...value.values()].some((item) => hasPendingPromises(item, seenSet));
+	if (value instanceof Set) return [...value.values()].some((item) => hasPendingPromises(item, seenSet));
+	return ownEnumerableKeys(value).some((key) => hasPendingPromises(value[key], seenSet));
+};
+function resolvedDeep(value, mode, seen) {
+	if (value == null || isPrimitive(value) || typeof value == "symbol") return value;
+	if (isThenable$2(value)) return value;
+	const slot = value?.[$promise$1];
+	if (isThenable$2(slot)) return slot;
+	if (typeof value != "object" && typeof value != "function") return value;
+	if (seen.has(value)) return value;
+	seen.add(value);
+	if (Array.isArray(value)) {
+		const items = value.map((item) => resolvedDeep(item, mode, seen));
+		return mode == "settled" ? Promise.allSettled(items) : Promise.all(items);
+	}
+	if (value instanceof Set) {
+		const items = [...value.values()].map((item) => resolvedDeep(item, mode, seen));
+		return mode == "settled" ? Promise.allSettled(items) : Promise.all(items);
+	}
+	const record = {};
+	if (value instanceof Map) for (const [key, item] of value.entries()) record[key] = resolvedDeep(item, mode, seen);
+	else for (const key of ownEnumerableKeys(value)) record[key] = resolvedDeep(value[key], mode, seen);
+	return mode == "settled" ? Promise.allSettledKeyed(record) : Promise.allKeyed(record);
+}
+/**
+* Await a value with the matching Promise combinator (`all` / `allKeyed` / settled variants).
+* Nested records, arrays, maps, sets, and `@promise` slots are walked once.
+*/
+function resolved$1(value, mode = "all") {
+	if (isThenable$2(value)) return mode == "settled" ? settleOne(value) : Promise.resolve(value);
+	const slot = value?.[$promise$1];
+	if (isThenable$2(slot)) return mode == "settled" ? settleOne(slot) : Promise.resolve(slot);
+	return Promise.resolve(resolvedDeep(value, mode, /* @__PURE__ */ new WeakSet()));
+}
+resolved$1.all = (value) => resolved$1(value, "all");
+resolved$1.allSettled = (value) => resolved$1(value, "settled");
+resolved$1.allKeyed = (value) => Promise.allKeyed(value);
+resolved$1.allSettledKeyed = (value) => Promise.allSettledKeyed(value);
+resolved$1.try = (callbackOrValue, ...args) => Promise.try(callbackOrValue, ...args).then((value) => resolved$1(value, "all"));
+//#endregion
+//#region ../../modules/projects/core.ts/src/utils/Upsert.ts
+/**
+* Get a value from a Map, or insert a computed value if the key doesn't exist.
+* @template K - The key type
+* @template V - The value type
+* @param map - The Map to get or insert into
+* @param key - The key to look up
+* @param callbackFunction - A function that computes the value to insert based on the key
+* @returns The value from the map (existing or newly computed and inserted)
+*/
+var getOrInsertComputed = (map, key, callbackFunction = () => null) => {
+	return map?.getOrInsertComputed?.(key, callbackFunction);
 };
 //#endregion
 //#region ../../modules/projects/core.ts/src/utils/Object.ts
@@ -942,10 +1014,16 @@ var bindEvent = (on, key, value) => {
 };
 //#endregion
 //#region ../../modules/projects/core.ts/src/utils/Promised.ts
-var resolvedMap = /* @__PURE__ */ new WeakMap();
-var handledMap = /* @__PURE__ */ new WeakMap();
+var resolvedSymbol = Symbol.for("@resolved-promise");
+var handledSymbol = Symbol.for("@handled-promise");
+globalThis[resolvedSymbol] ??= /* @__PURE__ */ new WeakMap();
+globalThis[handledSymbol] ??= /* @__PURE__ */ new WeakMap();
+var resolvedMap = globalThis[resolvedSymbol];
+var handledMap = globalThis[handledSymbol];
+var $extractKey$$1 = Symbol.for("@extract");
+var isThenable$1 = (value) => value instanceof Promise || typeof value?.then == "function";
 var actWith = (promiseOrPlain, cb) => {
-	if (promiseOrPlain instanceof Promise || typeof promiseOrPlain?.then == "function") {
+	if (isThenable$1(promiseOrPlain)) {
 		if (resolvedMap?.has?.(promiseOrPlain)) return cb(resolvedMap?.get?.(promiseOrPlain));
 		return Promise.try?.(async () => {
 			const item = await promiseOrPlain;
@@ -1064,21 +1142,20 @@ var PromiseHandler = class {
 		});
 	}
 };
-/**
-* Wrap a promise or value in a Proxy that allows synchronous property access.
-* For resolved promises, this enables accessing properties as if the promise was already resolved.
-* @template T - The resolved value type
-* @param promise - The promise or value to wrap
-* @param resolve - Optional resolve callback
-* @param reject - Optional reject callback
-* @returns A proxy that allows synchronous-style access to promise values
-*/
 function Promised(promise, resolve, reject) {
-	if (!(promise instanceof Promise || typeof promise?.then == "function")) return promise;
+	if (promise != null && typeof promise?.resolved == "function" && promise[$extractKey$$1] != null && hasPendingPromises(promise)) return Promised(promise.resolved(), resolve, reject);
+	if (!isThenable$1(promise) && hasPendingPromises(promise)) return Promised(resolved$1(promise), resolve, reject);
+	if (!isThenable$1(promise)) return promise;
 	if (resolvedMap?.has?.(promise)) return resolvedMap?.get?.(promise);
 	if (!handledMap?.has?.(promise)) promise?.then?.((item) => resolvedMap?.set?.(promise, item));
-	return handledMap?.getOrInsertComputed?.(promise, () => new Proxy(fixFx(promise), new PromiseHandler(resolve, reject)));
+	return handledMap.getOrInsertComputed(promise, () => new Proxy(fixFx(promise), new PromiseHandler(resolve, reject)));
 }
+Promised.allKeyed = function(promises, resolve, reject) {
+	return Promised(Promise.allKeyed(promises), resolve, reject);
+};
+Promised.allSettledKeyed = function(promises, resolve, reject) {
+	return Promised(Promise.allSettledKeyed(promises), resolve, reject);
+};
 //#endregion
 //#region ../../modules/projects/core.ts/src/utils/WRef.ts
 var existsMap = /* @__PURE__ */ new WeakMap();
@@ -1202,12 +1279,41 @@ var stripUserScopePrefix = (input) => {
 	if (normalized.startsWith("/user/")) return normalized.slice(5) || "/";
 	return normalized;
 };
-var userPathCandidates = (input) => {
+var isIdbScopePath = (input) => {
 	const normalized = normalizeSlashes(input);
-	const stripped = stripUserScopePrefix(normalized);
-	if (isUserScopePath(normalized)) return Array.from(/* @__PURE__ */ new Set([stripped, normalized]));
+	return normalized === "/idb" || normalized.startsWith("/idb/");
+};
+var stripIdbScopePrefix = (input) => {
+	const normalized = normalizeSlashes(input);
+	if (normalized === "/idb") return "/";
+	if (normalized.startsWith("/idb/")) return normalized.slice(4) || "/";
+	return normalized;
+};
+/** `/user/` and `/idb/` are the same virtual-storage shape; only the backend differs. */
+var isStorageScopePath = (input) => isUserScopePath(input) || isIdbScopePath(input);
+var stripStorageScopePrefix = (input) => {
+	const normalized = normalizeSlashes(input);
+	if (isIdbScopePath(normalized)) return stripIdbScopePrefix(normalized);
+	return stripUserScopePrefix(normalized);
+};
+var storagePathCandidates = (input) => {
+	const normalized = normalizeSlashes(input);
+	const stripped = stripStorageScopePrefix(normalized);
+	if (isStorageScopePath(normalized)) return Array.from(/* @__PURE__ */ new Set([stripped, normalized]));
 	return [stripped];
 };
+//#endregion
+//#region ../../modules/projects/core.ts/src/utils/MountedFs.ts
+var MOUNTED_FS_EVENT = "ssre:fs";
+var MOUNTED_FS_HTTP_PATH = "/ssre/fs";
+var MOUNTED_FS_WS_PATH = "/ssre/fs/ws";
+var createMountedFsId = () => {
+	try {
+		if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") return crypto.randomUUID();
+	} catch {}
+	return `fs_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+};
+var isMountedFsResponse = (value) => !!value && typeof value === "object" && value.t === "fs-result" && typeof value.id === "string";
 //#endregion
 //#region ../../modules/projects/style.ts/src/property.ts
 /**
@@ -2648,6 +2754,7 @@ var $originalKey$ = Symbol.for("@origin");
 var $registryKey$ = Symbol.for("@registry");
 var $behavior$1 = Symbol.for("@behavior");
 var $promise = Symbol.for("@promise");
+var $resolved = Symbol.for("@resolved");
 var $triggerLess = Symbol.for("@trigger-less");
 var $triggerLock = Symbol.for("@trigger-lock");
 var $triggerControl = Symbol.for("@trigger-control");
@@ -2697,7 +2804,9 @@ var isThenable = (val) => val != null && typeof val.then === "function";
 var withPromise = (target, cb) => {
 	if (isPrimitive(target) || typeof target == "function") return cb?.(target);
 	if (isThenable(target)) return target.then(cb);
+	if (typeof target?.resolved == "function") return Promise.resolve(target.resolved()).then(cb);
 	if (target?.promise && isThenable(target.promise)) return target.promise.then(cb);
+	if (target?.[$promise] && isThenable(target[$promise])) return target[$promise].then(cb);
 	return cb?.(target);
 };
 var disposeMap = /* @__PURE__ */ new WeakMap();
@@ -2848,6 +2957,7 @@ var triggerAliases = /* @__PURE__ */ new Map([
 	["invalidate", ["@invalidate"]],
 	["manual", ["@manual"]],
 	["custom", ["@custom"]],
+	["resolved", ["@resolved"]],
 	["setAll", ["@setAll"]],
 	["addAll", ["@addAll"]],
 	["deleteAll", ["@deleteAll", "@clear"]]
@@ -3109,6 +3219,68 @@ globalThis[SubscriptSymbol] ??= class Subscript {
 };
 var Subscript = globalThis[SubscriptSymbol];
 //#endregion
+//#region ../../modules/projects/object.ts/src/core/Resolved.ts
+/**
+* FIND:promise-keyed
+* Reactive `resolved` operation: snapshot thenables via core combinators and emit `resolved`.
+*/
+var rawOf = (target) => {
+	const unwrapped = deref(target);
+	return unwrapped?.[$extractKey$] ?? unwrapped;
+};
+/** Snapshot a reactive target (or its raw source) with `all` / `allKeyed` / settled variants. */
+function resolved(target, mode = "all") {
+	const raw = rawOf(target);
+	if (isPromise(raw)) return resolved$1(raw, mode);
+	if (isPromise(raw?.[$promise])) return resolved$1(raw[$promise], mode);
+	return resolved$1(raw ?? target, mode);
+}
+/** Build `obj.resolved` / `$trigger.resolved` without making the proxy thenable. */
+function makeResolvedOp(target, emit = false) {
+	const run = ((mode = "all") => {
+		const pending = resolved(target, mode);
+		if (!emit) return pending;
+		return pending.then((value) => {
+			const raw = rawOf(target);
+			const key = raw?.realProp ?? (raw && "value" in raw ? "value" : null);
+			subscriptRegistry.get(raw)?.trigger?.(key, value, void 0, "resolved");
+			return value;
+		});
+	});
+	run.all = () => run("all");
+	run.allSettled = () => run("settled");
+	run.allKeyed = () => run("all");
+	run.allSettledKeyed = () => run("settled");
+	run.try = (callbackOrValue, ...args) => Promise.try(callbackOrValue, ...args).then((value) => resolved(value ?? target, "all"));
+	return run;
+}
+function emitResolved(target, key, value, oldValue) {
+	const raw = rawOf(target) ?? target;
+	subscriptRegistry.get(raw)?.trigger?.(key, value, oldValue, "resolved");
+}
+/** Re-assign thenable fields through the live proxy so set + `resolved` share one path. */
+function bindExistingThenables(live, raw) {
+	if (live == null || raw == null) return live;
+	if (Array.isArray(raw)) {
+		raw.forEach((value, index) => {
+			if (isPromise(value)) live[index] = value;
+		});
+		return live;
+	}
+	if (raw instanceof Map) {
+		for (const [key, value] of raw.entries()) if (isPromise(value)) live.set(key, value);
+		return live;
+	}
+	if (raw instanceof Set) return live;
+	for (const key of Reflect.ownKeys(raw)) {
+		if (key == $extractKey$ || key == $promise || key == $resolved) continue;
+		if (!Object.getOwnPropertyDescriptor(raw, key)?.enumerable) continue;
+		const value = raw[key];
+		if (isPromise(value)) live[key] = value;
+	}
+	return live;
+}
+//#endregion
 //#region ../../modules/projects/object.ts/src/core/Specific.ts
 /**
 * Concrete proxy handlers for arrays, objects, maps, and sets.
@@ -3213,7 +3385,7 @@ var triggerValueOf = (target, key) => {
 	if (realProp != null && key == realProp) return safeGet$1(target, "value") ?? safeGet$1(target, $value) ?? safeGet$1(target, key);
 	return key == null ? void 0 : safeGet$1(target, key);
 };
-var createTriggerAPI = (registry, emit) => {
+var createTriggerAPI = (registry, emit, target) => {
 	const api = (key, opOrOptions, trigger) => {
 		if (!isTriggerEmitOptions(opOrOptions)) trigger ??= opOrOptions;
 		return emit(isTriggerEmitOptions(key) ? key : isTriggerEmitOptions(opOrOptions, true) ? {
@@ -3233,6 +3405,7 @@ var createTriggerAPI = (registry, emit) => {
 		value,
 		oldValue
 	});
+	if (target != null) api.resolved = makeResolvedOp(target, true);
 	return api;
 };
 var systemGet = (target, name, registry) => {
@@ -3248,6 +3421,7 @@ var systemGet = (target, name, registry) => {
 	if ([$extractKey$, $originalKey$].indexOf(name) >= 0) return safeGet$1(target, name) ?? target;
 	if (name == $value) return safeGet$1(target, name) ?? safeGet$1(target, "value");
 	if (name == $registryKey$) return registry;
+	if (name == $resolved || name == "resolved" && !Object.prototype.hasOwnProperty.call(target, "resolved")) return makeResolvedOp(target);
 	if (name == $triggerControl) return registry?.triggerControl;
 	if (name == Symbol.observable) return registry?.compatible;
 	if (name == Symbol.subscribe) return (cb, prop, options) => affected(prop != null ? [target, prop] : target, cb, options);
@@ -3426,7 +3600,7 @@ var ObserveArrayHandler = class {
 			const value = triggerOptionValue(options, "value", () => safeGet$1(target, key));
 			const oldValue = triggerOptionValue(options, "oldValue", () => void 0);
 			return registry?.trigger?.(key, value, oldValue, triggerOptionTrigger(options, "manual"));
-		});
+		}, target);
 		if (name == "@target" || name == $extractKey$) return target;
 		if (name == "x") return () => {
 			return target?.x ?? target?.[0];
@@ -3468,30 +3642,36 @@ var ObserveArrayHandler = class {
 			delete this[$triggerLock];
 			return true;
 		}
-		const old = safeGet$1(target, name);
-		const xyzw = [
-			"x",
-			"y",
-			"z",
-			"w"
-		];
-		const rgba = [
-			"r",
-			"g",
-			"b",
-			"a"
-		];
-		const xyzw_idx = xyzw.indexOf(name);
-		const rgba_idx = rgba.indexOf(name);
-		let got = false;
-		if (xyzw_idx >= 0) got = Reflect.set(target, xyzw_idx, value);
-		else if (rgba_idx >= 0) got = Reflect.set(target, rgba_idx, value);
-		else got = Reflect.set(target, name, value);
-		if (name == "length") {
-			if (isNotEqual(old, value)) triggerWhenLengthChange(this, target, old, value);
-		}
-		if (!this[$triggerLock] && typeof name != "symbol" && isNotEqual(old, value)) subscriptRegistry?.get?.(target)?.trigger?.(name, value, old, "set");
-		return got;
+		const pending = isPromise(value);
+		return potentiallyAsync(value, (v) => {
+			const old = safeGet$1(target, name);
+			const xyzw = [
+				"x",
+				"y",
+				"z",
+				"w"
+			];
+			const rgba = [
+				"r",
+				"g",
+				"b",
+				"a"
+			];
+			const xyzw_idx = xyzw.indexOf(name);
+			const rgba_idx = rgba.indexOf(name);
+			let got = false;
+			if (xyzw_idx >= 0) got = Reflect.set(target, xyzw_idx, v);
+			else if (rgba_idx >= 0) got = Reflect.set(target, rgba_idx, v);
+			else got = Reflect.set(target, name, v);
+			if (name == "length") {
+				if (isNotEqual(old, v)) triggerWhenLengthChange(this, target, old, v);
+			}
+			if (!this[$triggerLock] && typeof name != "symbol") {
+				if (isNotEqual(old, v)) subscriptRegistry?.get?.(target)?.trigger?.(name, v, old, "set");
+				if (pending) emitResolved(target, name, v, old);
+			}
+			return got;
+		});
 	}
 	deleteProperty(target, name) {
 		if (typeof name != "symbol") {
@@ -3535,7 +3715,7 @@ var ObserveObjectHandler = class {
 			const oldValue = triggerOptionValue(options, "oldValue", () => key == "value" || key == realPropOf$1(target) ? safeGet$1(target, $value) : void 0);
 			const value = triggerOptionValue(options, "value", () => triggerValueOf(target, key));
 			return registry?.trigger?.(key, value, oldValue, triggerOptionTrigger(options, "manual"));
-		});
+		}, target);
 		if (name == Symbol.toPrimitive) return (hint) => {
 			const ft = fallThrough(target, name);
 			if (safeGet$1(ft, name)) return safeGet$1(ft, name)?.(hint);
@@ -3618,7 +3798,11 @@ var ObserveObjectHandler = class {
 			const oldValue = name == "value" ? safeGet$1(target, $value) ?? safeGet$1(target, name) : safeGet$1(target, name);
 			target[name] = v;
 			const newValue = safeGet$1(target, name) ?? v;
-			if (!this[$triggerLock] && typeof name != "symbol" && (safeGet$1(target, $isNotEqual) ?? isNotEqual)?.(oldValue, newValue)) (subscriptRegistry.get(target) ?? subscriptRegistry.get($original))?.trigger?.(triggerName, v, oldValue);
+			if (!this[$triggerLock] && typeof name != "symbol") {
+				const subscript = subscriptRegistry.get(target) ?? subscriptRegistry.get($original);
+				if ((safeGet$1(target, $isNotEqual) ?? isNotEqual)?.(oldValue, newValue)) subscript?.trigger?.(triggerName, v, oldValue);
+				if (isPromise(value)) emitResolved($original, triggerName, v, oldValue);
+			}
 			return true;
 		});
 	}
@@ -3684,7 +3868,7 @@ var ObserveMapHandler = class {
 			if (value == null && !hasOwn(options, "value")) return;
 			const oldValue = triggerOptionValue(options, "oldValue", () => void 0);
 			return registry?.trigger?.(key, value, oldValue, triggerOptionTrigger(options, "manual"));
-		});
+		}, target);
 		if (name == "clear") return () => {
 			const oldValues = Array.from(target?.entries?.() || []), result = valueOrFx();
 			oldValues.forEach(([prop, oldValue]) => {
@@ -3699,11 +3883,27 @@ var ObserveMapHandler = class {
 		};
 		if (name == "set") return (prop, value) => potentiallyAsyncMap(value, (v) => {
 			const had = target.has(prop), oldValue = target.get(prop), result = valueOrFx(prop, v);
-			if (!had || isNotEqual(oldValue, v)) {
-				if (!this[$triggerLock]) subscriptRegistry.get(target)?.trigger?.(prop, v, had ? oldValue : null, had ? "set" : "add");
+			if (!this[$triggerLock]) {
+				if (!had || isNotEqual(oldValue, v)) subscriptRegistry.get(target)?.trigger?.(prop, v, had ? oldValue : null, had ? "set" : "add");
+				if (isPromise(value)) emitResolved(target, prop, v, oldValue);
 			}
 			return result;
 		});
+		if (name == "getOrInsert" || name == "getOrInsertComputed") {
+			const computed = name == "getOrInsertComputed";
+			return (key, defaultOrCompute) => {
+				if (target.has(key)) return target.get(key);
+				const incoming = computed ? typeof defaultOrCompute == "function" ? defaultOrCompute(key) : defaultOrCompute : defaultOrCompute;
+				return potentiallyAsyncMap(incoming, (v) => {
+					const result = typeof target.getOrInsert == "function" ? target.getOrInsert(key, v) : (target.set(key, v), target.get(key));
+					if (!this[$triggerLock]) {
+						subscriptRegistry.get(target)?.trigger?.(key, v, null, "add");
+						if (isPromise(incoming)) emitResolved(target, key, v, null);
+					}
+					return result;
+				});
+			};
+		}
 		return valueOrFx;
 	}
 	set(target, name, value) {
@@ -3779,7 +3979,7 @@ var ObserveSetHandler = class {
 			const value = triggerOptionValue(options, "value", () => target.has(key));
 			const oldValue = triggerOptionValue(options, "oldValue", () => void 0);
 			return registry?.trigger?.(key, value, oldValue, triggerOptionTrigger(options, "manual"));
-		});
+		}, target);
 		if (name == "clear") return () => {
 			const oldValues = Array.from(target?.values?.() || []), result = valueOrFx();
 			oldValues.forEach((oldValue) => {
@@ -3792,13 +3992,14 @@ var ObserveSetHandler = class {
 			if (!this[$triggerLock] && had) subscriptRegistry.get(target)?.trigger?.(value, null, oldValue, "delete");
 			return result;
 		};
-		if (name == "add") return (value) => {
-			const had = target.has(value), oldValue = had ? value : null, result = valueOrFx(value);
-			if (!had) {
-				if (!this[$triggerLock]) subscriptRegistry.get(target)?.trigger?.(value, value, oldValue, "add");
+		if (name == "add") return (value) => potentiallyAsync(value, (v) => {
+			const had = target.has(v), oldValue = had ? v : null, result = valueOrFx(v);
+			if (!this[$triggerLock]) {
+				if (!had) subscriptRegistry.get(target)?.trigger?.(v, v, oldValue, "add");
+				if (isPromise(value)) emitResolved(target, v, v, oldValue);
 			}
 			return result;
-		};
+		});
 		return valueOrFx;
 	}
 	set(target, name, value) {
@@ -3854,19 +4055,23 @@ var $isObservable = (target) => {
 };
 /** Wrap an array with the array-specific observable proxy. */
 var observeArray = (arr) => {
-	return $isObservable(arr) ? arr : wrapWith(arr, new ObserveArrayHandler());
+	if ($isObservable(arr)) return arr;
+	return bindExistingThenables(wrapWith(arr, new ObserveArrayHandler()), arr);
 };
 /** Wrap an object with the object-specific observable proxy. */
 var observeObject = (obj) => {
-	return $isObservable(obj) ? obj : wrapWith(obj, new ObserveObjectHandler());
+	if ($isObservable(obj)) return obj;
+	return bindExistingThenables(wrapWith(obj, new ObserveObjectHandler()), obj);
 };
 /** Wrap a map with the map-specific observable proxy. */
 var observeMap = (map) => {
-	return $isObservable(map) ? map : wrapWith(map, new ObserveMapHandler());
+	if ($isObservable(map)) return map;
+	return bindExistingThenables(wrapWith(map, new ObserveMapHandler()), map);
 };
 /** Wrap a set with the set-specific observable proxy. */
 var observeSet = (set) => {
-	return $isObservable(set) ? set : wrapWith(set, new ObserveSetHandler());
+	if ($isObservable(set)) return set;
+	return wrapWith(set, new ObserveSetHandler());
 };
 //#endregion
 //#region ../../modules/projects/object.ts/src/core/Primitives.ts
@@ -3897,7 +4102,14 @@ var numberRef = (initial, behavior) => {
 			return Number(this[$value] || 0) || 0;
 		}
 	});
-	initial?.then?.((v) => $r.value = v);
+	initial?.then?.((v) => {
+		$r.value = v;
+		$r[$trigger]?.({
+			key: "value",
+			value: v,
+			trigger: "resolved"
+		});
+	});
 	return $r;
 };
 /** String ref with coercion, primitive conversion hooks, and optional promise initialization. */
@@ -3920,7 +4132,14 @@ var stringRef = (initial, behavior) => {
 			return String(this[$value] ?? "") ?? "";
 		}
 	});
-	initial?.then?.((v) => $r.value = v);
+	initial?.then?.((v) => {
+		$r.value = v;
+		$r[$trigger]?.({
+			key: "value",
+			value: v,
+			trigger: "resolved"
+		});
+	});
 	return $r;
 };
 /** Boolean ref with truthy/falsy coercion and optional promise initialization. */
@@ -3943,7 +4162,14 @@ var booleanRef = (initial, behavior) => {
 			return this[$value] || false;
 		}
 	});
-	initial?.then?.((v) => $r.value = v);
+	initial?.then?.((v) => {
+		$r.value = v;
+		$r[$trigger]?.({
+			key: "value",
+			value: v,
+			trigger: "resolved"
+		});
+	});
 	return $r;
 };
 /** Generic ref wrapper for values that do not need one of the specialized primitive ref shapes. */
@@ -3960,7 +4186,14 @@ var wrapRef = (initial, behavior) => {
 		},
 		value: isPromise ? null : deref(initial)
 	});
-	initial?.then?.((v) => $r.value = v);
+	initial?.then?.((v) => {
+		$r.value = v;
+		$r[$trigger]?.({
+			key: "value",
+			value: v,
+			trigger: "resolved"
+		});
+	});
 	affected(initial, (v) => {
 		$r?.[$trigger]?.();
 	});
@@ -4514,9 +4747,10 @@ var computed = (src, cb, behavior, prop = "value") => {
 		return cb?.(src?.[0]?.[a_prop], a_prop, oldValue);
 	};
 	const initial = cmp();
+	const pendingInitial = isPromise(initial);
 	const rf = observe({
-		[$promise]: void 0,
-		[$value]: initial,
+		[$promise]: pendingInitial ? initial : void 0,
+		[$value]: pendingInitial ? void 0 : initial,
 		[$behavior$1]: behavior,
 		[Symbol?.toStringTag]() {
 			return String(cmp() ?? this[$value] ?? "") || "";
@@ -4531,16 +4765,31 @@ var computed = (src, cb, behavior, prop = "value") => {
 			return this[$value] = cmp() ?? this[$value];
 		}
 	});
-	const usb = affected([src?.[0] ?? src, a_prop ?? "value"], () => {
+	const writeComputed = (value, trigger) => {
+		if (isPromise(value)) return Promise.resolve(value).then((v) => {
+			const oldValue = rf?.[$value];
+			rf[$value] = v;
+			rf?.[$trigger]?.({
+				key: "value",
+				value: v,
+				oldValue,
+				trigger: "resolved"
+			});
+			return v;
+		});
 		const oldValue = rf?.[$value];
-		const value = cmp();
 		rf[$value] = value;
 		rf?.[$trigger]?.({
 			key: "value",
 			value,
 			oldValue,
-			trigger: "manual"
+			trigger
 		});
+		return value;
+	};
+	if (pendingInitial) writeComputed(initial, "resolved");
+	const usb = affected([src?.[0] ?? src, a_prop ?? "value"], () => {
+		writeComputed(cmp(), "manual");
 	});
 	addToCallChain(rf, Symbol.dispose, usb);
 	return rf;
@@ -4852,6 +5101,28 @@ var AnimatableValue = class {
 			apply(trigger.value);
 			const unsubscribe = typeof trigger.subscribe === "function" ? trigger.subscribe(apply) : null;
 			return () => unsubscribe?.();
+		}
+		if (trigger === "show" || trigger === "hide" || trigger === "remove") {
+			const eventName = trigger === "show" ? "u2-before-show" : trigger === "hide" ? "u2-before-hide" : "u2-before-remove";
+			const attr = trigger === "remove" ? "data-removing" : "data-hidden";
+			const wantPresent = trigger !== "show";
+			const onEvent = (ev) => {
+				if (ev.defaultPrevented) return;
+				playForward();
+			};
+			element.addEventListener(eventName, onEvent);
+			const mo = new MutationObserver(() => {
+				if (element.hasAttribute(attr) === wantPresent) playForward();
+				else if (reverseOnExit && attachment.animation) playBackward();
+			});
+			mo.observe(element, {
+				attributes: true,
+				attributeFilter: [attr]
+			});
+			return () => {
+				element.removeEventListener(eventName, onEvent);
+				mo.disconnect();
+			};
 		}
 		return () => {};
 	}
@@ -5664,19 +5935,39 @@ var ensureRegisteredNumberProperty = (win, name, initialValue) => {
 };
 //#endregion
 //#region ../../modules/projects/style.ts/src/Animate.ts
-var parsePropertyList = (options) => {
+var parsePropertyList = (options, extra) => {
+	if (extra instanceof Map && extra.size > 0) return Array.from(extra.values());
+	const fromKeyframes = options.keyframes?.properties;
+	if (fromKeyframes instanceof Map && fromKeyframes.size > 0) return Array.from(fromKeyframes.values());
 	const fromString = [];
 	if (typeof options.properties == "string") {
 		const props = options.properties?.trim?.()?.split?.(";");
 		fromString.push(...Array.from(props || [])?.map?.(($pair) => {
 			if ($pair?.includes?.(":")) {
 				const value = ($pair?.split?.(":") ?? [])?.slice?.(1, -1)?.join?.(":");
-				return { [($pair?.[0])?.trim?.()]: value?.trim?.() };
+				return {
+					property: ($pair?.[0])?.trim?.(),
+					values: [value?.trim?.()]
+				};
 			}
 			return null;
 		})?.filter?.((a) => a != null) || []);
+		return fromString;
 	}
-	return Array.from(Array.isArray(options.properties) ? options.properties : fromString);
+	if (Array.isArray(options.properties)) return options.properties.map((item, i) => {
+		if (item && Array.isArray(item.values) && item.property) return item;
+		const entries = Object.entries(item || {}).filter(([k]) => k !== "offset" && k !== "easing");
+		const value = entries[0]?.[1];
+		return {
+			property: entries[0]?.[0] ?? `p${i}`,
+			values: value == null ? [] : Array.isArray(value) ? value : [value]
+		};
+	});
+	if (options.properties && typeof options.properties === "object") return Object.entries(options.properties).map(([property, values]) => ({
+		property,
+		values: Array.isArray(values) ? values : [values]
+	}));
+	return fromString;
 };
 /**
 * Parse A template literal into animation keyframes.
@@ -5736,9 +6027,9 @@ var processAnimationValues = (values) => {
 /**
 * Build Web Animations API keyframes from parsed template.
 */
-var buildWebAnimationKeyframes = (options) => {
+var buildWebAnimationKeyframes = (options, extra) => {
 	const globalOffsets = options?.offsets;
-	const propertyList = parsePropertyList(options);
+	const propertyList = parsePropertyList(options, extra);
 	if (propertyList.length === 0) throw new Error("No animatable properties found in A template");
 	const maxLength = Math.max(...propertyList.map((p) => p.values.length));
 	const offsets = (globalOffsets?.length > 1 ? globalOffsets : null) || Array.from({ length: maxLength }, (_, i) => i / (maxLength - 1));
@@ -5839,11 +6130,13 @@ var A$1 = (strings, ...values) => {
 * ```
 */
 var doAnimation = (element, config, keyframes) => {
-	if (parsePropertyList(config).some((prop) => {
+	const canAnimate = element != null && typeof element.animate === "function";
+	if (!(typeof Element !== "undefined" && element instanceof Element) && !canAnimate) throw new TypeError("doAnimation requires an Element");
+	if (parsePropertyList(config, keyframes).some((prop) => {
 		const { hasReactive } = processAnimationValues(prop.values);
 		return hasReactive;
 	})) return createReactiveAnimation(element, config);
-	const frames = buildWebAnimationKeyframes(config);
+	const frames = buildWebAnimationKeyframes(config, keyframes);
 	const timing = buildAnimationTiming(config);
 	const animation = element.animate(frames, timing);
 	const cleanup = () => {
@@ -5870,7 +6163,9 @@ var doAnimation = (element, config, keyframes) => {
 */
 var animate = (element, options) => {
 	const properties = /* @__PURE__ */ new Map();
-	for (const [property, values] of Object.entries(options.properties)) {
+	const record = options.properties;
+	if (record == null || typeof record === "string" || Array.isArray(record)) return doAnimation(element, options);
+	for (const [property, values] of Object.entries(record)) {
 		if (!Array.isArray(values)) throw new TypeError(`animate() expects arrays of values, got ${typeof values} for ${property}`);
 		properties.set(property, {
 			property,
@@ -5956,6 +6251,601 @@ var staggerAnimation = (elements, options, staggerDelay = 100) => {
 			...options,
 			delay
 		});
+	});
+};
+//#endregion
+//#region ../../modules/projects/style.ts/src/css-animation.ts
+var isReactiveTrigger = (t) => t != null && typeof t === "object" && !isScrollDriven(t) && !isViewDriven(t) && "value" in t;
+var asPropertyList = (options) => {
+	const kf = options.keyframes?.properties;
+	if (kf instanceof Map) return Array.from(kf.values());
+	const props = options.properties;
+	if (typeof props === "string") throw new TypeError("string properties are not used on the CSS compile path");
+	if (Array.isArray(props)) return props.map((item, i) => {
+		if (item && Array.isArray(item.values) && item.property) return item;
+		const entries = Object.entries(item || {}).filter(([k]) => k !== "offset" && k !== "easing");
+		return {
+			property: entries[0]?.[0] ?? `p${i}`,
+			values: entries[0] ? [entries[0][1]] : []
+		};
+	});
+	if (props && typeof props === "object") return Object.entries(props).map(([property, values]) => ({
+		property,
+		values: Array.isArray(values) ? values : [values]
+	}));
+	throw new TypeError("No animatable properties");
+};
+var serializeValue = (value) => {
+	if (value == null) return "";
+	const isElement = typeof Element !== "undefined" && value instanceof Element;
+	if (typeof value === "object" && "value" in value && !isElement) return String(value.value ?? "");
+	return String(value);
+};
+var compileKeyframesCss = (options) => {
+	const list = asPropertyList(options);
+	const maxLength = Math.max(2, ...list.map((p) => p.values.length));
+	const offsets = options.offsets ?? Array.from({ length: maxLength }, (_, i) => i / (maxLength - 1));
+	const frames = [];
+	for (let i = 0; i < maxLength; i++) {
+		const decls = [];
+		for (const prop of list) {
+			const raw = prop.values[Math.min(i, prop.values.length - 1)];
+			decls.push(`${camelToKebab$3(prop.property)}: ${serializeValue(raw)}`);
+		}
+		const pct = Math.round((offsets[i] ?? i / (maxLength - 1)) * 100);
+		frames.push(`${pct}% { ${decls.join("; ")}; }`);
+	}
+	const fingerprint = frames.join("|");
+	let hash = 0;
+	for (let i = 0; i < fingerprint.length; i++) hash = hash * 31 + fingerprint.charCodeAt(i) | 0;
+	const name = `fest-anim-${(hash >>> 0).toString(36)}`;
+	return {
+		name,
+		cssText: `@keyframes ${name} {\n${frames.join("\n")}\n}`,
+		fingerprint
+	};
+};
+var compileTriggerCss = (selector, options) => {
+	const trigger = options.trigger ?? "mount";
+	if (isReactiveTrigger(trigger)) throw new TypeError("reactive { value } trigger is not valid on the CSS path");
+	const compiled = compileKeyframesCss(options);
+	const duration = `${parseTime(options.duration, 300)}ms`;
+	const delay = `${parseTime(options.delay, 0)}ms`;
+	const iterations = normalizeIterationCount(options.iterationCount);
+	const properties = {
+		"animation-name": compiled.name,
+		"animation-duration": duration,
+		"animation-delay": delay,
+		"animation-iteration-count": iterations === "Infinity" || iterations === Infinity ? "infinite" : String(iterations),
+		"animation-direction": options.direction ?? "normal",
+		"animation-fill-mode": options.fillMode ?? "none",
+		"animation-timing-function": typeof options.easing === "string" ? options.easing : "linear"
+	};
+	if (trigger === "hover") {
+		if (options.reverseOnExit) properties["animation-trigger"] = `${ANIM_TRIGGER_NAME} play-backwards`;
+		return {
+			selector: `${selector}:hover`,
+			properties
+		};
+	}
+	if (trigger === "focus") return {
+		selector: `${selector}:focus`,
+		properties
+	};
+	if (trigger === "show") return {
+		selector: `${selector}:not([data-hidden])`,
+		properties
+	};
+	if (trigger === "hide") return {
+		selector: `${selector}[data-hidden]`,
+		properties
+	};
+	if (trigger === "remove") return {
+		selector: `${selector}[data-removing]`,
+		properties
+	};
+	if (trigger === "manual") {
+		properties["animation-play-state"] = "paused";
+		return {
+			selector,
+			properties
+		};
+	}
+	if (trigger === "click") {
+		properties["event-trigger"] = `${ANIM_TRIGGER_NAME} click`;
+		properties["animation-trigger"] = `${ANIM_TRIGGER_NAME} play`;
+		return {
+			selector,
+			properties
+		};
+	}
+	if (trigger === "visible") {
+		properties["timeline-trigger"] = `${ANIM_TRIGGER_NAME} view contain`;
+		properties["animation-trigger"] = `${ANIM_TRIGGER_NAME} play`;
+		return {
+			selector,
+			properties
+		};
+	}
+	if (isScrollDriven(trigger) || isViewDriven(trigger)) {
+		properties["timeline-trigger"] = `${ANIM_TRIGGER_NAME} ${isViewDriven(trigger) ? "view" : "scroll"}`;
+		if (trigger.rangeStart) properties["animation-range-start"] = trigger.rangeStart;
+		if (trigger.rangeEnd) properties["animation-range-end"] = trigger.rangeEnd;
+		return {
+			selector,
+			properties
+		};
+	}
+	return {
+		selector,
+		properties
+	};
+};
+var resolveCssAnimationTarget = (target, options) => {
+	if (typeof Element !== "undefined" && target instanceof Element) throw new TypeError("bindCssAnimation does not accept Element");
+	if (typeof CSSStyleDeclaration !== "undefined" && target instanceof CSSStyleDeclaration) {
+		const rule = target.parentRule;
+		if (!rule) throw new TypeError("CSSStyleDeclaration has no parentRule");
+		return resolveCssAnimationTarget(rule, options);
+	}
+	if (typeof CSSStyleRule !== "undefined" && target instanceof CSSStyleRule) {
+		const sheet = target.parentStyleSheet;
+		if (!sheet) throw new TypeError("CSSStyleRule has no parentStyleSheet");
+		return {
+			sheet,
+			rule: target,
+			selector: target.selectorText
+		};
+	}
+	if (typeof CSSStyleSheet !== "undefined" && target instanceof CSSStyleSheet) {
+		const selector = options.selector;
+		if (!selector) throw new TypeError("CSSStyleSheet bind requires options.selector");
+		return {
+			sheet: target,
+			rule: null,
+			selector
+		};
+	}
+	throw new TypeError("bindCssAnimation target must be a CSSStyleRule, CSSStyleSheet, or CSSStyleDeclaration");
+};
+var declarationsToText = (properties) => Object.entries(properties).map(([k, v]) => `${k}: ${v};`).join(" ");
+/**
+* Write `@keyframes` + companion rule into a stylesheet. Never calls `element.animate()`.
+* WHY: duck-type `insertRule`+`cssRules`+`selector` before `instanceof` so Node tests work.
+*/
+var bindCssAnimation = (target, options) => {
+	const compiled = compileKeyframesCss(options);
+	let sheet;
+	let selector;
+	if (target && typeof target.insertRule === "function" && target.cssRules && options.selector) {
+		sheet = target;
+		selector = options.selector;
+	} else {
+		const resolved = resolveCssAnimationTarget(target, options);
+		sheet = resolved.sheet;
+		selector = resolved.selector;
+	}
+	const trigger = compileTriggerCss(selector, options);
+	const layer = getOrCreateLayerRule(sheet, "ux-anim") ?? sheet;
+	const host = layer.insertRule ? layer : sheet;
+	let entry = animKeyframeRefs.get(compiled.fingerprint);
+	if (!entry) {
+		host.insertRule(compiled.cssText, host.cssRules?.length ?? 0);
+		const keyframesRule = host.cssRules?.[host.cssRules.length - 1];
+		entry = {
+			name: compiled.name,
+			count: 0,
+			keyframesRule,
+			hosts: /* @__PURE__ */ new Set(),
+			hostCounts: /* @__PURE__ */ new Map()
+		};
+		animKeyframeRefs.set(compiled.fingerprint, entry);
+	} else if (!entry.hosts.has(host)) {
+		host.insertRule(compiled.cssText, host.cssRules?.length ?? 0);
+		if (!entry.keyframesRule) entry.keyframesRule = host.cssRules?.[host.cssRules.length - 1];
+	}
+	entry.hostCounts ??= /* @__PURE__ */ new Map();
+	entry.count += 1;
+	entry.hosts.add(host);
+	entry.hostCounts.set(host, (entry.hostCounts.get(host) ?? 0) + 1);
+	const companionText = `${trigger.selector} { ${declarationsToText(trigger.properties)} }`;
+	const companionIndex = host.insertRule(companionText, host.cssRules?.length ?? 0);
+	const companionRule = host.cssRules?.[companionIndex];
+	const deleteKeyframesFrom = (sheetHost) => {
+		try {
+			const rules = Array.from(sheetHost.cssRules || []);
+			let idx = rules.indexOf(entry.keyframesRule);
+			if (idx < 0) idx = rules.findIndex((r) => String(r?.cssText || "").includes(`@keyframes ${entry.name}`));
+			if (idx >= 0) sheetHost.deleteRule(idx);
+		} catch {}
+	};
+	let dead = false;
+	return () => {
+		if (dead) return;
+		dead = true;
+		try {
+			const idx = Array.from(host.cssRules || []).indexOf(companionRule);
+			if (idx >= 0) host.deleteRule(idx);
+		} catch {}
+		entry.count -= 1;
+		const nextHostCount = (entry.hostCounts?.get(host) ?? 1) - 1;
+		if (nextHostCount <= 0) {
+			entry.hostCounts?.delete(host);
+			entry.hosts.delete(host);
+			deleteKeyframesFrom(host);
+		} else entry.hostCounts?.set(host, nextHostCount);
+		if (entry.count <= 0) {
+			for (const leftover of entry.hosts) deleteKeyframesFrom(leftover);
+			animKeyframeRefs.delete(compiled.fingerprint);
+		}
+	};
+};
+//#endregion
+//#region ../../modules/projects/dom.ts/src/mixin/Observer.ts
+var onBorderObserveSymbol = Symbol.for("dom.ts@onBorderObserve");
+globalThis[onBorderObserveSymbol] ??= /* @__PURE__ */ new WeakMap();
+var onContentObserveSymbol = Symbol.for("dom.ts@onContentObserve");
+var onContentObserve$1 = globalThis[onContentObserveSymbol] ??= /* @__PURE__ */ new WeakMap();
+var unwrapFromQuery = (element) => {
+	if (typeof element?.current == "object") element = element?.element ?? element?.current ?? (typeof element?.self == "object" ? element?.self : null) ?? element;
+	return element;
+};
+/** INVARIANT: `querySelectorAll` / `matches` reject "" — normalize before DOM APIs. */
+var normalizeSelector = (selector, fallback = "*") => {
+	if (typeof selector !== "string") return fallback;
+	return selector.trim() || fallback;
+};
+var safeQuerySelectorAll = (el, selector) => {
+	if (!el || typeof el.querySelectorAll !== "function") return [];
+	const sel = normalizeSelector(selector, "");
+	if (!sel) return [];
+	try {
+		return Array.from(el.querySelectorAll(sel) || []);
+	} catch {
+		return [];
+	}
+};
+var safeMatches$1 = (el, selector) => {
+	if (!el || typeof el.matches !== "function") return false;
+	const sel = normalizeSelector(selector, "");
+	if (!sel) return false;
+	try {
+		return !!el.matches(sel);
+	} catch {
+		return false;
+	}
+};
+var observeContentBox = (element, cb) => {
+	if (!onContentObserve$1.has(element = unwrapFromQuery(element))) {
+		const callbacks = [];
+		const observer = new ResizeObserver((entries) => {
+			for (const entry of entries) if (entry.contentBoxSize) {
+				const contentBoxSize = entry.contentBoxSize[0];
+				if (contentBoxSize) callbacks.forEach((cb) => cb?.(contentBoxSize, observer));
+			}
+		});
+		cb?.({
+			inlineSize: element.clientWidth,
+			blockSize: element.clientHeight
+		}, observer);
+		onContentObserve$1.set(element, callbacks);
+		if ((element?.element ?? element) instanceof Node) observer.observe(element?.element ?? element, { box: "content-box" });
+	}
+	onContentObserve$1.get(element)?.push?.(cb);
+	return { disconnect: () => onContentObserve$1.get(element)?.splice?.(onContentObserve$1.get(element)?.indexOf(cb) || -1, 1) };
+};
+var observeAttribute = (element, attribute, cb) => {
+	if (typeof element?.selector == "string") return observeAttributeBySelector(element, element?.selector, attribute, cb);
+	const attributeList = new Set((attribute.split(",") || [attribute]).map((s) => s.trim()));
+	const observer = new MutationObserver((mutationList, observer) => {
+		for (const mutation of mutationList) if (mutation.attributeName && attributeList.has(mutation.attributeName)) cb(mutation, observer);
+	});
+	if ((element?.element ?? element) instanceof Node) observer.observe(element = unwrapFromQuery(element), {
+		attributes: true,
+		attributeOldValue: true,
+		attributeFilter: [...attributeList]
+	});
+	attributeList.forEach((attribute) => cb({
+		target: element,
+		type: "attributes",
+		attributeName: attribute,
+		oldValue: element?.getAttribute?.(attribute)
+	}, observer));
+	return observer;
+};
+var observeAttributeBySelector = (element, selector, attribute, cb) => {
+	const sel = normalizeSelector(selector);
+	const attributeList = new Set([...attribute.split(",") || [attribute]].map((s) => s.trim()));
+	const observer = new MutationObserver((mutationList, observer) => {
+		for (const mutation of mutationList) if (mutation.type == "childList") {
+			const addedNodes = Array.from(mutation.addedNodes) || [];
+			const removedNodes = Array.from(mutation.removedNodes) || [];
+			addedNodes.push(...Array.from(mutation.addedNodes || []).flatMap((el) => safeQuerySelectorAll(el, sel)));
+			removedNodes.push(...Array.from(mutation.removedNodes || []).flatMap((el) => safeQuerySelectorAll(el, sel)));
+			[...new Set(addedNodes)].filter((el) => safeMatches$1(el, sel))?.map?.((target) => {
+				attributeList.forEach((attribute) => {
+					cb({
+						target,
+						type: "attributes",
+						attributeName: attribute,
+						oldValue: target?.getAttribute?.(attribute)
+					}, observer);
+				});
+			});
+		} else if (safeMatches$1(mutation.target, sel) && mutation.attributeName && attributeList.has(mutation.attributeName)) cb(mutation, observer);
+	});
+	observer.observe(element = unwrapFromQuery(element), {
+		attributeOldValue: true,
+		attributes: true,
+		attributeFilter: [...attributeList],
+		childList: true,
+		subtree: true,
+		characterData: true
+	});
+	safeQuerySelectorAll(element, sel).map((target) => attributeList.forEach((attribute) => cb({
+		target,
+		type: "attributes",
+		attributeName: attribute,
+		oldValue: target?.getAttribute?.(attribute)
+	}, observer)));
+	return observer;
+};
+var observeBySelector = (element, selector = "*", cb = (mut, obs) => {}) => {
+	const sel = normalizeSelector(selector);
+	const unwrapNodesBySelector = (nodes) => {
+		const $nodes = Array.from(nodes || []) || [];
+		$nodes.push(...Array.from(nodes || []).flatMap((el) => safeQuerySelectorAll(el, sel)));
+		return [...Array.from(new Set($nodes).values())].filter((el) => safeMatches$1(el, sel));
+	};
+	let obRef = null;
+	const handleMutation = (mutation) => {
+		const observer = obRef?.deref?.();
+		const addedNodes = unwrapNodesBySelector(mutation.addedNodes);
+		const removedNodes = unwrapNodesBySelector(mutation.removedNodes);
+		if (addedNodes.length > 0 || removedNodes.length > 0) cb?.({
+			type: mutation.type,
+			target: mutation.target,
+			attributeName: mutation.attributeName,
+			attributeNamespace: mutation.attributeNamespace,
+			nextSibling: mutation.nextSibling,
+			oldValue: mutation.oldValue,
+			previousSibling: mutation.previousSibling,
+			addedNodes,
+			removedNodes
+		}, observer);
+	};
+	const handleCome = (ev) => {
+		handleMutation({
+			addedNodes: [ev?.target].filter((el) => !!el),
+			removedNodes: [ev?.relatedTarget].filter((el) => !!el),
+			type: "childList",
+			target: ev?.currentTarget
+		});
+	};
+	const handleOutCome = (ev) => {
+		handleMutation({
+			addedNodes: [ev?.relatedTarget].filter((el) => !!el),
+			removedNodes: [ev?.target].filter((el) => !!el),
+			type: "childList",
+			target: ev?.currentTarget
+		});
+	};
+	const handleFocusClick = (ev) => {
+		handleMutation({
+			addedNodes: [ev?.target].filter((el) => !!el),
+			removedNodes: [ev?.relatedTarget || document?.activeElement].filter((el) => !!el),
+			type: "childList",
+			target: ev?.currentTarget
+		});
+	};
+	const factors = {
+		passive: true,
+		capture: false
+	};
+	if (sel?.includes?.(":hover") && sel?.includes?.(":active")) {
+		element.addEventListener("pointerover", handleCome, factors);
+		element.addEventListener("pointerout", handleOutCome, factors);
+		element.addEventListener("pointerdown", handleCome, factors);
+		element.addEventListener("pointerup", handleOutCome, factors);
+		element.addEventListener("pointercancel", handleOutCome, factors);
+		return { disconnect: () => {
+			element.removeEventListener("pointerover", handleCome, factors);
+			element.removeEventListener("pointerout", handleOutCome, factors);
+			element.removeEventListener("pointerdown", handleCome, factors);
+			element.removeEventListener("pointerup", handleOutCome, factors);
+			element.removeEventListener("pointercancel", handleOutCome, factors);
+		} };
+	}
+	if (sel?.includes?.(":hover")) {
+		element.addEventListener("pointerover", handleCome, factors);
+		element.addEventListener("pointerout", handleOutCome, factors);
+		return { disconnect: () => {
+			element.removeEventListener("pointerover", handleCome, factors);
+			element.removeEventListener("pointerout", handleOutCome, factors);
+		} };
+	}
+	if (sel?.includes?.(":active")) {
+		element.addEventListener("pointerdown", handleCome, factors);
+		element.addEventListener("pointerup", handleOutCome, factors);
+		element.addEventListener("pointercancel", handleOutCome, factors);
+		return { disconnect: () => {
+			element.removeEventListener("pointerdown", handleCome, factors);
+			element.removeEventListener("pointerup", handleOutCome, factors);
+			element.removeEventListener("pointercancel", handleOutCome, factors);
+		} };
+	}
+	if (sel?.includes?.(":focus") && sel?.includes?.(":focus-within") && sel?.includes?.(":focus-visible")) {
+		element.addEventListener("focusin", handleCome, factors);
+		element.addEventListener("focusout", handleOutCome, factors);
+		element.addEventListener("click", handleFocusClick, factors);
+		return { disconnect: () => {
+			element.removeEventListener("focusin", handleCome, factors);
+			element.removeEventListener("focusout", handleOutCome, factors);
+			element.removeEventListener("click", handleFocusClick, factors);
+		} };
+	}
+	const observer = new MutationObserver((mutationList, observer) => {
+		for (const mutation of mutationList) if (mutation.type == "childList") handleMutation(mutation);
+	});
+	obRef = new WeakRef(observer);
+	if ((element?.element ?? element) instanceof Node) observer.observe(element = unwrapFromQuery(element), {
+		childList: true,
+		subtree: true
+	});
+	const selected = safeQuerySelectorAll(element, sel);
+	if (selected.length > 0) cb?.({
+		addedNodes: selected,
+		removedNodes: []
+	}, observer);
+	return observer;
+};
+//#endregion
+//#region ../../modules/projects/style.ts/src/lifecycle.ts
+if (typeof globalThis.CustomEvent !== "function") {
+	class PolyfillCustomEvent {
+		type;
+		detail;
+		bubbles;
+		cancelable;
+		defaultPrevented = false;
+		constructor(type, init) {
+			this.type = type;
+			this.detail = init?.detail;
+			this.bubbles = !!init?.bubbles;
+			this.cancelable = !!init?.cancelable;
+		}
+		preventDefault() {
+			if (this.cancelable) this.defaultPrevented = true;
+		}
+	}
+	globalThis.CustomEvent = PolyfillCustomEvent;
+}
+var hasPayload = (options) => !!options && (options.properties != null || options.keyframes != null);
+var reduced = (el) => el?.hasAttribute?.("data-instant") || typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+var dispatchLifecycleEvent = (el, type) => el?.dispatchEvent?.(new CustomEvent(type, {
+	detail: {},
+	bubbles: true,
+	cancelable: true
+})) !== false;
+var waitElementAnimations = async (el) => {
+	if (reduced(el)) return;
+	await new Promise((resolve) => {
+		(globalThis.requestAnimationFrame ?? ((cb) => setTimeout(() => cb(0), 0)))(() => resolve());
+	});
+	const list = typeof el?.getAnimations === "function" ? el.getAnimations() : [];
+	await Promise.all(list.filter((a) => a.playState === "running" || a.playState === "pending").map((a) => a.finished?.catch?.(() => {}) ?? Promise.resolve()));
+};
+var isRecordProperties = (properties) => !!properties && typeof properties === "object" && !Array.isArray(properties);
+var flights = /* @__PURE__ */ new WeakMap();
+var startPlayer = (el, options) => {
+	try {
+		return (isRecordProperties(options.properties) ? animate(el, options) : doAnimation(el, options))?.animation ?? null;
+	} catch (err) {
+		const msg = err instanceof Error ? err.message : String(err);
+		if (!(err instanceof TypeError && /Element/i.test(msg)) || typeof el.animate !== "function") throw err;
+		return el.animate(buildWebAnimationKeyframes(options), buildAnimationTiming(options));
+	}
+};
+var play = async (el, options, kind, before, after) => {
+	if (typeof Element !== "undefined" && !(el instanceof Element) && typeof el?.animate !== "function") throw new TypeError("appear/disappear require an Element");
+	if (!dispatchLifecycleEvent(el, before)) return false;
+	const prior = flights.get(el);
+	if (prior && prior.kind !== kind) prior.cancel();
+	let cancelled = false;
+	let settle;
+	const aborted = new Promise((resolve) => {
+		settle = resolve;
+	});
+	let player = null;
+	const flight = {
+		kind,
+		cancel() {
+			if (cancelled) return;
+			cancelled = true;
+			try {
+				player?.cancel?.();
+			} catch {}
+			settle();
+		}
+	};
+	flights.set(el, flight);
+	try {
+		if (hasPayload(options) && !reduced(el) && typeof el.animate === "function") {
+			player = startPlayer(el, options);
+			if (player?.finished) await Promise.race([Promise.resolve(player.finished).catch(() => {}), aborted]);
+		}
+		if (cancelled) return false;
+		await Promise.race([waitElementAnimations(el), aborted]);
+		if (cancelled) return false;
+		dispatchLifecycleEvent(el, after);
+		return true;
+	} finally {
+		if (flights.get(el) === flight) flights.delete(el);
+	}
+};
+var appear = (el, options) => play(el, options, "show", "u2-before-show", "u2-appear");
+var disappear = (el, options) => play(el, options, "hide", "u2-before-hide", "u2-hidden");
+var decorShow = {
+	properties: {
+		"--opacity": [
+			0,
+			0,
+			1
+		],
+		"--scale": [
+			.8,
+			.8,
+			1
+		],
+		display: [
+			"none",
+			"none",
+			"revert-layer"
+		],
+		pointerEvents: [
+			"none",
+			"none",
+			"revert-layer"
+		]
+	},
+	duration: 80,
+	easing: "linear"
+};
+var decorHide = {
+	properties: {
+		"--opacity": [
+			1,
+			0,
+			0
+		],
+		"--scale": [
+			1,
+			.8,
+			.8
+		],
+		display: [
+			"revert-layer",
+			"revert-layer",
+			"none"
+		],
+		pointerEvents: [
+			"none",
+			"none",
+			"none"
+		]
+	},
+	duration: 120,
+	easing: "linear"
+};
+var initVisibility = async (ROOT = typeof document !== "undefined" ? document.body : null, animations) => {
+	if (!ROOT) return;
+	observeAttributeBySelector(ROOT, "*", "data-hidden", (mutation) => {
+		if (mutation.attributeName !== "data-hidden") return;
+		const target = mutation.target;
+		if (target.getAttribute("data-hidden") === mutation.oldValue) return;
+		const hidden = target.getAttribute("data-hidden") != null;
+		const opts = hidden ? animations?.disappear : animations?.appear;
+		Promise.resolve(hidden ? disappear(target, opts) : appear(target, opts)).catch(console.warn);
 	});
 };
 //#endregion
@@ -6883,11 +7773,11 @@ var borderBoxWidth = Symbol("@border-box-width");
 var borderBoxHeight = Symbol("@border-box-height");
 var contentBoxWidth = Symbol("@content-box-width");
 var contentBoxHeight = Symbol("@content-box-height");
-var onBorderObserve$1 = /* @__PURE__ */ new WeakMap();
-var onContentObserve$1 = /* @__PURE__ */ new WeakMap();
+var onBorderObserve = /* @__PURE__ */ new WeakMap();
+var onContentObserve = /* @__PURE__ */ new WeakMap();
 var doContentObserve = (element, cb = () => {}) => {
 	if (!(element instanceof HTMLElement)) return;
-	if (!onContentObserve$1.has(element)) {
+	if (!onContentObserve.has(element)) {
 		element[contentBoxWidth] = element.clientWidth;
 		element[contentBoxHeight] = element.clientHeight;
 		const observer = new ResizeObserver((entries) => {
@@ -6900,13 +7790,13 @@ var doContentObserve = (element, cb = () => {}) => {
 				}
 			}
 		});
-		onContentObserve$1.set(element, observer);
+		onContentObserve.set(element, observer);
 		observer.observe(element?.element ?? element, { box: "content-box" });
 	}
 };
 var doBorderObserve = (element, cb = () => {}) => {
 	if (!(element instanceof HTMLElement)) return;
-	if (!onBorderObserve$1.has(element)) {
+	if (!onBorderObserve.has(element)) {
 		element[borderBoxWidth] = element.offsetWidth;
 		element[borderBoxHeight] = element.offsetHeight;
 		const observer = new ResizeObserver((entries) => {
@@ -6919,7 +7809,7 @@ var doBorderObserve = (element, cb = () => {}) => {
 				}
 			}
 		});
-		onBorderObserve$1.set(element, observer);
+		onBorderObserve.set(element, observer);
 		observer.observe(element?.element ?? element, { box: "border-box" });
 	}
 };
@@ -7358,225 +8248,6 @@ var fixOrientToScreen = (element) => {
 	}
 };
 new OffscreenCanvas(1, 1).getContext("2d");
-//#endregion
-//#region ../../modules/projects/dom.ts/src/mixin/Observer.ts
-var onBorderObserveSymbol = Symbol.for("dom.ts@onBorderObserve");
-globalThis[onBorderObserveSymbol] ??= /* @__PURE__ */ new WeakMap();
-var onContentObserveSymbol = Symbol.for("dom.ts@onContentObserve");
-var onContentObserve = globalThis[onContentObserveSymbol] ??= /* @__PURE__ */ new WeakMap();
-var unwrapFromQuery = (element) => {
-	if (typeof element?.current == "object") element = element?.element ?? element?.current ?? (typeof element?.self == "object" ? element?.self : null) ?? element;
-	return element;
-};
-/** INVARIANT: `querySelectorAll` / `matches` reject "" — normalize before DOM APIs. */
-var normalizeSelector = (selector, fallback = "*") => {
-	if (typeof selector !== "string") return fallback;
-	return selector.trim() || fallback;
-};
-var safeQuerySelectorAll = (el, selector) => {
-	if (!el || typeof el.querySelectorAll !== "function") return [];
-	const sel = normalizeSelector(selector, "");
-	if (!sel) return [];
-	try {
-		return Array.from(el.querySelectorAll(sel) || []);
-	} catch {
-		return [];
-	}
-};
-var safeMatches$1 = (el, selector) => {
-	if (!el || typeof el.matches !== "function") return false;
-	const sel = normalizeSelector(selector, "");
-	if (!sel) return false;
-	try {
-		return !!el.matches(sel);
-	} catch {
-		return false;
-	}
-};
-var observeContentBox = (element, cb) => {
-	if (!onContentObserve.has(element = unwrapFromQuery(element))) {
-		const callbacks = [];
-		const observer = new ResizeObserver((entries) => {
-			for (const entry of entries) if (entry.contentBoxSize) {
-				const contentBoxSize = entry.contentBoxSize[0];
-				if (contentBoxSize) callbacks.forEach((cb) => cb?.(contentBoxSize, observer));
-			}
-		});
-		cb?.({
-			inlineSize: element.clientWidth,
-			blockSize: element.clientHeight
-		}, observer);
-		onContentObserve.set(element, callbacks);
-		if ((element?.element ?? element) instanceof Node) observer.observe(element?.element ?? element, { box: "content-box" });
-	}
-	onContentObserve.get(element)?.push?.(cb);
-	return { disconnect: () => onContentObserve.get(element)?.splice?.(onContentObserve.get(element)?.indexOf(cb) || -1, 1) };
-};
-var observeAttribute = (element, attribute, cb) => {
-	if (typeof element?.selector == "string") return observeAttributeBySelector(element, element?.selector, attribute, cb);
-	const attributeList = new Set((attribute.split(",") || [attribute]).map((s) => s.trim()));
-	const observer = new MutationObserver((mutationList, observer) => {
-		for (const mutation of mutationList) if (mutation.attributeName && attributeList.has(mutation.attributeName)) cb(mutation, observer);
-	});
-	if ((element?.element ?? element) instanceof Node) observer.observe(element = unwrapFromQuery(element), {
-		attributes: true,
-		attributeOldValue: true,
-		attributeFilter: [...attributeList]
-	});
-	attributeList.forEach((attribute) => cb({
-		target: element,
-		type: "attributes",
-		attributeName: attribute,
-		oldValue: element?.getAttribute?.(attribute)
-	}, observer));
-	return observer;
-};
-var observeAttributeBySelector = (element, selector, attribute, cb) => {
-	const sel = normalizeSelector(selector);
-	const attributeList = new Set([...attribute.split(",") || [attribute]].map((s) => s.trim()));
-	const observer = new MutationObserver((mutationList, observer) => {
-		for (const mutation of mutationList) if (mutation.type == "childList") {
-			const addedNodes = Array.from(mutation.addedNodes) || [];
-			const removedNodes = Array.from(mutation.removedNodes) || [];
-			addedNodes.push(...Array.from(mutation.addedNodes || []).flatMap((el) => safeQuerySelectorAll(el, sel)));
-			removedNodes.push(...Array.from(mutation.removedNodes || []).flatMap((el) => safeQuerySelectorAll(el, sel)));
-			[...new Set(addedNodes)].filter((el) => safeMatches$1(el, sel))?.map?.((target) => {
-				attributeList.forEach((attribute) => {
-					cb({
-						target,
-						type: "attributes",
-						attributeName: attribute,
-						oldValue: target?.getAttribute?.(attribute)
-					}, observer);
-				});
-			});
-		} else if (safeMatches$1(mutation.target, sel) && mutation.attributeName && attributeList.has(mutation.attributeName)) cb(mutation, observer);
-	});
-	observer.observe(element = unwrapFromQuery(element), {
-		attributeOldValue: true,
-		attributes: true,
-		attributeFilter: [...attributeList],
-		childList: true,
-		subtree: true,
-		characterData: true
-	});
-	safeQuerySelectorAll(element, sel).map((target) => attributeList.forEach((attribute) => cb({
-		target,
-		type: "attributes",
-		attributeName: attribute,
-		oldValue: target?.getAttribute?.(attribute)
-	}, observer)));
-	return observer;
-};
-var observeBySelector = (element, selector = "*", cb = (mut, obs) => {}) => {
-	const sel = normalizeSelector(selector);
-	const unwrapNodesBySelector = (nodes) => {
-		const $nodes = Array.from(nodes || []) || [];
-		$nodes.push(...Array.from(nodes || []).flatMap((el) => safeQuerySelectorAll(el, sel)));
-		return [...Array.from(new Set($nodes).values())].filter((el) => safeMatches$1(el, sel));
-	};
-	let obRef = null;
-	const handleMutation = (mutation) => {
-		const observer = obRef?.deref?.();
-		const addedNodes = unwrapNodesBySelector(mutation.addedNodes);
-		const removedNodes = unwrapNodesBySelector(mutation.removedNodes);
-		if (addedNodes.length > 0 || removedNodes.length > 0) cb?.({
-			type: mutation.type,
-			target: mutation.target,
-			attributeName: mutation.attributeName,
-			attributeNamespace: mutation.attributeNamespace,
-			nextSibling: mutation.nextSibling,
-			oldValue: mutation.oldValue,
-			previousSibling: mutation.previousSibling,
-			addedNodes,
-			removedNodes
-		}, observer);
-	};
-	const handleCome = (ev) => {
-		handleMutation({
-			addedNodes: [ev?.target].filter((el) => !!el),
-			removedNodes: [ev?.relatedTarget].filter((el) => !!el),
-			type: "childList",
-			target: ev?.currentTarget
-		});
-	};
-	const handleOutCome = (ev) => {
-		handleMutation({
-			addedNodes: [ev?.relatedTarget].filter((el) => !!el),
-			removedNodes: [ev?.target].filter((el) => !!el),
-			type: "childList",
-			target: ev?.currentTarget
-		});
-	};
-	const handleFocusClick = (ev) => {
-		handleMutation({
-			addedNodes: [ev?.target].filter((el) => !!el),
-			removedNodes: [ev?.relatedTarget || document?.activeElement].filter((el) => !!el),
-			type: "childList",
-			target: ev?.currentTarget
-		});
-	};
-	const factors = {
-		passive: true,
-		capture: false
-	};
-	if (sel?.includes?.(":hover") && sel?.includes?.(":active")) {
-		element.addEventListener("pointerover", handleCome, factors);
-		element.addEventListener("pointerout", handleOutCome, factors);
-		element.addEventListener("pointerdown", handleCome, factors);
-		element.addEventListener("pointerup", handleOutCome, factors);
-		element.addEventListener("pointercancel", handleOutCome, factors);
-		return { disconnect: () => {
-			element.removeEventListener("pointerover", handleCome, factors);
-			element.removeEventListener("pointerout", handleOutCome, factors);
-			element.removeEventListener("pointerdown", handleCome, factors);
-			element.removeEventListener("pointerup", handleOutCome, factors);
-			element.removeEventListener("pointercancel", handleOutCome, factors);
-		} };
-	}
-	if (sel?.includes?.(":hover")) {
-		element.addEventListener("pointerover", handleCome, factors);
-		element.addEventListener("pointerout", handleOutCome, factors);
-		return { disconnect: () => {
-			element.removeEventListener("pointerover", handleCome, factors);
-			element.removeEventListener("pointerout", handleOutCome, factors);
-		} };
-	}
-	if (sel?.includes?.(":active")) {
-		element.addEventListener("pointerdown", handleCome, factors);
-		element.addEventListener("pointerup", handleOutCome, factors);
-		element.addEventListener("pointercancel", handleOutCome, factors);
-		return { disconnect: () => {
-			element.removeEventListener("pointerdown", handleCome, factors);
-			element.removeEventListener("pointerup", handleOutCome, factors);
-			element.removeEventListener("pointercancel", handleOutCome, factors);
-		} };
-	}
-	if (sel?.includes?.(":focus") && sel?.includes?.(":focus-within") && sel?.includes?.(":focus-visible")) {
-		element.addEventListener("focusin", handleCome, factors);
-		element.addEventListener("focusout", handleOutCome, factors);
-		element.addEventListener("click", handleFocusClick, factors);
-		return { disconnect: () => {
-			element.removeEventListener("focusin", handleCome, factors);
-			element.removeEventListener("focusout", handleOutCome, factors);
-			element.removeEventListener("click", handleFocusClick, factors);
-		} };
-	}
-	const observer = new MutationObserver((mutationList, observer) => {
-		for (const mutation of mutationList) if (mutation.type == "childList") handleMutation(mutation);
-	});
-	obRef = new WeakRef(observer);
-	if ((element?.element ?? element) instanceof Node) observer.observe(element = unwrapFromQuery(element), {
-		childList: true,
-		subtree: true
-	});
-	const selected = safeQuerySelectorAll(element, sel);
-	if (selected.length > 0) cb?.({
-		addedNodes: selected,
-		removedNodes: []
-	}, observer);
-	return observer;
-};
 //#endregion
 //#region ../../modules/projects/dom.ts/src/mixin/Behavior.ts
 var boundBehaviors = /* @__PURE__ */ new WeakMap();
@@ -8829,11 +9500,11 @@ var bindWhileConnected = (element, bind) => {
 };
 //#endregion
 //#region ../../modules/projects/lur.e/src/lure/context/ReflectChildren.ts
-var makeUpdater = (defaultParent = null, mapper, isArray = true) => {
+var makeUpdater = (defaultParent = null, mapper, isArray = true, lifecycle) => {
 	const commandBuffer = [];
-	const merge = () => {
-		commandBuffer?.forEach?.(([fn, args]) => fn?.(...args));
-		commandBuffer?.splice?.(0, commandBuffer?.length);
+	const merge = async () => {
+		const batch = commandBuffer.splice(0, commandBuffer.length);
+		for (const [fn, args] of batch) await fn?.(...args, lifecycle);
 	};
 	const updateChildList = (newEl, idx, oldEl, op, boundParent = null) => {
 		const $requestor = isValidParent$1(boundParent) ?? isValidParent$1(defaultParent);
@@ -8872,7 +9543,7 @@ var makeUpdater = (defaultParent = null, mapper, isArray = true) => {
 			"add",
 			"set",
 			"delete"
-		].indexOf(op) >= 0 || !op && !isArray) merge?.();
+		].indexOf(op) >= 0 || !op && !isArray) return merge?.();
 	};
 	return updateChildList;
 };
@@ -8880,14 +9551,14 @@ var asArray$2 = (children) => {
 	if (children instanceof Map || children instanceof Set) children = Array.from(children?.values?.());
 	return children;
 };
-var reformChildren = (element, children = [], mapper) => {
+var reformChildren = async (element, children = [], mapper) => {
 	if (!children || !element) return element;
 	mapper = (children?.[$mapped] ? children?.mapper : mapper) ?? mapper;
 	children = (children?.[$mapped] ? children?.children : children) ?? children;
 	const keys = Array.from(children?.keys?.() || []);
 	const cvt = asArray$2(children)?.map?.((nd, index) => getNode(nd, mapper, keys?.[index] ?? index, element));
-	removeNotExists(element, cvt);
-	cvt?.forEach?.((nd) => appendChild(element, nd));
+	await removeNotExists(element, cvt);
+	await Promise.all((cvt ?? []).map((nd) => appendChild(element, nd)));
 	return element;
 };
 //#endregion
@@ -8909,7 +9580,10 @@ var Ch = class {
 			this.#internal?.();
 			this.#internal = null;
 			this.#updater = null;
-			this.#updater ??= makeUpdater(basisParent, null, false);
+			this.#updater ??= makeUpdater(basisParent, null, false, {
+				appear: this.#options.appear,
+				disappear: this.#options.disappear
+			});
 			this.#internal ??= affected?.([this.#valueRef, "value"], this._onUpdate.bind(this));
 		}
 	}
@@ -8920,8 +9594,12 @@ var Ch = class {
 		if (value instanceof HTMLElement && isValidParent$1(value) && value != this.#boundParent) {
 			this.#boundParent = value;
 			this.makeUpdater(value);
-			if (this.#oldNode) {
-				this.#oldNode?.parentNode != null && this.#oldNode?.remove?.();
+			if (this.#oldNode?.parentNode) {
+				removeChild(this.#oldNode.parentNode, this.#oldNode, null, -1, {
+					appear: this.#options.appear,
+					disappear: this.#options.disappear
+				});
+				if (!this.#options.disappear && this.#oldNode.parentNode) this.#oldNode.remove?.();
 				this.#oldNode = null;
 			}
 			this.element;
@@ -9156,10 +9834,13 @@ var appendArray = (parent, children, mapper, index = -1) => {
 		if (node != null) appendFix(parent, node, index);
 	}
 };
-var appendChild = (element, cp, mapper, index = -1) => {
+var appendChild = async (element, cp, mapper, index = -1, lifecycle) => {
 	if (mapper != null) cp = mapper?.(cp, index);
 	if (cp?.children && Array.isArray(unwrap(cp?.children)) && (cp?.[$virtual] || cp?.[$mapped])) appendArray(element, cp?.children, null, index);
 	else appendArray(element, cp, null, index);
+	const node = getNode(cp, null, index, element);
+	if (node instanceof Element) await appear(node, lifecycle?.appear ?? null);
+	return element;
 };
 var dePhantomNode = (parent, node, index = -1) => {
 	if (!parent) return node;
@@ -9183,7 +9864,7 @@ var replaceOrSwap = (parent, oldEl, newEl) => {
 		} else oldEl?.replaceWith?.(newEl);
 	}
 };
-var replaceChildren = (element, cp, mapper, index = -1, old) => {
+var replaceChildren = async (element, cp, mapper, index = -1, old, lifecycle) => {
 	if (mapper != null) cp = mapper?.(cp, index);
 	if (!element) element = old?.parentNode;
 	const cn = dePhantomNode(element, getNode(old, mapper, index), index);
@@ -9192,23 +9873,35 @@ var replaceChildren = (element, cp, mapper, index = -1, old) => {
 		const node = getNode(cp);
 		if (cn?.parentNode == element && cn != node && cn instanceof Text && node instanceof Text) {
 			if (cn?.textContent != node?.textContent) cn.textContent = node?.textContent?.trim?.() ?? "";
-		} else if (cn?.parentNode == element && cn != node && cn != null && cn?.parentNode != null) replaceOrSwap(element, cn, node);
-		else if (cn?.parentNode != element || cn?.parentNode == null) appendChild(element, node, null, index);
+		} else if (cn?.parentNode == element && cn != node && cn != null && cn?.parentNode != null) {
+			replaceOrSwap(element, cn, node);
+			if (node instanceof Element) await appear(node, lifecycle?.appear ?? null);
+		} else if (cn?.parentNode != element || cn?.parentNode == null) await appendChild(element, node, null, index, lifecycle);
 	}
 };
-var removeChild = (element, cp, mapper, index = -1) => {
+var removeChild = async (element, cp, mapper, index = -1, lifecycle) => {
 	const $node = getNode(cp, mapper);
 	if (!element) element = $node?.parentNode;
-	if (Array.from(element?.childNodes ?? [])?.length < 1) return;
+	if (Array.from(element?.childNodes ?? []).length < 1) return element;
 	const whatToRemove = dePhantomNode(element, $node, index);
-	if (whatToRemove?.parentNode == element) whatToRemove?.remove?.();
+	if (whatToRemove?.parentNode != element) return element;
+	if (whatToRemove instanceof Element) {
+		if (!dispatchLifecycleEvent(whatToRemove, "u2-before-remove")) return element;
+		whatToRemove.setAttribute("data-removing", "");
+		await disappear(whatToRemove, lifecycle?.disappear ?? null);
+		await waitElementAnimations(whatToRemove);
+		whatToRemove.remove();
+		whatToRemove.removeAttribute("data-removing");
+		dispatchLifecycleEvent(whatToRemove, "u2-removed");
+		return element;
+	}
+	whatToRemove?.remove?.();
 	return element;
 };
-var removeNotExists = (element, children, mapper) => {
+var removeNotExists = async (element, children, mapper, lifecycle) => {
 	const list = Array.from(unwrap(children) || [])?.map?.((cp, index) => getNode(cp, mapper, index));
-	Array.from(element.childNodes).forEach((nd) => {
-		if (!list?.find?.((cp) => !isNotEqual?.(cp, nd))) nd?.remove?.();
-	});
+	const missing = Array.from(element.childNodes).filter((nd) => !list?.find?.((cp) => !isNotEqual?.(cp, nd)));
+	await Promise.all(missing.map((nd) => removeChild(element, nd, null, -1, lifecycle)));
 	return element;
 };
 var T$1 = (ref) => {
@@ -10144,6 +10837,8 @@ var Mp = class {
 	#stub = document.createComment("");
 	#renderedNodes = /* @__PURE__ */ new Set();
 	#syncQueued = false;
+	#syncInFlight = null;
+	#disposed = false;
 	#parentObserver = null;
 	#boundParent = null;
 	#collection() {
@@ -10170,9 +10865,9 @@ var Mp = class {
 		this.#parentObserver?.disconnect();
 		this.#parentObserver = null;
 	}
-	#syncBoundParent() {
+	async #syncBoundParent() {
 		const parent = this.#boundParent;
-		if (!parent) return;
+		if (!parent || this.#disposed) return;
 		this.#pruneMapEntries();
 		const desiredNodes = [];
 		this.#collection().forEach((value, index) => {
@@ -10180,33 +10875,58 @@ var Mp = class {
 			desiredNodes.push(...flattenMappedNode(node));
 		});
 		const desired = new Set(desiredNodes);
+		const lifecycle = {
+			appear: this.#options.appear,
+			disappear: this.#options.disappear
+		};
 		if (this.#stub.parentNode !== parent) {
 			const firstExisting = desiredNodes.find((node) => node.parentNode === parent);
 			if (firstExisting) parent.insertBefore(this.#stub, firstExisting);
 			else parent.appendChild(this.#stub);
 		}
-		for (const oldNode of this.#renderedNodes) if (!desired.has(oldNode) && oldNode.parentNode === parent) oldNode.parentNode.removeChild(oldNode);
+		for (const oldNode of this.#renderedNodes) if (!desired.has(oldNode) && oldNode.parentNode === parent) {
+			if (lifecycle.disappear) {
+				await removeChild(parent, oldNode, null, -1, lifecycle);
+				if (this.#disposed || this.#boundParent !== parent) return;
+			} else oldNode.parentNode.removeChild(oldNode);
+		}
 		let anchor = this.#stub.nextSibling;
 		for (const node of desiredNodes) {
+			const wasInParent = node.parentNode === parent;
 			if (node.parentNode !== parent || node !== anchor) parent.insertBefore(node, anchor);
+			if (!wasInParent && node instanceof Element && lifecycle.appear) {
+				await appear(node, lifecycle.appear);
+				if (this.#disposed || this.#boundParent !== parent) return;
+			}
 			anchor = node.nextSibling;
 		}
 		this.#renderedNodes = desired;
 	}
 	#queueBoundParentSync() {
-		if (this.#syncQueued) return;
 		this.#syncQueued = true;
-		queueMicrotask(() => {
-			this.#syncQueued = false;
-			this.#syncBoundParent();
-		});
+		if (this.#syncInFlight) return;
+		this.#syncInFlight = this.#drainBoundParentSync();
+	}
+	async #drainBoundParentSync() {
+		try {
+			while (this.#syncQueued && !this.#disposed) {
+				this.#syncQueued = false;
+				await this.#syncBoundParent();
+			}
+		} finally {
+			this.#syncInFlight = null;
+			if (this.#syncQueued && !this.#disposed) this.#queueBoundParentSync();
+		}
 	}
 	makeUpdater(basisParent = null) {
 		if (basisParent) {
 			this.#internal?.();
 			this.#internal = null;
 			this.#updater = null;
-			this.#updater ??= makeUpdater(basisParent, this.mapper.bind(this), true);
+			this.#updater ??= makeUpdater(basisParent, this.mapper.bind(this), true, {
+				appear: this.#options.appear,
+				disappear: this.#options.disappear
+			});
 			this.#internal ??= iterated?.(this.#observable, this._onUpdate.bind(this));
 		}
 	}
@@ -10214,13 +10934,23 @@ var Mp = class {
 		return this.#boundParent;
 	}
 	set boundParent(value) {
+		if (this.#disposed) return;
 		if (isElementParent(value) && value != this.#boundParent) {
 			this.#disconnectParentObserver();
 			const oldParent = this.#boundParent;
-			for (const node of this.#renderedNodes) if (node.parentNode === oldParent && oldParent !== value) oldParent?.removeChild(node);
-			this.#boundParent = value;
-			this.makeUpdater(value);
-			this.#syncBoundParent();
+			const lifecycle = { disappear: this.#options.disappear };
+			const outgoing = [...this.#renderedNodes].filter((node) => node.parentNode === oldParent && oldParent !== value);
+			const apply = () => {
+				if (this.#disposed) return;
+				this.#boundParent = value;
+				this.makeUpdater(value);
+				this.#queueBoundParentSync();
+			};
+			if (lifecycle.disappear && outgoing.length) Promise.all(outgoing.map((node) => removeChild(oldParent, node, null, -1, lifecycle))).then(apply);
+			else {
+				for (const node of outgoing) oldParent?.removeChild(node);
+				apply();
+			}
 		}
 	}
 	constructor(observable, mapCb = (el) => el, options = null) {
@@ -10245,7 +10975,7 @@ var Mp = class {
 		this.boundParent = isValidParent$1(this.#options?.boundParent) ?? isValidParent$1(options) ?? null;
 		if (!this.boundParent) {
 			if (this.#options.preMap) {
-				reformChildren(this.#fragments, this.#collection(), this.mapper.bind(this));
+				appendArray(this.#fragments, this.#collection(), this.mapper.bind(this));
 				if (this.#fragments.childNodes.length === 0) this.#fragments.appendChild(this.#stub);
 			}
 		}
@@ -10259,7 +10989,7 @@ var Mp = class {
 				this.#disconnectParentObserver();
 				this.#boundParent = requestor;
 				this.makeUpdater(requestor);
-				this.#syncBoundParent();
+				this.#queueBoundParentSync();
 				return this.element;
 			}
 			const element = getNode(this.#collection()?.[0], this.mapper.bind(this), 0);
@@ -10343,14 +11073,21 @@ var Mp = class {
 		};
 	}
 	_onUpdate(newEl, idx, oldEl, op = "") {
+		if (this.#disposed) return;
 		this.#queueBoundParentSync();
 	}
 	[Symbol.dispose]() {
+		this.#disposed = true;
 		this.#internal?.();
 		this.#internal = null;
 		this.#disconnectParentObserver();
 		this.#syncQueued = false;
-		for (const node of this.#renderedNodes) if (node.parentNode) node.parentNode.removeChild(node);
+		const lifecycle = { disappear: this.#options.disappear };
+		for (const node of this.#renderedNodes) {
+			if (!node.parentNode) continue;
+			if (lifecycle.disappear) removeChild(node.parentNode, node, null, -1, lifecycle);
+			else node.parentNode.removeChild(node);
+		}
 		this.#renderedNodes.clear();
 		this.#stub.parentNode?.removeChild(this.#stub);
 		this.#mapEntries.clear();
@@ -28391,6 +29128,506 @@ var formRef = (element, kind = "text", options = {}) => {
 	return value;
 };
 //#endregion
+//#region ../../modules/projects/lur.e/src/utils/opfs/IdbFs.ts
+/**
+* FIND:idb-fs
+* TAG:opfs,idb
+* IndexedDB FileSystem-handle backend for OPFS.
+*
+* INVARIANT: handles expose the same surface as OPFS
+* (`getDirectoryHandle` / `getFileHandle` / `entries` / `removeEntry` /
+* `getFile` / `createWritable`) so `mappedRoots` can swap backends.
+*
+* WHY: OPFS is missing on some hosts, or can be turned off. Then `/user/`
+* uses this store. When OPFS stays on (default), the same store is `/idb/`.
+*/
+var IDB_FS_ROOT = "/idb/";
+var OPFS_SUPPORT_KEY$2 = "cwsp.opfs.enabled";
+var IDB_FS_BRAND = Symbol.for("fest.idb-fs");
+var DB_NAME$1 = "fest-idb-fs";
+var STORE_NAME = "nodes";
+var DB_VERSION$2 = 1;
+var refreshRoots = null;
+/** OPFS.ts binds this so toggling support remounts `/user/` and `/idb/`. */
+var bindStorageRootsRefresher = (fn) => {
+	refreshRoots = fn;
+};
+var fsError = (name, message) => {
+	if (typeof DOMException !== "undefined") return new DOMException(message, name);
+	const error = new Error(message);
+	error.name = name;
+	return error;
+};
+var normalizeIdbNodePath = (path) => {
+	const parts = [];
+	for (const part of String(path || "/").split("/")) {
+		if (!part || part === ".") continue;
+		if (part === "..") {
+			parts.pop();
+			continue;
+		}
+		parts.push(part);
+	}
+	return parts.length ? `/${parts.join("/")}` : "/";
+};
+var joinChildPath = (parent, name) => {
+	const clean = String(name || "").replace(/[/\\]/g, "");
+	if (!clean || clean === "." || clean === "..") throw fsError("TypeMismatchError", `Invalid entry name: ${name}`);
+	const base = normalizeIdbNodePath(parent);
+	return base === "/" ? `/${clean}` : `${base}/${clean}`;
+};
+var parentOf = (path) => {
+	const normalized = normalizeIdbNodePath(path);
+	if (normalized === "/") return "";
+	const index = normalized.lastIndexOf("/");
+	return index <= 0 ? "/" : normalized.slice(0, index);
+};
+var ensureRootNode = async (store) => {
+	if ((await store.get("/"))?.kind === "directory") return;
+	await store.put({
+		path: "/",
+		name: "",
+		parent: "",
+		kind: "directory"
+	});
+};
+var createMemoryIdbFsStore = () => {
+	const nodes = /* @__PURE__ */ new Map();
+	return {
+		async get(path) {
+			return nodes.get(normalizeIdbNodePath(path));
+		},
+		async put(node) {
+			const path = normalizeIdbNodePath(node.path);
+			nodes.set(path, {
+				...node,
+				path
+			});
+		},
+		async delete(path) {
+			nodes.delete(normalizeIdbNodePath(path));
+		},
+		async list(parent) {
+			const key = normalizeIdbNodePath(parent);
+			return [...nodes.values()].filter((node) => node.path !== "/" && node.parent === key);
+		}
+	};
+};
+var idbRequest = (request) => new Promise((resolve, reject) => {
+	request.onsuccess = () => resolve(request.result);
+	request.onerror = () => reject(request.error);
+});
+var openIdbFsDatabase = () => new Promise((resolve, reject) => {
+	const request = indexedDB.open(DB_NAME$1, DB_VERSION$2);
+	request.onerror = () => reject(request.error);
+	request.onsuccess = () => resolve(request.result);
+	request.onupgradeneeded = () => {
+		const db = request.result;
+		if (db.objectStoreNames.contains(STORE_NAME)) return;
+		db.createObjectStore(STORE_NAME, { keyPath: "path" }).createIndex("parent", "parent", { unique: false });
+	};
+});
+var createIndexedDbFsStore = async () => {
+	const db = await openIdbFsDatabase();
+	const withStore = async (mode, run) => {
+		return run(db.transaction(STORE_NAME, mode).objectStore(STORE_NAME));
+	};
+	const store = {
+		async get(path) {
+			return withStore("readonly", (objectStore) => idbRequest(objectStore.get(normalizeIdbNodePath(path))));
+		},
+		async put(node) {
+			const path = normalizeIdbNodePath(node.path);
+			await withStore("readwrite", (objectStore) => idbRequest(objectStore.put({
+				...node,
+				path
+			})));
+		},
+		async delete(path) {
+			await withStore("readwrite", (objectStore) => idbRequest(objectStore.delete(normalizeIdbNodePath(path))));
+		},
+		async list(parent) {
+			const key = normalizeIdbNodePath(parent);
+			return withStore("readonly", async (objectStore) => {
+				if (objectStore.indexNames.contains("parent")) return (await idbRequest(objectStore.index("parent").getAll(key)) || []).filter((node) => node.path !== "/");
+				return (await idbRequest(objectStore.getAll()) || []).filter((node) => node.path !== "/" && node.parent === key);
+			});
+		}
+	};
+	await ensureRootNode(store);
+	return store;
+};
+var isIdbAvailable = () => {
+	try {
+		return typeof indexedDB !== "undefined";
+	} catch {
+		return false;
+	}
+};
+var isOpfsCapabilityAvailable = () => {
+	try {
+		return typeof navigator !== "undefined" && typeof navigator.storage?.getDirectory === "function";
+	} catch {
+		return false;
+	}
+};
+var isOpfsSupportEnabled = () => {
+	try {
+		if (typeof localStorage === "undefined") return true;
+		const value = localStorage.getItem(OPFS_SUPPORT_KEY$2);
+		return value !== "0" && value !== "false";
+	} catch {
+		return true;
+	}
+};
+var setOpfsSupportEnabled = (enabled) => {
+	try {
+		localStorage?.setItem?.(OPFS_SUPPORT_KEY$2, enabled ? "1" : "0");
+	} catch {}
+	refreshRoots?.();
+};
+/** OPFS is used for `/user/` only when the API exists and support is on. */
+var isOpfsBackendActive = () => isOpfsCapabilityAvailable() && isOpfsSupportEnabled();
+var isIdbFsHandle = (value) => !!value && typeof value === "object" && value[IDB_FS_BRAND] === true;
+var removeTree = async (store, path) => {
+	const target = normalizeIdbNodePath(path);
+	const children = await store.list(target);
+	for (const child of children) if (child.kind === "directory") await removeTree(store, child.path);
+	else await store.delete(child.path);
+	if (target !== "/") await store.delete(target);
+};
+var IdbFileHandle = class {
+	kind = "file";
+	[IDB_FS_BRAND] = true;
+	name;
+	#store;
+	#path;
+	#type;
+	constructor(store, path, name, type = "") {
+		this.#store = store;
+		this.#path = normalizeIdbNodePath(path);
+		this.name = name;
+		this.#type = type;
+	}
+	async getFile() {
+		const node = await this.#store.get(this.#path);
+		if (!node || node.kind !== "file") throw fsError("NotFoundError", `File not found: ${this.#path}`);
+		const payload = node.data ?? new Blob();
+		const blob = payload instanceof Blob ? payload : new Blob([payload]);
+		return new File([blob], this.name, {
+			type: node.type || blob.type || this.#type,
+			lastModified: node.lastModified || Date.now()
+		});
+	}
+	async createWritable() {
+		const chunks = [];
+		let aborted = false;
+		const store = this.#store;
+		const path = this.#path;
+		const name = this.name;
+		const type = this.#type;
+		return {
+			async write(data) {
+				if (aborted) throw fsError("AbortError", "Writable aborted");
+				const chunk = data && typeof data === "object" && "data" in data ? data.data : data;
+				chunks.push(chunk);
+			},
+			async seek() {},
+			async truncate() {
+				chunks.length = 0;
+			},
+			async abort() {
+				aborted = true;
+				chunks.length = 0;
+			},
+			async close() {
+				if (aborted) return;
+				const blob = new Blob(chunks, { type: type || void 0 });
+				await store.put({
+					path,
+					name,
+					parent: parentOf(path),
+					kind: "file",
+					type: blob.type || type,
+					lastModified: Date.now(),
+					size: blob.size,
+					data: blob
+				});
+			}
+		};
+	}
+};
+var IdbDirectoryHandle = class IdbDirectoryHandle {
+	kind = "directory";
+	[IDB_FS_BRAND] = true;
+	name;
+	#store;
+	#path;
+	constructor(store, path, name) {
+		this.#store = store;
+		this.#path = normalizeIdbNodePath(path);
+		this.name = name;
+	}
+	async getDirectoryHandle(name, options = {}) {
+		const childPath = joinChildPath(this.#path, name);
+		let node = await this.#store.get(childPath);
+		if (!node) {
+			if (!options.create) throw fsError("NotFoundError", `Directory not found: ${childPath}`);
+			node = {
+				path: childPath,
+				name: String(name),
+				parent: this.#path,
+				kind: "directory"
+			};
+			await this.#store.put(node);
+		}
+		if (node.kind !== "directory") throw fsError("TypeMismatchError", `Not a directory: ${childPath}`);
+		return new IdbDirectoryHandle(this.#store, childPath, node.name);
+	}
+	async getFileHandle(name, options = {}) {
+		const childPath = joinChildPath(this.#path, name);
+		let node = await this.#store.get(childPath);
+		if (!node) {
+			if (!options.create) throw fsError("NotFoundError", `File not found: ${childPath}`);
+			node = {
+				path: childPath,
+				name: String(name),
+				parent: this.#path,
+				kind: "file",
+				type: "",
+				lastModified: Date.now(),
+				size: 0,
+				data: new Blob()
+			};
+			await this.#store.put(node);
+		}
+		if (node.kind !== "file") throw fsError("TypeMismatchError", `Not a file: ${childPath}`);
+		return new IdbFileHandle(this.#store, childPath, node.name, node.type);
+	}
+	async removeEntry(name, options = {}) {
+		const childPath = joinChildPath(this.#path, name);
+		const node = await this.#store.get(childPath);
+		if (!node) throw fsError("NotFoundError", `Entry not found: ${childPath}`);
+		if (node.kind === "directory") {
+			if ((await this.#store.list(childPath)).length && !options.recursive) throw fsError("InvalidModificationError", `Directory not empty: ${childPath}`);
+			await removeTree(this.#store, childPath);
+			return;
+		}
+		await this.#store.delete(childPath);
+	}
+	async *entries() {
+		const children = await this.#store.list(this.#path);
+		for (const node of children) {
+			const handle = node.kind === "directory" ? new IdbDirectoryHandle(this.#store, node.path, node.name) : new IdbFileHandle(this.#store, node.path, node.name, node.type);
+			yield [node.name, handle];
+		}
+	}
+	async *keys() {
+		for await (const [name] of this.entries()) yield name;
+	}
+	async *values() {
+		for await (const [, handle] of this.entries()) yield handle;
+	}
+};
+var defaultRootPromise = null;
+var getIdbRoot = async (store) => {
+	if (store) {
+		await ensureRootNode(store);
+		return new IdbDirectoryHandle(store, "/", "");
+	}
+	if (!isIdbAvailable()) return null;
+	defaultRootPromise ??= (async () => {
+		try {
+			return new IdbDirectoryHandle(await createIndexedDbFsStore(), "/", "");
+		} catch {
+			return null;
+		}
+	})();
+	return defaultRootPromise;
+};
+var copyHandleTree = async (fromHandle, toHandle) => {
+	try {
+		if (fromHandle?.kind === "directory") {
+			for await (const [name, entry] of fromHandle.entries()) if (entry?.kind === "directory") await copyHandleTree(entry, await toHandle.getDirectoryHandle(name, { create: true }));
+			else {
+				const file = await entry.getFile();
+				const writable = await (await toHandle.getFileHandle(name, { create: true })).createWritable();
+				await writable.write(file);
+				await writable.close();
+			}
+			return true;
+		}
+		const file = await fromHandle.getFile();
+		const writable = await toHandle.createWritable();
+		await writable.write(file);
+		await writable.close();
+		return true;
+	} catch {
+		return false;
+	}
+};
+//#endregion
+//#region ../../modules/projects/lur.e/src/utils/opfs/provide.ts
+/**
+* FIND:provide
+* TAG:idb-fs,opfs
+*
+* Virtual-FS `provide()` pieces: files, directories, and host backends.
+*
+* WHY: `provide` used to mean "OPFS `/user/` file or HTTP". Callers now need
+* `/idb/`, `/mounts/`, and Capacitor `/sdcard/` `/saf/` — plus directory
+* listings, not only `File`. Handle walking stays here so lure does not
+* import fl.ui; Explorer registers native roots via `registerProvideBackend`.
+*
+* INVARIANT: a directory result is never a `Blob`/`File`. Use
+* `isProvidedDirectory` / `asProvidedFile` at call sites that still want bytes.
+*/
+var provideBackends = /* @__PURE__ */ new Map();
+var normalizeRoot$2 = (root) => {
+	const raw = String(root || "").trim() || "/";
+	if (raw === "/") return "/";
+	return raw.endsWith("/") ? raw : `${raw}/`;
+};
+var isProvidedDirectory = (value) => !!value && typeof value === "object" && !(value instanceof Blob) && value.kind === "directory" && Array.isArray(value.entries);
+var asProvidedFile = (value) => {
+	if (typeof File !== "undefined" && value instanceof File) return value;
+	return null;
+};
+var registerProvideBackend = (backend) => {
+	if (!backend?.root || typeof backend.list !== "function") return;
+	provideBackends.set(normalizeRoot$2(backend.root), backend);
+};
+var unregisterProvideBackend = (root) => {
+	provideBackends.delete(normalizeRoot$2(root));
+};
+var matchProvideBackend = (path) => {
+	let p = String(path || "").trim() || "/";
+	if (!p.startsWith("/")) p = `/${p}`;
+	let best = null;
+	let bestLen = -1;
+	for (const [root, backend] of provideBackends) {
+		if (root === "/") continue;
+		if (p === root.slice(0, -1) || p === root || p.startsWith(root)) {
+			if (root.length > bestLen) {
+				best = backend;
+				bestLen = root.length;
+			}
+		}
+	}
+	return best;
+};
+var stripProvideRootPrefix = (path, root) => {
+	const normalized = String(path || "").trim() || "/";
+	const key = normalizeRoot$2(root);
+	if (key === "/") return normalized.startsWith("/") ? normalized : `/${normalized}`;
+	if (normalized === key.slice(0, -1) || normalized === key) return "/";
+	if (normalized.startsWith(key)) return `/${normalized.slice(key.length)}`.replace(/\/{2,}/g, "/") || "/";
+	return stripStorageScopePrefix(normalized);
+};
+var wantsDirectoryProvide = (path, options) => {
+	if (options?.asDirectory) return true;
+	const raw = String(path || "").trim();
+	if (!raw || raw.endsWith("/")) return true;
+	const p = raw.replace(/\/+$/, "");
+	return p === "/user" || p === "/idb" || p === "/sdcard" || p === "/saf" || p === "/mounts" || p === "/desktop" || p === "/assets";
+};
+var isDirHandle = (handle) => !!handle && handle.kind === "directory" && typeof handle.getDirectoryHandle === "function";
+var childVirtualPath = (dirPath, name, kind) => {
+	return `${String(dirPath || "/").endsWith("/") ? dirPath : `${dirPath}/`}${name}${kind === "directory" ? "/" : ""}`;
+};
+var listHandleEntries = async (dir, dirPath) => {
+	if (!dir?.entries) return [];
+	const entries = [];
+	try {
+		for await (const [name, handle] of dir.entries()) {
+			const kind = handle?.kind === "directory" ? "directory" : "file";
+			entries.push({
+				name: String(name),
+				kind,
+				path: childVirtualPath(dirPath, String(name), kind)
+			});
+		}
+	} catch {
+		return [];
+	}
+	return entries;
+};
+var toProvidedDirectory = async (path, handle) => {
+	const normalized = String(path || "/").trim() || "/";
+	const dirPath = normalized.endsWith("/") || normalized === "/" ? normalized : `${normalized}/`;
+	return {
+		kind: "directory",
+		name: dirPath.split("/").filter(Boolean).pop() || dirPath.replace(/\//g, "") || "root",
+		path: dirPath,
+		handle,
+		entries: await listHandleEntries(handle, dirPath)
+	};
+};
+var walkHandle$2 = async (root, rel, asDirectory, create) => {
+	const parts = String(rel || "/").split("/").filter(Boolean);
+	let dir = root;
+	const fileName = asDirectory ? null : parts.pop();
+	for (const part of parts) {
+		dir = await dir?.getDirectoryHandle?.(part, { create });
+		if (!dir) return null;
+	}
+	if (!fileName) return dir;
+	return dir?.getFileHandle?.(fileName, { create }) ?? null;
+};
+var provideFromHandle = async (root, virtualPath, mappedRoot, rw = false, options) => {
+	if (!isDirHandle(root)) return null;
+	const asDir = wantsDirectoryProvide(virtualPath, options);
+	const rel = stripProvideRootPrefix(virtualPath, mappedRoot);
+	if (asDir) {
+		const dir = await walkHandle$2(root, rel, true, !!rw).catch(() => null);
+		if (!dir) return null;
+		return toProvidedDirectory(virtualPath, dir);
+	}
+	const fileHandle = await walkHandle$2(root, rel, false, !!rw).catch(() => null);
+	if (fileHandle?.kind === "file" || typeof fileHandle?.getFile === "function") {
+		if (rw) return fileHandle.createWritable?.() ?? null;
+		return await fileHandle.getFile?.() ?? null;
+	}
+	const dir = await walkHandle$2(root, rel, true, false).catch(() => null);
+	if (dir) return toProvidedDirectory(virtualPath, dir);
+	return null;
+};
+var writableFromBackend = (backend, path) => {
+	const chunks = [];
+	return {
+		async write(data) {
+			const chunk = data && typeof data === "object" && "data" in data ? data.data : data;
+			chunks.push(chunk);
+		},
+		async seek() {},
+		async truncate() {
+			chunks.length = 0;
+		},
+		async abort() {
+			chunks.length = 0;
+		},
+		async close() {
+			const name = path.split("/").filter(Boolean).pop() || "file";
+			const file = new File([new Blob(chunks)], name);
+			await backend.writeFile?.(path, file);
+		}
+	};
+};
+var provideFromBackend = async (backend, virtualPath, rw = false, options) => {
+	if (wantsDirectoryProvide(virtualPath, options)) {
+		const entries = await backend.list(virtualPath).catch(() => []);
+		const dirPath = virtualPath.endsWith("/") ? virtualPath : `${virtualPath}/`;
+		return {
+			kind: "directory",
+			name: dirPath.split("/").filter(Boolean).pop() || backend.root.replace(/\//g, ""),
+			path: dirPath,
+			entries
+		};
+	}
+	if (rw && backend.writeFile) return writableFromBackend(backend, virtualPath);
+	return await backend.readFile?.(virtualPath).catch(() => null) ?? null;
+};
+//#endregion
 //#region ../../modules/projects/uniform.ts/src/newer/next/types/Interface.ts
 var WReflectAction = /* @__PURE__ */ function(WReflectAction) {
 	WReflectAction["GET"] = "get";
@@ -33740,7 +34977,12 @@ function WorkerWrapper(options) {
 }
 //#endregion
 //#region ../../modules/projects/lur.e/src/utils/opfs/OPFS.ts
+/**
+* FIND:opfs
+* TAG:idb-fs
+*/
 var OPFS_exports = /* @__PURE__ */ __exportAll({
+	asProvidedFile: () => asProvidedFile,
 	attachFile: () => attachFile,
 	clearAllInDirectory: () => clearAllInDirectory,
 	copyFromOneHandlerToAnother: () => copyFromOneHandlerToAnother,
@@ -33768,9 +35010,12 @@ var OPFS_exports = /* @__PURE__ */ __exportAll({
 	handleIncomingEntries: () => handleIncomingEntries,
 	hasFileExtension: () => hasFileExtension,
 	imageImportDesc: () => imageImportDesc,
+	isFsDirectoryHandle: () => isFsDirectoryHandle,
+	isProvidedDirectory: () => isProvidedDirectory,
 	isVirtualFsPath: () => isVirtualFsPath,
 	mappedRoots: () => mappedRoots,
 	matchMappedRoot: () => matchMappedRoot,
+	matchProvideBackend: () => matchProvideBackend,
 	mayNotPromise: () => mayNotPromise,
 	mountAsRoot: () => mountAsRoot,
 	normalizePath: () => normalizePath$1,
@@ -33781,7 +35026,9 @@ var OPFS_exports = /* @__PURE__ */ __exportAll({
 	readAsObjectURL: () => readAsObjectURL,
 	readFile: () => readFile,
 	readFileUTF8: () => readFileUTF8,
+	refreshMappedStorageRoots: () => refreshMappedStorageRoots,
 	registerDirectoryRoot: () => registerDirectoryRoot,
+	registerProvideBackend: () => registerProvideBackend,
 	remove: () => remove,
 	removeDirectory: () => removeDirectory,
 	removeFile: () => removeFile,
@@ -33789,9 +35036,11 @@ var OPFS_exports = /* @__PURE__ */ __exportAll({
 	resolveRootHandle: () => resolveRootHandle,
 	unmountAsRoot: () => unmountAsRoot,
 	unregisterDirectoryRoot: () => unregisterDirectoryRoot,
+	unregisterProvideBackend: () => unregisterProvideBackend,
 	uploadDirectory: () => uploadDirectory,
 	uploadFile: () => uploadFile,
 	walkExactFile: () => walkExactFile,
+	wantsDirectoryProvide: () => wantsDirectoryProvide,
 	writeFile: () => writeFile
 });
 var workerChannel = null;
@@ -34044,14 +35293,28 @@ var generalFileImportDesc = {
 		] }
 	}]
 };
+var resolveOpfsDirectory = async () => await navigator?.storage?.getDirectory?.() ?? null;
+var resolveUserStorageRoot = async () => {
+	if (isOpfsBackendActive()) return resolveOpfsDirectory();
+	return getIdbRoot();
+};
 var mappedRoots = /* @__PURE__ */ new Map([
-	["/", async () => await navigator?.storage?.getDirectory?.()],
-	["/user/", async () => await navigator?.storage?.getDirectory?.()],
+	["/", resolveUserStorageRoot],
+	["/user/", resolveUserStorageRoot],
 	["/assets/", async () => {
 		console.warn("Backend related API not implemented!");
 		return null;
 	}]
 ]);
+var refreshMappedStorageRoots = () => {
+	mappedRoots.set("/", resolveUserStorageRoot);
+	mappedRoots.set("/user/", resolveUserStorageRoot);
+	if (isOpfsBackendActive() && isIdbAvailable()) mappedRoots.set("/idb/", () => getIdbRoot());
+	else mappedRoots.delete("/idb/");
+};
+bindStorageRootsRefresher(refreshMappedStorageRoots);
+refreshMappedStorageRoots();
+var isFsDirectoryHandle = (handle) => !!handle && handle.kind === "directory" && typeof handle.getDirectoryHandle === "function";
 var currentHandleMap = /* @__PURE__ */ new Map();
 /** Virtual Explorer / OPFS roots that `provide()` can read without HTTP. */
 var isVirtualFsPath = (path) => {
@@ -34064,7 +35327,7 @@ var isVirtualFsPath = (path) => {
 		if (/^[a-zA-Z][a-zA-Z\d+\-.]*:/.test(raw)) p = new URL(raw).pathname;
 	} catch {}
 	if (!p.startsWith("/")) p = `/${p}`;
-	if (p === "/user" || p.startsWith("/user/") || p === "/mounts" || p.startsWith("/mounts/") || p === "/sdcard" || p.startsWith("/sdcard/") || p === "/saf" || p.startsWith("/saf/")) return true;
+	if (p === "/user" || p.startsWith("/user/") || p === "/idb" || p.startsWith("/idb/") || p === "/mounts" || p.startsWith("/mounts/") || p === "/sdcard" || p.startsWith("/sdcard/") || p === "/saf" || p.startsWith("/saf/") || p === "/desktop" || p.startsWith("/desktop/")) return true;
 	for (const root of mappedRoots.keys()) {
 		if (root === "/" || root === "/user/" || root === "/assets/") continue;
 		if (p === root || p.startsWith(root) || `${p}/` === root) return true;
@@ -34146,13 +35409,23 @@ var unmountAsRoot = async (forId) => {
 	post("unmount", { id: forId });
 };
 async function resolveRootHandle(rootHandle, relPath = "") {
+	const fallbackRoot = async () => {
+		if (isOpfsBackendActive()) return resolveOpfsDirectory();
+		return getIdbRoot();
+	};
+	const mappedFromPath = matchMappedRoot(relPath);
+	if ((rootHandle == null || rootHandle == void 0 || rootHandle?.trim?.()?.length == 0) && mappedFromPath && mappedFromPath.root !== "/") {
+		const fromPath = await mappedFromPath.resolver().catch(() => null);
+		if (fromPath) return fromPath;
+	}
 	if (rootHandle == null || rootHandle == void 0 || rootHandle?.trim?.()?.length == 0) rootHandle = "/user/";
+	if (isFsDirectoryHandle(rootHandle)) return rootHandle;
 	const cleanId = typeof rootHandle == "string" ? rootHandle?.trim?.()?.replace?.(/^\//, "")?.trim?.()?.split?.("/")?.filter?.((p) => !!p?.trim?.())?.at?.(0) : null;
 	if (cleanId) {
 		if (typeof localStorage != "undefined" && JSON.parse(localStorage?.getItem?.("opfs.mounted") || "[]").includes(cleanId)) rootHandle = currentHandleMap?.get(cleanId);
-		if (!rootHandle) rootHandle = await mappedRoots?.get?.(`/${cleanId}/`)?.() ?? await navigator.storage.getDirectory();
+		if (!rootHandle) rootHandle = await mappedRoots?.get?.(`/${cleanId}/`)?.() ?? await fallbackRoot();
 	}
-	if (rootHandle instanceof FileSystemDirectoryHandle) return rootHandle;
+	if (isFsDirectoryHandle(rootHandle)) return rootHandle;
 	const normalizedPath = relPath?.trim?.() || "/";
 	const pathForMatch = normalizedPath.startsWith("/") ? normalizedPath : "/" + normalizedPath;
 	let bestMatch = null;
@@ -34162,10 +35435,10 @@ async function resolveRootHandle(rootHandle, relPath = "") {
 		bestMatchLength = rootPath.length;
 	}
 	try {
-		return (bestMatch ? await bestMatch() : null) || await navigator?.storage?.getDirectory?.();
+		return (bestMatch ? await bestMatch() : null) || await fallbackRoot();
 	} catch (error) {
-		console.warn("Failed to resolve root handle, falling back to OPFS root:", error);
-		return await navigator?.storage?.getDirectory?.();
+		console.warn("Failed to resolve root handle, falling back to user storage:", error);
+		return await fallbackRoot();
 	}
 }
 function normalizePath$1(basePath = "", relPath) {
@@ -34235,7 +35508,7 @@ var hasFileExtension = (path) => {
 async function getDirectoryHandle(rootHandle, relPath, { create = false, basePath = "" } = {}, logger = defaultLogger) {
 	try {
 		const { rootHandle: resolvedRoot, resolvedPath } = await resolvePath(rootHandle, relPath, basePath);
-		const parts = stripUserScopePrefix(resolvedPath).split("/").filter((p) => !!p?.trim?.());
+		const parts = stripStorageScopePrefix(resolvedPath).split("/").filter((p) => !!p?.trim?.());
 		if (parts.length > 0 && hasFileExtension(parts[parts.length - 1]?.trim?.())) parts?.pop?.();
 		let dir = resolvedRoot;
 		if (parts?.length > 0) for (const part of parts) {
@@ -34250,7 +35523,7 @@ async function getDirectoryHandle(rootHandle, relPath, { create = false, basePat
 async function getFileHandle(rootHandle, relPath, { create = false, basePath = "" } = {}, logger = defaultLogger) {
 	try {
 		const { rootHandle: resolvedRoot, resolvedPath } = await resolvePath(rootHandle, relPath, basePath);
-		const cleanPath = stripUserScopePrefix(resolvedPath);
+		const cleanPath = stripStorageScopePrefix(resolvedPath);
 		const parts = cleanPath.split("/").filter((d) => !!d?.trim?.());
 		if (parts?.length == 0) return null;
 		const filePath = parts.length > 0 ? parts[parts.length - 1]?.trim?.()?.replace?.(/\s+/g, "-") : "";
@@ -34334,9 +35607,11 @@ function openDirectory(rootHandle, relPath, options = { create: false }, logger 
 		const observationId = UUIDv4();
 		const dirHandlePromise = getDirectoryHandle(rootHandle, resolvedPath, options, logger);
 		const updateCache = async () => {
-			const entries = await post("readDirectory", {
+			const cleanPath = stripStorageScopePrefix(resolvedPath);
+			const dir = await dirHandlePromise;
+			const entries = isIdbFsHandle(dir) || isIdbFsHandle(rootHandle) || !isOpfsBackendActive() ? await Promise.all(await Array.fromAsync(dir?.entries?.() ?? [])) : await post("readDirectory", {
 				rootId: "",
-				path: stripUserScopePrefix(resolvedPath),
+				path: cleanPath,
 				create: options.create
 			}, rootHandle ? [rootHandle] : []);
 			if (!entries) return mapCache;
@@ -34357,9 +35632,10 @@ function openDirectory(rootHandle, relPath, options = { create: false }, logger 
 				else if (change.type === "deleted" || change.type === "disappeared") mapCache.delete(change.name);
 			}
 		});
-		post("observe", {
+		const cleanPath = stripStorageScopePrefix(resolvedPath);
+		if (!isIdbFsHandle(rootHandle) && isOpfsBackendActive()) post("observe", {
 			rootId: "",
-			path: stripUserScopePrefix(resolvedPath),
+			path: cleanPath,
 			id: observationId
 		}, rootHandle ? [rootHandle] : []);
 		updateCache();
@@ -34435,9 +35711,11 @@ function openDirectory(rootHandle, relPath, options = { create: false }, logger 
 async function readFile(rootHandle, relPath, options = {}, logger = defaultLogger) {
 	try {
 		const { rootHandle: resolvedRoot, resolvedPath } = await resolvePath(rootHandle, relPath, options?.basePath || "");
+		const cleanPath = stripStorageScopePrefix(resolvedPath);
+		if (isIdbFsHandle(resolvedRoot) || !isOpfsBackendActive()) return await (await getFileHandle(resolvedRoot, resolvedPath, options, logger))?.getFile?.();
 		return await post("readFile", {
 			rootId: "",
-			path: stripUserScopePrefix(resolvedPath),
+			path: cleanPath,
 			type: "blob"
 		}, resolvedRoot ? [resolvedRoot] : []);
 	} catch (e) {
@@ -34462,15 +35740,23 @@ async function readFileUTF8(rootHandle, relPath, options = {}, logger = defaultL
 	}
 }
 async function writeFile(rootHandle, relPath, data, logger = defaultLogger) {
-	if (data instanceof FileSystemFileHandle) data = await data.getFile();
-	if (data instanceof FileSystemDirectoryHandle) {
-		const dstHandle = await getDirectoryHandle(await resolveRootHandle(rootHandle), relPath + (relPath?.trim?.()?.endsWith?.("/") ? "" : "/") + (data?.name || "")?.trim?.()?.replace?.(/\s+/g, "-"), { create: true });
+	if (data?.kind === "file" && typeof data.getFile === "function") data = await data.getFile();
+	if (isFsDirectoryHandle(data)) {
+		const dstHandle = await getDirectoryHandle(await resolveRootHandle(rootHandle, relPath), relPath + (relPath?.trim?.()?.endsWith?.("/") ? "" : "/") + (data?.name || "")?.trim?.()?.replace?.(/\s+/g, "-"), { create: true });
 		return await copyFromOneHandlerToAnother(data, dstHandle, {})?.catch?.(console.warn.bind(console));
 	} else try {
 		const { rootHandle: resolvedRoot, resolvedPath } = await resolvePath(rootHandle, relPath, "");
+		const cleanPath = stripStorageScopePrefix(resolvedPath);
+		if (isIdbFsHandle(resolvedRoot) || !isOpfsBackendActive()) {
+			const writable = await (await getFileHandle(resolvedRoot, resolvedPath, { create: true }, logger))?.createWritable?.();
+			if (!writable) return false;
+			await writable.write(data);
+			await writable.close();
+			return true;
+		}
 		return await post("writeFile", {
 			rootId: "",
-			path: stripUserScopePrefix(resolvedPath),
+			path: cleanPath,
 			data
 		}, resolvedRoot ? [resolvedRoot] : []) !== false;
 	} catch (e) {
@@ -34488,7 +35774,16 @@ async function getFileWriter(rootHandle, relPath, options = { create: true }, lo
 async function removeFile(rootHandle, relPath, options = { recursive: true }, logger = defaultLogger) {
 	try {
 		const { rootHandle: resolvedRoot, resolvedPath } = await resolvePath(rootHandle, relPath, options?.basePath || "");
-		const candidates = userPathCandidates(resolvedPath);
+		const candidates = storagePathCandidates(resolvedPath);
+		if (isIdbFsHandle(resolvedRoot) || !isOpfsBackendActive()) {
+			const parts = stripStorageScopePrefix(resolvedPath).split("/").filter((part) => !!part?.trim?.());
+			if (!parts.length) return false;
+			const name = parts.pop();
+			const dir = await getDirectoryHandle(resolvedRoot, parts.join("/") || "/", { create: false }, logger);
+			if (!dir) return false;
+			await dir.removeEntry(name, { recursive: options.recursive });
+			return true;
+		}
 		let lastResult = false;
 		for (const candidate of candidates) {
 			lastResult = await post("remove", {
@@ -34526,7 +35821,7 @@ var openImageFilePicker = async () => {
 };
 var downloadFile = async (file, filename) => {
 	if (file instanceof FileSystemFileHandle) file = await file.getFile();
-	if (typeof file == "string") file = await provide(file);
+	if (typeof file == "string") file = asProvidedFile(await provide(file));
 	filename = filename ?? file?.name;
 	if (!filename) return;
 	if ("msSaveOrOpenBlob" in self.navigator) self.navigator.msSaveOrOpenBlob(file, filename);
@@ -34562,7 +35857,7 @@ var downloadFile = async (file, filename) => {
 		}, 0);
 	}
 };
-var provide = async (req = "", rw = false) => {
+var provide = async (req = "", rw = false, options) => {
 	const requestUrl = (typeof req === "string" ? req : req?.url || "").trim();
 	if (!requestUrl) return null;
 	let pathname = requestUrl;
@@ -34570,28 +35865,22 @@ var provide = async (req = "", rw = false) => {
 		pathname = new URL(requestUrl, location?.origin || self?.location?.origin || "http://localhost").pathname || requestUrl;
 	} catch {}
 	const cleanPath = pathname?.trim?.() || "/";
-	if (cleanPath?.startsWith?.("/user")) {
-		const path = stripUserScopePrefix(cleanPath);
-		const root = await navigator?.storage?.getDirectory?.();
-		if (!root) return null;
-		const handle = await getFileHandle(root, path, { create: !!rw }).catch(() => null);
-		if (!handle) return null;
-		if (rw) return handle?.createWritable?.();
-		return handle?.getFile?.();
-	}
 	const mapped = matchMappedRoot(cleanPath);
-	if (mapped && mapped.root !== "/user/" && mapped.root !== "/" && mapped.root !== "/assets/") {
-		const dir = await mapped.resolver().catch(() => null);
-		if (dir instanceof FileSystemDirectoryHandle) {
-			const fileHandle = await walkExactFile(dir, cleanPath.startsWith(mapped.root) ? cleanPath.slice(mapped.root.length) : cleanPath.replace(/^\/+/, ""));
-			if (!fileHandle) return null;
-			if (rw) return fileHandle.createWritable?.();
-			return fileHandle.getFile?.();
+	const hostBackend = matchProvideBackend(cleanPath);
+	const mappedRoot = mapped && mapped.root !== "/" && mapped.root !== "/assets/" ? mapped.root : cleanPath.startsWith("/idb") ? "/idb/" : cleanPath.startsWith("/user") ? "/user/" : "";
+	if (mappedRoot) {
+		const root = await resolveRootHandle(null, cleanPath).catch(() => null);
+		if (isFsDirectoryHandle(root)) {
+			const fromHandle = await provideFromHandle(root, cleanPath, mappedRoot, rw, options);
+			if (fromHandle) return fromHandle;
 		}
-		return null;
 	}
-	if (rw) return null;
+	if (hostBackend) {
+		const fromHost = await provideFromBackend(hostBackend, cleanPath, rw, options);
+		if (fromHost) return fromHost;
+	}
 	if (isVirtualFsPath(cleanPath)) return null;
+	if (rw) return null;
 	try {
 		const baseOrigin = String(location?.origin || self?.location?.origin || "").trim();
 		const fetchTarget = cleanPath.startsWith("/") ? new URL(cleanPath, baseOrigin || "http://localhost").toString() : requestUrl;
@@ -34617,7 +35906,7 @@ var getLeast = (item) => {
 };
 var dropFile = async (file, dest = "/user/".trim?.()?.replace?.(/\s+/g, "-"), current) => {
 	const fs = await resolveRootHandle(null);
-	const user = getDir(stripUserScopePrefix(dest))?.replace?.("/user", "")?.trim?.();
+	const user = getDir(stripStorageScopePrefix(dest))?.replace?.("/user", "")?.trim?.();
 	file = file instanceof File ? file : new File([file], UUIDv4() + "." + (file?.type?.split?.("/")?.[1] || "tmp"));
 	const fp = user + (file?.name || "wallpaper")?.trim?.()?.replace?.(/\s+/g, "-");
 	await writeFile(fs, fp, file);
@@ -34625,7 +35914,7 @@ var dropFile = async (file, dest = "/user/".trim?.()?.replace?.(/\s+/g, "-"), cu
 	return "/user" + fp?.trim?.();
 };
 var uploadDirectory = async (dest = "/user/", id = null) => {
-	dest = stripUserScopePrefix(dest);
+	dest = stripStorageScopePrefix(dest);
 	if (!globalThis.showDirectoryPicker) return;
 	const srcHandle = await showDirectoryPicker?.({
 		mode: "readonly",
@@ -34638,7 +35927,7 @@ var uploadDirectory = async (dest = "/user/", id = null) => {
 };
 var uploadFile = async (dest = "/user/".trim?.()?.replace?.(/\s+/g, "-"), current) => {
 	const $e = "showOpenFilePicker";
-	dest = stripUserScopePrefix(dest);
+	dest = stripStorageScopePrefix(dest);
 	return (window?.[$e]?.bind?.(window) ?? (await __vitePreload(() => Promise.resolve().then(() => showOpenFilePicker_exports), void 0, import.meta.url))?.[$e])({
 		...generalFileImportDesc,
 		multiple: true
@@ -34673,9 +35962,14 @@ var dropAsTempFile = async (data) => {
 var clearAllInDirectory = async (rootHandle = null, relPath = "", options = {}, logger = defaultLogger) => {
 	try {
 		const { rootHandle: resolvedRoot, resolvedPath } = await resolvePath(rootHandle, relPath, options?.basePath || "");
+		const cleanPath = stripStorageScopePrefix(resolvedPath);
+		if (isIdbFsHandle(resolvedRoot) || !isOpfsBackendActive()) return removeFile(resolvedRoot, resolvedPath, {
+			recursive: true,
+			basePath: options?.basePath
+		}, logger);
 		await post("remove", {
 			rootId: "",
-			path: stripUserScopePrefix(resolvedPath),
+			path: cleanPath,
 			recursive: true
 		}, resolvedRoot ? [resolvedRoot] : []);
 	} catch (e) {
@@ -34683,6 +35977,7 @@ var clearAllInDirectory = async (rootHandle = null, relPath = "", options = {}, 
 	}
 };
 var copyFromOneHandlerToAnother = async (fromHandle, toHandle, options = {}, logger = defaultLogger) => {
+	if (isIdbFsHandle(fromHandle) || isIdbFsHandle(toHandle) || !isOpfsBackendActive()) return copyHandleTree(fromHandle, toHandle);
 	return post("copy", {
 		from: fromHandle,
 		to: toHandle
@@ -34746,7 +36041,7 @@ var handleIncomingEntries = (data, destPath = "/user/", rootHandle = null, onIte
 						}
 					}));
 				} else tasks.push(Promise.try(async () => {
-					const file = await provide(url);
+					const file = asProvidedFile(await provide(url));
 					if (file) {
 						const path = destPath + file.name;
 						await writeFile(resolvedRoot, path, file);
@@ -35607,6 +36902,249 @@ async function stringToFile(input, filename, options = {}) {
 	});
 }
 //#endregion
+//#region ../../modules/projects/lur.e/src/utils/opfs/remote-fs.ts
+var decodeBase64$1 = (body) => {
+	if (typeof Buffer !== "undefined") return new Uint8Array(Buffer.from(body, "base64"));
+	const bin = atob(body);
+	const out = new Uint8Array(bin.length);
+	for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+	return out;
+};
+var fileFromResponse = (resp) => {
+	if (!resp.ok || !resp.file?.body) return null;
+	const bytes = resp.file.encoding === "utf8" ? new TextEncoder().encode(resp.file.body) : decodeBase64$1(resp.file.body);
+	return new File([bytes], resp.file.name || "file", { type: resp.file.type || "" });
+};
+var createHttpsFsTransport = (httpPath = MOUNTED_FS_HTTP_PATH) => ({ async request(req) {
+	const id = req.id || createMountedFsId();
+	const r = await fetch(httpPath, {
+		method: "POST",
+		headers: { "content-type": "application/json" },
+		body: JSON.stringify({
+			t: "fs",
+			id,
+			...req
+		})
+	});
+	const json = await r.json().catch(() => null);
+	if (!isMountedFsResponse(json)) return {
+		t: "fs-result",
+		id,
+		ok: false,
+		error: `https ${r.status}`
+	};
+	return json;
+} });
+var createWebSocketFsTransport = (socket) => {
+	const pending = /* @__PURE__ */ new Map();
+	socket.addEventListener("message", (ev) => {
+		const raw = typeof ev.data === "string" ? ev.data : "";
+		let parsed = null;
+		try {
+			parsed = JSON.parse(raw);
+		} catch {
+			return;
+		}
+		if (!isMountedFsResponse(parsed)) return;
+		pending.get(parsed.id)?.(parsed);
+		pending.delete(parsed.id);
+	});
+	return { request(req) {
+		const id = req.id || createMountedFsId();
+		return new Promise((resolve, reject) => {
+			if (socket.readyState !== 1) {
+				reject(/* @__PURE__ */ new Error("ws closed"));
+				return;
+			}
+			pending.set(id, resolve);
+			socket.send(JSON.stringify({
+				t: "fs",
+				id,
+				...req
+			}));
+			setTimeout(() => {
+				if (pending.delete(id)) reject(/* @__PURE__ */ new Error("ws timeout"));
+			}, 8e3);
+		});
+	} };
+};
+var createSocketIoFsTransport = (socket, event = MOUNTED_FS_EVENT) => ({ request(req) {
+	const id = req.id || createMountedFsId();
+	const payload = {
+		t: "fs",
+		id,
+		...req
+	};
+	return new Promise((resolve, reject) => {
+		const timer = setTimeout(() => reject(/* @__PURE__ */ new Error("sio timeout")), 8e3);
+		const finish = (resp) => {
+			clearTimeout(timer);
+			if (isMountedFsResponse(resp)) resolve(resp);
+			else reject(/* @__PURE__ */ new Error("sio bad reply"));
+		};
+		try {
+			socket.emit(event, payload, finish);
+		} catch {
+			socket.emit(event, payload);
+			const onMsg = (data) => {
+				if (isMountedFsResponse(data) && data.id === id) {
+					socket.on;
+					finish(data);
+				}
+			};
+			socket.on(event, onMsg);
+		}
+	});
+} });
+var wsUrlFromHttp = (httpPath) => {
+	const origin = typeof location !== "undefined" ? location.origin : "http://localhost";
+	const url = new URL(httpPath.replace(/\/+$/, "") + "/ws", origin);
+	url.pathname = MOUNTED_FS_WS_PATH;
+	url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
+	return url.toString();
+};
+var tryOpenWebSocket = (url, timeoutMs = 1500) => new Promise((resolve) => {
+	if (typeof WebSocket === "undefined") {
+		resolve(null);
+		return;
+	}
+	let settled = false;
+	const done = (socket) => {
+		if (settled) return;
+		settled = true;
+		resolve(socket);
+	};
+	try {
+		const socket = new WebSocket(url);
+		const timer = setTimeout(() => {
+			try {
+				socket.close();
+			} catch {}
+			done(null);
+		}, timeoutMs);
+		socket.addEventListener("open", () => {
+			clearTimeout(timer);
+			done(socket);
+		});
+		socket.addEventListener("error", () => {
+			clearTimeout(timer);
+			done(null);
+		});
+	} catch {
+		done(null);
+	}
+});
+var tryOpenSocketIo = async () => {
+	const io = globalThis.io;
+	if (typeof io !== "function") return null;
+	try {
+		const socket = io({
+			path: "/socket.io",
+			transports: ["websocket", "polling"]
+		});
+		if (!socket) return null;
+		await new Promise((resolve, reject) => {
+			const timer = setTimeout(() => reject(/* @__PURE__ */ new Error("sio connect")), 1500);
+			socket.on?.("connect", () => {
+				clearTimeout(timer);
+				resolve();
+			});
+			socket.on?.("connect_error", () => {
+				clearTimeout(timer);
+				reject(/* @__PURE__ */ new Error("sio connect"));
+			});
+		}).catch(() => {
+			socket.close?.();
+			throw new Error("sio connect");
+		});
+		return createSocketIoFsTransport(socket);
+	} catch {
+		return null;
+	}
+};
+var connectRemoteMountedFs = async (options) => {
+	const httpPath = options?.httpPath || "/ssre/fs";
+	const ws = await tryOpenWebSocket(options?.wsUrl || wsUrlFromHttp(httpPath));
+	if (ws) {
+		const transport = createWebSocketFsTransport(ws);
+		if ((await transport.request({ op: "mounts" }).catch(() => null))?.ok) return transport;
+		try {
+			ws.close();
+		} catch {}
+	}
+	const sio = await tryOpenSocketIo();
+	if (sio) {
+		if ((await sio.request({ op: "mounts" }).catch(() => null))?.ok) return sio;
+	}
+	const https = createHttpsFsTransport(httpPath);
+	return (await https.request({ op: "mounts" }).catch(() => null))?.ok ? https : null;
+};
+var createRemoteProvideBackend = (root, transport) => ({
+	root,
+	async list(path) {
+		const resp = await transport.request({
+			op: "list",
+			path
+		});
+		if (!resp.ok) return [];
+		return resp.entries ?? [];
+	},
+	async readFile(path) {
+		return fileFromResponse(await transport.request({
+			op: "read",
+			path
+		}));
+	},
+	async writeFile(path, file) {
+		const buf = new Uint8Array(await file.arrayBuffer());
+		const body = typeof Buffer !== "undefined" ? Buffer.from(buf).toString("base64") : btoa(String.fromCharCode(...buf));
+		const resp = await transport.request({
+			op: "write",
+			path,
+			file: {
+				name: file.name,
+				type: file.type || "",
+				encoding: "base64",
+				body
+			}
+		});
+		if (!resp.ok) throw new Error(resp.error || "remote write failed");
+		return true;
+	}
+});
+var remoteTransport = null;
+var ensureRemoteMountedFs = () => {
+	remoteTransport ??= connectRemoteMountedFs().then((transport) => {
+		if (!transport) return null;
+		return transport.request({ op: "mounts" }).then((resp) => {
+			if (!resp.ok) return transport;
+			for (const mount of resp.mounts ?? []) registerProvideBackend(createRemoteProvideBackend(mount.virtual, transport));
+			return transport;
+		}).catch(() => transport);
+	}).catch(() => null);
+	return remoteTransport;
+};
+var tryRemoteMountedList = async (path) => {
+	const transport = await ensureRemoteMountedFs();
+	if (!transport) return null;
+	const resp = await transport.request({
+		op: "list",
+		path
+	}).catch(() => null);
+	if (!resp?.ok) return null;
+	return resp.entries ?? [];
+};
+var tryRemoteMountedRead = async (path) => {
+	const transport = await ensureRemoteMountedFs();
+	if (!transport) return null;
+	const resp = await transport.request({
+		op: "read",
+		path
+	}).catch(() => null);
+	if (!resp) return null;
+	return fileFromResponse(resp);
+};
+//#endregion
 //#region ../../modules/projects/lur.e/src/utils/opfs/OPFSMod.ts
 /**
 * Recursive JSON transformation helper for OPFS directories.
@@ -36461,7 +37999,7 @@ var provideBoundRelative = async (mountRoot, originalRel, sourceUrl) => {
 		const path = normalizePath$1(base, candidate);
 		if (!path || seen.has(path)) continue;
 		seen.add(path);
-		const file = await provide(path).catch(() => null);
+		const file = asProvidedFile(await provide(path).catch(() => null));
 		if (file) return file;
 	}
 	return null;
@@ -36825,6 +38363,8 @@ var src_exports$2 = /* @__PURE__ */ __exportAll({
 	$virtual: () => $virtual,
 	A: () => A$1,
 	ANIMATABLE_BRAND: () => ANIMATABLE_BRAND,
+	ANIM_LAYER: () => ANIM_LAYER,
+	ANIM_TRIGGER_NAME: () => ANIM_TRIGGER_NAME,
 	AnimatableValue: () => AnimatableValue,
 	BAKE_CATEGORIES: () => BAKE_CATEGORIES,
 	BAKE_LAYER: () => BAKE_LAYER,
@@ -36878,7 +38418,10 @@ var src_exports$2 = /* @__PURE__ */ __exportAll({
 	HistoryManager: () => HistoryManager,
 	I: () => I$1,
 	IDBStorage: () => IDBStorage,
+	IDB_FS_ROOT: () => IDB_FS_ROOT,
 	ITEM_COMPACT_KIND: () => ITEM_COMPACT_KIND,
+	IdbDirectoryHandle: () => IdbDirectoryHandle,
+	IdbFileHandle: () => IdbFileHandle,
 	JUNCTION_DRAG_EVENTS: () => JUNCTION_DRAG_EVENTS,
 	JUNCTION_RESIZE_EVENTS: () => JUNCTION_RESIZE_EVENTS,
 	JUNCTION_SELECT_EVENTS: () => JUNCTION_SELECT_EVENTS,
@@ -36894,6 +38437,7 @@ var src_exports$2 = /* @__PURE__ */ __exportAll({
 	Matrix3D: () => Matrix3D,
 	Matrix4D: () => Matrix4D,
 	OOBTrigger: () => OOBTrigger,
+	OPFS_SUPPORT_KEY: () => OPFS_SUPPORT_KEY$2,
 	OWNER: () => "DOM",
 	Q: () => Q$1,
 	Qp: () => Qp,
@@ -36948,8 +38492,10 @@ var src_exports$2 = /* @__PURE__ */ __exportAll({
 	adoptedStyleSheetsCache: () => adoptedStyleSheetsCache,
 	agWrapEvent: () => agWrapEvent,
 	alives: () => alives,
+	animKeyframeRefs: () => animKeyframeRefs,
 	animatable: () => animatable,
 	animate: () => animate,
+	appear: () => appear,
 	appendAsLayer: () => appendAsLayer,
 	appendAsOverlay: () => appendAsOverlay,
 	appendAsUnderlying: () => appendAsUnderlying,
@@ -36957,6 +38503,7 @@ var src_exports$2 = /* @__PURE__ */ __exportAll({
 	appendScrollbarOverlay: () => appendScrollbarOverlay,
 	applyAnchorName: () => applyAnchorName,
 	applyNormalizedInlineStyle: () => applyNormalizedInlineStyle,
+	asProvidedFile: () => asProvidedFile,
 	asinRef: () => asinRef,
 	atan2Ref: () => atan2Ref,
 	atanRef: () => atanRef,
@@ -36978,6 +38525,7 @@ var src_exports$2 = /* @__PURE__ */ __exportAll({
 	bindAnimatedBatch: () => bindAnimatedBatch,
 	bindBeh: () => bindBeh,
 	bindConditionalAnimation: () => bindConditionalAnimation,
+	bindCssAnimation: () => bindCssAnimation,
 	bindCtrl: () => bindCtrl,
 	bindDirectoryForLaunchedFiles: () => bindDirectoryForLaunchedFiles,
 	bindDraggable: () => bindDraggable,
@@ -36991,6 +38539,7 @@ var src_exports$2 = /* @__PURE__ */ __exportAll({
 	bindPreset: () => bindPreset,
 	bindScrollbarPosition: () => bindScrollbarPosition,
 	bindSpring: () => bindSpring,
+	bindStorageRootsRefresher: () => bindStorageRootsRefresher,
 	bindStyle: () => bindStyle,
 	bindTransition: () => bindTransition,
 	bindTriggerHandlers: () => bindTriggerHandlers,
@@ -37006,7 +38555,9 @@ var src_exports$2 = /* @__PURE__ */ __exportAll({
 	boolDepIconRef: () => boolDepIconRef,
 	booleanRef: () => booleanRef,
 	boundingBoxAnchorRef: () => boundingBoxAnchorRef,
+	buildAnimationTiming: () => buildAnimationTiming,
 	buildBakedCssText: () => buildBakedCssText,
+	buildWebAnimationKeyframes: () => buildWebAnimationKeyframes,
 	cacheBlobContentMap: () => cacheBlobContentMap,
 	cacheContentMap: () => cacheContentMap,
 	cacheMap: () => cacheMap,
@@ -37032,6 +38583,9 @@ var src_exports$2 = /* @__PURE__ */ __exportAll({
 	colorScheme: () => colorScheme,
 	compactIconSrcForStorage: () => compactIconSrcForStorage,
 	compileInlineStyleAttribute: () => compileInlineStyleAttribute,
+	compileKeyframesCss: () => compileKeyframesCss,
+	compileTriggerCss: () => compileTriggerCss,
+	connectRemoteMountedFs: () => connectRemoteMountedFs,
 	constrainRectAspectRatio: () => constrainRectAspectRatio,
 	containsMarker: () => containsMarker,
 	convertPointerToValue: () => convertPointerToValue,
@@ -37039,6 +38593,7 @@ var src_exports$2 = /* @__PURE__ */ __exportAll({
 	convertValueToPointer: () => convertValueToPointer,
 	copy: () => copy,
 	copyFromOneHandlerToAnother: () => copyFromOneHandlerToAnother,
+	copyHandleTree: () => copyHandleTree,
 	copyWithResult: () => copyWithResult,
 	correctValue: () => correctValue,
 	cosRef: () => cosRef,
@@ -37053,17 +38608,23 @@ var src_exports$2 = /* @__PURE__ */ __exportAll({
 	createFileHandler: () => createFileHandler,
 	createHandler: () => createHandler,
 	createHistoryManager: () => createHistoryManager,
+	createHttpsFsTransport: () => createHttpsFsTransport,
+	createIndexedDbFsStore: () => createIndexedDbFsStore,
 	createJsonFile: () => createJsonFile,
 	createMarkdownFile: () => createMarkdownFile,
+	createMemoryIdbFsStore: () => createMemoryIdbFsStore,
 	createPanelUnderShadow: () => createPanelUnderShadow,
 	createReactiveScrollbarOverlay: () => createReactiveScrollbarOverlay,
 	createRect2D: () => createRect2D,
+	createRemoteProvideBackend: () => createRemoteProvideBackend,
 	createShapedTileShadow: () => createShapedTileShadow,
+	createSocketIoFsTransport: () => createSocketIoFsTransport,
 	createStyleId: () => createStyleId,
 	createTemplateManager: () => createTemplateManager,
 	createTextFile: () => createTextFile,
 	createTypedUnitValue: () => createTypedUnitValue,
 	createUnderlyingShadow: () => createUnderlyingShadow,
+	createWebSocketFsTransport: () => createWebSocketFsTransport,
 	crossProduct3D: () => crossProduct3D,
 	css: () => css,
 	cssEmptyLayerRule: () => cssEmptyLayerRule,
@@ -37086,6 +38647,8 @@ var src_exports$2 = /* @__PURE__ */ __exportAll({
 	datasetRef: () => datasetRef,
 	decodeBase64ToBytes: () => decodeBase64ToBytes,
 	decodeDesktopState: () => decodeDesktopState,
+	decorHide: () => decorHide,
+	decorShow: () => decorShow,
 	defaultLogger: () => defaultLogger,
 	defaultZIndexShift: () => defaultZIndexShift,
 	defineAnimation: () => defineAnimation,
@@ -37093,6 +38656,8 @@ var src_exports$2 = /* @__PURE__ */ __exportAll({
 	detectTypeByRelPath: () => detectTypeByRelPath,
 	directHandlers: () => directHandlers,
 	directoryCacheMap: () => directoryCacheMap,
+	disappear: () => disappear,
+	dispatchLifecycleEvent: () => dispatchLifecycleEvent,
 	disposeCachedComponents: () => disposeCachedComponents,
 	divideRef: () => divideRef,
 	divideVector2D: () => divideVector2D,
@@ -37126,6 +38691,7 @@ var src_exports$2 = /* @__PURE__ */ __exportAll({
 	enhancedIntersectionBoxAnchorRef: () => enhancedIntersectionBoxAnchorRef,
 	ensureAdoptedSheetContent: () => ensureAdoptedSheetContent,
 	ensureHostStyles: () => ensureHostStyles,
+	ensureRemoteMountedFs: () => ensureRemoteMountedFs,
 	ensureStyleScopeSelector: () => ensureStyleScopeSelector,
 	ensureWorker: () => ensureWorker,
 	escapeCSSIdentifier: () => escapeCSSIdentifier,
@@ -37170,6 +38736,7 @@ var src_exports$2 = /* @__PURE__ */ __exportAll({
 	getGlobalContextMenu: () => getGlobalContextMenu,
 	getHandler: () => getHandler,
 	getIDBItem: () => getIDBItem,
+	getIdbRoot: () => getIdbRoot,
 	getIgnoreNextPopState: () => getIgnoreNextPopState,
 	getInputValues: () => getInputValues,
 	getItem: () => getItem,
@@ -37223,6 +38790,7 @@ var src_exports$2 = /* @__PURE__ */ __exportAll({
 	initClipboardReceiver: () => initClipboardReceiver,
 	initGlobalClipboard: () => initGlobalClipboard,
 	initHistory: () => initHistory,
+	initVisibility: () => initVisibility,
 	intersectionBoxAnchorRef: () => intersectionBoxAnchorRef,
 	invalidateBakedStyles: () => invalidateBakedStyles,
 	isAdoptedSheetEmpty: () => isAdoptedSheetEmpty,
@@ -37239,6 +38807,9 @@ var src_exports$2 = /* @__PURE__ */ __exportAll({
 	isEffectivelyEmptyStyleText: () => isEffectivelyEmptyStyleText,
 	isElementVisible: () => isElementVisible,
 	isExternalHttpHrefForFavicon: () => isExternalHttpHrefForFavicon,
+	isFsDirectoryHandle: () => isFsDirectoryHandle,
+	isIdbAvailable: () => isIdbAvailable,
+	isIdbFsHandle: () => isIdbFsHandle,
 	isImageFile: () => isImageFile,
 	isLayerBlockRule: () => isLayerBlockRule,
 	isLocalStorageAvailable: () => isLocalStorageAvailable,
@@ -37246,7 +38817,12 @@ var src_exports$2 = /* @__PURE__ */ __exportAll({
 	isMarkdownRelativeRef: () => isMarkdownRelativeRef,
 	isNativeCSSStyleValue: () => isNativeCSSStyleValue,
 	isNotExtended: () => isNotExtended,
+	isOpfsBackendActive: () => isOpfsBackendActive,
+	isOpfsCapabilityAvailable: () => isOpfsCapabilityAvailable,
+	isOpfsSupportEnabled: () => isOpfsSupportEnabled,
+	isProvidedDirectory: () => isProvidedDirectory,
 	isReactiveStyleValue: () => isReactiveStyleValue,
+	isReactiveTrigger: () => isReactiveTrigger,
 	isScrollDriven: () => isScrollDriven,
 	isShadowRoot: () => isShadowRoot,
 	isSpeechRecognitionAvailable: () => isSpeechRecognitionAvailable,
@@ -37300,6 +38876,7 @@ var src_exports$2 = /* @__PURE__ */ __exportAll({
 	matchMappedRoot: () => matchMappedRoot,
 	matchMediaLink: () => matchMediaLink,
 	matchMediaRef: () => matchMediaRef,
+	matchProvideBackend: () => matchProvideBackend,
 	matrix2x2Ref: () => matrix2x2Ref,
 	matrix3x3Ref: () => matrix3x3Ref,
 	matrix4x4Ref: () => matrix4x4Ref,
@@ -37324,6 +38901,7 @@ var src_exports$2 = /* @__PURE__ */ __exportAll({
 	normalizeCssForLayer: () => normalizeCssForLayer,
 	normalizeDataAsset: () => normalizeDataAsset,
 	normalizeIconSrcFromPayload: () => normalizeIconSrcFromPayload,
+	normalizeIdbNodePath: () => normalizeIdbNodePath,
 	normalizeIterationCount: () => normalizeIterationCount,
 	normalizeIterations: () => normalizeIterations,
 	normalizePath: () => normalizePath$1,
@@ -37410,6 +38988,7 @@ var src_exports$2 = /* @__PURE__ */ __exportAll({
 	refCtl: () => refCtl,
 	refTrigger: () => refTrigger,
 	reflectControllers: () => reflectControllers,
+	refreshMappedStorageRoots: () => refreshMappedStorageRoots,
 	registerCloseable: () => registerCloseable,
 	registerColorProperty: () => registerColorProperty$1,
 	registerContextMenu: () => registerContextMenu,
@@ -37418,6 +38997,7 @@ var src_exports$2 = /* @__PURE__ */ __exportAll({
 	registerModal: () => registerModal,
 	registerOverlay: () => registerOverlay,
 	registerOverlayElement: () => registerOverlayElement,
+	registerProvideBackend: () => registerProvideBackend,
 	registerSidebar: () => registerSidebar,
 	registerStyleTreeHook: () => registerStyleTreeHook,
 	registerTask: () => registerTask,
@@ -37443,6 +39023,7 @@ var src_exports$2 = /* @__PURE__ */ __exportAll({
 	requestCopyViaCRX: () => requestCopyViaCRX,
 	requestMicrophonePermission: () => requestMicrophonePermission,
 	resizeTrigger: () => resizeTrigger,
+	resolveCssAnimationTarget: () => resolveCssAnimationTarget,
 	resolveDragging: () => resolveDragging,
 	resolveFileUnderDirectory: () => resolveFileUnderDirectory,
 	resolveLayerZIndex: () => resolveLayerZIndex,
@@ -37474,6 +39055,7 @@ var src_exports$2 = /* @__PURE__ */ __exportAll({
 	setIgnoreNextPopState: () => setIgnoreNextPopState,
 	setInputValue: () => setInputValue,
 	setItem: () => setItem,
+	setOpfsSupportEnabled: () => setOpfsSupportEnabled,
 	setProperty: () => setProperty,
 	setSessionItem: () => setSessionItem,
 	setString: () => setString,
@@ -37521,12 +39103,15 @@ var src_exports$2 = /* @__PURE__ */ __exportAll({
 	toText: () => toText,
 	transformRect2D: () => transformRect2D,
 	translate2D: () => translate2D,
+	tryRemoteMountedList: () => tryRemoteMountedList,
+	tryRemoteMountedRead: () => tryRemoteMountedRead,
 	unbakeComputedStyle: () => unbakeComputedStyle,
 	unbakeScreenColors: () => unbakeScreenColors,
 	unmountAsRoot: () => unmountAsRoot,
 	unpackHrefInline: () => unpackHrefInline,
 	unregisterCloseable: () => unregisterCloseable,
 	unregisterDirectoryRoot: () => unregisterDirectoryRoot,
+	unregisterProvideBackend: () => unregisterProvideBackend,
 	unwrapCssLayer: () => unwrapCssLayer,
 	updateInput: () => updateInput,
 	updateThemeBase: () => updateThemeBase,
@@ -37546,7 +39131,9 @@ var src_exports$2 = /* @__PURE__ */ __exportAll({
 	visibleBySelectorRef: () => visibleBySelectorRef,
 	visibleLink: () => visibleLink,
 	visibleRef: () => visibleRef,
+	waitElementAnimations: () => waitElementAnimations,
 	walkExactFile: () => walkExactFile,
+	wantsDirectoryProvide: () => wantsDirectoryProvide,
 	watchFsDirectory: () => watchFsDirectory,
 	withInsetWithPointer: () => withInsetWithPointer,
 	withProperties: () => withProperties,
@@ -37654,7 +39241,7 @@ var removeDirectoryMount = (id) => {
 	writeCatalog$1(catalog);
 	handles$1.delete(id);
 	if (mount) {
-		unregisterFsBackend(mount.path);
+		unregisterFsBackend$1(mount.path);
 		unregisterDirectoryRoot(mount.path);
 	}
 	forgetMountHandle(id);
@@ -37758,8 +39345,9 @@ function registerFsBackend$1(backend) {
 	const key = normalizeRoot$1(backend.root);
 	registry$1.set(key, backend);
 	notifyBackendRegistered$1(key);
+	bindFsBackendToProvide$1(backend);
 }
-function unregisterFsBackend(root) {
+function unregisterFsBackend$1(root) {
 	registry$1.delete(normalizeRoot$1(root));
 }
 /**
@@ -37807,23 +39395,28 @@ function listVirtualRootEntriesFromRouter() {
 	entries.sort((a, b) => a.name.localeCompare(b.name));
 	return entries;
 }
-var stripUserPrefix$1 = (path) => {
-	const vpath = String(path || "").replace(/^\/+/, "");
-	if (vpath.startsWith("user/")) return "/" + vpath.slice(5);
-	return "/" + vpath;
-};
-var listOpfsUserDirectory$1 = async (path) => {
-	const nav = typeof navigator !== "undefined" ? navigator : null;
-	const getDir = nav?.storage?.getDirectory;
-	if (typeof getDir !== "function") return [];
-	let root;
+var OPFS_SUPPORT_KEY$1 = "cwsp.opfs.enabled";
+var isOpfsSupportEnabledSync$1 = () => {
 	try {
-		root = await getDir.call(nav.storage);
+		if (typeof localStorage === "undefined") return true;
+		const value = localStorage.getItem(OPFS_SUPPORT_KEY$1);
+		return value !== "0" && value !== "false";
 	} catch {
-		return [];
+		return true;
 	}
+};
+var isOpfsCapabilityAvailableSync$1 = () => typeof navigator !== "undefined" && typeof navigator.storage?.getDirectory === "function";
+var isOpfsBackendActiveSync$1 = () => isOpfsCapabilityAvailableSync$1() && isOpfsSupportEnabledSync$1();
+var stripStoragePrefix$1 = (path, scope) => {
+	const vpath = String(path || "").replace(/^\/+/, "");
+	const prefix = `${scope}/`;
+	if (vpath.startsWith(prefix)) return `/${vpath.slice(prefix.length)}`;
+	if (vpath === scope) return "/";
+	return `/${vpath}`;
+};
+var listHandleDirectory$1 = async (root, path) => {
 	if (!root) return [];
-	const segments = stripUserPrefix$1(path).split("/").filter(Boolean);
+	const segments = stripStoragePrefix$1(path, normalizeVirtualPath$1(path, true).startsWith("/idb/") ? "idb" : "user").split("/").filter(Boolean);
 	let dir = root;
 	for (const seg of segments) try {
 		dir = await dir.getDirectoryHandle(seg, { create: false });
@@ -37846,43 +39439,147 @@ var listOpfsUserDirectory$1 = async (path) => {
 	}
 	return entries;
 };
-function ensureDefaultFsBackends$1() {
-	if (!resolveFsBackend$1("/user/")) registerFsBackend$1({
-		root: "/user/",
+var readHandleFile$1 = async (root, path, scope) => {
+	if (!root) return null;
+	const segments = stripStoragePrefix$1(path, scope).split("/").filter(Boolean);
+	if (!segments.length) return null;
+	let dir = root;
+	for (const seg of segments.slice(0, -1)) try {
+		dir = await dir.getDirectoryHandle(seg, { create: false });
+	} catch {
+		return null;
+	}
+	try {
+		return await (await dir.getFileHandle(segments[segments.length - 1], { create: false })).getFile();
+	} catch {
+		return null;
+	}
+};
+var bindFsBackendToProvide$1 = (backend) => {
+	if (backend.root === "/bookmarks/" || backend.root === "/downloads/") return;
+	__vitePreload(async () => {
+		const { registerProvideBackend } = await Promise.resolve().then(() => src_exports$2);
+		return { registerProvideBackend };
+	}, void 0, import.meta.url).then(({ registerProvideBackend }) => {
+		registerProvideBackend({
+			root: backend.root,
+			list: async (path) => {
+				const rows = await backend.list(path);
+				const base = normalizeVirtualPath$1(path, true);
+				return rows.map((row) => ({
+					name: row.name,
+					kind: row.kind,
+					path: row.path || `${base}${row.name}${row.kind === "directory" ? "/" : ""}`
+				}));
+			},
+			readFile: backend.readFile,
+			writeFile: backend.writeFile ? async (path, file) => {
+				const slash = String(path || "").lastIndexOf("/");
+				const parent = slash >= 0 ? path.slice(0, slash + 1) : backend.root;
+				await backend.writeFile?.(parent, file);
+				return true;
+			} : void 0
+		});
+	}).catch(() => {});
+};
+var loadIdbRoot$1 = async () => {
+	if (typeof indexedDB === "undefined") return null;
+	try {
+		const { getIdbRoot } = await __vitePreload(async () => {
+			const { getIdbRoot } = await Promise.resolve().then(() => src_exports$2);
+			return { getIdbRoot };
+		}, void 0, import.meta.url);
+		return await getIdbRoot();
+	} catch {
+		return null;
+	}
+};
+var resolveUserHandleRoot$1 = async () => {
+	if (isOpfsBackendActiveSync$1()) try {
+		return await navigator.storage.getDirectory();
+	} catch {
+		return null;
+	}
+	return loadIdbRoot$1();
+};
+var createStorageFsBackend$1 = (root, getRoot) => {
+	const scope = root === "/idb/" ? "idb" : "user";
+	return {
+		root,
 		writable: true,
 		async list(path) {
-			return listOpfsUserDirectory$1(path);
+			return listHandleDirectory$1(await getRoot().catch(() => null), path);
 		},
 		async readFile(path) {
-			const nav = typeof navigator !== "undefined" ? navigator : null;
-			const getDir = nav?.storage?.getDirectory;
-			if (typeof getDir !== "function") return null;
-			const root = await getDir.call(nav.storage).catch(() => null);
-			if (!root) return null;
-			const segments = stripUserPrefix$1(path).split("/").filter(Boolean);
-			if (!segments.length) return null;
-			let dir = root;
-			for (const seg of segments.slice(0, -1)) try {
-				dir = await dir.getDirectoryHandle(seg, { create: false });
-			} catch {
-				return null;
-			}
-			try {
-				return await (await dir.getFileHandle(segments[segments.length - 1], { create: false })).getFile();
-			} catch {
-				return null;
-			}
+			return readHandleFile$1(await getRoot().catch(() => null), path, scope);
+		},
+		async mkdir(parentPath, name) {
+			const handleRoot = await getRoot();
+			if (!handleRoot) return;
+			const segments = [...stripStoragePrefix$1(parentPath, scope).split("/").filter(Boolean), String(name || "").trim()].filter(Boolean);
+			let dir = handleRoot;
+			for (const seg of segments) dir = await dir.getDirectoryHandle(seg, { create: true });
+		},
+		async writeFile(parentPath, file) {
+			const handleRoot = await getRoot();
+			if (!handleRoot || !file) return;
+			const segments = stripStoragePrefix$1(parentPath, scope).split("/").filter(Boolean);
+			let dir = handleRoot;
+			for (const seg of segments) dir = await dir.getDirectoryHandle(seg, { create: true });
+			const writable = await (await dir.getFileHandle(file.name || `file-${Date.now()}`, { create: true })).createWritable();
+			await writable.write(file);
+			await writable.close();
+		},
+		async remove(path, recursive = true) {
+			const handleRoot = await getRoot();
+			if (!handleRoot) return;
+			const segments = stripStoragePrefix$1(path, scope).replace(/\/+$/g, "").split("/").filter(Boolean);
+			if (!segments.length) return;
+			const name = segments.pop();
+			let dir = handleRoot;
+			for (const seg of segments) dir = await dir.getDirectoryHandle(seg, { create: false });
+			await dir.removeEntry(name, { recursive });
 		}
-	});
+	};
+};
+function ensureDefaultFsBackends$1() {
+	if (!resolveFsBackend$1("/user/")) registerFsBackend$1(createStorageFsBackend$1("/user/", resolveUserHandleRoot$1));
+	if (isOpfsBackendActiveSync$1() && typeof indexedDB !== "undefined") {
+		if (!resolveFsBackend$1("/idb/")) registerFsBackend$1(createStorageFsBackend$1("/idb/", loadIdbRoot$1));
+	} else {
+		unregisterFsBackend$1("/idb/");
+		__vitePreload(async () => {
+			const { unregisterProvideBackend } = await Promise.resolve().then(() => src_exports$2);
+			return { unregisterProvideBackend };
+		}, void 0, import.meta.url).then(({ unregisterProvideBackend }) => {
+			unregisterProvideBackend("/idb/");
+		}).catch(() => {});
+	}
 	if (!resolveFsBackend$1("/assets/")) registerFsBackend$1({
 		root: "/assets/",
 		writable: false,
-		async list() {
-			return [];
+		async list(path) {
+			try {
+				const { tryRemoteMountedList } = await __vitePreload(async () => {
+					const { tryRemoteMountedList } = await Promise.resolve().then(() => src_exports$2);
+					return { tryRemoteMountedList };
+				}, void 0, import.meta.url);
+				return await tryRemoteMountedList(path) ?? [];
+			} catch {
+				return [];
+			}
 		},
 		async readFile(path) {
 			const p = String(path || "").trim();
 			if (!p || p.endsWith("/")) return null;
+			try {
+				const { tryRemoteMountedRead } = await __vitePreload(async () => {
+					const { tryRemoteMountedRead } = await Promise.resolve().then(() => src_exports$2);
+					return { tryRemoteMountedRead };
+				}, void 0, import.meta.url);
+				const remote = await tryRemoteMountedRead(p);
+				if (remote) return remote;
+			} catch {}
 			try {
 				const r = await fetch(p);
 				if (!r?.ok) return null;
@@ -37894,6 +39591,12 @@ function ensureDefaultFsBackends$1() {
 			}
 		}
 	});
+	__vitePreload(async () => {
+		const { ensureRemoteMountedFs } = await Promise.resolve().then(() => src_exports$2);
+		return { ensureRemoteMountedFs };
+	}, void 0, import.meta.url).then(({ ensureRemoteMountedFs }) => {
+		ensureRemoteMountedFs();
+	}).catch(() => {});
 	if (!resolveFsBackend$1("/bookmarks/")) {
 		const chromeAny = globalThis?.chrome;
 		if (chromeAny?.bookmarks) {
@@ -42100,6 +43803,8 @@ var isVirtualRootPath = (path) => normalizeDirectoryPath(path) === "/";
 var isReadonlyPath = (path) => isAssetsPath(path) || isVirtualRootPath(path);
 var isIconsPath = (path) => normalizeDirectoryPath(path).startsWith("/assets/icons/");
 var isUserPath = (path) => isUserScopePath(normalizeDirectoryPath(path));
+var isIdbPath = (path) => isIdbScopePath(normalizeDirectoryPath(path));
+var isWorkspacePath = (path) => isUserPath(path) || isIdbPath(path);
 var BOOKMARKS_ROOT$1 = "/bookmarks/";
 var isBookmarksPath = (path) => normalizeDirectoryPath(path).startsWith(BOOKMARKS_ROOT$1);
 /**
@@ -42109,7 +43814,7 @@ var isBookmarksPath = (path) => normalizeDirectoryPath(path).startsWith(BOOKMARK
 */
 var canReceiveIncomingPath = (path) => {
 	const normalized = normalizeDirectoryPath(path);
-	return isVirtualRootPath(normalized) || isUserPath(normalized) || isBookmarksPath(normalized);
+	return isVirtualRootPath(normalized) || isWorkspacePath(normalized) || isBookmarksPath(normalized);
 };
 var buildVirtualAssetPaths = (path) => {
 	const target = normalizeDirectoryPath(path);
@@ -42178,7 +43883,7 @@ var FileOperative = class {
 			this.#readonly.value = isReadonlyPath(path || "/");
 			this.loadPath(path || "/");
 		});
-		navigator?.storage?.getDirectory?.()?.then?.((h) => {
+		resolveRootHandle("/user/").then((h) => {
 			this.#fsRoot = h;
 			this.refreshList(this.path || "/");
 		});
@@ -42284,7 +43989,7 @@ var FileOperative = class {
 		})))?.filter?.(($item) => $item != null) || [];
 	}
 	async getDirectoryHandleByPath(path, create = false) {
-		const root = this.#fsRoot || await navigator?.storage?.getDirectory?.();
+		const root = this.#fsRoot || await this.getStorageRootHandle("/user/");
 		if (!root) return null;
 		const parts = normalizeDirectoryPath(path).split("/").filter(Boolean);
 		let current = root;
@@ -42293,16 +43998,20 @@ var FileOperative = class {
 	}
 	normalizeUserRelativePath(path) {
 		const normalized = normalizeDirectoryPath(path);
-		if (normalized === "/user/") return "/";
+		if (normalized === "/user/" || normalized === "/idb/") return "/";
 		if (normalized.startsWith("/user/")) return normalized.slice(5);
+		if (normalized.startsWith("/idb/")) return normalized.slice(4);
 		return normalized;
 	}
+	async getStorageRootHandle(path) {
+		return resolveRootHandle(isIdbPath(path) ? "/idb/" : "/user/", path);
+	}
 	async getOpfsRootHandle() {
-		this.#fsRoot = this.#fsRoot || await navigator?.storage?.getDirectory?.();
+		this.#fsRoot = await this.getStorageRootHandle("/user/");
 		return this.#fsRoot;
 	}
 	async getUserDirHandle(path, create = false) {
-		const root = await this.getOpfsRootHandle();
+		const root = await this.getStorageRootHandle(path);
 		if (!root) return null;
 		const parts = this.normalizeUserRelativePath(path).split("/").filter(Boolean);
 		let current = root;
@@ -42374,7 +44083,7 @@ var FileOperative = class {
 	*/
 	incomingDestinationPath() {
 		const currentPath = normalizeDirectoryPath(this.path);
-		if (canReceiveIncomingPath(currentPath) && isUserPath(currentPath)) return currentPath;
+		if (canReceiveIncomingPath(currentPath) && isWorkspacePath(currentPath)) return currentPath;
 		if (isBookmarksPath(currentPath)) return currentPath;
 		if (isVirtualRootPath(currentPath)) return "/user/";
 		return null;
@@ -42484,7 +44193,7 @@ var FileOperative = class {
 		await this.writeUserFile(file, destPath ?? this.path);
 	}
 	async removeUserEntry(absPath, recursive = true) {
-		const root = await this.getOpfsRootHandle();
+		const root = await this.getStorageRootHandle(absPath);
 		if (!root) return false;
 		const parts = this.normalizeUserRelativePath(absPath).replace(/\/+$/g, "").split("/").filter(Boolean);
 		if (!parts.length) return false;
@@ -42495,7 +44204,7 @@ var FileOperative = class {
 		return true;
 	}
 	async renameUserFile(absPath, newName) {
-		const root = await this.getOpfsRootHandle();
+		const root = await this.getStorageRootHandle(absPath);
 		if (!root) return;
 		const parts = this.normalizeUserRelativePath(absPath).replace(/\/+$/g, "").split("/").filter(Boolean);
 		if (!parts.length) return;
@@ -42661,7 +44370,7 @@ var FileOperative = class {
 				const loadPath = itemPath || abs;
 				const backend = resolveFsBackend$1(loadPath);
 				if (typeof backend?.readFile === "function") item.file = await backend.readFile(loadPath).catch(() => null);
-				if (!item.file) item.file = await provide(loadPath).catch(() => null);
+				if (!item.file) item.file = asProvidedFile(await provide(loadPath).catch(() => null));
 				if (item.file) {
 					item.size = item.file.size;
 					item.lastModified = item.file.lastModified;
@@ -42711,6 +44420,14 @@ var FileOperative = class {
 				return this;
 			}
 			if (isAssetsPath(rel)) {
+				const backend = resolveFsBackend$1(rel);
+				try {
+					const remote = await backend?.list?.(rel);
+					if (remote && remote.length) {
+						this.applyEntries(remote.map((e) => observe(e)));
+						return this;
+					}
+				} catch {}
 				this.applyEntries(await this.listAssetEntries(rel));
 				return this;
 			}
@@ -42816,7 +44533,7 @@ var FileOperative = class {
 							if (fsBackend?.remove && fsBackend.root !== "/user/" && fsBackend.root !== "/assets/") {
 								if (globalThis.confirm?.(`Delete “${itemName || "item"}”?`) !== true) break;
 								await fsBackend.remove(nativePath, true);
-							} else if (isUserPath(abs)) await this.removeUserEntry(abs, true);
+							} else if (isWorkspacePath(abs)) await this.removeUserEntry(abs, true);
 							else await remove(this.#fsRoot, abs);
 						}
 						await this.refreshList(this.path);
@@ -42827,7 +44544,7 @@ var FileOperative = class {
 						if (next && next !== itemName) {
 							if (bmBackend?.rename) await bmBackend.rename(bmPath, next);
 							else if (item?.kind === "file") {
-								if (isUserPath(abs)) await this.renameUserFile(abs ?? "", next ?? "");
+								if (isWorkspacePath(abs)) await this.renameUserFile(abs ?? "", next ?? "");
 								else await this.renameFile(abs ?? "", next ?? "");
 							}
 							await this.refreshList(this.path);
@@ -42871,8 +44588,12 @@ var FileOperative = class {
 						if (!fields?.title) break;
 						await destBackend.mkdir(this.path, fields.title);
 					} else {
-						if (!prompt("Folder name:", "New folder")) break;
-						if (isUserPath(this.path)) await this.getUserDirHandle(this.path, true);
+						const name = prompt("Folder name:", "New folder");
+						if (!name) break;
+						if (isWorkspacePath(this.path)) {
+							const folder = String(name).trim();
+							if (folder) await this.getUserDirHandle(`${this.path}${folder}/`, true);
+						}
 					}
 					await this.refreshList(this.path);
 					break;
@@ -42955,7 +44676,7 @@ var FileOperative = class {
 				case "download":
 					Promise.try(async () => {
 						if (isAssetsPath(abs)) {
-							const file = await provide(abs);
+							const file = asProvidedFile(await provide(abs));
 							if (file) await downloadFile(file);
 							return;
 						}
@@ -48166,6 +49887,24 @@ var ExplorerSettings = class ExplorerSettings extends UIElement {
 		}}>Pick SAF folder</button>
                 </div>
             </section>
+            <section class="explorer-settings__card">
+                <h3 class="explorer-settings__title">
+                    <ui-icon icon="hard-drives" icon-style="duotone" size="20"></ui-icon>
+                    Origin storage
+                </h3>
+                <p>OPFS is <code>/user/</code> when available. IndexedDB is <code>/idb/</code> beside it, or <code>/user/</code> if OPFS is off.</p>
+                <label class="explorer-settings__check">
+                    <input type="checkbox" data-explorer-opfs-enabled checked=${isOpfsSupportEnabled()} disabled=${!isOpfsCapabilityAvailable()} on:change=${(ev) => {
+			setOpfsSupportEnabled(ev.currentTarget.checked);
+			refreshMappedStorageRoots();
+			unregisterFsBackend$1("/user/");
+			unregisterFsBackend$1("/idb/");
+			ensureDefaultFsBackends$1();
+			window.dispatchEvent(new CustomEvent("cwsp:explorer-mount-change"));
+		}} />
+                    <span>Use OPFS for <code>/user/</code></span>
+                </label>
+            </section>
             <section class="explorer-settings__card" hidden=${native || !picker}>
                 <h3 class="explorer-settings__title">
                     <ui-icon icon="folder-plus" icon-style="duotone" size="20"></ui-icon>
@@ -50843,6 +52582,10 @@ function registerFsBackend(backend) {
 	const key = normalizeRoot(backend.root);
 	registry.set(key, backend);
 	notifyBackendRegistered(key);
+	bindFsBackendToProvide(backend);
+}
+function unregisterFsBackend(root) {
+	registry.delete(normalizeRoot(root));
 }
 /**
 * Longest-prefix match. A backend rooted at `/user/` matches `/user/links/`
@@ -50869,23 +52612,28 @@ function resolveFsBackend(path) {
 	}
 	return best;
 }
-var stripUserPrefix = (path) => {
-	const vpath = String(path || "").replace(/^\/+/, "");
-	if (vpath.startsWith("user/")) return "/" + vpath.slice(5);
-	return "/" + vpath;
-};
-var listOpfsUserDirectory = async (path) => {
-	const nav = typeof navigator !== "undefined" ? navigator : null;
-	const getDir = nav?.storage?.getDirectory;
-	if (typeof getDir !== "function") return [];
-	let root;
+var OPFS_SUPPORT_KEY = "cwsp.opfs.enabled";
+var isOpfsSupportEnabledSync = () => {
 	try {
-		root = await getDir.call(nav.storage);
+		if (typeof localStorage === "undefined") return true;
+		const value = localStorage.getItem(OPFS_SUPPORT_KEY);
+		return value !== "0" && value !== "false";
 	} catch {
-		return [];
+		return true;
 	}
+};
+var isOpfsCapabilityAvailableSync = () => typeof navigator !== "undefined" && typeof navigator.storage?.getDirectory === "function";
+var isOpfsBackendActiveSync = () => isOpfsCapabilityAvailableSync() && isOpfsSupportEnabledSync();
+var stripStoragePrefix = (path, scope) => {
+	const vpath = String(path || "").replace(/^\/+/, "");
+	const prefix = `${scope}/`;
+	if (vpath.startsWith(prefix)) return `/${vpath.slice(prefix.length)}`;
+	if (vpath === scope) return "/";
+	return `/${vpath}`;
+};
+var listHandleDirectory = async (root, path) => {
 	if (!root) return [];
-	const segments = stripUserPrefix(path).split("/").filter(Boolean);
+	const segments = stripStoragePrefix(path, normalizeVirtualPath(path, true).startsWith("/idb/") ? "idb" : "user").split("/").filter(Boolean);
 	let dir = root;
 	for (const seg of segments) try {
 		dir = await dir.getDirectoryHandle(seg, { create: false });
@@ -50908,43 +52656,147 @@ var listOpfsUserDirectory = async (path) => {
 	}
 	return entries;
 };
-function ensureDefaultFsBackends() {
-	if (!resolveFsBackend("/user/")) registerFsBackend({
-		root: "/user/",
+var readHandleFile = async (root, path, scope) => {
+	if (!root) return null;
+	const segments = stripStoragePrefix(path, scope).split("/").filter(Boolean);
+	if (!segments.length) return null;
+	let dir = root;
+	for (const seg of segments.slice(0, -1)) try {
+		dir = await dir.getDirectoryHandle(seg, { create: false });
+	} catch {
+		return null;
+	}
+	try {
+		return await (await dir.getFileHandle(segments[segments.length - 1], { create: false })).getFile();
+	} catch {
+		return null;
+	}
+};
+var bindFsBackendToProvide = (backend) => {
+	if (backend.root === "/bookmarks/" || backend.root === "/downloads/") return;
+	__vitePreload(async () => {
+		const { registerProvideBackend } = await Promise.resolve().then(() => src_exports$2);
+		return { registerProvideBackend };
+	}, void 0, import.meta.url).then(({ registerProvideBackend }) => {
+		registerProvideBackend({
+			root: backend.root,
+			list: async (path) => {
+				const rows = await backend.list(path);
+				const base = normalizeVirtualPath(path, true);
+				return rows.map((row) => ({
+					name: row.name,
+					kind: row.kind,
+					path: row.path || `${base}${row.name}${row.kind === "directory" ? "/" : ""}`
+				}));
+			},
+			readFile: backend.readFile,
+			writeFile: backend.writeFile ? async (path, file) => {
+				const slash = String(path || "").lastIndexOf("/");
+				const parent = slash >= 0 ? path.slice(0, slash + 1) : backend.root;
+				await backend.writeFile?.(parent, file);
+				return true;
+			} : void 0
+		});
+	}).catch(() => {});
+};
+var loadIdbRoot = async () => {
+	if (typeof indexedDB === "undefined") return null;
+	try {
+		const { getIdbRoot } = await __vitePreload(async () => {
+			const { getIdbRoot } = await Promise.resolve().then(() => src_exports$2);
+			return { getIdbRoot };
+		}, void 0, import.meta.url);
+		return await getIdbRoot();
+	} catch {
+		return null;
+	}
+};
+var resolveUserHandleRoot = async () => {
+	if (isOpfsBackendActiveSync()) try {
+		return await navigator.storage.getDirectory();
+	} catch {
+		return null;
+	}
+	return loadIdbRoot();
+};
+var createStorageFsBackend = (root, getRoot) => {
+	const scope = root === "/idb/" ? "idb" : "user";
+	return {
+		root,
 		writable: true,
 		async list(path) {
-			return listOpfsUserDirectory(path);
+			return listHandleDirectory(await getRoot().catch(() => null), path);
 		},
 		async readFile(path) {
-			const nav = typeof navigator !== "undefined" ? navigator : null;
-			const getDir = nav?.storage?.getDirectory;
-			if (typeof getDir !== "function") return null;
-			const root = await getDir.call(nav.storage).catch(() => null);
-			if (!root) return null;
-			const segments = stripUserPrefix(path).split("/").filter(Boolean);
-			if (!segments.length) return null;
-			let dir = root;
-			for (const seg of segments.slice(0, -1)) try {
-				dir = await dir.getDirectoryHandle(seg, { create: false });
-			} catch {
-				return null;
-			}
-			try {
-				return await (await dir.getFileHandle(segments[segments.length - 1], { create: false })).getFile();
-			} catch {
-				return null;
-			}
+			return readHandleFile(await getRoot().catch(() => null), path, scope);
+		},
+		async mkdir(parentPath, name) {
+			const handleRoot = await getRoot();
+			if (!handleRoot) return;
+			const segments = [...stripStoragePrefix(parentPath, scope).split("/").filter(Boolean), String(name || "").trim()].filter(Boolean);
+			let dir = handleRoot;
+			for (const seg of segments) dir = await dir.getDirectoryHandle(seg, { create: true });
+		},
+		async writeFile(parentPath, file) {
+			const handleRoot = await getRoot();
+			if (!handleRoot || !file) return;
+			const segments = stripStoragePrefix(parentPath, scope).split("/").filter(Boolean);
+			let dir = handleRoot;
+			for (const seg of segments) dir = await dir.getDirectoryHandle(seg, { create: true });
+			const writable = await (await dir.getFileHandle(file.name || `file-${Date.now()}`, { create: true })).createWritable();
+			await writable.write(file);
+			await writable.close();
+		},
+		async remove(path, recursive = true) {
+			const handleRoot = await getRoot();
+			if (!handleRoot) return;
+			const segments = stripStoragePrefix(path, scope).replace(/\/+$/g, "").split("/").filter(Boolean);
+			if (!segments.length) return;
+			const name = segments.pop();
+			let dir = handleRoot;
+			for (const seg of segments) dir = await dir.getDirectoryHandle(seg, { create: false });
+			await dir.removeEntry(name, { recursive });
 		}
-	});
+	};
+};
+function ensureDefaultFsBackends() {
+	if (!resolveFsBackend("/user/")) registerFsBackend(createStorageFsBackend("/user/", resolveUserHandleRoot));
+	if (isOpfsBackendActiveSync() && typeof indexedDB !== "undefined") {
+		if (!resolveFsBackend("/idb/")) registerFsBackend(createStorageFsBackend("/idb/", loadIdbRoot));
+	} else {
+		unregisterFsBackend("/idb/");
+		__vitePreload(async () => {
+			const { unregisterProvideBackend } = await Promise.resolve().then(() => src_exports$2);
+			return { unregisterProvideBackend };
+		}, void 0, import.meta.url).then(({ unregisterProvideBackend }) => {
+			unregisterProvideBackend("/idb/");
+		}).catch(() => {});
+	}
 	if (!resolveFsBackend("/assets/")) registerFsBackend({
 		root: "/assets/",
 		writable: false,
-		async list() {
-			return [];
+		async list(path) {
+			try {
+				const { tryRemoteMountedList } = await __vitePreload(async () => {
+					const { tryRemoteMountedList } = await Promise.resolve().then(() => src_exports$2);
+					return { tryRemoteMountedList };
+				}, void 0, import.meta.url);
+				return await tryRemoteMountedList(path) ?? [];
+			} catch {
+				return [];
+			}
 		},
 		async readFile(path) {
 			const p = String(path || "").trim();
 			if (!p || p.endsWith("/")) return null;
+			try {
+				const { tryRemoteMountedRead } = await __vitePreload(async () => {
+					const { tryRemoteMountedRead } = await Promise.resolve().then(() => src_exports$2);
+					return { tryRemoteMountedRead };
+				}, void 0, import.meta.url);
+				const remote = await tryRemoteMountedRead(p);
+				if (remote) return remote;
+			} catch {}
 			try {
 				const r = await fetch(p);
 				if (!r?.ok) return null;
@@ -50956,6 +52808,12 @@ function ensureDefaultFsBackends() {
 			}
 		}
 	});
+	__vitePreload(async () => {
+		const { ensureRemoteMountedFs } = await Promise.resolve().then(() => src_exports$2);
+		return { ensureRemoteMountedFs };
+	}, void 0, import.meta.url).then(({ ensureRemoteMountedFs }) => {
+		ensureRemoteMountedFs();
+	}).catch(() => {});
 	if (!resolveFsBackend("/bookmarks/")) {
 		const chromeAny = globalThis?.chrome;
 		if (chromeAny?.bookmarks) {
@@ -84898,4 +86756,4 @@ var { showOpenFilePicker, showSaveFilePicker } = globalThis.showOpenFilePicker ?
 	}
 };
 //#endregion
-export { openUnifiedContextMenu as $, updateVP as $n, isBase64Like as $t, tryLaunchSiblingView as A, writeText$1 as An, ensureDefaultFsBackends$1 as At, refreshAppWallpaperPaint as B, vector2Ref as Bn, mountPickedDirectory as Bt, writeAppMenuSort as C, makeUIState as Cn, cssLayerOrder as Cr, getAppLaunchSpec as Ct, getCachedIconResourceObjectUrl as D, loadDesktopRaw as Dn, __vitePreload as Dr, setAppLaunchSpec as Dt, ensureLauncherIconObjectUrl as E, decodeDesktopState as En, VIEWER_CSS_LAYER_ORDER as Er, resolveAppLaunchSpec as Et, flyout_default as F, makeTask as Fn, getCachedComponent as Ft, UIElement_default as G, E$1 as Gn, pickSidecarDirectoryFiles as Gt, applyWallpaperPaperFromLuma as H, hasActiveCloseable as Hn, originalRelFromRef as Ht, src_exports$1 as I, getBy as In, bindDirectoryForLaunchedFiles as It, debugIconSystem as J, DOMMixin as Jn, resolveFileUnderDirectory as Jt, __decorate as K, M$1 as Kn, provideBoundRelative as Kt, WALLPAPER_IDB_MARKER as L, navigationEnable as Ln, findEntryRelPath as Lt, statusbar_default as M, resolveOverlayHost as Mn, resolveFsBackend$1 as Mt, quick_settings_default as N, elementPointerMap as Nn, subscribeFsBackendRegister as Nt, getCachedLauncherIconObjectUrl as O, copy as On, showError as Ot, getSpeedDialViewOpener as P, bindOutsideDismiss as Pn, src_exports$2 as Pt, clearAllCache as Q, orientationNumberMap as Qn, decodeBase64ToBytes as Qt, getWallpaperStoragePointer as R, defineElement as Rn, indexDirectoryFiles as Rt, sortLauncherApps as S, getSpeechPrompt as Sn, cssLayerBlock as Sr, clearAppLaunchSpec as St, applyLauncherIconToUiIcon as T, JSOX as Tn, unwrapCssLayer as Tr, normalizeLauncherLaunchSpec as Tt, restoreWallpaperThemeCache as U, registerModal as Un, pickAssetDirectory as Ut, setAppWallpaperFromBlob as V, closeHighestPriority as Vn, observeFileSystemHandle as Vt, UIElement as W, navigate as Wn, pickMarkdownFile as Wt, ensureStyleSheet as X, fixOrientToScreen as Xn, createFileHandler as Xt, testIconRacing as Y, ensureVirtualKeyboardOverlay as Yn, saveMarkdownBlob as Yt, reinitializeRegistry as Z, getCorrectOrientation as Zn, writeFileSmart as Zt, APP_MENU_SORT_EVENT as _, normalizeProtocolEnvelope as _n, unbakeScreenColors as _r, defaultIconScaleForDisplay as _t, f as a, getDir as an, toExplorerStoragePath as ar, buildLauncherAppDragEnvelope as at, hydrateAppColorKeys as b, createTemplateManager as bn, preloadStyle as br, normalizeTileShape$1 as bt, collectAttachmentCandidates as c, matchMappedRoot as cn, booleanRef as cr, launcher_state_exports as ct, overlay_back_exports as d, provide as dn, propRef as dr, pinLauncherAppEntry as dt, normalizeDataAsset as en, MOCElement as er, isBookmarksPath as et, WORKSPACE_PAGE_EVENT as f, registerDirectoryRoot as fn, ref as fr, resolveSpeedDialCellFromClientPoint as ft, app_menu_default as g, isProtocolEnvelope as gn, scheduleBakeScreenColors as gr, createTileUiIconElement as gt, switchWorkspacePage as h, createProtocolEnvelope as hn, safe as hr, TILE_SHAPE_OPTIONS as ht, src_exports as i, createContentAddressedStore as in, resolveEntryIcon as ir, applyItemIconScaleToElement as it, isAndroidIconRef as j, registerTransientOverlay as jn, listVirtualRootEntriesFromRouter as jt, resolveIconResourceUrl as k, initClipboardReceiver as kn, showSuccess as kt, taskbar_default as l, normalizePath$1 as ln, numberRef as lr, normalizeItemIconBitmapScale as lt, listWorkspacePages as m, getUnifiedMessaging as mn, makeObjectAssignable as mr, ICON_DISPLAY_OPTIONS as mt, renderMathInElement as n, StorageKeys as nn, isInFocus as nr, addSpeedDialItem as nt, marked_esm_exports as o, handleIncomingEntries as on, affected as or, findNextFreeSpeedDialCell as ot, getActiveWorkspaceId as p, createServiceChannelManager as pn, stringRef as pr, tileIconFetchSize as pt, clearIconCaches as q, Q$1 as qn, relPathCandidates as qt, src_default as r, setString as rn, storage_bridge_exports as rr, applyIconScaleToPaintedNodes as rt, purify as s, isVirtualFsPath as sn, effect as sr, isClientPointOverSpeedDial as st, renderSafeMarkdown as t, parseDataUrl as tn, addEvent as tr, ICON_BITMAP_SCALE_OPTIONS as tt, installLauncherBackStack as u, openDirectory as un, observe as ur, parseSpeedDialItemFromJSON as ut, APP_MENU_SORT_OPTIONS as v, dynamicTheme as vn, loadAsAdopted as vr, inferIconDisplay as vt, attachIconResourcePickButton as w, saveUIState as wn, normalizeCssForLayer as wr, isLauncherLaunchSpecEmpty as wt, peekAppMenuSort as x, pointerAnchorRef as xn, removeAdopted as xr, syncShapelessIconShadow as xt, defaultDirForAppSort as y, placeOverlay as yn, loadInlineStyle as yr, normalizeIconDisplay as yt, initializeAppCanvasLayer as z, H$1 as zn, isMarkdownRelativeRef as zt };
+export { openUnifiedContextMenu as $, updateVP as $n, isBase64Like as $t, tryLaunchSiblingView as A, writeText$1 as An, ensureDefaultFsBackends$1 as At, refreshAppWallpaperPaint as B, vector2Ref as Bn, mountPickedDirectory as Bt, writeAppMenuSort as C, makeUIState as Cn, cssLayerBlock as Cr, getAppLaunchSpec as Ct, getCachedIconResourceObjectUrl as D, loadDesktopRaw as Dn, VIEWER_CSS_LAYER_ORDER as Dr, setAppLaunchSpec as Dt, ensureLauncherIconObjectUrl as E, decodeDesktopState as En, unwrapCssLayer as Er, resolveAppLaunchSpec as Et, flyout_default as F, makeTask as Fn, getCachedComponent as Ft, UIElement_default as G, E$1 as Gn, pickSidecarDirectoryFiles as Gt, applyWallpaperPaperFromLuma as H, hasActiveCloseable as Hn, originalRelFromRef as Ht, src_exports$1 as I, getBy as In, bindDirectoryForLaunchedFiles as It, debugIconSystem as J, DOMMixin as Jn, resolveFileUnderDirectory as Jt, __decorate as K, M$1 as Kn, provideBoundRelative as Kt, WALLPAPER_IDB_MARKER as L, navigationEnable as Ln, findEntryRelPath as Lt, statusbar_default as M, resolveOverlayHost as Mn, resolveFsBackend$1 as Mt, quick_settings_default as N, elementPointerMap as Nn, subscribeFsBackendRegister as Nt, getCachedLauncherIconObjectUrl as O, copy as On, __vitePreload as Or, showError as Ot, getSpeedDialViewOpener as P, bindOutsideDismiss as Pn, src_exports$2 as Pt, clearAllCache as Q, orientationNumberMap as Qn, decodeBase64ToBytes as Qt, getWallpaperStoragePointer as R, defineElement as Rn, indexDirectoryFiles as Rt, sortLauncherApps as S, getSpeechPrompt as Sn, resolved$1 as Sr, clearAppLaunchSpec as St, applyLauncherIconToUiIcon as T, JSOX as Tn, normalizeCssForLayer as Tr, normalizeLauncherLaunchSpec as Tt, restoreWallpaperThemeCache as U, registerModal as Un, pickAssetDirectory as Ut, setAppWallpaperFromBlob as V, closeHighestPriority as Vn, observeFileSystemHandle as Vt, UIElement as W, navigate as Wn, pickMarkdownFile as Wt, ensureStyleSheet as X, fixOrientToScreen as Xn, createFileHandler as Xt, testIconRacing as Y, ensureVirtualKeyboardOverlay as Yn, saveMarkdownBlob as Yt, reinitializeRegistry as Z, getCorrectOrientation as Zn, writeFileSmart as Zt, APP_MENU_SORT_EVENT as _, normalizeProtocolEnvelope as _n, unbakeScreenColors as _r, defaultIconScaleForDisplay as _t, f as a, getDir as an, toExplorerStoragePath as ar, buildLauncherAppDragEnvelope as at, hydrateAppColorKeys as b, createTemplateManager as bn, preloadStyle as br, normalizeTileShape$1 as bt, collectAttachmentCandidates as c, matchMappedRoot as cn, booleanRef as cr, launcher_state_exports as ct, overlay_back_exports as d, provide as dn, propRef as dr, pinLauncherAppEntry as dt, normalizeDataAsset as en, MOCElement as er, isBookmarksPath as et, WORKSPACE_PAGE_EVENT as f, registerDirectoryRoot as fn, ref as fr, resolveSpeedDialCellFromClientPoint as ft, app_menu_default as g, isProtocolEnvelope as gn, scheduleBakeScreenColors as gr, createTileUiIconElement as gt, switchWorkspacePage as h, createProtocolEnvelope as hn, safe as hr, TILE_SHAPE_OPTIONS as ht, src_exports as i, createContentAddressedStore as in, resolveEntryIcon as ir, applyItemIconScaleToElement as it, isAndroidIconRef as j, registerTransientOverlay as jn, listVirtualRootEntriesFromRouter as jt, resolveIconResourceUrl as k, initClipboardReceiver as kn, showSuccess as kt, taskbar_default as l, normalizePath$1 as ln, numberRef as lr, normalizeItemIconBitmapScale as lt, listWorkspacePages as m, getUnifiedMessaging as mn, makeObjectAssignable as mr, ICON_DISPLAY_OPTIONS as mt, renderMathInElement as n, StorageKeys as nn, isInFocus as nr, addSpeedDialItem as nt, marked_esm_exports as o, handleIncomingEntries as on, affected as or, findNextFreeSpeedDialCell as ot, getActiveWorkspaceId as p, createServiceChannelManager as pn, stringRef as pr, tileIconFetchSize as pt, clearIconCaches as q, Q$1 as qn, relPathCandidates as qt, src_default as r, setString as rn, storage_bridge_exports as rr, applyIconScaleToPaintedNodes as rt, purify as s, isVirtualFsPath as sn, effect as sr, isClientPointOverSpeedDial as st, renderSafeMarkdown as t, parseDataUrl as tn, addEvent as tr, ICON_BITMAP_SCALE_OPTIONS as tt, installLauncherBackStack as u, openDirectory as un, observe as ur, parseSpeedDialItemFromJSON as ut, APP_MENU_SORT_OPTIONS as v, dynamicTheme as vn, loadAsAdopted as vr, inferIconDisplay as vt, attachIconResourcePickButton as w, saveUIState as wn, cssLayerOrder as wr, isLauncherLaunchSpecEmpty as wt, peekAppMenuSort as x, pointerAnchorRef as xn, removeAdopted as xr, syncShapelessIconShadow as xt, defaultDirForAppSort as y, placeOverlay as yn, loadInlineStyle as yr, normalizeIconDisplay as yt, initializeAppCanvasLayer as z, H$1 as zn, isMarkdownRelativeRef as zt };

@@ -2394,7 +2394,7 @@ cacheWillUpdate: async ({ response }) => {
 	} catch (e) {}
 	//#endregion
 	//#region ../../node_modules/workbox-expiration/models/CacheTimestampsModel.js
-	var DB_NAME$2 = "workbox-expiration";
+	var DB_NAME$3 = "workbox-expiration";
 	var CACHE_OBJECT_STORE = "cache-entries";
 	var normalizeURL = (unNormalizedUrl) => {
 		const url = new URL(unNormalizedUrl, location.href);
@@ -2518,7 +2518,7 @@ cacheWillUpdate: async ({ response }) => {
 		* @private
 		*/
 		async getDb() {
-			if (!this._db) this._db = await openDB(DB_NAME$2, 1, { upgrade: this._upgradeDbAndDeleteOldDbs.bind(this) });
+			if (!this._db) this._db = await openDB(DB_NAME$3, 1, { upgrade: this._upgradeDbAndDeleteOldDbs.bind(this) });
 			return this._db;
 		}
 	};
@@ -6528,48 +6528,8 @@ cacheWillUpdate: async ({ response }) => {
 		};
 	}));
 	//#endregion
-	//#region ../../modules/projects/core.ts/src/utils/PromiseUtils.ts
-	/**
-	* Create a timeout promise that rejects after specified time
-	*/
-	function withTimeout(promise, timeoutMs, timeoutMessage = "Operation timed out") {
-		const timeoutPromise = new Promise((_, reject) => {
-			setTimeout(() => reject(new Error(timeoutMessage)), timeoutMs);
-		});
-		return Promise.race([promise, timeoutPromise]);
-	}
-	var init_PromiseUtils = __esmMin((() => {}));
-	//#endregion
-	//#region ../../modules/projects/core.ts/src/utils/ChannelUtils.ts
-	var init_ChannelUtils = __esmMin((() => {}));
-	//#endregion
-	//#region ../../modules/projects/core.ts/src/utils/Upsert.ts
-	var getOrInsertComputed;
-	var init_Upsert = __esmMin((() => {
-		WeakMap.prototype.getOrInsert ??= function(key, defaultValue) {
-			if (!this.has(key)) this.set(key, defaultValue);
-			return this.get(key);
-		};
-		WeakMap.prototype.getOrInsertComputed ??= function(key, callbackFunction) {
-			if (!this.has(key)) this.set(key, callbackFunction(key));
-			return this.get(key);
-		};
-		Map.prototype.getOrInsert ??= function(key, defaultValue) {
-			if (!this.has(key)) this.set(key, defaultValue);
-			return this.get(key);
-		};
-		Map.prototype.getOrInsertComputed ??= function(key, callbackFunction) {
-			if (!this.has(key)) this.set(key, callbackFunction(key));
-			return this.get(key);
-		};
-		getOrInsertComputed = (map, key, callbackFunction = () => null) => {
-			if (!map?.has?.(key)) map?.set?.(key, callbackFunction?.(key));
-			return map?.get?.(key);
-		};
-	}));
-	//#endregion
 	//#region ../../modules/projects/core.ts/src/utils/Primitive.ts
-	var $fxy, isObservable$1, isPrimitive, tryParseByHint, hasProperty, hasValue, $getValue, unwrap$1, deref$1, fixFx, $set$1, getRandomValues, clamp$1, withCtx, UUIDv4, camelToKebab$1, kebabToCamel, isValueUnit, isVal, normalizePrimitive, $triggerLock$1, $avoidTrigger, tryStringAsNumber, INTEGER_REGEXP, tryStringAsInteger, canBeInteger, handleListeners, isRef, unref, toRef$1, isValueRef, isObject$1, getValue, potentiallyAsync, potentiallyAsyncMap, makeTriggerLess, unwrapArray, isNotComplexArray, isCanJustReturn, isTypedArray, isCanTransfer, defaultByType;
+	var $fxy, isObservable$1, isPrimitive, tryParseByHint, hasProperty, hasValue, $getValue, unwrap$1, deref$1, fixFx, $set$1, getRandomValues, clamp$1, withCtx, UUIDv4, camelToKebab$1, kebabToCamel, isValueUnit, isVal, normalizePrimitive, $triggerLock$1, $avoidTrigger, tryStringAsNumber, INTEGER_REGEXP, tryStringAsInteger, canBeInteger, handleListeners, isRef, unref, toRef$1, isValueRef, isObject$1, getValue, potentiallyAsync, potentiallyAsyncMap, makeTriggerLess, unwrapArray, isNotComplexArray, isCanJustReturn, isTypedArray, isPromise, isCanTransfer, defaultByType;
 	var init_Primitive = __esmMin((() => {
 		$fxy = Symbol.for("@fix");
 		isObservable$1 = (observable) => {
@@ -6734,6 +6694,9 @@ cacheWillUpdate: async ({ response }) => {
 		isTypedArray = (value) => {
 			return ArrayBuffer.isView(value) && !(value instanceof DataView);
 		};
+		isPromise = (target) => {
+			return target instanceof Promise || typeof target?.then == "function";
+		};
 		isCanTransfer = (obj) => {
 			return isPrimitive(obj) || typeof ArrayBuffer == "function" && obj instanceof ArrayBuffer || typeof MessagePort == "function" && obj instanceof MessagePort || typeof ReadableStream == "function" && obj instanceof ReadableStream || typeof WritableStream == "function" && obj instanceof WritableStream || typeof TransformStream == "function" && obj instanceof TransformStream || typeof ImageBitmap == "function" && obj instanceof ImageBitmap || typeof VideoFrame == "function" && obj instanceof VideoFrame || typeof OffscreenCanvas == "function" && obj instanceof OffscreenCanvas || typeof RTCDataChannel == "function" && obj instanceof RTCDataChannel || typeof AudioData == "function" && obj instanceof AudioData || typeof WebTransportReceiveStream == "function" && obj instanceof WebTransportReceiveStream || typeof WebTransportSendStream == "function" && obj instanceof WebTransportSendStream || typeof WebTransportReceiveStream == "function" && obj instanceof WebTransportReceiveStream;
 		};
@@ -6747,6 +6710,117 @@ cacheWillUpdate: async ({ response }) => {
 				case "symbol": return null;
 				case "bigint": return 0n;
 			}
+		};
+	}));
+	//#endregion
+	//#region ../../modules/projects/core.ts/src/utils/Resolved.ts
+	function resolvedDeep(value, mode, seen) {
+		if (value == null || isPrimitive(value) || typeof value == "symbol") return value;
+		if (isThenable$3(value)) return value;
+		const slot = value?.[$promise$1];
+		if (isThenable$3(slot)) return slot;
+		if (typeof value != "object" && typeof value != "function") return value;
+		if (seen.has(value)) return value;
+		seen.add(value);
+		if (Array.isArray(value)) {
+			const items = value.map((item) => resolvedDeep(item, mode, seen));
+			return mode == "settled" ? Promise.allSettled(items) : Promise.all(items);
+		}
+		if (value instanceof Set) {
+			const items = [...value.values()].map((item) => resolvedDeep(item, mode, seen));
+			return mode == "settled" ? Promise.allSettled(items) : Promise.all(items);
+		}
+		const record = {};
+		if (value instanceof Map) for (const [key, item] of value.entries()) record[key] = resolvedDeep(item, mode, seen);
+		else for (const key of ownEnumerableKeys(value)) record[key] = resolvedDeep(value[key], mode, seen);
+		return mode == "settled" ? Promise.allSettledKeyed(record) : Promise.allKeyed(record);
+	}
+	/**
+	* Await a value with the matching Promise combinator (`all` / `allKeyed` / settled variants).
+	* Nested records, arrays, maps, sets, and `@promise` slots are walked once.
+	*/
+	function resolved$1(value, mode = "all") {
+		if (isThenable$3(value)) return mode == "settled" ? settleOne(value) : Promise.resolve(value);
+		const slot = value?.[$promise$1];
+		if (isThenable$3(slot)) return mode == "settled" ? settleOne(slot) : Promise.resolve(slot);
+		return Promise.resolve(resolvedDeep(value, mode, /* @__PURE__ */ new WeakSet()));
+	}
+	var $promise$1, SKIP_KEYS, isThenable$3, settleOne, ownEnumerableKeys, hasPendingPromises;
+	var init_Resolved$1 = __esmMin((() => {
+		init_Primitive();
+		$promise$1 = Symbol.for("@promise");
+		SKIP_KEYS = /* @__PURE__ */ new Set([
+			Symbol.for("@extract"),
+			Symbol.for("@origin"),
+			Symbol.for("@registry"),
+			Symbol.for("@value"),
+			Symbol.for("@promise"),
+			Symbol.for("@behavior"),
+			Symbol.for("@trigger"),
+			Symbol.for("@subscribe"),
+			Symbol.for("@realProp"),
+			Symbol.for("@trigger-lock"),
+			Symbol.for("@trigger-less"),
+			Symbol.for("@trigger-control"),
+			Symbol.for("@isNotEqual"),
+			Symbol.for("@fix"),
+			Symbol.for("@target"),
+			Symbol.for("@resolved")
+		]);
+		isThenable$3 = (value) => value instanceof Promise || typeof value?.then == "function";
+		settleOne = (value) => Promise.resolve(value).then((v) => ({
+			status: "fulfilled",
+			value: v
+		}), (reason) => ({
+			status: "rejected",
+			reason
+		}));
+		ownEnumerableKeys = (obj) => Reflect.ownKeys(obj).filter((key) => {
+			if (SKIP_KEYS.has(key)) return false;
+			const desc = Object.getOwnPropertyDescriptor(obj, key);
+			return desc !== void 0 && desc.enumerable;
+		});
+		hasPendingPromises = (value, seen) => {
+			if (value == null || isPrimitive(value)) return false;
+			if (isThenable$3(value) || isThenable$3(value?.[$promise$1])) return true;
+			if (typeof value != "object" && typeof value != "function") return false;
+			const seenSet = seen ?? /* @__PURE__ */ new WeakSet();
+			if (seenSet.has(value)) return false;
+			seenSet.add(value);
+			if (Array.isArray(value)) return value.some((item) => hasPendingPromises(item, seenSet));
+			if (value instanceof Map) return [...value.values()].some((item) => hasPendingPromises(item, seenSet));
+			if (value instanceof Set) return [...value.values()].some((item) => hasPendingPromises(item, seenSet));
+			return ownEnumerableKeys(value).some((key) => hasPendingPromises(value[key], seenSet));
+		};
+		resolved$1.all = (value) => resolved$1(value, "all");
+		resolved$1.allSettled = (value) => resolved$1(value, "settled");
+		resolved$1.allKeyed = (value) => Promise.allKeyed(value);
+		resolved$1.allSettledKeyed = (value) => Promise.allSettledKeyed(value);
+		resolved$1.try = (callbackOrValue, ...args) => Promise.try(callbackOrValue, ...args).then((value) => resolved$1(value, "all"));
+	}));
+	//#endregion
+	//#region ../../modules/projects/core.ts/src/utils/PromiseUtils.ts
+	function withTimeout(promise, timeoutMs, timeoutMessage = "Operation timed out") {
+		const pending = isThenable$2(promise) ? promise : resolved$1(promise);
+		const timeoutPromise = new Promise((_, reject) => {
+			setTimeout(() => reject(new Error(timeoutMessage)), timeoutMs);
+		});
+		return Promise.race([pending, timeoutPromise]);
+	}
+	var isThenable$2;
+	var init_PromiseUtils = __esmMin((() => {
+		init_Resolved$1();
+		isThenable$2 = (value) => value instanceof Promise || typeof value?.then == "function";
+	}));
+	//#endregion
+	//#region ../../modules/projects/core.ts/src/utils/ChannelUtils.ts
+	var init_ChannelUtils = __esmMin((() => {}));
+	//#endregion
+	//#region ../../modules/projects/core.ts/src/utils/Upsert.ts
+	var getOrInsertComputed;
+	var init_Upsert = __esmMin((() => {
+		getOrInsertComputed = (map, key, callbackFunction = () => null) => {
+			return map?.getOrInsertComputed?.(key, callbackFunction);
 		};
 	}));
 	//#endregion
@@ -6845,28 +6919,28 @@ cacheWillUpdate: async ({ response }) => {
 	}));
 	//#endregion
 	//#region ../../modules/projects/core.ts/src/utils/Promised.ts
-	/**
-	* Wrap a promise or value in a Proxy that allows synchronous property access.
-	* For resolved promises, this enables accessing properties as if the promise was already resolved.
-	* @template T - The resolved value type
-	* @param promise - The promise or value to wrap
-	* @param resolve - Optional resolve callback
-	* @param reject - Optional reject callback
-	* @returns A proxy that allows synchronous-style access to promise values
-	*/
 	function Promised(promise, resolve, reject) {
-		if (!(promise instanceof Promise || typeof promise?.then == "function")) return promise;
+		if (promise != null && typeof promise?.resolved == "function" && promise[$extractKey$$1] != null && hasPendingPromises(promise)) return Promised(promise.resolved(), resolve, reject);
+		if (!isThenable$1(promise) && hasPendingPromises(promise)) return Promised(resolved$1(promise), resolve, reject);
+		if (!isThenable$1(promise)) return promise;
 		if (resolvedMap?.has?.(promise)) return resolvedMap?.get?.(promise);
 		if (!handledMap?.has?.(promise)) promise?.then?.((item) => resolvedMap?.set?.(promise, item));
-		return handledMap?.getOrInsertComputed?.(promise, () => new Proxy(fixFx(promise), new PromiseHandler(resolve, reject)));
+		return handledMap.getOrInsertComputed(promise, () => new Proxy(fixFx(promise), new PromiseHandler(resolve, reject)));
 	}
-	var resolvedMap, handledMap, actWith, PromiseHandler;
+	var resolvedSymbol, handledSymbol, resolvedMap, handledMap, $extractKey$$1, isThenable$1, actWith, PromiseHandler;
 	var init_Promised = __esmMin((() => {
 		init_Primitive();
-		resolvedMap = /* @__PURE__ */ new WeakMap();
-		handledMap = /* @__PURE__ */ new WeakMap();
+		init_Resolved$1();
+		resolvedSymbol = Symbol.for("@resolved-promise");
+		handledSymbol = Symbol.for("@handled-promise");
+		globalThis[resolvedSymbol] ??= /* @__PURE__ */ new WeakMap();
+		globalThis[handledSymbol] ??= /* @__PURE__ */ new WeakMap();
+		resolvedMap = globalThis[resolvedSymbol];
+		handledMap = globalThis[handledSymbol];
+		$extractKey$$1 = Symbol.for("@extract");
+		isThenable$1 = (value) => value instanceof Promise || typeof value?.then == "function";
 		actWith = (promiseOrPlain, cb) => {
-			if (promiseOrPlain instanceof Promise || typeof promiseOrPlain?.then == "function") {
+			if (isThenable$1(promiseOrPlain)) {
 				if (resolvedMap?.has?.(promiseOrPlain)) return cb(resolvedMap?.get?.(promiseOrPlain));
 				return Promise.try?.(async () => {
 					const item = await promiseOrPlain;
@@ -6985,6 +7059,12 @@ cacheWillUpdate: async ({ response }) => {
 				});
 			}
 		};
+		Promised.allKeyed = function(promises, resolve, reject) {
+			return Promised(Promise.allKeyed(promises), resolve, reject);
+		};
+		Promised.allSettledKeyed = function(promises, resolve, reject) {
+			return Promised(Promise.allSettledKeyed(promises), resolve, reject);
+		};
 	}));
 	//#endregion
 	//#region ../../modules/projects/core.ts/src/utils/WRef.ts
@@ -7093,7 +7173,7 @@ cacheWillUpdate: async ({ response }) => {
 	var init_GridItemUtils = __esmMin((() => {}));
 	//#endregion
 	//#region ../../modules/projects/core.ts/src/utils/UserPath.ts
-	var normalizeSlashes, isUserScopePath, stripUserScopePrefix, toUserRelativePath, userPathCandidates;
+	var normalizeSlashes, isUserScopePath, stripUserScopePrefix, toUserRelativePath, isIdbScopePath, stripIdbScopePrefix, isStorageScopePath, stripStorageScopePrefix, storagePathCandidates;
 	var init_UserPath = __esmMin((() => {
 		normalizeSlashes = (input) => {
 			const value = String(input ?? "").trim();
@@ -7113,12 +7193,43 @@ cacheWillUpdate: async ({ response }) => {
 		toUserRelativePath = (input) => {
 			return stripUserScopePrefix(input).replace(/^\/+/, "");
 		};
-		userPathCandidates = (input) => {
+		isIdbScopePath = (input) => {
 			const normalized = normalizeSlashes(input);
-			const stripped = stripUserScopePrefix(normalized);
-			if (isUserScopePath(normalized)) return Array.from(/* @__PURE__ */ new Set([stripped, normalized]));
+			return normalized === "/idb" || normalized.startsWith("/idb/");
+		};
+		stripIdbScopePrefix = (input) => {
+			const normalized = normalizeSlashes(input);
+			if (normalized === "/idb") return "/";
+			if (normalized.startsWith("/idb/")) return normalized.slice(4) || "/";
+			return normalized;
+		};
+		isStorageScopePath = (input) => isUserScopePath(input) || isIdbScopePath(input);
+		stripStorageScopePrefix = (input) => {
+			const normalized = normalizeSlashes(input);
+			if (isIdbScopePath(normalized)) return stripIdbScopePrefix(normalized);
+			return stripUserScopePrefix(normalized);
+		};
+		storagePathCandidates = (input) => {
+			const normalized = normalizeSlashes(input);
+			const stripped = stripStorageScopePrefix(normalized);
+			if (isStorageScopePath(normalized)) return Array.from(/* @__PURE__ */ new Set([stripped, normalized]));
 			return [stripped];
 		};
+	}));
+	//#endregion
+	//#region ../../modules/projects/core.ts/src/utils/MountedFs.ts
+	var MOUNTED_FS_EVENT, MOUNTED_FS_HTTP_PATH, MOUNTED_FS_WS_PATH, createMountedFsId, isMountedFsResponse;
+	var init_MountedFs = __esmMin((() => {
+		MOUNTED_FS_EVENT = "ssre:fs";
+		MOUNTED_FS_HTTP_PATH = "/ssre/fs";
+		MOUNTED_FS_WS_PATH = "/ssre/fs/ws";
+		createMountedFsId = () => {
+			try {
+				if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") return crypto.randomUUID();
+			} catch {}
+			return `fs_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+		};
+		isMountedFsResponse = (value) => !!value && typeof value === "object" && value.t === "fs-result" && typeof value.id === "string";
 	}));
 	//#endregion
 	//#region ../../modules/projects/core.ts/src/utils/Mapped.ts
@@ -7136,6 +7247,7 @@ cacheWillUpdate: async ({ response }) => {
 	//#region ../../modules/projects/core.ts/src/index.ts
 	var init_src$6 = __esmMin((() => {
 		init_PromiseUtils();
+		init_Resolved$1();
 		init_ChannelUtils();
 		init_Upsert();
 		init_Primitive();
@@ -7145,6 +7257,7 @@ cacheWillUpdate: async ({ response }) => {
 		init_Convert();
 		init_GridItemUtils();
 		init_UserPath();
+		init_MountedFs();
 		init_Mapped$1();
 		init_Phone();
 		init_Time();
@@ -9067,12 +9180,12 @@ cacheWillUpdate: async ({ response }) => {
 		if (!_storageInstances.has(channelName)) _storageInstances.set(channelName, new ChannelStorage(channelName));
 		return _storageInstances.get(channelName);
 	}
-	var DB_NAME$1, DB_VERSION$1, STORES, ChannelStorage, ChannelTransaction, _storageInstances;
+	var DB_NAME$2, DB_VERSION$2, STORES, ChannelStorage, ChannelTransaction, _storageInstances;
 	var init_Storage = __esmMin((() => {
 		init_src$6();
 		init_Observable();
-		DB_NAME$1 = "uniform_channels";
-		DB_VERSION$1 = 1;
+		DB_NAME$2 = "uniform_channels";
+		DB_VERSION$2 = 1;
 		STORES = {
 			MESSAGES: "messages",
 			MAILBOX: "mailbox",
@@ -9097,7 +9210,7 @@ cacheWillUpdate: async ({ response }) => {
 				if (this._db && this._isOpen) return this._db;
 				if (this._openPromise) return this._openPromise;
 				this._openPromise = new Promise((resolve, reject) => {
-					const request = indexedDB.open(DB_NAME$1, DB_VERSION$1);
+					const request = indexedDB.open(DB_NAME$2, DB_VERSION$2);
 					request.onerror = () => {
 						this._openPromise = null;
 						reject(/* @__PURE__ */ new Error("Failed to open IndexedDB"));
@@ -11291,6 +11404,7 @@ cacheWillUpdate: async ({ response }) => {
 	var init_messaging = __esmMin((() => {
 		init_UnifiedMessaging();
 		init_Protocol();
+		init_src$6();
 		init_Env();
 	}));
 	//#endregion
@@ -13422,243 +13536,11 @@ cacheWillUpdate: async ({ response }) => {
 		init_Zoom();
 	}));
 	//#endregion
-	//#region ../../modules/projects/dom.ts/src/decor/Animation.ts
-	var init_Animation = __esmMin((() => {
-		init_Utils$3();
-	})), onBorderObserveSymbol, onContentObserveSymbol, onContentObserve, unwrapFromQuery, normalizeSelector, safeQuerySelectorAll, safeMatches$1, observeContentBox, observeAttribute, observeAttributeBySelector, observeBySelector;
-	var init_Observer = __esmMin((() => {
-		onBorderObserveSymbol = Symbol.for("dom.ts@onBorderObserve");
-		globalThis[onBorderObserveSymbol] ??= /* @__PURE__ */ new WeakMap();
-		onContentObserveSymbol = Symbol.for("dom.ts@onContentObserve");
-		onContentObserve = globalThis[onContentObserveSymbol] ??= /* @__PURE__ */ new WeakMap();
-		unwrapFromQuery = (element) => {
-			if (typeof element?.current == "object") element = element?.element ?? element?.current ?? (typeof element?.self == "object" ? element?.self : null) ?? element;
-			return element;
-		};
-		normalizeSelector = (selector, fallback = "*") => {
-			if (typeof selector !== "string") return fallback;
-			return selector.trim() || fallback;
-		};
-		safeQuerySelectorAll = (el, selector) => {
-			if (!el || typeof el.querySelectorAll !== "function") return [];
-			const sel = normalizeSelector(selector, "");
-			if (!sel) return [];
-			try {
-				return Array.from(el.querySelectorAll(sel) || []);
-			} catch {
-				return [];
-			}
-		};
-		safeMatches$1 = (el, selector) => {
-			if (!el || typeof el.matches !== "function") return false;
-			const sel = normalizeSelector(selector, "");
-			if (!sel) return false;
-			try {
-				return !!el.matches(sel);
-			} catch {
-				return false;
-			}
-		};
-		observeContentBox = (element, cb) => {
-			if (!onContentObserve.has(element = unwrapFromQuery(element))) {
-				const callbacks = [];
-				const observer = new ResizeObserver((entries) => {
-					for (const entry of entries) if (entry.contentBoxSize) {
-						const contentBoxSize = entry.contentBoxSize[0];
-						if (contentBoxSize) callbacks.forEach((cb) => cb?.(contentBoxSize, observer));
-					}
-				});
-				cb?.({
-					inlineSize: element.clientWidth,
-					blockSize: element.clientHeight
-				}, observer);
-				onContentObserve.set(element, callbacks);
-				if ((element?.element ?? element) instanceof Node) observer.observe(element?.element ?? element, { box: "content-box" });
-			}
-			onContentObserve.get(element)?.push?.(cb);
-			return { disconnect: () => onContentObserve.get(element)?.splice?.(onContentObserve.get(element)?.indexOf(cb) || -1, 1) };
-		};
-		observeAttribute = (element, attribute, cb) => {
-			if (typeof element?.selector == "string") return observeAttributeBySelector(element, element?.selector, attribute, cb);
-			const attributeList = new Set((attribute.split(",") || [attribute]).map((s) => s.trim()));
-			const observer = new MutationObserver((mutationList, observer) => {
-				for (const mutation of mutationList) if (mutation.attributeName && attributeList.has(mutation.attributeName)) cb(mutation, observer);
-			});
-			if ((element?.element ?? element) instanceof Node) observer.observe(element = unwrapFromQuery(element), {
-				attributes: true,
-				attributeOldValue: true,
-				attributeFilter: [...attributeList]
-			});
-			attributeList.forEach((attribute) => cb({
-				target: element,
-				type: "attributes",
-				attributeName: attribute,
-				oldValue: element?.getAttribute?.(attribute)
-			}, observer));
-			return observer;
-		};
-		observeAttributeBySelector = (element, selector, attribute, cb) => {
-			const sel = normalizeSelector(selector);
-			const attributeList = new Set([...attribute.split(",") || [attribute]].map((s) => s.trim()));
-			const observer = new MutationObserver((mutationList, observer) => {
-				for (const mutation of mutationList) if (mutation.type == "childList") {
-					const addedNodes = Array.from(mutation.addedNodes) || [];
-					const removedNodes = Array.from(mutation.removedNodes) || [];
-					addedNodes.push(...Array.from(mutation.addedNodes || []).flatMap((el) => safeQuerySelectorAll(el, sel)));
-					removedNodes.push(...Array.from(mutation.removedNodes || []).flatMap((el) => safeQuerySelectorAll(el, sel)));
-					[...new Set(addedNodes)].filter((el) => safeMatches$1(el, sel))?.map?.((target) => {
-						attributeList.forEach((attribute) => {
-							cb({
-								target,
-								type: "attributes",
-								attributeName: attribute,
-								oldValue: target?.getAttribute?.(attribute)
-							}, observer);
-						});
-					});
-				} else if (safeMatches$1(mutation.target, sel) && mutation.attributeName && attributeList.has(mutation.attributeName)) cb(mutation, observer);
-			});
-			observer.observe(element = unwrapFromQuery(element), {
-				attributeOldValue: true,
-				attributes: true,
-				attributeFilter: [...attributeList],
-				childList: true,
-				subtree: true,
-				characterData: true
-			});
-			safeQuerySelectorAll(element, sel).map((target) => attributeList.forEach((attribute) => cb({
-				target,
-				type: "attributes",
-				attributeName: attribute,
-				oldValue: target?.getAttribute?.(attribute)
-			}, observer)));
-			return observer;
-		};
-		observeBySelector = (element, selector = "*", cb = (mut, obs) => {}) => {
-			const sel = normalizeSelector(selector);
-			const unwrapNodesBySelector = (nodes) => {
-				const $nodes = Array.from(nodes || []) || [];
-				$nodes.push(...Array.from(nodes || []).flatMap((el) => safeQuerySelectorAll(el, sel)));
-				return [...Array.from(new Set($nodes).values())].filter((el) => safeMatches$1(el, sel));
-			};
-			let obRef = null;
-			const handleMutation = (mutation) => {
-				const observer = obRef?.deref?.();
-				const addedNodes = unwrapNodesBySelector(mutation.addedNodes);
-				const removedNodes = unwrapNodesBySelector(mutation.removedNodes);
-				if (addedNodes.length > 0 || removedNodes.length > 0) cb?.({
-					type: mutation.type,
-					target: mutation.target,
-					attributeName: mutation.attributeName,
-					attributeNamespace: mutation.attributeNamespace,
-					nextSibling: mutation.nextSibling,
-					oldValue: mutation.oldValue,
-					previousSibling: mutation.previousSibling,
-					addedNodes,
-					removedNodes
-				}, observer);
-			};
-			const handleCome = (ev) => {
-				handleMutation({
-					addedNodes: [ev?.target].filter((el) => !!el),
-					removedNodes: [ev?.relatedTarget].filter((el) => !!el),
-					type: "childList",
-					target: ev?.currentTarget
-				});
-			};
-			const handleOutCome = (ev) => {
-				handleMutation({
-					addedNodes: [ev?.relatedTarget].filter((el) => !!el),
-					removedNodes: [ev?.target].filter((el) => !!el),
-					type: "childList",
-					target: ev?.currentTarget
-				});
-			};
-			const handleFocusClick = (ev) => {
-				handleMutation({
-					addedNodes: [ev?.target].filter((el) => !!el),
-					removedNodes: [ev?.relatedTarget || document?.activeElement].filter((el) => !!el),
-					type: "childList",
-					target: ev?.currentTarget
-				});
-			};
-			const factors = {
-				passive: true,
-				capture: false
-			};
-			if (sel?.includes?.(":hover") && sel?.includes?.(":active")) {
-				element.addEventListener("pointerover", handleCome, factors);
-				element.addEventListener("pointerout", handleOutCome, factors);
-				element.addEventListener("pointerdown", handleCome, factors);
-				element.addEventListener("pointerup", handleOutCome, factors);
-				element.addEventListener("pointercancel", handleOutCome, factors);
-				return { disconnect: () => {
-					element.removeEventListener("pointerover", handleCome, factors);
-					element.removeEventListener("pointerout", handleOutCome, factors);
-					element.removeEventListener("pointerdown", handleCome, factors);
-					element.removeEventListener("pointerup", handleOutCome, factors);
-					element.removeEventListener("pointercancel", handleOutCome, factors);
-				} };
-			}
-			if (sel?.includes?.(":hover")) {
-				element.addEventListener("pointerover", handleCome, factors);
-				element.addEventListener("pointerout", handleOutCome, factors);
-				return { disconnect: () => {
-					element.removeEventListener("pointerover", handleCome, factors);
-					element.removeEventListener("pointerout", handleOutCome, factors);
-				} };
-			}
-			if (sel?.includes?.(":active")) {
-				element.addEventListener("pointerdown", handleCome, factors);
-				element.addEventListener("pointerup", handleOutCome, factors);
-				element.addEventListener("pointercancel", handleOutCome, factors);
-				return { disconnect: () => {
-					element.removeEventListener("pointerdown", handleCome, factors);
-					element.removeEventListener("pointerup", handleOutCome, factors);
-					element.removeEventListener("pointercancel", handleOutCome, factors);
-				} };
-			}
-			if (sel?.includes?.(":focus") && sel?.includes?.(":focus-within") && sel?.includes?.(":focus-visible")) {
-				element.addEventListener("focusin", handleCome, factors);
-				element.addEventListener("focusout", handleOutCome, factors);
-				element.addEventListener("click", handleFocusClick, factors);
-				return { disconnect: () => {
-					element.removeEventListener("focusin", handleCome, factors);
-					element.removeEventListener("focusout", handleOutCome, factors);
-					element.removeEventListener("click", handleFocusClick, factors);
-				} };
-			}
-			const observer = new MutationObserver((mutationList, observer) => {
-				for (const mutation of mutationList) if (mutation.type == "childList") handleMutation(mutation);
-			});
-			obRef = new WeakRef(observer);
-			if ((element?.element ?? element) instanceof Node) observer.observe(element = unwrapFromQuery(element), {
-				childList: true,
-				subtree: true
-			});
-			const selected = safeQuerySelectorAll(element, sel);
-			if (selected.length > 0) cb?.({
-				addedNodes: selected,
-				removedNodes: []
-			}, observer);
-			return observer;
-		};
-	}));
-	//#endregion
-	//#region ../../modules/projects/dom.ts/src/decor/Appear.ts
-	var init_Appear = __esmMin((() => {
-		init_Observer();
-		init_Animation();
-	}));
-	//#endregion
-	//#region ../../modules/projects/dom.ts/src/decor/Shape.ts
-	var init_Shape = __esmMin((() => {}));
-	//#endregion
 	//#region ../../modules/projects/style.ts/src/types.ts
 	var init_types$3 = __esmMin((() => {}));
 	//#endregion
 	//#region ../../modules/projects/style.ts/src/maps.ts
-	var shared, blobURLMap, cacheMap, cacheContentMap, cacheBlobContentMap, adoptedSelectorMap, adoptedShadowSelectorMap, adoptedLayerMap, adoptedShadowLayerMap, adoptedMap, adoptedBlobMap, adoptedAppliedText, adoptedFilled, layerCounter, styleTreeHooks, styleTreeObserved, styleTreeRoots, bakedStyles, bakedLive, bakedCache, rebakeBatch, bakedFollowers, adoptedStyleSheetsCache, styleCache, styleElementCache, styleFlushPending, registeredProperties;
+	var shared, blobURLMap, cacheMap, cacheContentMap, cacheBlobContentMap, adoptedSelectorMap, adoptedShadowSelectorMap, adoptedLayerMap, adoptedShadowLayerMap, adoptedMap, adoptedBlobMap, adoptedAppliedText, adoptedFilled, layerCounter, styleTreeHooks, styleTreeObserved, styleTreeRoots, bakedStyles, bakedLive, bakedCache, rebakeBatch, bakedFollowers, adoptedStyleSheetsCache, styleCache, styleElementCache, styleFlushPending, registeredProperties, animKeyframeRefs;
 	var init_maps = __esmMin((() => {
 		shared = (key, create) => globalThis[Symbol.for(key)] ??= create();
 		blobURLMap = shared("dom.ts@blobURLMap", () => /* @__PURE__ */ new WeakMap());
@@ -13687,7 +13569,8 @@ cacheWillUpdate: async ({ response }) => {
 		styleElementCache = shared("lur.e@styleElementCache", () => /* @__PURE__ */ new WeakMap());
 		styleFlushPending = shared("style-lib@styleFlushPending", () => /* @__PURE__ */ new WeakSet());
 		registeredProperties = shared("style-lib@registeredProperties", () => /* @__PURE__ */ new Set());
-	})), CSS_DIMENSION_UNITS_LIST, CSS_DIMENSION_UNITS, CSS_UNIT_FACTORY_ALIASES, CSS_UNIT_TOKEN_RE, CSS_COLOR_PROPERTIES, CSS_TYPOGRAPHY_PROPERTIES, CSS_MOTION_PROPERTIES, STYLE_THEME_ATTRS, STYLE_THEME_OBSERVE_ATTRS, BAKE_CATEGORIES, VEELA_CASCADE_LAYERS, UX_HOST_LAYERS, VIEWER_RUNTIME_LAYERS, VIEWER_CSS_LAYER_ORDER, LAYER_NAME, LAYER_OPEN, HOST_CSS_FALLBACK, BAKE_LAYER, DEFAULT_CATEGORIES, DEFAULT_CACHE_MS, BAKE_SCREEN_MEDIA, BAKE_SCREEN_CHROME, BAKE_SCREEN_ALSO_EXPLORER, BAKE_SCREEN_ALSO_SETTINGS, BAKE_SCREEN_ALSO, ANIMATABLE_BRAND, hasTypedOM;
+		animKeyframeRefs = shared("style.ts@animKeyframeRefs", () => /* @__PURE__ */ new Map());
+	})), CSS_DIMENSION_UNITS_LIST, CSS_DIMENSION_UNITS, CSS_UNIT_FACTORY_ALIASES, CSS_UNIT_TOKEN_RE, CSS_COLOR_PROPERTIES, CSS_TYPOGRAPHY_PROPERTIES, CSS_MOTION_PROPERTIES, STYLE_THEME_ATTRS, STYLE_THEME_OBSERVE_ATTRS, BAKE_CATEGORIES, VEELA_CASCADE_LAYERS, UX_HOST_LAYERS, VIEWER_RUNTIME_LAYERS, VIEWER_CSS_LAYER_ORDER, LAYER_NAME, LAYER_OPEN, HOST_CSS_FALLBACK, BAKE_LAYER, DEFAULT_CATEGORIES, DEFAULT_CACHE_MS, BAKE_SCREEN_MEDIA, BAKE_SCREEN_CHROME, BAKE_SCREEN_ALSO_EXPLORER, BAKE_SCREEN_ALSO_SETTINGS, BAKE_SCREEN_ALSO, ANIMATABLE_BRAND, ANIM_LAYER, ANIM_TRIGGER_NAME, hasTypedOM;
 	var init_constants$7 = __esmMin((() => {
 		CSS_DIMENSION_UNITS_LIST = [
 			"%",
@@ -13865,6 +13748,8 @@ cacheWillUpdate: async ({ response }) => {
 		];
 		BAKE_SCREEN_ALSO = [...BAKE_SCREEN_ALSO_EXPLORER, ...BAKE_SCREEN_ALSO_SETTINGS];
 		ANIMATABLE_BRAND = Symbol.for("fest.animatable");
+		ANIM_LAYER = "ux-anim";
+		ANIM_TRIGGER_NAME = "--fest-t";
 		hasTypedOM = typeof CSSStyleValue !== "undefined" && typeof CSSUnitValue !== "undefined";
 	}));
 	//#endregion
@@ -15574,7 +15459,7 @@ cacheWillUpdate: async ({ response }) => {
 	}));
 	//#endregion
 	//#region ../../modules/projects/object.ts/src/wrap/Symbol.ts
-	var $value, $extractKey$, $originalKey$, $registryKey$, $behavior$1, $promise, $triggerLess, $triggerLock, $triggerControl, $trigger, $affected, $isNotEqual, $realProp;
+	var $value, $extractKey$, $originalKey$, $registryKey$, $behavior$1, $promise, $resolved, $triggerLess, $triggerLock, $triggerControl, $trigger, $affected, $isNotEqual, $realProp;
 	var init_Symbol = __esmMin((() => {
 		/**
 		* Shared symbol registry for the `object.ts` reactive runtime.
@@ -15591,6 +15476,7 @@ cacheWillUpdate: async ({ response }) => {
 		$registryKey$ = Symbol.for("@registry");
 		$behavior$1 = Symbol.for("@behavior");
 		$promise = Symbol.for("@promise");
+		$resolved = Symbol.for("@resolved");
 		$triggerLess = Symbol.for("@trigger-less");
 		$triggerLock = Symbol.for("@trigger-lock");
 		$triggerControl = Symbol.for("@trigger-control");
@@ -15659,7 +15545,9 @@ cacheWillUpdate: async ({ response }) => {
 		withPromise = (target, cb) => {
 			if (isPrimitive(target) || typeof target == "function") return cb?.(target);
 			if (isThenable(target)) return target.then(cb);
+			if (typeof target?.resolved == "function") return Promise.resolve(target.resolved()).then(cb);
 			if (target?.promise && isThenable(target.promise)) return target.promise.then(cb);
+			if (target?.[$promise] && isThenable(target[$promise])) return target[$promise].then(cb);
 			return cb?.(target);
 		};
 		disposeMap = /* @__PURE__ */ new WeakMap();
@@ -15729,6 +15617,7 @@ cacheWillUpdate: async ({ response }) => {
 			["invalidate", ["@invalidate"]],
 			["manual", ["@manual"]],
 			["custom", ["@custom"]],
+			["resolved", ["@resolved"]],
 			["setAll", ["@setAll"]],
 			["addAll", ["@addAll"]],
 			["deleteAll", ["@deleteAll", "@clear"]]
@@ -15980,6 +15869,71 @@ cacheWillUpdate: async ({ response }) => {
 		Subscript = globalThis[SubscriptSymbol];
 	}));
 	//#endregion
+	//#region ../../modules/projects/object.ts/src/core/Resolved.ts
+	/** Snapshot a reactive target (or its raw source) with `all` / `allKeyed` / settled variants. */
+	function resolved(target, mode = "all") {
+		const raw = rawOf(target);
+		if (isPromise(raw)) return resolved$1(raw, mode);
+		if (isPromise(raw?.[$promise])) return resolved$1(raw[$promise], mode);
+		return resolved$1(raw ?? target, mode);
+	}
+	/** Build `obj.resolved` / `$trigger.resolved` without making the proxy thenable. */
+	function makeResolvedOp(target, emit = false) {
+		const run = ((mode = "all") => {
+			const pending = resolved(target, mode);
+			if (!emit) return pending;
+			return pending.then((value) => {
+				const raw = rawOf(target);
+				const key = raw?.realProp ?? (raw && "value" in raw ? "value" : null);
+				subscriptRegistry.get(raw)?.trigger?.(key, value, void 0, "resolved");
+				return value;
+			});
+		});
+		run.all = () => run("all");
+		run.allSettled = () => run("settled");
+		run.allKeyed = () => run("all");
+		run.allSettledKeyed = () => run("settled");
+		run.try = (callbackOrValue, ...args) => Promise.try(callbackOrValue, ...args).then((value) => resolved(value ?? target, "all"));
+		return run;
+	}
+	function emitResolved(target, key, value, oldValue) {
+		const raw = rawOf(target) ?? target;
+		subscriptRegistry.get(raw)?.trigger?.(key, value, oldValue, "resolved");
+	}
+	/** Re-assign thenable fields through the live proxy so set + `resolved` share one path. */
+	function bindExistingThenables(live, raw) {
+		if (live == null || raw == null) return live;
+		if (Array.isArray(raw)) {
+			raw.forEach((value, index) => {
+				if (isPromise(value)) live[index] = value;
+			});
+			return live;
+		}
+		if (raw instanceof Map) {
+			for (const [key, value] of raw.entries()) if (isPromise(value)) live.set(key, value);
+			return live;
+		}
+		if (raw instanceof Set) return live;
+		for (const key of Reflect.ownKeys(raw)) {
+			if (key == $extractKey$ || key == $promise || key == $resolved) continue;
+			if (!Object.getOwnPropertyDescriptor(raw, key)?.enumerable) continue;
+			const value = raw[key];
+			if (isPromise(value)) live[key] = value;
+		}
+		return live;
+	}
+	var rawOf;
+	var init_Resolved = __esmMin((() => {
+		init_src$6();
+		init_Symbol();
+		init_Utils$2();
+		init_Subscript();
+		rawOf = (target) => {
+			const unwrapped = deref(target);
+			return unwrapped?.[$extractKey$] ?? unwrapped;
+		};
+	}));
+	//#endregion
 	//#region ../../modules/projects/object.ts/src/core/Specific.ts
 	function isGetter(obj, propName) {
 		let got = true;
@@ -16000,6 +15954,7 @@ cacheWillUpdate: async ({ response }) => {
 		init_Subscript();
 		init_Symbol();
 		init_src$6();
+		init_Resolved();
 		__safeGetGuardSymbol = Symbol.for("object.ts@__safeGetGuard");
 		__systemSkip = /* @__PURE__ */ new Set([
 			Symbol.toStringTag,
@@ -16080,7 +16035,7 @@ cacheWillUpdate: async ({ response }) => {
 			if (realProp != null && key == realProp) return safeGet$1(target, "value") ?? safeGet$1(target, $value) ?? safeGet$1(target, key);
 			return key == null ? void 0 : safeGet$1(target, key);
 		};
-		createTriggerAPI = (registry, emit) => {
+		createTriggerAPI = (registry, emit, target) => {
 			const api = (key, opOrOptions, trigger) => {
 				if (!isTriggerEmitOptions(opOrOptions)) trigger ??= opOrOptions;
 				return emit(isTriggerEmitOptions(key) ? key : isTriggerEmitOptions(opOrOptions, true) ? {
@@ -16100,6 +16055,7 @@ cacheWillUpdate: async ({ response }) => {
 				value,
 				oldValue
 			});
+			if (target != null) api.resolved = makeResolvedOp(target, true);
 			return api;
 		};
 		systemGet = (target, name, registry) => {
@@ -16115,6 +16071,7 @@ cacheWillUpdate: async ({ response }) => {
 			if ([$extractKey$, $originalKey$].indexOf(name) >= 0) return safeGet$1(target, name) ?? target;
 			if (name == $value) return safeGet$1(target, name) ?? safeGet$1(target, "value");
 			if (name == $registryKey$) return registry;
+			if (name == $resolved || name == "resolved" && !Object.prototype.hasOwnProperty.call(target, "resolved")) return makeResolvedOp(target);
 			if (name == $triggerControl) return registry?.triggerControl;
 			if (name == Symbol.observable) return registry?.compatible;
 			if (name == Symbol.subscribe) return (cb, prop, options) => affected(prop != null ? [target, prop] : target, cb, options);
@@ -16291,7 +16248,7 @@ cacheWillUpdate: async ({ response }) => {
 					const value = triggerOptionValue(options, "value", () => safeGet$1(target, key));
 					const oldValue = triggerOptionValue(options, "oldValue", () => void 0);
 					return registry?.trigger?.(key, value, oldValue, triggerOptionTrigger(options, "manual"));
-				});
+				}, target);
 				if (name == "@target" || name == $extractKey$) return target;
 				if (name == "x") return () => {
 					return target?.x ?? target?.[0];
@@ -16333,30 +16290,36 @@ cacheWillUpdate: async ({ response }) => {
 					delete this[$triggerLock];
 					return true;
 				}
-				const old = safeGet$1(target, name);
-				const xyzw = [
-					"x",
-					"y",
-					"z",
-					"w"
-				];
-				const rgba = [
-					"r",
-					"g",
-					"b",
-					"a"
-				];
-				const xyzw_idx = xyzw.indexOf(name);
-				const rgba_idx = rgba.indexOf(name);
-				let got = false;
-				if (xyzw_idx >= 0) got = Reflect.set(target, xyzw_idx, value);
-				else if (rgba_idx >= 0) got = Reflect.set(target, rgba_idx, value);
-				else got = Reflect.set(target, name, value);
-				if (name == "length") {
-					if (isNotEqual(old, value)) triggerWhenLengthChange(this, target, old, value);
-				}
-				if (!this[$triggerLock] && typeof name != "symbol" && isNotEqual(old, value)) subscriptRegistry?.get?.(target)?.trigger?.(name, value, old, "set");
-				return got;
+				const pending = isPromise(value);
+				return potentiallyAsync(value, (v) => {
+					const old = safeGet$1(target, name);
+					const xyzw = [
+						"x",
+						"y",
+						"z",
+						"w"
+					];
+					const rgba = [
+						"r",
+						"g",
+						"b",
+						"a"
+					];
+					const xyzw_idx = xyzw.indexOf(name);
+					const rgba_idx = rgba.indexOf(name);
+					let got = false;
+					if (xyzw_idx >= 0) got = Reflect.set(target, xyzw_idx, v);
+					else if (rgba_idx >= 0) got = Reflect.set(target, rgba_idx, v);
+					else got = Reflect.set(target, name, v);
+					if (name == "length") {
+						if (isNotEqual(old, v)) triggerWhenLengthChange(this, target, old, v);
+					}
+					if (!this[$triggerLock] && typeof name != "symbol") {
+						if (isNotEqual(old, v)) subscriptRegistry?.get?.(target)?.trigger?.(name, v, old, "set");
+						if (pending) emitResolved(target, name, v, old);
+					}
+					return got;
+				});
 			}
 			deleteProperty(target, name) {
 				if (typeof name != "symbol") {
@@ -16399,7 +16362,7 @@ cacheWillUpdate: async ({ response }) => {
 					const oldValue = triggerOptionValue(options, "oldValue", () => key == "value" || key == realPropOf$1(target) ? safeGet$1(target, $value) : void 0);
 					const value = triggerOptionValue(options, "value", () => triggerValueOf(target, key));
 					return registry?.trigger?.(key, value, oldValue, triggerOptionTrigger(options, "manual"));
-				});
+				}, target);
 				if (name == Symbol.toPrimitive) return (hint) => {
 					const ft = fallThrough(target, name);
 					if (safeGet$1(ft, name)) return safeGet$1(ft, name)?.(hint);
@@ -16482,7 +16445,11 @@ cacheWillUpdate: async ({ response }) => {
 					const oldValue = name == "value" ? safeGet$1(target, $value) ?? safeGet$1(target, name) : safeGet$1(target, name);
 					target[name] = v;
 					const newValue = safeGet$1(target, name) ?? v;
-					if (!this[$triggerLock] && typeof name != "symbol" && (safeGet$1(target, $isNotEqual) ?? isNotEqual)?.(oldValue, newValue)) (subscriptRegistry.get(target) ?? subscriptRegistry.get($original))?.trigger?.(triggerName, v, oldValue);
+					if (!this[$triggerLock] && typeof name != "symbol") {
+						const subscript = subscriptRegistry.get(target) ?? subscriptRegistry.get($original);
+						if ((safeGet$1(target, $isNotEqual) ?? isNotEqual)?.(oldValue, newValue)) subscript?.trigger?.(triggerName, v, oldValue);
+						if (isPromise(value)) emitResolved($original, triggerName, v, oldValue);
+					}
 					return true;
 				});
 			}
@@ -16547,7 +16514,7 @@ cacheWillUpdate: async ({ response }) => {
 					if (value == null && !hasOwn(options, "value")) return;
 					const oldValue = triggerOptionValue(options, "oldValue", () => void 0);
 					return registry?.trigger?.(key, value, oldValue, triggerOptionTrigger(options, "manual"));
-				});
+				}, target);
 				if (name == "clear") return () => {
 					const oldValues = Array.from(target?.entries?.() || []), result = valueOrFx();
 					oldValues.forEach(([prop, oldValue]) => {
@@ -16562,11 +16529,27 @@ cacheWillUpdate: async ({ response }) => {
 				};
 				if (name == "set") return (prop, value) => potentiallyAsyncMap(value, (v) => {
 					const had = target.has(prop), oldValue = target.get(prop), result = valueOrFx(prop, v);
-					if (!had || isNotEqual(oldValue, v)) {
-						if (!this[$triggerLock]) subscriptRegistry.get(target)?.trigger?.(prop, v, had ? oldValue : null, had ? "set" : "add");
+					if (!this[$triggerLock]) {
+						if (!had || isNotEqual(oldValue, v)) subscriptRegistry.get(target)?.trigger?.(prop, v, had ? oldValue : null, had ? "set" : "add");
+						if (isPromise(value)) emitResolved(target, prop, v, oldValue);
 					}
 					return result;
 				});
+				if (name == "getOrInsert" || name == "getOrInsertComputed") {
+					const computed = name == "getOrInsertComputed";
+					return (key, defaultOrCompute) => {
+						if (target.has(key)) return target.get(key);
+						const incoming = computed ? typeof defaultOrCompute == "function" ? defaultOrCompute(key) : defaultOrCompute : defaultOrCompute;
+						return potentiallyAsyncMap(incoming, (v) => {
+							const result = typeof target.getOrInsert == "function" ? target.getOrInsert(key, v) : (target.set(key, v), target.get(key));
+							if (!this[$triggerLock]) {
+								subscriptRegistry.get(target)?.trigger?.(key, v, null, "add");
+								if (isPromise(incoming)) emitResolved(target, key, v, null);
+							}
+							return result;
+						});
+					};
+				}
 				return valueOrFx;
 			}
 			set(target, name, value) {
@@ -16641,7 +16624,7 @@ cacheWillUpdate: async ({ response }) => {
 					const value = triggerOptionValue(options, "value", () => target.has(key));
 					const oldValue = triggerOptionValue(options, "oldValue", () => void 0);
 					return registry?.trigger?.(key, value, oldValue, triggerOptionTrigger(options, "manual"));
-				});
+				}, target);
 				if (name == "clear") return () => {
 					const oldValues = Array.from(target?.values?.() || []), result = valueOrFx();
 					oldValues.forEach((oldValue) => {
@@ -16654,13 +16637,14 @@ cacheWillUpdate: async ({ response }) => {
 					if (!this[$triggerLock] && had) subscriptRegistry.get(target)?.trigger?.(value, null, oldValue, "delete");
 					return result;
 				};
-				if (name == "add") return (value) => {
-					const had = target.has(value), oldValue = had ? value : null, result = valueOrFx(value);
-					if (!had) {
-						if (!this[$triggerLock]) subscriptRegistry.get(target)?.trigger?.(value, value, oldValue, "add");
+				if (name == "add") return (value) => potentiallyAsync(value, (v) => {
+					const had = target.has(v), oldValue = had ? v : null, result = valueOrFx(v);
+					if (!this[$triggerLock]) {
+						if (!had) subscriptRegistry.get(target)?.trigger?.(v, v, oldValue, "add");
+						if (isPromise(value)) emitResolved(target, v, v, oldValue);
 					}
 					return result;
-				};
+				});
 				return valueOrFx;
 			}
 			set(target, name, value) {
@@ -16714,16 +16698,20 @@ cacheWillUpdate: async ({ response }) => {
 			return !!((typeof target == "object" || typeof target == "function") && target != null && (target?.[$extractKey$] || target?.[$affected]));
 		};
 		observeArray = (arr) => {
-			return $isObservable(arr) ? arr : wrapWith(arr, new ObserveArrayHandler());
+			if ($isObservable(arr)) return arr;
+			return bindExistingThenables(wrapWith(arr, new ObserveArrayHandler()), arr);
 		};
 		observeObject = (obj) => {
-			return $isObservable(obj) ? obj : wrapWith(obj, new ObserveObjectHandler());
+			if ($isObservable(obj)) return obj;
+			return bindExistingThenables(wrapWith(obj, new ObserveObjectHandler()), obj);
 		};
 		observeMap = (map) => {
-			return $isObservable(map) ? map : wrapWith(map, new ObserveMapHandler());
+			if ($isObservable(map)) return map;
+			return bindExistingThenables(wrapWith(map, new ObserveMapHandler()), map);
 		};
 		observeSet = (set) => {
-			return $isObservable(set) ? set : wrapWith(set, new ObserveSetHandler());
+			if ($isObservable(set)) return set;
+			return wrapWith(set, new ObserveSetHandler());
 		};
 	}));
 	//#endregion
@@ -16777,7 +16765,14 @@ cacheWillUpdate: async ({ response }) => {
 					return Number(this[$value] || 0) || 0;
 				}
 			});
-			initial?.then?.((v) => $r.value = v);
+			initial?.then?.((v) => {
+				$r.value = v;
+				$r[$trigger]?.({
+					key: "value",
+					value: v,
+					trigger: "resolved"
+				});
+			});
 			return $r;
 		};
 		stringRef = (initial, behavior) => {
@@ -16799,7 +16794,14 @@ cacheWillUpdate: async ({ response }) => {
 					return String(this[$value] ?? "") ?? "";
 				}
 			});
-			initial?.then?.((v) => $r.value = v);
+			initial?.then?.((v) => {
+				$r.value = v;
+				$r[$trigger]?.({
+					key: "value",
+					value: v,
+					trigger: "resolved"
+				});
+			});
 			return $r;
 		};
 		booleanRef = (initial, behavior) => {
@@ -16821,7 +16823,14 @@ cacheWillUpdate: async ({ response }) => {
 					return this[$value] || false;
 				}
 			});
-			initial?.then?.((v) => $r.value = v);
+			initial?.then?.((v) => {
+				$r.value = v;
+				$r[$trigger]?.({
+					key: "value",
+					value: v,
+					trigger: "resolved"
+				});
+			});
 			return $r;
 		};
 		wrapRef = (initial, behavior) => {
@@ -16837,7 +16846,14 @@ cacheWillUpdate: async ({ response }) => {
 				},
 				value: isPromise ? null : deref(initial)
 			});
-			initial?.then?.((v) => $r.value = v);
+			initial?.then?.((v) => {
+				$r.value = v;
+				$r[$trigger]?.({
+					key: "value",
+					value: v,
+					trigger: "resolved"
+				});
+			});
 			affected(initial, (v) => {
 				$r?.[$trigger]?.();
 			});
@@ -17287,9 +17303,10 @@ cacheWillUpdate: async ({ response }) => {
 				return cb?.(src?.[0]?.[a_prop], a_prop, oldValue);
 			};
 			const initial = cmp();
+			const pendingInitial = isPromise(initial);
 			const rf = observe({
-				[$promise]: void 0,
-				[$value]: initial,
+				[$promise]: pendingInitial ? initial : void 0,
+				[$value]: pendingInitial ? void 0 : initial,
 				[$behavior$1]: behavior,
 				[Symbol?.toStringTag]() {
 					return String(cmp() ?? this[$value] ?? "") || "";
@@ -17304,16 +17321,31 @@ cacheWillUpdate: async ({ response }) => {
 					return this[$value] = cmp() ?? this[$value];
 				}
 			});
-			const usb = affected([src?.[0] ?? src, a_prop ?? "value"], () => {
+			const writeComputed = (value, trigger) => {
+				if (isPromise(value)) return Promise.resolve(value).then((v) => {
+					const oldValue = rf?.[$value];
+					rf[$value] = v;
+					rf?.[$trigger]?.({
+						key: "value",
+						value: v,
+						oldValue,
+						trigger: "resolved"
+					});
+					return v;
+				});
 				const oldValue = rf?.[$value];
-				const value = cmp();
 				rf[$value] = value;
 				rf?.[$trigger]?.({
 					key: "value",
 					value,
 					oldValue,
-					trigger: "manual"
+					trigger
 				});
+				return value;
+			};
+			if (pendingInitial) writeComputed(initial, "resolved");
+			const usb = affected([src?.[0] ?? src, a_prop ?? "value"], () => {
+				writeComputed(cmp(), "manual");
 			});
 			addToCallChain(rf, Symbol.dispose, usb);
 			return rf;
@@ -17326,6 +17358,7 @@ cacheWillUpdate: async ({ response }) => {
 		init_Assigned();
 		init_Mainline();
 		init_Primitives();
+		init_Resolved();
 		init_Symbol();
 		init_Utils$2();
 	}));
@@ -17645,6 +17678,28 @@ cacheWillUpdate: async ({ response }) => {
 					apply(trigger.value);
 					const unsubscribe = typeof trigger.subscribe === "function" ? trigger.subscribe(apply) : null;
 					return () => unsubscribe?.();
+				}
+				if (trigger === "show" || trigger === "hide" || trigger === "remove") {
+					const eventName = trigger === "show" ? "u2-before-show" : trigger === "hide" ? "u2-before-hide" : "u2-before-remove";
+					const attr = trigger === "remove" ? "data-removing" : "data-hidden";
+					const wantPresent = trigger !== "show";
+					const onEvent = (ev) => {
+						if (ev.defaultPrevented) return;
+						playForward();
+					};
+					element.addEventListener(eventName, onEvent);
+					const mo = new MutationObserver(() => {
+						if (element.hasAttribute(attr) === wantPresent) playForward();
+						else if (reverseOnExit && attachment.animation) playBackward();
+					});
+					mo.observe(element, {
+						attributes: true,
+						attributeFilter: [attr]
+					});
+					return () => {
+						element.removeEventListener(eventName, onEvent);
+						mo.disconnect();
+					};
 				}
 				return () => {};
 			}
@@ -18436,19 +18491,39 @@ cacheWillUpdate: async ({ response }) => {
 		init_src$6();
 		init_bind();
 		init_utils$1();
-		parsePropertyList = (options) => {
+		parsePropertyList = (options, extra) => {
+			if (extra instanceof Map && extra.size > 0) return Array.from(extra.values());
+			const fromKeyframes = options.keyframes?.properties;
+			if (fromKeyframes instanceof Map && fromKeyframes.size > 0) return Array.from(fromKeyframes.values());
 			const fromString = [];
 			if (typeof options.properties == "string") {
 				const props = options.properties?.trim?.()?.split?.(";");
 				fromString.push(...Array.from(props || [])?.map?.(($pair) => {
 					if ($pair?.includes?.(":")) {
 						const value = ($pair?.split?.(":") ?? [])?.slice?.(1, -1)?.join?.(":");
-						return { [($pair?.[0])?.trim?.()]: value?.trim?.() };
+						return {
+							property: ($pair?.[0])?.trim?.(),
+							values: [value?.trim?.()]
+						};
 					}
 					return null;
 				})?.filter?.((a) => a != null) || []);
+				return fromString;
 			}
-			return Array.from(Array.isArray(options.properties) ? options.properties : fromString);
+			if (Array.isArray(options.properties)) return options.properties.map((item, i) => {
+				if (item && Array.isArray(item.values) && item.property) return item;
+				const entries = Object.entries(item || {}).filter(([k]) => k !== "offset" && k !== "easing");
+				const value = entries[0]?.[1];
+				return {
+					property: entries[0]?.[0] ?? `p${i}`,
+					values: value == null ? [] : Array.isArray(value) ? value : [value]
+				};
+			});
+			if (options.properties && typeof options.properties === "object") return Object.entries(options.properties).map(([property, values]) => ({
+				property,
+				values: Array.isArray(values) ? values : [values]
+			}));
+			return fromString;
 		};
 		parseAnimationTemplate = (strings, values) => {
 			const properties = /* @__PURE__ */ new Map();
@@ -18493,9 +18568,9 @@ cacheWillUpdate: async ({ response }) => {
 				reactiveIndices
 			};
 		};
-		buildWebAnimationKeyframes = (options) => {
+		buildWebAnimationKeyframes = (options, extra) => {
 			const globalOffsets = options?.offsets;
-			const propertyList = parsePropertyList(options);
+			const propertyList = parsePropertyList(options, extra);
 			if (propertyList.length === 0) throw new Error("No animatable properties found in A template");
 			const maxLength = Math.max(...propertyList.map((p) => p.values.length));
 			const offsets = (globalOffsets?.length > 1 ? globalOffsets : null) || Array.from({ length: maxLength }, (_, i) => i / (maxLength - 1));
@@ -18561,11 +18636,13 @@ cacheWillUpdate: async ({ response }) => {
 			return parseAnimationTemplate(strings, values);
 		};
 		doAnimation = (element, config, keyframes) => {
-			if (parsePropertyList(config).some((prop) => {
+			const canAnimate = element != null && typeof element.animate === "function";
+			if (!(typeof Element !== "undefined" && element instanceof Element) && !canAnimate) throw new TypeError("doAnimation requires an Element");
+			if (parsePropertyList(config, keyframes).some((prop) => {
 				const { hasReactive } = processAnimationValues(prop.values);
 				return hasReactive;
 			})) return createReactiveAnimation(element, config);
-			const frames = buildWebAnimationKeyframes(config);
+			const frames = buildWebAnimationKeyframes(config, keyframes);
 			const timing = buildAnimationTiming(config);
 			const animation = element.animate(frames, timing);
 			const cleanup = () => {
@@ -18578,7 +18655,9 @@ cacheWillUpdate: async ({ response }) => {
 		};
 		animate = (element, options) => {
 			const properties = /* @__PURE__ */ new Map();
-			for (const [property, values] of Object.entries(options.properties)) {
+			const record = options.properties;
+			if (record == null || typeof record === "string" || Array.isArray(record)) return doAnimation(element, options);
+			for (const [property, values] of Object.entries(record)) {
 				if (!Array.isArray(values)) throw new TypeError(`animate() expects arrays of values, got ${typeof values} for ${property}`);
 				properties.set(property, {
 					property,
@@ -18619,6 +18698,610 @@ cacheWillUpdate: async ({ response }) => {
 		};
 	}));
 	//#endregion
+	//#region ../../modules/projects/style.ts/src/css-animation.ts
+	var isReactiveTrigger, asPropertyList, serializeValue, compileKeyframesCss, compileTriggerCss, resolveCssAnimationTarget, declarationsToText, bindCssAnimation;
+	var init_css_animation = __esmMin((() => {
+		init_src$6();
+		init_constants$7();
+		init_layers();
+		init_maps();
+		init_utils$1();
+		isReactiveTrigger = (t) => t != null && typeof t === "object" && !isScrollDriven(t) && !isViewDriven(t) && "value" in t;
+		asPropertyList = (options) => {
+			const kf = options.keyframes?.properties;
+			if (kf instanceof Map) return Array.from(kf.values());
+			const props = options.properties;
+			if (typeof props === "string") throw new TypeError("string properties are not used on the CSS compile path");
+			if (Array.isArray(props)) return props.map((item, i) => {
+				if (item && Array.isArray(item.values) && item.property) return item;
+				const entries = Object.entries(item || {}).filter(([k]) => k !== "offset" && k !== "easing");
+				return {
+					property: entries[0]?.[0] ?? `p${i}`,
+					values: entries[0] ? [entries[0][1]] : []
+				};
+			});
+			if (props && typeof props === "object") return Object.entries(props).map(([property, values]) => ({
+				property,
+				values: Array.isArray(values) ? values : [values]
+			}));
+			throw new TypeError("No animatable properties");
+		};
+		serializeValue = (value) => {
+			if (value == null) return "";
+			const isElement = typeof Element !== "undefined" && value instanceof Element;
+			if (typeof value === "object" && "value" in value && !isElement) return String(value.value ?? "");
+			return String(value);
+		};
+		compileKeyframesCss = (options) => {
+			const list = asPropertyList(options);
+			const maxLength = Math.max(2, ...list.map((p) => p.values.length));
+			const offsets = options.offsets ?? Array.from({ length: maxLength }, (_, i) => i / (maxLength - 1));
+			const frames = [];
+			for (let i = 0; i < maxLength; i++) {
+				const decls = [];
+				for (const prop of list) {
+					const raw = prop.values[Math.min(i, prop.values.length - 1)];
+					decls.push(`${camelToKebab$1(prop.property)}: ${serializeValue(raw)}`);
+				}
+				const pct = Math.round((offsets[i] ?? i / (maxLength - 1)) * 100);
+				frames.push(`${pct}% { ${decls.join("; ")}; }`);
+			}
+			const fingerprint = frames.join("|");
+			let hash = 0;
+			for (let i = 0; i < fingerprint.length; i++) hash = hash * 31 + fingerprint.charCodeAt(i) | 0;
+			const name = `fest-anim-${(hash >>> 0).toString(36)}`;
+			return {
+				name,
+				cssText: `@keyframes ${name} {\n${frames.join("\n")}\n}`,
+				fingerprint
+			};
+		};
+		compileTriggerCss = (selector, options) => {
+			const trigger = options.trigger ?? "mount";
+			if (isReactiveTrigger(trigger)) throw new TypeError("reactive { value } trigger is not valid on the CSS path");
+			const compiled = compileKeyframesCss(options);
+			const duration = `${parseTime(options.duration, 300)}ms`;
+			const delay = `${parseTime(options.delay, 0)}ms`;
+			const iterations = normalizeIterationCount(options.iterationCount);
+			const properties = {
+				"animation-name": compiled.name,
+				"animation-duration": duration,
+				"animation-delay": delay,
+				"animation-iteration-count": iterations === "Infinity" || iterations === Infinity ? "infinite" : String(iterations),
+				"animation-direction": options.direction ?? "normal",
+				"animation-fill-mode": options.fillMode ?? "none",
+				"animation-timing-function": typeof options.easing === "string" ? options.easing : "linear"
+			};
+			if (trigger === "hover") {
+				if (options.reverseOnExit) properties["animation-trigger"] = `${ANIM_TRIGGER_NAME} play-backwards`;
+				return {
+					selector: `${selector}:hover`,
+					properties
+				};
+			}
+			if (trigger === "focus") return {
+				selector: `${selector}:focus`,
+				properties
+			};
+			if (trigger === "show") return {
+				selector: `${selector}:not([data-hidden])`,
+				properties
+			};
+			if (trigger === "hide") return {
+				selector: `${selector}[data-hidden]`,
+				properties
+			};
+			if (trigger === "remove") return {
+				selector: `${selector}[data-removing]`,
+				properties
+			};
+			if (trigger === "manual") {
+				properties["animation-play-state"] = "paused";
+				return {
+					selector,
+					properties
+				};
+			}
+			if (trigger === "click") {
+				properties["event-trigger"] = `${ANIM_TRIGGER_NAME} click`;
+				properties["animation-trigger"] = `${ANIM_TRIGGER_NAME} play`;
+				return {
+					selector,
+					properties
+				};
+			}
+			if (trigger === "visible") {
+				properties["timeline-trigger"] = `${ANIM_TRIGGER_NAME} view contain`;
+				properties["animation-trigger"] = `${ANIM_TRIGGER_NAME} play`;
+				return {
+					selector,
+					properties
+				};
+			}
+			if (isScrollDriven(trigger) || isViewDriven(trigger)) {
+				const kind = isViewDriven(trigger) ? "view" : "scroll";
+				properties["timeline-trigger"] = `${ANIM_TRIGGER_NAME} ${kind}`;
+				if (trigger.rangeStart) properties["animation-range-start"] = trigger.rangeStart;
+				if (trigger.rangeEnd) properties["animation-range-end"] = trigger.rangeEnd;
+				return {
+					selector,
+					properties
+				};
+			}
+			return {
+				selector,
+				properties
+			};
+		};
+		resolveCssAnimationTarget = (target, options) => {
+			if (typeof Element !== "undefined" && target instanceof Element) throw new TypeError("bindCssAnimation does not accept Element");
+			if (typeof CSSStyleDeclaration !== "undefined" && target instanceof CSSStyleDeclaration) {
+				const rule = target.parentRule;
+				if (!rule) throw new TypeError("CSSStyleDeclaration has no parentRule");
+				return resolveCssAnimationTarget(rule, options);
+			}
+			if (typeof CSSStyleRule !== "undefined" && target instanceof CSSStyleRule) {
+				const sheet = target.parentStyleSheet;
+				if (!sheet) throw new TypeError("CSSStyleRule has no parentStyleSheet");
+				return {
+					sheet,
+					rule: target,
+					selector: target.selectorText
+				};
+			}
+			if (typeof CSSStyleSheet !== "undefined" && target instanceof CSSStyleSheet) {
+				const selector = options.selector;
+				if (!selector) throw new TypeError("CSSStyleSheet bind requires options.selector");
+				return {
+					sheet: target,
+					rule: null,
+					selector
+				};
+			}
+			throw new TypeError("bindCssAnimation target must be a CSSStyleRule, CSSStyleSheet, or CSSStyleDeclaration");
+		};
+		declarationsToText = (properties) => Object.entries(properties).map(([k, v]) => `${k}: ${v};`).join(" ");
+		bindCssAnimation = (target, options) => {
+			const compiled = compileKeyframesCss(options);
+			let sheet;
+			let selector;
+			if (target && typeof target.insertRule === "function" && target.cssRules && options.selector) {
+				sheet = target;
+				selector = options.selector;
+			} else {
+				const resolved = resolveCssAnimationTarget(target, options);
+				sheet = resolved.sheet;
+				selector = resolved.selector;
+			}
+			const trigger = compileTriggerCss(selector, options);
+			const layer = getOrCreateLayerRule(sheet, "ux-anim") ?? sheet;
+			const host = layer.insertRule ? layer : sheet;
+			let entry = animKeyframeRefs.get(compiled.fingerprint);
+			if (!entry) {
+				host.insertRule(compiled.cssText, host.cssRules?.length ?? 0);
+				const keyframesRule = host.cssRules?.[host.cssRules.length - 1];
+				entry = {
+					name: compiled.name,
+					count: 0,
+					keyframesRule,
+					hosts: /* @__PURE__ */ new Set(),
+					hostCounts: /* @__PURE__ */ new Map()
+				};
+				animKeyframeRefs.set(compiled.fingerprint, entry);
+			} else if (!entry.hosts.has(host)) {
+				host.insertRule(compiled.cssText, host.cssRules?.length ?? 0);
+				if (!entry.keyframesRule) entry.keyframesRule = host.cssRules?.[host.cssRules.length - 1];
+			}
+			entry.hostCounts ??= /* @__PURE__ */ new Map();
+			entry.count += 1;
+			entry.hosts.add(host);
+			entry.hostCounts.set(host, (entry.hostCounts.get(host) ?? 0) + 1);
+			const companionText = `${trigger.selector} { ${declarationsToText(trigger.properties)} }`;
+			const companionIndex = host.insertRule(companionText, host.cssRules?.length ?? 0);
+			const companionRule = host.cssRules?.[companionIndex];
+			const deleteKeyframesFrom = (sheetHost) => {
+				try {
+					const rules = Array.from(sheetHost.cssRules || []);
+					let idx = rules.indexOf(entry.keyframesRule);
+					if (idx < 0) idx = rules.findIndex((r) => String(r?.cssText || "").includes(`@keyframes ${entry.name}`));
+					if (idx >= 0) sheetHost.deleteRule(idx);
+				} catch {}
+			};
+			let dead = false;
+			return () => {
+				if (dead) return;
+				dead = true;
+				try {
+					const idx = Array.from(host.cssRules || []).indexOf(companionRule);
+					if (idx >= 0) host.deleteRule(idx);
+				} catch {}
+				entry.count -= 1;
+				const nextHostCount = (entry.hostCounts?.get(host) ?? 1) - 1;
+				if (nextHostCount <= 0) {
+					entry.hostCounts?.delete(host);
+					entry.hosts.delete(host);
+					deleteKeyframesFrom(host);
+				} else entry.hostCounts?.set(host, nextHostCount);
+				if (entry.count <= 0) {
+					for (const leftover of entry.hosts) deleteKeyframesFrom(leftover);
+					animKeyframeRefs.delete(compiled.fingerprint);
+				}
+			};
+		};
+	})), onBorderObserveSymbol, onContentObserveSymbol, onContentObserve, unwrapFromQuery, normalizeSelector, safeQuerySelectorAll, safeMatches$1, observeContentBox, observeAttribute, observeAttributeBySelector, observeBySelector;
+	var init_Observer = __esmMin((() => {
+		onBorderObserveSymbol = Symbol.for("dom.ts@onBorderObserve");
+		globalThis[onBorderObserveSymbol] ??= /* @__PURE__ */ new WeakMap();
+		onContentObserveSymbol = Symbol.for("dom.ts@onContentObserve");
+		onContentObserve = globalThis[onContentObserveSymbol] ??= /* @__PURE__ */ new WeakMap();
+		unwrapFromQuery = (element) => {
+			if (typeof element?.current == "object") element = element?.element ?? element?.current ?? (typeof element?.self == "object" ? element?.self : null) ?? element;
+			return element;
+		};
+		normalizeSelector = (selector, fallback = "*") => {
+			if (typeof selector !== "string") return fallback;
+			return selector.trim() || fallback;
+		};
+		safeQuerySelectorAll = (el, selector) => {
+			if (!el || typeof el.querySelectorAll !== "function") return [];
+			const sel = normalizeSelector(selector, "");
+			if (!sel) return [];
+			try {
+				return Array.from(el.querySelectorAll(sel) || []);
+			} catch {
+				return [];
+			}
+		};
+		safeMatches$1 = (el, selector) => {
+			if (!el || typeof el.matches !== "function") return false;
+			const sel = normalizeSelector(selector, "");
+			if (!sel) return false;
+			try {
+				return !!el.matches(sel);
+			} catch {
+				return false;
+			}
+		};
+		observeContentBox = (element, cb) => {
+			if (!onContentObserve.has(element = unwrapFromQuery(element))) {
+				const callbacks = [];
+				const observer = new ResizeObserver((entries) => {
+					for (const entry of entries) if (entry.contentBoxSize) {
+						const contentBoxSize = entry.contentBoxSize[0];
+						if (contentBoxSize) callbacks.forEach((cb) => cb?.(contentBoxSize, observer));
+					}
+				});
+				cb?.({
+					inlineSize: element.clientWidth,
+					blockSize: element.clientHeight
+				}, observer);
+				onContentObserve.set(element, callbacks);
+				if ((element?.element ?? element) instanceof Node) observer.observe(element?.element ?? element, { box: "content-box" });
+			}
+			onContentObserve.get(element)?.push?.(cb);
+			return { disconnect: () => onContentObserve.get(element)?.splice?.(onContentObserve.get(element)?.indexOf(cb) || -1, 1) };
+		};
+		observeAttribute = (element, attribute, cb) => {
+			if (typeof element?.selector == "string") return observeAttributeBySelector(element, element?.selector, attribute, cb);
+			const attributeList = new Set((attribute.split(",") || [attribute]).map((s) => s.trim()));
+			const observer = new MutationObserver((mutationList, observer) => {
+				for (const mutation of mutationList) if (mutation.attributeName && attributeList.has(mutation.attributeName)) cb(mutation, observer);
+			});
+			if ((element?.element ?? element) instanceof Node) observer.observe(element = unwrapFromQuery(element), {
+				attributes: true,
+				attributeOldValue: true,
+				attributeFilter: [...attributeList]
+			});
+			attributeList.forEach((attribute) => cb({
+				target: element,
+				type: "attributes",
+				attributeName: attribute,
+				oldValue: element?.getAttribute?.(attribute)
+			}, observer));
+			return observer;
+		};
+		observeAttributeBySelector = (element, selector, attribute, cb) => {
+			const sel = normalizeSelector(selector);
+			const attributeList = new Set([...attribute.split(",") || [attribute]].map((s) => s.trim()));
+			const observer = new MutationObserver((mutationList, observer) => {
+				for (const mutation of mutationList) if (mutation.type == "childList") {
+					const addedNodes = Array.from(mutation.addedNodes) || [];
+					const removedNodes = Array.from(mutation.removedNodes) || [];
+					addedNodes.push(...Array.from(mutation.addedNodes || []).flatMap((el) => safeQuerySelectorAll(el, sel)));
+					removedNodes.push(...Array.from(mutation.removedNodes || []).flatMap((el) => safeQuerySelectorAll(el, sel)));
+					[...new Set(addedNodes)].filter((el) => safeMatches$1(el, sel))?.map?.((target) => {
+						attributeList.forEach((attribute) => {
+							cb({
+								target,
+								type: "attributes",
+								attributeName: attribute,
+								oldValue: target?.getAttribute?.(attribute)
+							}, observer);
+						});
+					});
+				} else if (safeMatches$1(mutation.target, sel) && mutation.attributeName && attributeList.has(mutation.attributeName)) cb(mutation, observer);
+			});
+			observer.observe(element = unwrapFromQuery(element), {
+				attributeOldValue: true,
+				attributes: true,
+				attributeFilter: [...attributeList],
+				childList: true,
+				subtree: true,
+				characterData: true
+			});
+			safeQuerySelectorAll(element, sel).map((target) => attributeList.forEach((attribute) => cb({
+				target,
+				type: "attributes",
+				attributeName: attribute,
+				oldValue: target?.getAttribute?.(attribute)
+			}, observer)));
+			return observer;
+		};
+		observeBySelector = (element, selector = "*", cb = (mut, obs) => {}) => {
+			const sel = normalizeSelector(selector);
+			const unwrapNodesBySelector = (nodes) => {
+				const $nodes = Array.from(nodes || []) || [];
+				$nodes.push(...Array.from(nodes || []).flatMap((el) => safeQuerySelectorAll(el, sel)));
+				return [...Array.from(new Set($nodes).values())].filter((el) => safeMatches$1(el, sel));
+			};
+			let obRef = null;
+			const handleMutation = (mutation) => {
+				const observer = obRef?.deref?.();
+				const addedNodes = unwrapNodesBySelector(mutation.addedNodes);
+				const removedNodes = unwrapNodesBySelector(mutation.removedNodes);
+				if (addedNodes.length > 0 || removedNodes.length > 0) cb?.({
+					type: mutation.type,
+					target: mutation.target,
+					attributeName: mutation.attributeName,
+					attributeNamespace: mutation.attributeNamespace,
+					nextSibling: mutation.nextSibling,
+					oldValue: mutation.oldValue,
+					previousSibling: mutation.previousSibling,
+					addedNodes,
+					removedNodes
+				}, observer);
+			};
+			const handleCome = (ev) => {
+				handleMutation({
+					addedNodes: [ev?.target].filter((el) => !!el),
+					removedNodes: [ev?.relatedTarget].filter((el) => !!el),
+					type: "childList",
+					target: ev?.currentTarget
+				});
+			};
+			const handleOutCome = (ev) => {
+				handleMutation({
+					addedNodes: [ev?.relatedTarget].filter((el) => !!el),
+					removedNodes: [ev?.target].filter((el) => !!el),
+					type: "childList",
+					target: ev?.currentTarget
+				});
+			};
+			const handleFocusClick = (ev) => {
+				handleMutation({
+					addedNodes: [ev?.target].filter((el) => !!el),
+					removedNodes: [ev?.relatedTarget || document?.activeElement].filter((el) => !!el),
+					type: "childList",
+					target: ev?.currentTarget
+				});
+			};
+			const factors = {
+				passive: true,
+				capture: false
+			};
+			if (sel?.includes?.(":hover") && sel?.includes?.(":active")) {
+				element.addEventListener("pointerover", handleCome, factors);
+				element.addEventListener("pointerout", handleOutCome, factors);
+				element.addEventListener("pointerdown", handleCome, factors);
+				element.addEventListener("pointerup", handleOutCome, factors);
+				element.addEventListener("pointercancel", handleOutCome, factors);
+				return { disconnect: () => {
+					element.removeEventListener("pointerover", handleCome, factors);
+					element.removeEventListener("pointerout", handleOutCome, factors);
+					element.removeEventListener("pointerdown", handleCome, factors);
+					element.removeEventListener("pointerup", handleOutCome, factors);
+					element.removeEventListener("pointercancel", handleOutCome, factors);
+				} };
+			}
+			if (sel?.includes?.(":hover")) {
+				element.addEventListener("pointerover", handleCome, factors);
+				element.addEventListener("pointerout", handleOutCome, factors);
+				return { disconnect: () => {
+					element.removeEventListener("pointerover", handleCome, factors);
+					element.removeEventListener("pointerout", handleOutCome, factors);
+				} };
+			}
+			if (sel?.includes?.(":active")) {
+				element.addEventListener("pointerdown", handleCome, factors);
+				element.addEventListener("pointerup", handleOutCome, factors);
+				element.addEventListener("pointercancel", handleOutCome, factors);
+				return { disconnect: () => {
+					element.removeEventListener("pointerdown", handleCome, factors);
+					element.removeEventListener("pointerup", handleOutCome, factors);
+					element.removeEventListener("pointercancel", handleOutCome, factors);
+				} };
+			}
+			if (sel?.includes?.(":focus") && sel?.includes?.(":focus-within") && sel?.includes?.(":focus-visible")) {
+				element.addEventListener("focusin", handleCome, factors);
+				element.addEventListener("focusout", handleOutCome, factors);
+				element.addEventListener("click", handleFocusClick, factors);
+				return { disconnect: () => {
+					element.removeEventListener("focusin", handleCome, factors);
+					element.removeEventListener("focusout", handleOutCome, factors);
+					element.removeEventListener("click", handleFocusClick, factors);
+				} };
+			}
+			const observer = new MutationObserver((mutationList, observer) => {
+				for (const mutation of mutationList) if (mutation.type == "childList") handleMutation(mutation);
+			});
+			obRef = new WeakRef(observer);
+			if ((element?.element ?? element) instanceof Node) observer.observe(element = unwrapFromQuery(element), {
+				childList: true,
+				subtree: true
+			});
+			const selected = safeQuerySelectorAll(element, sel);
+			if (selected.length > 0) cb?.({
+				addedNodes: selected,
+				removedNodes: []
+			}, observer);
+			return observer;
+		};
+	}));
+	//#endregion
+	//#region ../../modules/projects/style.ts/src/lifecycle.ts
+	var hasPayload, reduced, dispatchLifecycleEvent, waitElementAnimations, isRecordProperties, flights, startPlayer, play, appear, disappear, decorShow, decorHide, initVisibility;
+	var init_lifecycle = __esmMin((() => {
+		init_Observer();
+		init_Animate();
+		if (typeof globalThis.CustomEvent !== "function") {
+			class PolyfillCustomEvent {
+				type;
+				detail;
+				bubbles;
+				cancelable;
+				defaultPrevented = false;
+				constructor(type, init) {
+					this.type = type;
+					this.detail = init?.detail;
+					this.bubbles = !!init?.bubbles;
+					this.cancelable = !!init?.cancelable;
+				}
+				preventDefault() {
+					if (this.cancelable) this.defaultPrevented = true;
+				}
+			}
+			globalThis.CustomEvent = PolyfillCustomEvent;
+		}
+		hasPayload = (options) => !!options && (options.properties != null || options.keyframes != null);
+		reduced = (el) => el?.hasAttribute?.("data-instant") || typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+		dispatchLifecycleEvent = (el, type) => el?.dispatchEvent?.(new CustomEvent(type, {
+			detail: {},
+			bubbles: true,
+			cancelable: true
+		})) !== false;
+		waitElementAnimations = async (el) => {
+			if (reduced(el)) return;
+			await new Promise((resolve) => {
+				(globalThis.requestAnimationFrame ?? ((cb) => setTimeout(() => cb(0), 0)))(() => resolve());
+			});
+			const list = typeof el?.getAnimations === "function" ? el.getAnimations() : [];
+			await Promise.all(list.filter((a) => a.playState === "running" || a.playState === "pending").map((a) => a.finished?.catch?.(() => {}) ?? Promise.resolve()));
+		};
+		isRecordProperties = (properties) => !!properties && typeof properties === "object" && !Array.isArray(properties);
+		flights = /* @__PURE__ */ new WeakMap();
+		startPlayer = (el, options) => {
+			try {
+				return (isRecordProperties(options.properties) ? animate(el, options) : doAnimation(el, options))?.animation ?? null;
+			} catch (err) {
+				const msg = err instanceof Error ? err.message : String(err);
+				if (!(err instanceof TypeError && /Element/i.test(msg)) || typeof el.animate !== "function") throw err;
+				return el.animate(buildWebAnimationKeyframes(options), buildAnimationTiming(options));
+			}
+		};
+		play = async (el, options, kind, before, after) => {
+			if (typeof Element !== "undefined" && !(el instanceof Element) && typeof el?.animate !== "function") throw new TypeError("appear/disappear require an Element");
+			if (!dispatchLifecycleEvent(el, before)) return false;
+			const prior = flights.get(el);
+			if (prior && prior.kind !== kind) prior.cancel();
+			let cancelled = false;
+			let settle;
+			const aborted = new Promise((resolve) => {
+				settle = resolve;
+			});
+			let player = null;
+			const flight = {
+				kind,
+				cancel() {
+					if (cancelled) return;
+					cancelled = true;
+					try {
+						player?.cancel?.();
+					} catch {}
+					settle();
+				}
+			};
+			flights.set(el, flight);
+			try {
+				if (hasPayload(options) && !reduced(el) && typeof el.animate === "function") {
+					player = startPlayer(el, options);
+					if (player?.finished) await Promise.race([Promise.resolve(player.finished).catch(() => {}), aborted]);
+				}
+				if (cancelled) return false;
+				await Promise.race([waitElementAnimations(el), aborted]);
+				if (cancelled) return false;
+				dispatchLifecycleEvent(el, after);
+				return true;
+			} finally {
+				if (flights.get(el) === flight) flights.delete(el);
+			}
+		};
+		appear = (el, options) => play(el, options, "show", "u2-before-show", "u2-appear");
+		disappear = (el, options) => play(el, options, "hide", "u2-before-hide", "u2-hidden");
+		decorShow = {
+			properties: {
+				"--opacity": [
+					0,
+					0,
+					1
+				],
+				"--scale": [
+					.8,
+					.8,
+					1
+				],
+				display: [
+					"none",
+					"none",
+					"revert-layer"
+				],
+				pointerEvents: [
+					"none",
+					"none",
+					"revert-layer"
+				]
+			},
+			duration: 80,
+			easing: "linear"
+		};
+		decorHide = {
+			properties: {
+				"--opacity": [
+					1,
+					0,
+					0
+				],
+				"--scale": [
+					1,
+					.8,
+					.8
+				],
+				display: [
+					"revert-layer",
+					"revert-layer",
+					"none"
+				],
+				pointerEvents: [
+					"none",
+					"none",
+					"none"
+				]
+			},
+			duration: 120,
+			easing: "linear"
+		};
+		initVisibility = async (ROOT = typeof document !== "undefined" ? document.body : null, animations) => {
+			if (!ROOT) return;
+			observeAttributeBySelector(ROOT, "*", "data-hidden", (mutation) => {
+				if (mutation.attributeName !== "data-hidden") return;
+				const target = mutation.target;
+				if (target.getAttribute("data-hidden") === mutation.oldValue) return;
+				const hidden = target.getAttribute("data-hidden") != null;
+				const opts = hidden ? animations?.disappear : animations?.appear;
+				Promise.resolve(hidden ? disappear(target, opts) : appear(target, opts)).catch(console.warn);
+			});
+		};
+	}));
+	//#endregion
 	//#region ../../modules/projects/style.ts/src/index.ts
 	var init_src$3 = __esmMin((() => {
 		init_types$3();
@@ -18634,7 +19317,17 @@ cacheWillUpdate: async ({ response }) => {
 		init_Styles();
 		init_Animate();
 		init_Animatable();
+		init_css_animation();
+		init_lifecycle();
 	}));
+	//#endregion
+	//#region ../../modules/projects/dom.ts/src/decor/Animation.ts
+	var init_Animation = __esmMin((() => {
+		init_src$3();
+	}));
+	//#endregion
+	//#region ../../modules/projects/dom.ts/src/decor/Shape.ts
+	var init_Shape = __esmMin((() => {}));
 	//#endregion
 	//#region ../../modules/projects/dom.ts/src/mixin/Behavior.ts
 	var boundBehaviors, bindBehavior, reflectBehaviors;
@@ -19260,7 +19953,6 @@ cacheWillUpdate: async ({ response }) => {
 		init_Measure();
 		init_LauncherGrid();
 		init_Animation();
-		init_Appear();
 		init_Shape();
 		init_Observer();
 		init_src$3();
@@ -19941,11 +20633,11 @@ cacheWillUpdate: async ({ response }) => {
 		init_Utils$1();
 		init_Binding();
 		init_src$2();
-		makeUpdater = (defaultParent = null, mapper, isArray = true) => {
+		makeUpdater = (defaultParent = null, mapper, isArray = true, lifecycle) => {
 			const commandBuffer = [];
-			const merge = () => {
-				commandBuffer?.forEach?.(([fn, args]) => fn?.(...args));
-				commandBuffer?.splice?.(0, commandBuffer?.length);
+			const merge = async () => {
+				const batch = commandBuffer.splice(0, commandBuffer.length);
+				for (const [fn, args] of batch) await fn?.(...args, lifecycle);
 			};
 			const updateChildList = (newEl, idx, oldEl, op, boundParent = null) => {
 				const $requestor = isValidParent$1(boundParent) ?? isValidParent$1(defaultParent);
@@ -19985,7 +20677,7 @@ cacheWillUpdate: async ({ response }) => {
 					"add",
 					"set",
 					"delete"
-				].indexOf(op) >= 0 || !op && !isArray) merge?.();
+				].indexOf(op) >= 0 || !op && !isArray) return merge?.();
 			};
 			return updateChildList;
 		};
@@ -19993,14 +20685,14 @@ cacheWillUpdate: async ({ response }) => {
 			if (children instanceof Map || children instanceof Set) children = Array.from(children?.values?.());
 			return children;
 		};
-		reformChildren = (element, children = [], mapper) => {
+		reformChildren = async (element, children = [], mapper) => {
 			if (!children || !element) return element;
 			mapper = (children?.[$mapped] ? children?.mapper : mapper) ?? mapper;
 			children = (children?.[$mapped] ? children?.children : children) ?? children;
 			const keys = Array.from(children?.keys?.() || []);
 			const cvt = asArray$2(children)?.map?.((nd, index) => getNode(nd, mapper, keys?.[index] ?? index, element));
-			removeNotExists(element, cvt);
-			cvt?.forEach?.((nd) => appendChild(element, nd));
+			await removeNotExists(element, cvt);
+			await Promise.all((cvt ?? []).map((nd) => appendChild(element, nd)));
 			return element;
 		};
 	}));
@@ -20032,7 +20724,10 @@ cacheWillUpdate: async ({ response }) => {
 					this.#internal?.();
 					this.#internal = null;
 					this.#updater = null;
-					this.#updater ??= makeUpdater(basisParent, null, false);
+					this.#updater ??= makeUpdater(basisParent, null, false, {
+						appear: this.#options.appear,
+						disappear: this.#options.disappear
+					});
 					this.#internal ??= affected?.([this.#valueRef, "value"], this._onUpdate.bind(this));
 				}
 			}
@@ -20043,8 +20738,12 @@ cacheWillUpdate: async ({ response }) => {
 				if (value instanceof HTMLElement && isValidParent$1(value) && value != this.#boundParent) {
 					this.#boundParent = value;
 					this.makeUpdater(value);
-					if (this.#oldNode) {
-						this.#oldNode?.parentNode != null && this.#oldNode?.remove?.();
+					if (this.#oldNode?.parentNode) {
+						removeChild(this.#oldNode.parentNode, this.#oldNode, null, -1, {
+							appear: this.#options.appear,
+							disappear: this.#options.disappear
+						});
+						if (!this.#options.disappear && this.#oldNode.parentNode) this.#oldNode.remove?.();
 						this.#oldNode = null;
 					}
 					this.element;
@@ -20162,6 +20861,7 @@ cacheWillUpdate: async ({ response }) => {
 		init_Binding();
 		init_src$2();
 		init_src$6();
+		init_src$3();
 		init_Changeable();
 		init_Queried();
 		KIDNAP_WITHOUT_HANG = (el, requestor) => {
@@ -20287,10 +20987,13 @@ cacheWillUpdate: async ({ response }) => {
 				if (node != null) appendFix(parent, node, index);
 			}
 		};
-		appendChild = (element, cp, mapper, index = -1) => {
+		appendChild = async (element, cp, mapper, index = -1, lifecycle) => {
 			if (mapper != null) cp = mapper?.(cp, index);
 			if (cp?.children && Array.isArray(unwrap(cp?.children)) && (cp?.[$virtual] || cp?.[$mapped])) appendArray(element, cp?.children, null, index);
 			else appendArray(element, cp, null, index);
+			const node = getNode(cp, null, index, element);
+			if (node instanceof Element) await appear(node, lifecycle?.appear ?? null);
+			return element;
 		};
 		dePhantomNode = (parent, node, index = -1) => {
 			if (!parent) return node;
@@ -20314,7 +21017,7 @@ cacheWillUpdate: async ({ response }) => {
 				} else oldEl?.replaceWith?.(newEl);
 			}
 		};
-		replaceChildren = (element, cp, mapper, index = -1, old) => {
+		replaceChildren = async (element, cp, mapper, index = -1, old, lifecycle) => {
 			if (mapper != null) cp = mapper?.(cp, index);
 			if (!element) element = old?.parentNode;
 			const cn = dePhantomNode(element, getNode(old, mapper, index), index);
@@ -20323,23 +21026,35 @@ cacheWillUpdate: async ({ response }) => {
 				const node = getNode(cp);
 				if (cn?.parentNode == element && cn != node && cn instanceof Text && node instanceof Text) {
 					if (cn?.textContent != node?.textContent) cn.textContent = node?.textContent?.trim?.() ?? "";
-				} else if (cn?.parentNode == element && cn != node && cn != null && cn?.parentNode != null) replaceOrSwap(element, cn, node);
-				else if (cn?.parentNode != element || cn?.parentNode == null) appendChild(element, node, null, index);
+				} else if (cn?.parentNode == element && cn != node && cn != null && cn?.parentNode != null) {
+					replaceOrSwap(element, cn, node);
+					if (node instanceof Element) await appear(node, lifecycle?.appear ?? null);
+				} else if (cn?.parentNode != element || cn?.parentNode == null) await appendChild(element, node, null, index, lifecycle);
 			}
 		};
-		removeChild = (element, cp, mapper, index = -1) => {
+		removeChild = async (element, cp, mapper, index = -1, lifecycle) => {
 			const $node = getNode(cp, mapper);
 			if (!element) element = $node?.parentNode;
-			if (Array.from(element?.childNodes ?? [])?.length < 1) return;
+			if (Array.from(element?.childNodes ?? []).length < 1) return element;
 			const whatToRemove = dePhantomNode(element, $node, index);
-			if (whatToRemove?.parentNode == element) whatToRemove?.remove?.();
+			if (whatToRemove?.parentNode != element) return element;
+			if (whatToRemove instanceof Element) {
+				if (!dispatchLifecycleEvent(whatToRemove, "u2-before-remove")) return element;
+				whatToRemove.setAttribute("data-removing", "");
+				await disappear(whatToRemove, lifecycle?.disappear ?? null);
+				await waitElementAnimations(whatToRemove);
+				whatToRemove.remove();
+				whatToRemove.removeAttribute("data-removing");
+				dispatchLifecycleEvent(whatToRemove, "u2-removed");
+				return element;
+			}
+			whatToRemove?.remove?.();
 			return element;
 		};
-		removeNotExists = (element, children, mapper) => {
+		removeNotExists = async (element, children, mapper, lifecycle) => {
 			const list = Array.from(unwrap(children) || [])?.map?.((cp, index) => getNode(cp, mapper, index));
-			Array.from(element.childNodes).forEach((nd) => {
-				if (!list?.find?.((cp) => !isNotEqual?.(cp, nd))) nd?.remove?.();
-			});
+			const missing = Array.from(element.childNodes).filter((nd) => !list?.find?.((cp) => !isNotEqual?.(cp, nd)));
+			await Promise.all(missing.map((nd) => removeChild(element, nd, null, -1, lifecycle)));
 			return element;
 		};
 		T = (ref) => {
@@ -21263,6 +21978,7 @@ cacheWillUpdate: async ({ response }) => {
 		init_ReflectChildren();
 		init_src$6();
 		init_src$2();
+		init_src$3();
 		asArray = (children) => {
 			if (children instanceof Map || children instanceof Set) children = Array.from(children?.values?.());
 			return children;
@@ -21302,6 +22018,8 @@ cacheWillUpdate: async ({ response }) => {
 			#stub = document.createComment("");
 			#renderedNodes = /* @__PURE__ */ new Set();
 			#syncQueued = false;
+			#syncInFlight = null;
+			#disposed = false;
 			#parentObserver = null;
 			#boundParent = null;
 			#collection() {
@@ -21328,9 +22046,9 @@ cacheWillUpdate: async ({ response }) => {
 				this.#parentObserver?.disconnect();
 				this.#parentObserver = null;
 			}
-			#syncBoundParent() {
+			async #syncBoundParent() {
 				const parent = this.#boundParent;
-				if (!parent) return;
+				if (!parent || this.#disposed) return;
 				this.#pruneMapEntries();
 				const desiredNodes = [];
 				this.#collection().forEach((value, index) => {
@@ -21338,33 +22056,58 @@ cacheWillUpdate: async ({ response }) => {
 					desiredNodes.push(...flattenMappedNode(node));
 				});
 				const desired = new Set(desiredNodes);
+				const lifecycle = {
+					appear: this.#options.appear,
+					disappear: this.#options.disappear
+				};
 				if (this.#stub.parentNode !== parent) {
 					const firstExisting = desiredNodes.find((node) => node.parentNode === parent);
 					if (firstExisting) parent.insertBefore(this.#stub, firstExisting);
 					else parent.appendChild(this.#stub);
 				}
-				for (const oldNode of this.#renderedNodes) if (!desired.has(oldNode) && oldNode.parentNode === parent) oldNode.parentNode.removeChild(oldNode);
+				for (const oldNode of this.#renderedNodes) if (!desired.has(oldNode) && oldNode.parentNode === parent) {
+					if (lifecycle.disappear) {
+						await removeChild(parent, oldNode, null, -1, lifecycle);
+						if (this.#disposed || this.#boundParent !== parent) return;
+					} else oldNode.parentNode.removeChild(oldNode);
+				}
 				let anchor = this.#stub.nextSibling;
 				for (const node of desiredNodes) {
+					const wasInParent = node.parentNode === parent;
 					if (node.parentNode !== parent || node !== anchor) parent.insertBefore(node, anchor);
+					if (!wasInParent && node instanceof Element && lifecycle.appear) {
+						await appear(node, lifecycle.appear);
+						if (this.#disposed || this.#boundParent !== parent) return;
+					}
 					anchor = node.nextSibling;
 				}
 				this.#renderedNodes = desired;
 			}
 			#queueBoundParentSync() {
-				if (this.#syncQueued) return;
 				this.#syncQueued = true;
-				queueMicrotask(() => {
-					this.#syncQueued = false;
-					this.#syncBoundParent();
-				});
+				if (this.#syncInFlight) return;
+				this.#syncInFlight = this.#drainBoundParentSync();
+			}
+			async #drainBoundParentSync() {
+				try {
+					while (this.#syncQueued && !this.#disposed) {
+						this.#syncQueued = false;
+						await this.#syncBoundParent();
+					}
+				} finally {
+					this.#syncInFlight = null;
+					if (this.#syncQueued && !this.#disposed) this.#queueBoundParentSync();
+				}
 			}
 			makeUpdater(basisParent = null) {
 				if (basisParent) {
 					this.#internal?.();
 					this.#internal = null;
 					this.#updater = null;
-					this.#updater ??= makeUpdater(basisParent, this.mapper.bind(this), true);
+					this.#updater ??= makeUpdater(basisParent, this.mapper.bind(this), true, {
+						appear: this.#options.appear,
+						disappear: this.#options.disappear
+					});
 					this.#internal ??= iterated?.(this.#observable, this._onUpdate.bind(this));
 				}
 			}
@@ -21372,13 +22115,23 @@ cacheWillUpdate: async ({ response }) => {
 				return this.#boundParent;
 			}
 			set boundParent(value) {
+				if (this.#disposed) return;
 				if (isElementParent(value) && value != this.#boundParent) {
 					this.#disconnectParentObserver();
 					const oldParent = this.#boundParent;
-					for (const node of this.#renderedNodes) if (node.parentNode === oldParent && oldParent !== value) oldParent?.removeChild(node);
-					this.#boundParent = value;
-					this.makeUpdater(value);
-					this.#syncBoundParent();
+					const lifecycle = { disappear: this.#options.disappear };
+					const outgoing = [...this.#renderedNodes].filter((node) => node.parentNode === oldParent && oldParent !== value);
+					const apply = () => {
+						if (this.#disposed) return;
+						this.#boundParent = value;
+						this.makeUpdater(value);
+						this.#queueBoundParentSync();
+					};
+					if (lifecycle.disappear && outgoing.length) Promise.all(outgoing.map((node) => removeChild(oldParent, node, null, -1, lifecycle))).then(apply);
+					else {
+						for (const node of outgoing) oldParent?.removeChild(node);
+						apply();
+					}
 				}
 			}
 			constructor(observable, mapCb = (el) => el, options = null) {
@@ -21403,7 +22156,7 @@ cacheWillUpdate: async ({ response }) => {
 				this.boundParent = isValidParent$1(this.#options?.boundParent) ?? isValidParent$1(options) ?? null;
 				if (!this.boundParent) {
 					if (this.#options.preMap) {
-						reformChildren(this.#fragments, this.#collection(), this.mapper.bind(this));
+						appendArray(this.#fragments, this.#collection(), this.mapper.bind(this));
 						if (this.#fragments.childNodes.length === 0) this.#fragments.appendChild(this.#stub);
 					}
 				}
@@ -21417,7 +22170,7 @@ cacheWillUpdate: async ({ response }) => {
 						this.#disconnectParentObserver();
 						this.#boundParent = requestor;
 						this.makeUpdater(requestor);
-						this.#syncBoundParent();
+						this.#queueBoundParentSync();
 						return this.element;
 					}
 					const element = getNode(this.#collection()?.[0], this.mapper.bind(this), 0);
@@ -21501,14 +22254,21 @@ cacheWillUpdate: async ({ response }) => {
 				};
 			}
 			_onUpdate(newEl, idx, oldEl, op = "") {
+				if (this.#disposed) return;
 				this.#queueBoundParentSync();
 			}
 			[Symbol.dispose]() {
+				this.#disposed = true;
 				this.#internal?.();
 				this.#internal = null;
 				this.#disconnectParentObserver();
 				this.#syncQueued = false;
-				for (const node of this.#renderedNodes) if (node.parentNode) node.parentNode.removeChild(node);
+				const lifecycle = { disappear: this.#options.disappear };
+				for (const node of this.#renderedNodes) {
+					if (!node.parentNode) continue;
+					if (lifecycle.disappear) removeChild(node.parentNode, node, null, -1, lifecycle);
+					else node.parentNode.removeChild(node);
+				}
 				this.#renderedNodes.clear();
 				this.#stub.parentNode?.removeChild(this.#stub);
 				this.#mapEntries.clear();
@@ -37938,6 +38698,488 @@ cacheWillUpdate: async ({ response }) => {
 		};
 	}));
 	//#endregion
+	//#region ../../modules/projects/lur.e/src/utils/opfs/IdbFs.ts
+	var IDB_FS_ROOT, OPFS_SUPPORT_KEY, IDB_FS_BRAND, DB_NAME$1, STORE_NAME, DB_VERSION$1, refreshRoots, bindStorageRootsRefresher, fsError, normalizeIdbNodePath, joinChildPath, parentOf, ensureRootNode, createMemoryIdbFsStore, idbRequest, openIdbFsDatabase, createIndexedDbFsStore, isIdbAvailable, isOpfsCapabilityAvailable, isOpfsSupportEnabled, setOpfsSupportEnabled, isOpfsBackendActive, isIdbFsHandle, removeTree, IdbFileHandle, IdbDirectoryHandle, defaultRootPromise, getIdbRoot, copyHandleTree;
+	var init_IdbFs = __esmMin((() => {
+		IDB_FS_ROOT = "/idb/";
+		OPFS_SUPPORT_KEY = "cwsp.opfs.enabled";
+		IDB_FS_BRAND = Symbol.for("fest.idb-fs");
+		DB_NAME$1 = "fest-idb-fs";
+		STORE_NAME = "nodes";
+		DB_VERSION$1 = 1;
+		refreshRoots = null;
+		bindStorageRootsRefresher = (fn) => {
+			refreshRoots = fn;
+		};
+		fsError = (name, message) => {
+			if (typeof DOMException !== "undefined") return new DOMException(message, name);
+			const error = new Error(message);
+			error.name = name;
+			return error;
+		};
+		normalizeIdbNodePath = (path) => {
+			const parts = [];
+			for (const part of String(path || "/").split("/")) {
+				if (!part || part === ".") continue;
+				if (part === "..") {
+					parts.pop();
+					continue;
+				}
+				parts.push(part);
+			}
+			return parts.length ? `/${parts.join("/")}` : "/";
+		};
+		joinChildPath = (parent, name) => {
+			const clean = String(name || "").replace(/[/\\]/g, "");
+			if (!clean || clean === "." || clean === "..") throw fsError("TypeMismatchError", `Invalid entry name: ${name}`);
+			const base = normalizeIdbNodePath(parent);
+			return base === "/" ? `/${clean}` : `${base}/${clean}`;
+		};
+		parentOf = (path) => {
+			const normalized = normalizeIdbNodePath(path);
+			if (normalized === "/") return "";
+			const index = normalized.lastIndexOf("/");
+			return index <= 0 ? "/" : normalized.slice(0, index);
+		};
+		ensureRootNode = async (store) => {
+			if ((await store.get("/"))?.kind === "directory") return;
+			await store.put({
+				path: "/",
+				name: "",
+				parent: "",
+				kind: "directory"
+			});
+		};
+		createMemoryIdbFsStore = () => {
+			const nodes = /* @__PURE__ */ new Map();
+			return {
+				async get(path) {
+					return nodes.get(normalizeIdbNodePath(path));
+				},
+				async put(node) {
+					const path = normalizeIdbNodePath(node.path);
+					nodes.set(path, {
+						...node,
+						path
+					});
+				},
+				async delete(path) {
+					nodes.delete(normalizeIdbNodePath(path));
+				},
+				async list(parent) {
+					const key = normalizeIdbNodePath(parent);
+					return [...nodes.values()].filter((node) => node.path !== "/" && node.parent === key);
+				}
+			};
+		};
+		idbRequest = (request) => new Promise((resolve, reject) => {
+			request.onsuccess = () => resolve(request.result);
+			request.onerror = () => reject(request.error);
+		});
+		openIdbFsDatabase = () => new Promise((resolve, reject) => {
+			const request = indexedDB.open(DB_NAME$1, DB_VERSION$1);
+			request.onerror = () => reject(request.error);
+			request.onsuccess = () => resolve(request.result);
+			request.onupgradeneeded = () => {
+				const db = request.result;
+				if (db.objectStoreNames.contains(STORE_NAME)) return;
+				db.createObjectStore(STORE_NAME, { keyPath: "path" }).createIndex("parent", "parent", { unique: false });
+			};
+		});
+		createIndexedDbFsStore = async () => {
+			const db = await openIdbFsDatabase();
+			const withStore = async (mode, run) => {
+				return run(db.transaction(STORE_NAME, mode).objectStore(STORE_NAME));
+			};
+			const store = {
+				async get(path) {
+					return withStore("readonly", (objectStore) => idbRequest(objectStore.get(normalizeIdbNodePath(path))));
+				},
+				async put(node) {
+					const path = normalizeIdbNodePath(node.path);
+					await withStore("readwrite", (objectStore) => idbRequest(objectStore.put({
+						...node,
+						path
+					})));
+				},
+				async delete(path) {
+					await withStore("readwrite", (objectStore) => idbRequest(objectStore.delete(normalizeIdbNodePath(path))));
+				},
+				async list(parent) {
+					const key = normalizeIdbNodePath(parent);
+					return withStore("readonly", async (objectStore) => {
+						if (objectStore.indexNames.contains("parent")) return (await idbRequest(objectStore.index("parent").getAll(key)) || []).filter((node) => node.path !== "/");
+						return (await idbRequest(objectStore.getAll()) || []).filter((node) => node.path !== "/" && node.parent === key);
+					});
+				}
+			};
+			await ensureRootNode(store);
+			return store;
+		};
+		isIdbAvailable = () => {
+			try {
+				return typeof indexedDB !== "undefined";
+			} catch {
+				return false;
+			}
+		};
+		isOpfsCapabilityAvailable = () => {
+			try {
+				return typeof navigator !== "undefined" && typeof navigator.storage?.getDirectory === "function";
+			} catch {
+				return false;
+			}
+		};
+		isOpfsSupportEnabled = () => {
+			try {
+				if (typeof localStorage === "undefined") return true;
+				const value = localStorage.getItem(OPFS_SUPPORT_KEY);
+				return value !== "0" && value !== "false";
+			} catch {
+				return true;
+			}
+		};
+		setOpfsSupportEnabled = (enabled) => {
+			try {
+				localStorage?.setItem?.(OPFS_SUPPORT_KEY, enabled ? "1" : "0");
+			} catch {}
+			refreshRoots?.();
+		};
+		isOpfsBackendActive = () => isOpfsCapabilityAvailable() && isOpfsSupportEnabled();
+		isIdbFsHandle = (value) => !!value && typeof value === "object" && value[IDB_FS_BRAND] === true;
+		removeTree = async (store, path) => {
+			const target = normalizeIdbNodePath(path);
+			const children = await store.list(target);
+			for (const child of children) if (child.kind === "directory") await removeTree(store, child.path);
+			else await store.delete(child.path);
+			if (target !== "/") await store.delete(target);
+		};
+		IdbFileHandle = class {
+			kind = "file";
+			[IDB_FS_BRAND] = true;
+			name;
+			#store;
+			#path;
+			#type;
+			constructor(store, path, name, type = "") {
+				this.#store = store;
+				this.#path = normalizeIdbNodePath(path);
+				this.name = name;
+				this.#type = type;
+			}
+			async getFile() {
+				const node = await this.#store.get(this.#path);
+				if (!node || node.kind !== "file") throw fsError("NotFoundError", `File not found: ${this.#path}`);
+				const payload = node.data ?? new Blob();
+				const blob = payload instanceof Blob ? payload : new Blob([payload]);
+				return new File([blob], this.name, {
+					type: node.type || blob.type || this.#type,
+					lastModified: node.lastModified || Date.now()
+				});
+			}
+			async createWritable() {
+				const chunks = [];
+				let aborted = false;
+				const store = this.#store;
+				const path = this.#path;
+				const name = this.name;
+				const type = this.#type;
+				return {
+					async write(data) {
+						if (aborted) throw fsError("AbortError", "Writable aborted");
+						const chunk = data && typeof data === "object" && "data" in data ? data.data : data;
+						chunks.push(chunk);
+					},
+					async seek() {},
+					async truncate() {
+						chunks.length = 0;
+					},
+					async abort() {
+						aborted = true;
+						chunks.length = 0;
+					},
+					async close() {
+						if (aborted) return;
+						const blob = new Blob(chunks, { type: type || void 0 });
+						await store.put({
+							path,
+							name,
+							parent: parentOf(path),
+							kind: "file",
+							type: blob.type || type,
+							lastModified: Date.now(),
+							size: blob.size,
+							data: blob
+						});
+					}
+				};
+			}
+		};
+		IdbDirectoryHandle = class IdbDirectoryHandle {
+			kind = "directory";
+			[IDB_FS_BRAND] = true;
+			name;
+			#store;
+			#path;
+			constructor(store, path, name) {
+				this.#store = store;
+				this.#path = normalizeIdbNodePath(path);
+				this.name = name;
+			}
+			async getDirectoryHandle(name, options = {}) {
+				const childPath = joinChildPath(this.#path, name);
+				let node = await this.#store.get(childPath);
+				if (!node) {
+					if (!options.create) throw fsError("NotFoundError", `Directory not found: ${childPath}`);
+					node = {
+						path: childPath,
+						name: String(name),
+						parent: this.#path,
+						kind: "directory"
+					};
+					await this.#store.put(node);
+				}
+				if (node.kind !== "directory") throw fsError("TypeMismatchError", `Not a directory: ${childPath}`);
+				return new IdbDirectoryHandle(this.#store, childPath, node.name);
+			}
+			async getFileHandle(name, options = {}) {
+				const childPath = joinChildPath(this.#path, name);
+				let node = await this.#store.get(childPath);
+				if (!node) {
+					if (!options.create) throw fsError("NotFoundError", `File not found: ${childPath}`);
+					node = {
+						path: childPath,
+						name: String(name),
+						parent: this.#path,
+						kind: "file",
+						type: "",
+						lastModified: Date.now(),
+						size: 0,
+						data: new Blob()
+					};
+					await this.#store.put(node);
+				}
+				if (node.kind !== "file") throw fsError("TypeMismatchError", `Not a file: ${childPath}`);
+				return new IdbFileHandle(this.#store, childPath, node.name, node.type);
+			}
+			async removeEntry(name, options = {}) {
+				const childPath = joinChildPath(this.#path, name);
+				const node = await this.#store.get(childPath);
+				if (!node) throw fsError("NotFoundError", `Entry not found: ${childPath}`);
+				if (node.kind === "directory") {
+					if ((await this.#store.list(childPath)).length && !options.recursive) throw fsError("InvalidModificationError", `Directory not empty: ${childPath}`);
+					await removeTree(this.#store, childPath);
+					return;
+				}
+				await this.#store.delete(childPath);
+			}
+			async *entries() {
+				const children = await this.#store.list(this.#path);
+				for (const node of children) {
+					const handle = node.kind === "directory" ? new IdbDirectoryHandle(this.#store, node.path, node.name) : new IdbFileHandle(this.#store, node.path, node.name, node.type);
+					yield [node.name, handle];
+				}
+			}
+			async *keys() {
+				for await (const [name] of this.entries()) yield name;
+			}
+			async *values() {
+				for await (const [, handle] of this.entries()) yield handle;
+			}
+		};
+		defaultRootPromise = null;
+		getIdbRoot = async (store) => {
+			if (store) {
+				await ensureRootNode(store);
+				return new IdbDirectoryHandle(store, "/", "");
+			}
+			if (!isIdbAvailable()) return null;
+			defaultRootPromise ??= (async () => {
+				try {
+					const idbStore = await createIndexedDbFsStore();
+					return new IdbDirectoryHandle(idbStore, "/", "");
+				} catch {
+					return null;
+				}
+			})();
+			return defaultRootPromise;
+		};
+		copyHandleTree = async (fromHandle, toHandle) => {
+			try {
+				if (fromHandle?.kind === "directory") {
+					for await (const [name, entry] of fromHandle.entries()) if (entry?.kind === "directory") {
+						const dest = await toHandle.getDirectoryHandle(name, { create: true });
+						await copyHandleTree(entry, dest);
+					} else {
+						const file = await entry.getFile();
+						const writable = await (await toHandle.getFileHandle(name, { create: true })).createWritable();
+						await writable.write(file);
+						await writable.close();
+					}
+					return true;
+				}
+				const file = await fromHandle.getFile();
+				const writable = await toHandle.createWritable();
+				await writable.write(file);
+				await writable.close();
+				return true;
+			} catch {
+				return false;
+			}
+		};
+	}));
+	//#endregion
+	//#region ../../modules/projects/lur.e/src/utils/opfs/provide.ts
+	var provideBackends, normalizeRoot, isProvidedDirectory, asProvidedFile, registerProvideBackend, unregisterProvideBackend, matchProvideBackend, stripProvideRootPrefix, wantsDirectoryProvide, isDirHandle$1, childVirtualPath, listHandleEntries, toProvidedDirectory, walkHandle, provideFromHandle, writableFromBackend, provideFromBackend;
+	var init_provide = __esmMin((() => {
+		init_src$6();
+		provideBackends = /* @__PURE__ */ new Map();
+		normalizeRoot = (root) => {
+			const raw = String(root || "").trim() || "/";
+			if (raw === "/") return "/";
+			return raw.endsWith("/") ? raw : `${raw}/`;
+		};
+		isProvidedDirectory = (value) => !!value && typeof value === "object" && !(value instanceof Blob) && value.kind === "directory" && Array.isArray(value.entries);
+		asProvidedFile = (value) => {
+			if (typeof File !== "undefined" && value instanceof File) return value;
+			return null;
+		};
+		registerProvideBackend = (backend) => {
+			if (!backend?.root || typeof backend.list !== "function") return;
+			provideBackends.set(normalizeRoot(backend.root), backend);
+		};
+		unregisterProvideBackend = (root) => {
+			provideBackends.delete(normalizeRoot(root));
+		};
+		matchProvideBackend = (path) => {
+			let p = String(path || "").trim() || "/";
+			if (!p.startsWith("/")) p = `/${p}`;
+			let best = null;
+			let bestLen = -1;
+			for (const [root, backend] of provideBackends) {
+				if (root === "/") continue;
+				if (p === root.slice(0, -1) || p === root || p.startsWith(root)) {
+					if (root.length > bestLen) {
+						best = backend;
+						bestLen = root.length;
+					}
+				}
+			}
+			return best;
+		};
+		stripProvideRootPrefix = (path, root) => {
+			const normalized = String(path || "").trim() || "/";
+			const key = normalizeRoot(root);
+			if (key === "/") return normalized.startsWith("/") ? normalized : `/${normalized}`;
+			if (normalized === key.slice(0, -1) || normalized === key) return "/";
+			if (normalized.startsWith(key)) return `/${normalized.slice(key.length)}`.replace(/\/{2,}/g, "/") || "/";
+			return stripStorageScopePrefix(normalized);
+		};
+		wantsDirectoryProvide = (path, options) => {
+			if (options?.asDirectory) return true;
+			const raw = String(path || "").trim();
+			if (!raw || raw.endsWith("/")) return true;
+			const p = raw.replace(/\/+$/, "");
+			return p === "/user" || p === "/idb" || p === "/sdcard" || p === "/saf" || p === "/mounts" || p === "/desktop" || p === "/assets";
+		};
+		isDirHandle$1 = (handle) => !!handle && handle.kind === "directory" && typeof handle.getDirectoryHandle === "function";
+		childVirtualPath = (dirPath, name, kind) => {
+			return `${String(dirPath || "/").endsWith("/") ? dirPath : `${dirPath}/`}${name}${kind === "directory" ? "/" : ""}`;
+		};
+		listHandleEntries = async (dir, dirPath) => {
+			if (!dir?.entries) return [];
+			const entries = [];
+			try {
+				for await (const [name, handle] of dir.entries()) {
+					const kind = handle?.kind === "directory" ? "directory" : "file";
+					entries.push({
+						name: String(name),
+						kind,
+						path: childVirtualPath(dirPath, String(name), kind)
+					});
+				}
+			} catch {
+				return [];
+			}
+			return entries;
+		};
+		toProvidedDirectory = async (path, handle) => {
+			const normalized = String(path || "/").trim() || "/";
+			const dirPath = normalized.endsWith("/") || normalized === "/" ? normalized : `${normalized}/`;
+			return {
+				kind: "directory",
+				name: dirPath.split("/").filter(Boolean).pop() || dirPath.replace(/\//g, "") || "root",
+				path: dirPath,
+				handle,
+				entries: await listHandleEntries(handle, dirPath)
+			};
+		};
+		walkHandle = async (root, rel, asDirectory, create) => {
+			const parts = String(rel || "/").split("/").filter(Boolean);
+			let dir = root;
+			const fileName = asDirectory ? null : parts.pop();
+			for (const part of parts) {
+				dir = await dir?.getDirectoryHandle?.(part, { create });
+				if (!dir) return null;
+			}
+			if (!fileName) return dir;
+			return dir?.getFileHandle?.(fileName, { create }) ?? null;
+		};
+		provideFromHandle = async (root, virtualPath, mappedRoot, rw = false, options) => {
+			if (!isDirHandle$1(root)) return null;
+			const asDir = wantsDirectoryProvide(virtualPath, options);
+			const rel = stripProvideRootPrefix(virtualPath, mappedRoot);
+			if (asDir) {
+				const dir = await walkHandle(root, rel, true, !!rw).catch(() => null);
+				if (!dir) return null;
+				return toProvidedDirectory(virtualPath, dir);
+			}
+			const fileHandle = await walkHandle(root, rel, false, !!rw).catch(() => null);
+			if (fileHandle?.kind === "file" || typeof fileHandle?.getFile === "function") {
+				if (rw) return fileHandle.createWritable?.() ?? null;
+				return await fileHandle.getFile?.() ?? null;
+			}
+			const dir = await walkHandle(root, rel, true, false).catch(() => null);
+			if (dir) return toProvidedDirectory(virtualPath, dir);
+			return null;
+		};
+		writableFromBackend = (backend, path) => {
+			const chunks = [];
+			return {
+				async write(data) {
+					const chunk = data && typeof data === "object" && "data" in data ? data.data : data;
+					chunks.push(chunk);
+				},
+				async seek() {},
+				async truncate() {
+					chunks.length = 0;
+				},
+				async abort() {
+					chunks.length = 0;
+				},
+				async close() {
+					const name = path.split("/").filter(Boolean).pop() || "file";
+					const file = new File([new Blob(chunks)], name);
+					await backend.writeFile?.(path, file);
+				}
+			};
+		};
+		provideFromBackend = async (backend, virtualPath, rw = false, options) => {
+			if (wantsDirectoryProvide(virtualPath, options)) {
+				const entries = await backend.list(virtualPath).catch(() => []);
+				const dirPath = virtualPath.endsWith("/") ? virtualPath : `${virtualPath}/`;
+				return {
+					kind: "directory",
+					name: dirPath.split("/").filter(Boolean).pop() || backend.root.replace(/\//g, ""),
+					path: dirPath,
+					entries
+				};
+			}
+			if (rw && backend.writeFile) return writableFromBackend(backend, virtualPath);
+			return await backend.readFile?.(virtualPath).catch(() => null) ?? null;
+		};
+	}));
+	//#endregion
 	//#region ../../modules/projects/lur.e/src/utils/opfs/OPFS.uniform.worker.ts?worker
 	function WorkerWrapper(options) {
 		return new Worker("" + new URL("assets/OPFS.uniform.worker.js", document.currentScript && document.currentScript.tagName.toUpperCase() === "SCRIPT" && document.currentScript.src || document.baseURI).href, { name: options?.name });
@@ -38004,6 +39246,7 @@ cacheWillUpdate: async ({ response }) => {
 	//#endregion
 	//#region ../../modules/projects/lur.e/src/utils/opfs/OPFS.ts
 	var OPFS_exports = /* @__PURE__ */ __exportAll({
+		asProvidedFile: () => asProvidedFile,
 		attachFile: () => attachFile,
 		clearAllInDirectory: () => clearAllInDirectory,
 		copyFromOneHandlerToAnother: () => copyFromOneHandlerToAnother,
@@ -38031,9 +39274,12 @@ cacheWillUpdate: async ({ response }) => {
 		handleIncomingEntries: () => handleIncomingEntries,
 		hasFileExtension: () => hasFileExtension,
 		imageImportDesc: () => imageImportDesc,
+		isFsDirectoryHandle: () => isFsDirectoryHandle,
+		isProvidedDirectory: () => isProvidedDirectory,
 		isVirtualFsPath: () => isVirtualFsPath,
 		mappedRoots: () => mappedRoots,
 		matchMappedRoot: () => matchMappedRoot,
+		matchProvideBackend: () => matchProvideBackend,
 		mayNotPromise: () => mayNotPromise,
 		mountAsRoot: () => mountAsRoot,
 		normalizePath: () => normalizePath$1,
@@ -38044,7 +39290,9 @@ cacheWillUpdate: async ({ response }) => {
 		readAsObjectURL: () => readAsObjectURL,
 		readFile: () => readFile,
 		readFileUTF8: () => readFileUTF8,
+		refreshMappedStorageRoots: () => refreshMappedStorageRoots,
 		registerDirectoryRoot: () => registerDirectoryRoot,
+		registerProvideBackend: () => registerProvideBackend,
 		remove: () => remove,
 		removeDirectory: () => removeDirectory,
 		removeFile: () => removeFile,
@@ -38052,19 +39300,31 @@ cacheWillUpdate: async ({ response }) => {
 		resolveRootHandle: () => resolveRootHandle,
 		unmountAsRoot: () => unmountAsRoot,
 		unregisterDirectoryRoot: () => unregisterDirectoryRoot,
+		unregisterProvideBackend: () => unregisterProvideBackend,
 		uploadDirectory: () => uploadDirectory,
 		uploadFile: () => uploadFile,
 		walkExactFile: () => walkExactFile,
+		wantsDirectoryProvide: () => wantsDirectoryProvide,
 		writeFile: () => writeFile
 	});
 	async function resolveRootHandle(rootHandle, relPath = "") {
+		const fallbackRoot = async () => {
+			if (isOpfsBackendActive()) return resolveOpfsDirectory();
+			return getIdbRoot();
+		};
+		const mappedFromPath = matchMappedRoot(relPath);
+		if ((rootHandle == null || rootHandle == void 0 || rootHandle?.trim?.()?.length == 0) && mappedFromPath && mappedFromPath.root !== "/") {
+			const fromPath = await mappedFromPath.resolver().catch(() => null);
+			if (fromPath) return fromPath;
+		}
 		if (rootHandle == null || rootHandle == void 0 || rootHandle?.trim?.()?.length == 0) rootHandle = "/user/";
+		if (isFsDirectoryHandle(rootHandle)) return rootHandle;
 		const cleanId = typeof rootHandle == "string" ? rootHandle?.trim?.()?.replace?.(/^\//, "")?.trim?.()?.split?.("/")?.filter?.((p) => !!p?.trim?.())?.at?.(0) : null;
 		if (cleanId) {
 			if (typeof localStorage != "undefined" && JSON.parse(localStorage?.getItem?.("opfs.mounted") || "[]").includes(cleanId)) rootHandle = currentHandleMap?.get(cleanId);
-			if (!rootHandle) rootHandle = await mappedRoots?.get?.(`/${cleanId}/`)?.() ?? await navigator.storage.getDirectory();
+			if (!rootHandle) rootHandle = await mappedRoots?.get?.(`/${cleanId}/`)?.() ?? await fallbackRoot();
 		}
-		if (rootHandle instanceof FileSystemDirectoryHandle) return rootHandle;
+		if (isFsDirectoryHandle(rootHandle)) return rootHandle;
 		const normalizedPath = relPath?.trim?.() || "/";
 		const pathForMatch = normalizedPath.startsWith("/") ? normalizedPath : "/" + normalizedPath;
 		let bestMatch = null;
@@ -38074,10 +39334,10 @@ cacheWillUpdate: async ({ response }) => {
 			bestMatchLength = rootPath.length;
 		}
 		try {
-			return (bestMatch ? await bestMatch() : null) || await navigator?.storage?.getDirectory?.();
+			return (bestMatch ? await bestMatch() : null) || await fallbackRoot();
 		} catch (error) {
-			console.warn("Failed to resolve root handle, falling back to OPFS root:", error);
-			return await navigator?.storage?.getDirectory?.();
+			console.warn("Failed to resolve root handle, falling back to user storage:", error);
+			return await fallbackRoot();
 		}
 	}
 	function normalizePath$1(basePath = "", relPath) {
@@ -38144,7 +39404,7 @@ cacheWillUpdate: async ({ response }) => {
 	async function getDirectoryHandle(rootHandle, relPath, { create = false, basePath = "" } = {}, logger = defaultLogger) {
 		try {
 			const { rootHandle: resolvedRoot, resolvedPath } = await resolvePath(rootHandle, relPath, basePath);
-			const parts = stripUserScopePrefix(resolvedPath).split("/").filter((p) => !!p?.trim?.());
+			const parts = stripStorageScopePrefix(resolvedPath).split("/").filter((p) => !!p?.trim?.());
 			if (parts.length > 0 && hasFileExtension(parts[parts.length - 1]?.trim?.())) parts?.pop?.();
 			let dir = resolvedRoot;
 			if (parts?.length > 0) for (const part of parts) {
@@ -38159,7 +39419,7 @@ cacheWillUpdate: async ({ response }) => {
 	async function getFileHandle(rootHandle, relPath, { create = false, basePath = "" } = {}, logger = defaultLogger) {
 		try {
 			const { rootHandle: resolvedRoot, resolvedPath } = await resolvePath(rootHandle, relPath, basePath);
-			const cleanPath = stripUserScopePrefix(resolvedPath);
+			const cleanPath = stripStorageScopePrefix(resolvedPath);
 			const parts = cleanPath.split("/").filter((d) => !!d?.trim?.());
 			if (parts?.length == 0) return null;
 			const filePath = parts.length > 0 ? parts[parts.length - 1]?.trim?.()?.replace?.(/\s+/g, "-") : "";
@@ -38233,8 +39493,9 @@ cacheWillUpdate: async ({ response }) => {
 			const observationId = UUIDv4();
 			const dirHandlePromise = getDirectoryHandle(rootHandle, resolvedPath, options, logger);
 			const updateCache = async () => {
-				const cleanPath = stripUserScopePrefix(resolvedPath);
-				const entries = await post("readDirectory", {
+				const cleanPath = stripStorageScopePrefix(resolvedPath);
+				const dir = await dirHandlePromise;
+				const entries = isIdbFsHandle(dir) || isIdbFsHandle(rootHandle) || !isOpfsBackendActive() ? await Promise.all(await Array.fromAsync(dir?.entries?.() ?? [])) : await post("readDirectory", {
 					rootId: "",
 					path: cleanPath,
 					create: options.create
@@ -38257,8 +39518,8 @@ cacheWillUpdate: async ({ response }) => {
 					else if (change.type === "deleted" || change.type === "disappeared") mapCache.delete(change.name);
 				}
 			});
-			const cleanPath = stripUserScopePrefix(resolvedPath);
-			post("observe", {
+			const cleanPath = stripStorageScopePrefix(resolvedPath);
+			if (!isIdbFsHandle(rootHandle) && isOpfsBackendActive()) post("observe", {
 				rootId: "",
 				path: cleanPath,
 				id: observationId
@@ -38336,7 +39597,8 @@ cacheWillUpdate: async ({ response }) => {
 	async function readFile(rootHandle, relPath, options = {}, logger = defaultLogger) {
 		try {
 			const { rootHandle: resolvedRoot, resolvedPath } = await resolvePath(rootHandle, relPath, options?.basePath || "");
-			const cleanPath = stripUserScopePrefix(resolvedPath);
+			const cleanPath = stripStorageScopePrefix(resolvedPath);
+			if (isIdbFsHandle(resolvedRoot) || !isOpfsBackendActive()) return await (await getFileHandle(resolvedRoot, resolvedPath, options, logger))?.getFile?.();
 			return await post("readFile", {
 				rootId: "",
 				path: cleanPath,
@@ -38364,13 +39626,20 @@ cacheWillUpdate: async ({ response }) => {
 		}
 	}
 	async function writeFile(rootHandle, relPath, data, logger = defaultLogger) {
-		if (data instanceof FileSystemFileHandle) data = await data.getFile();
-		if (data instanceof FileSystemDirectoryHandle) {
-			const dstHandle = await getDirectoryHandle(await resolveRootHandle(rootHandle), relPath + (relPath?.trim?.()?.endsWith?.("/") ? "" : "/") + (data?.name || "")?.trim?.()?.replace?.(/\s+/g, "-"), { create: true });
+		if (data?.kind === "file" && typeof data.getFile === "function") data = await data.getFile();
+		if (isFsDirectoryHandle(data)) {
+			const dstHandle = await getDirectoryHandle(await resolveRootHandle(rootHandle, relPath), relPath + (relPath?.trim?.()?.endsWith?.("/") ? "" : "/") + (data?.name || "")?.trim?.()?.replace?.(/\s+/g, "-"), { create: true });
 			return await copyFromOneHandlerToAnother(data, dstHandle, {})?.catch?.(console.warn.bind(console));
 		} else try {
 			const { rootHandle: resolvedRoot, resolvedPath } = await resolvePath(rootHandle, relPath, "");
-			const cleanPath = stripUserScopePrefix(resolvedPath);
+			const cleanPath = stripStorageScopePrefix(resolvedPath);
+			if (isIdbFsHandle(resolvedRoot) || !isOpfsBackendActive()) {
+				const writable = await (await getFileHandle(resolvedRoot, resolvedPath, { create: true }, logger))?.createWritable?.();
+				if (!writable) return false;
+				await writable.write(data);
+				await writable.close();
+				return true;
+			}
 			return await post("writeFile", {
 				rootId: "",
 				path: cleanPath,
@@ -38391,7 +39660,16 @@ cacheWillUpdate: async ({ response }) => {
 	async function removeFile(rootHandle, relPath, options = { recursive: true }, logger = defaultLogger) {
 		try {
 			const { rootHandle: resolvedRoot, resolvedPath } = await resolvePath(rootHandle, relPath, options?.basePath || "");
-			const candidates = userPathCandidates(resolvedPath);
+			const candidates = storagePathCandidates(resolvedPath);
+			if (isIdbFsHandle(resolvedRoot) || !isOpfsBackendActive()) {
+				const parts = stripStorageScopePrefix(resolvedPath).split("/").filter((part) => !!part?.trim?.());
+				if (!parts.length) return false;
+				const name = parts.pop();
+				const dir = await getDirectoryHandle(resolvedRoot, parts.join("/") || "/", { create: false }, logger);
+				if (!dir) return false;
+				await dir.removeEntry(name, { recursive: options.recursive });
+				return true;
+			}
 			let lastResult = false;
 			for (const candidate of candidates) {
 				lastResult = await post("remove", {
@@ -38423,9 +39701,11 @@ cacheWillUpdate: async ({ response }) => {
 			return handleError(logger, "error", `remove: ${e.message}`);
 		}
 	}
-	var workerChannel, isServiceWorker, SW_BRIDGE_CHANNEL_NAME, observers, workerInitPromise, swBridgeChannel, swBridgeRequestCounter, ensureSwBridgeChannel, postViaSwBridge, ensureWorker, directHandlers, post, getDir, imageImportDesc, generalFileImportDesc, mappedRoots, currentHandleMap, isVirtualFsPath, matchMappedRoot, walkExactFile, registerDirectoryRoot, unregisterDirectoryRoot, mountAsRoot, unmountAsRoot, hasFileExtension, directoryCacheMap, mayNotPromise, openImageFilePicker, downloadFile, provide, getLeast, dropFile, uploadDirectory, uploadFile, ghostImage, attachFile, dropAsTempFile, clearAllInDirectory, copyFromOneHandlerToAnother, handleIncomingEntries;
+	var workerChannel, isServiceWorker, SW_BRIDGE_CHANNEL_NAME, observers, workerInitPromise, swBridgeChannel, swBridgeRequestCounter, ensureSwBridgeChannel, postViaSwBridge, ensureWorker, directHandlers, post, getDir, imageImportDesc, generalFileImportDesc, resolveOpfsDirectory, resolveUserStorageRoot, mappedRoots, refreshMappedStorageRoots, isFsDirectoryHandle, currentHandleMap, isVirtualFsPath, matchMappedRoot, walkExactFile, registerDirectoryRoot, unregisterDirectoryRoot, mountAsRoot, unmountAsRoot, hasFileExtension, directoryCacheMap, mayNotPromise, openImageFilePicker, downloadFile, provide, getLeast, dropFile, uploadDirectory, uploadFile, ghostImage, attachFile, dropAsTempFile, clearAllInDirectory, copyFromOneHandlerToAnother, handleIncomingEntries;
 	var init_OPFS = __esmMin((() => {
 		init_src$6();
+		init_IdbFs();
+		init_provide();
 		init_src$4();
 		init_src$5();
 		init_OPFS_uniform_worker();
@@ -38679,14 +39959,28 @@ cacheWillUpdate: async ({ response }) => {
 				] }
 			}]
 		};
+		resolveOpfsDirectory = async () => await navigator?.storage?.getDirectory?.() ?? null;
+		resolveUserStorageRoot = async () => {
+			if (isOpfsBackendActive()) return resolveOpfsDirectory();
+			return getIdbRoot();
+		};
 		mappedRoots = /* @__PURE__ */ new Map([
-			["/", async () => await navigator?.storage?.getDirectory?.()],
-			["/user/", async () => await navigator?.storage?.getDirectory?.()],
+			["/", resolveUserStorageRoot],
+			["/user/", resolveUserStorageRoot],
 			["/assets/", async () => {
 				console.warn("Backend related API not implemented!");
 				return null;
 			}]
 		]);
+		refreshMappedStorageRoots = () => {
+			mappedRoots.set("/", resolveUserStorageRoot);
+			mappedRoots.set("/user/", resolveUserStorageRoot);
+			if (isOpfsBackendActive() && isIdbAvailable()) mappedRoots.set("/idb/", () => getIdbRoot());
+			else mappedRoots.delete("/idb/");
+		};
+		bindStorageRootsRefresher(refreshMappedStorageRoots);
+		refreshMappedStorageRoots();
+		isFsDirectoryHandle = (handle) => !!handle && handle.kind === "directory" && typeof handle.getDirectoryHandle === "function";
 		currentHandleMap = /* @__PURE__ */ new Map();
 		isVirtualFsPath = (path) => {
 			const raw = String(path || "").trim();
@@ -38698,7 +39992,7 @@ cacheWillUpdate: async ({ response }) => {
 				if (/^[a-zA-Z][a-zA-Z\d+\-.]*:/.test(raw)) p = new URL(raw).pathname;
 			} catch {}
 			if (!p.startsWith("/")) p = `/${p}`;
-			if (p === "/user" || p.startsWith("/user/") || p === "/mounts" || p.startsWith("/mounts/") || p === "/sdcard" || p.startsWith("/sdcard/") || p === "/saf" || p.startsWith("/saf/")) return true;
+			if (p === "/user" || p.startsWith("/user/") || p === "/idb" || p.startsWith("/idb/") || p === "/mounts" || p.startsWith("/mounts/") || p === "/sdcard" || p.startsWith("/sdcard/") || p === "/saf" || p.startsWith("/saf/") || p === "/desktop" || p.startsWith("/desktop/")) return true;
 			for (const root of mappedRoots.keys()) {
 				if (root === "/" || root === "/user/" || root === "/assets/") continue;
 				if (p === root || p.startsWith(root) || `${p}/` === root) return true;
@@ -38796,7 +40090,7 @@ cacheWillUpdate: async ({ response }) => {
 		};
 		downloadFile = async (file, filename) => {
 			if (file instanceof FileSystemFileHandle) file = await file.getFile();
-			if (typeof file == "string") file = await provide(file);
+			if (typeof file == "string") file = asProvidedFile(await provide(file));
 			filename = filename ?? file?.name;
 			if (!filename) return;
 			if ("msSaveOrOpenBlob" in self.navigator) self.navigator.msSaveOrOpenBlob(file, filename);
@@ -38832,7 +40126,7 @@ cacheWillUpdate: async ({ response }) => {
 				}, 0);
 			}
 		};
-		provide = async (req = "", rw = false) => {
+		provide = async (req = "", rw = false, options) => {
 			const requestUrl = (typeof req === "string" ? req : req?.url || "").trim();
 			if (!requestUrl) return null;
 			let pathname = requestUrl;
@@ -38840,29 +40134,22 @@ cacheWillUpdate: async ({ response }) => {
 				pathname = new URL(requestUrl, location?.origin || self?.location?.origin || "http://localhost").pathname || requestUrl;
 			} catch {}
 			const cleanPath = pathname?.trim?.() || "/";
-			if (cleanPath?.startsWith?.("/user")) {
-				const path = stripUserScopePrefix(cleanPath);
-				const root = await navigator?.storage?.getDirectory?.();
-				if (!root) return null;
-				const handle = await getFileHandle(root, path, { create: !!rw }).catch(() => null);
-				if (!handle) return null;
-				if (rw) return handle?.createWritable?.();
-				return handle?.getFile?.();
-			}
 			const mapped = matchMappedRoot(cleanPath);
-			if (mapped && mapped.root !== "/user/" && mapped.root !== "/" && mapped.root !== "/assets/") {
-				const dir = await mapped.resolver().catch(() => null);
-				if (dir instanceof FileSystemDirectoryHandle) {
-					const rel = cleanPath.startsWith(mapped.root) ? cleanPath.slice(mapped.root.length) : cleanPath.replace(/^\/+/, "");
-					const fileHandle = await walkExactFile(dir, rel);
-					if (!fileHandle) return null;
-					if (rw) return fileHandle.createWritable?.();
-					return fileHandle.getFile?.();
+			const hostBackend = matchProvideBackend(cleanPath);
+			const mappedRoot = mapped && mapped.root !== "/" && mapped.root !== "/assets/" ? mapped.root : cleanPath.startsWith("/idb") ? "/idb/" : cleanPath.startsWith("/user") ? "/user/" : "";
+			if (mappedRoot) {
+				const root = await resolveRootHandle(null, cleanPath).catch(() => null);
+				if (isFsDirectoryHandle(root)) {
+					const fromHandle = await provideFromHandle(root, cleanPath, mappedRoot, rw, options);
+					if (fromHandle) return fromHandle;
 				}
-				return null;
 			}
-			if (rw) return null;
+			if (hostBackend) {
+				const fromHost = await provideFromBackend(hostBackend, cleanPath, rw, options);
+				if (fromHost) return fromHost;
+			}
 			if (isVirtualFsPath(cleanPath)) return null;
+			if (rw) return null;
 			try {
 				const baseOrigin = String(location?.origin || self?.location?.origin || "").trim();
 				const fetchTarget = cleanPath.startsWith("/") ? new URL(cleanPath, baseOrigin || "http://localhost").toString() : requestUrl;
@@ -38888,7 +40175,7 @@ cacheWillUpdate: async ({ response }) => {
 		};
 		dropFile = async (file, dest = "/user/".trim?.()?.replace?.(/\s+/g, "-"), current) => {
 			const fs = await resolveRootHandle(null);
-			const user = getDir(stripUserScopePrefix(dest))?.replace?.("/user", "")?.trim?.();
+			const user = getDir(stripStorageScopePrefix(dest))?.replace?.("/user", "")?.trim?.();
 			file = file instanceof File ? file : new File([file], UUIDv4() + "." + (file?.type?.split?.("/")?.[1] || "tmp"));
 			const fp = user + (file?.name || "wallpaper")?.trim?.()?.replace?.(/\s+/g, "-");
 			await writeFile(fs, fp, file);
@@ -38896,7 +40183,7 @@ cacheWillUpdate: async ({ response }) => {
 			return "/user" + fp?.trim?.();
 		};
 		uploadDirectory = async (dest = "/user/", id = null) => {
-			dest = stripUserScopePrefix(dest);
+			dest = stripStorageScopePrefix(dest);
 			if (!globalThis.showDirectoryPicker) return;
 			const srcHandle = await showDirectoryPicker?.({
 				mode: "readonly",
@@ -38909,7 +40196,7 @@ cacheWillUpdate: async ({ response }) => {
 		};
 		uploadFile = async (dest = "/user/".trim?.()?.replace?.(/\s+/g, "-"), current) => {
 			const $e = "showOpenFilePicker";
-			dest = stripUserScopePrefix(dest);
+			dest = stripStorageScopePrefix(dest);
 			return (window?.[$e]?.bind?.(window) ?? (await Promise.resolve().then(() => (init_showOpenFilePicker(), showOpenFilePicker_exports)))?.[$e])({
 				...generalFileImportDesc,
 				multiple: true
@@ -38948,7 +40235,11 @@ cacheWillUpdate: async ({ response }) => {
 		clearAllInDirectory = async (rootHandle = null, relPath = "", options = {}, logger = defaultLogger) => {
 			try {
 				const { rootHandle: resolvedRoot, resolvedPath } = await resolvePath(rootHandle, relPath, options?.basePath || "");
-				const cleanPath = stripUserScopePrefix(resolvedPath);
+				const cleanPath = stripStorageScopePrefix(resolvedPath);
+				if (isIdbFsHandle(resolvedRoot) || !isOpfsBackendActive()) return removeFile(resolvedRoot, resolvedPath, {
+					recursive: true,
+					basePath: options?.basePath
+				}, logger);
 				await post("remove", {
 					rootId: "",
 					path: cleanPath,
@@ -38959,6 +40250,7 @@ cacheWillUpdate: async ({ response }) => {
 			}
 		};
 		copyFromOneHandlerToAnother = async (fromHandle, toHandle, options = {}, logger = defaultLogger) => {
+			if (isIdbFsHandle(fromHandle) || isIdbFsHandle(toHandle) || !isOpfsBackendActive()) return copyHandleTree(fromHandle, toHandle);
 			return post("copy", {
 				from: fromHandle,
 				to: toHandle
@@ -39022,7 +40314,7 @@ cacheWillUpdate: async ({ response }) => {
 								}
 							}));
 						} else tasks.push(Promise.try(async () => {
-							const file = await provide(url);
+							const file = asProvidedFile(await provide(url));
 							if (file) {
 								const path = destPath + file.name;
 								await writeFile(resolvedRoot, path, file);
@@ -39864,6 +41156,255 @@ cacheWillUpdate: async ({ response }) => {
 		DATA_URL_RE = /^data:(?<mime>[^;,]+)?(?<params>(?:;[^,]*)*?),(?<data>[\s\S]*)$/i;
 	}));
 	//#endregion
+	//#region ../../modules/projects/lur.e/src/utils/opfs/remote-fs.ts
+	var decodeBase64, fileFromResponse, createHttpsFsTransport, createWebSocketFsTransport, createSocketIoFsTransport, wsUrlFromHttp, tryOpenWebSocket, tryOpenSocketIo, connectRemoteMountedFs, createRemoteProvideBackend, remoteTransport, ensureRemoteMountedFs, tryRemoteMountedList, tryRemoteMountedRead;
+	var init_remote_fs = __esmMin((() => {
+		init_src$6();
+		init_provide();
+		decodeBase64 = (body) => {
+			if (typeof Buffer !== "undefined") return new Uint8Array(Buffer.from(body, "base64"));
+			const bin = atob(body);
+			const out = new Uint8Array(bin.length);
+			for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+			return out;
+		};
+		fileFromResponse = (resp) => {
+			if (!resp.ok || !resp.file?.body) return null;
+			const bytes = resp.file.encoding === "utf8" ? new TextEncoder().encode(resp.file.body) : decodeBase64(resp.file.body);
+			return new File([bytes], resp.file.name || "file", { type: resp.file.type || "" });
+		};
+		createHttpsFsTransport = (httpPath = MOUNTED_FS_HTTP_PATH) => ({ async request(req) {
+			const id = req.id || createMountedFsId();
+			const r = await fetch(httpPath, {
+				method: "POST",
+				headers: { "content-type": "application/json" },
+				body: JSON.stringify({
+					t: "fs",
+					id,
+					...req
+				})
+			});
+			const json = await r.json().catch(() => null);
+			if (!isMountedFsResponse(json)) return {
+				t: "fs-result",
+				id,
+				ok: false,
+				error: `https ${r.status}`
+			};
+			return json;
+		} });
+		createWebSocketFsTransport = (socket) => {
+			const pending = /* @__PURE__ */ new Map();
+			socket.addEventListener("message", (ev) => {
+				const raw = typeof ev.data === "string" ? ev.data : "";
+				let parsed = null;
+				try {
+					parsed = JSON.parse(raw);
+				} catch {
+					return;
+				}
+				if (!isMountedFsResponse(parsed)) return;
+				pending.get(parsed.id)?.(parsed);
+				pending.delete(parsed.id);
+			});
+			return { request(req) {
+				const id = req.id || createMountedFsId();
+				return new Promise((resolve, reject) => {
+					if (socket.readyState !== 1) {
+						reject(/* @__PURE__ */ new Error("ws closed"));
+						return;
+					}
+					pending.set(id, resolve);
+					socket.send(JSON.stringify({
+						t: "fs",
+						id,
+						...req
+					}));
+					setTimeout(() => {
+						if (pending.delete(id)) reject(/* @__PURE__ */ new Error("ws timeout"));
+					}, 8e3);
+				});
+			} };
+		};
+		createSocketIoFsTransport = (socket, event = MOUNTED_FS_EVENT) => ({ request(req) {
+			const id = req.id || createMountedFsId();
+			const payload = {
+				t: "fs",
+				id,
+				...req
+			};
+			return new Promise((resolve, reject) => {
+				const timer = setTimeout(() => reject(/* @__PURE__ */ new Error("sio timeout")), 8e3);
+				const finish = (resp) => {
+					clearTimeout(timer);
+					if (isMountedFsResponse(resp)) resolve(resp);
+					else reject(/* @__PURE__ */ new Error("sio bad reply"));
+				};
+				try {
+					socket.emit(event, payload, finish);
+				} catch {
+					socket.emit(event, payload);
+					const onMsg = (data) => {
+						if (isMountedFsResponse(data) && data.id === id) {
+							socket.on;
+							finish(data);
+						}
+					};
+					socket.on(event, onMsg);
+				}
+			});
+		} });
+		wsUrlFromHttp = (httpPath) => {
+			const origin = typeof location !== "undefined" ? location.origin : "http://localhost";
+			const url = new URL(httpPath.replace(/\/+$/, "") + "/ws", origin);
+			url.pathname = MOUNTED_FS_WS_PATH;
+			url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
+			return url.toString();
+		};
+		tryOpenWebSocket = (url, timeoutMs = 1500) => new Promise((resolve) => {
+			if (typeof WebSocket === "undefined") {
+				resolve(null);
+				return;
+			}
+			let settled = false;
+			const done = (socket) => {
+				if (settled) return;
+				settled = true;
+				resolve(socket);
+			};
+			try {
+				const socket = new WebSocket(url);
+				const timer = setTimeout(() => {
+					try {
+						socket.close();
+					} catch {}
+					done(null);
+				}, timeoutMs);
+				socket.addEventListener("open", () => {
+					clearTimeout(timer);
+					done(socket);
+				});
+				socket.addEventListener("error", () => {
+					clearTimeout(timer);
+					done(null);
+				});
+			} catch {
+				done(null);
+			}
+		});
+		tryOpenSocketIo = async () => {
+			const io = globalThis.io;
+			if (typeof io !== "function") return null;
+			try {
+				const socket = io({
+					path: "/socket.io",
+					transports: ["websocket", "polling"]
+				});
+				if (!socket) return null;
+				await new Promise((resolve, reject) => {
+					const timer = setTimeout(() => reject(/* @__PURE__ */ new Error("sio connect")), 1500);
+					socket.on?.("connect", () => {
+						clearTimeout(timer);
+						resolve();
+					});
+					socket.on?.("connect_error", () => {
+						clearTimeout(timer);
+						reject(/* @__PURE__ */ new Error("sio connect"));
+					});
+				}).catch(() => {
+					socket.close?.();
+					throw new Error("sio connect");
+				});
+				return createSocketIoFsTransport(socket);
+			} catch {
+				return null;
+			}
+		};
+		connectRemoteMountedFs = async (options) => {
+			const httpPath = options?.httpPath || "/ssre/fs";
+			const ws = await tryOpenWebSocket(options?.wsUrl || wsUrlFromHttp(httpPath));
+			if (ws) {
+				const transport = createWebSocketFsTransport(ws);
+				if ((await transport.request({ op: "mounts" }).catch(() => null))?.ok) return transport;
+				try {
+					ws.close();
+				} catch {}
+			}
+			const sio = await tryOpenSocketIo();
+			if (sio) {
+				if ((await sio.request({ op: "mounts" }).catch(() => null))?.ok) return sio;
+			}
+			const https = createHttpsFsTransport(httpPath);
+			return (await https.request({ op: "mounts" }).catch(() => null))?.ok ? https : null;
+		};
+		createRemoteProvideBackend = (root, transport) => ({
+			root,
+			async list(path) {
+				const resp = await transport.request({
+					op: "list",
+					path
+				});
+				if (!resp.ok) return [];
+				return resp.entries ?? [];
+			},
+			async readFile(path) {
+				const resp = await transport.request({
+					op: "read",
+					path
+				});
+				return fileFromResponse(resp);
+			},
+			async writeFile(path, file) {
+				const buf = new Uint8Array(await file.arrayBuffer());
+				const body = typeof Buffer !== "undefined" ? Buffer.from(buf).toString("base64") : btoa(String.fromCharCode(...buf));
+				const resp = await transport.request({
+					op: "write",
+					path,
+					file: {
+						name: file.name,
+						type: file.type || "",
+						encoding: "base64",
+						body
+					}
+				});
+				if (!resp.ok) throw new Error(resp.error || "remote write failed");
+				return true;
+			}
+		});
+		remoteTransport = null;
+		ensureRemoteMountedFs = () => {
+			remoteTransport ??= connectRemoteMountedFs().then((transport) => {
+				if (!transport) return null;
+				return transport.request({ op: "mounts" }).then((resp) => {
+					if (!resp.ok) return transport;
+					for (const mount of resp.mounts ?? []) registerProvideBackend(createRemoteProvideBackend(mount.virtual, transport));
+					return transport;
+				}).catch(() => transport);
+			}).catch(() => null);
+			return remoteTransport;
+		};
+		tryRemoteMountedList = async (path) => {
+			const transport = await ensureRemoteMountedFs();
+			if (!transport) return null;
+			const resp = await transport.request({
+				op: "list",
+				path
+			}).catch(() => null);
+			if (!resp?.ok) return null;
+			return resp.entries ?? [];
+		};
+		tryRemoteMountedRead = async (path) => {
+			const transport = await ensureRemoteMountedFs();
+			if (!transport) return null;
+			const resp = await transport.request({
+				op: "read",
+				path
+			}).catch(() => null);
+			if (!resp) return null;
+			return fileFromResponse(resp);
+		};
+	}));
+	//#endregion
 	//#region ../../modules/projects/lur.e/src/utils/opfs/OPFSMod.ts
 	/**
 	* Walk a directory tree inside OPFS, apply a transform to every JSON-like file,
@@ -40702,7 +42243,7 @@ cacheWillUpdate: async ({ response }) => {
 				const path = normalizePath$1(base, candidate);
 				if (!path || seen.has(path)) continue;
 				seen.add(path);
-				const file = await provide(path).catch(() => null);
+				const file = asProvidedFile(await provide(path).catch(() => null));
 				if (file) return file;
 			}
 			return null;
@@ -41048,6 +42589,8 @@ cacheWillUpdate: async ({ response }) => {
 		$virtual: () => $virtual,
 		A: () => A,
 		ANIMATABLE_BRAND: () => ANIMATABLE_BRAND,
+		ANIM_LAYER: () => ANIM_LAYER,
+		ANIM_TRIGGER_NAME: () => ANIM_TRIGGER_NAME,
 		AnimatableValue: () => AnimatableValue,
 		BAKE_CATEGORIES: () => BAKE_CATEGORIES,
 		BAKE_LAYER: () => BAKE_LAYER,
@@ -41101,7 +42644,10 @@ cacheWillUpdate: async ({ response }) => {
 		HistoryManager: () => HistoryManager,
 		I: () => I,
 		IDBStorage: () => IDBStorage,
+		IDB_FS_ROOT: () => IDB_FS_ROOT,
 		ITEM_COMPACT_KIND: () => ITEM_COMPACT_KIND,
+		IdbDirectoryHandle: () => IdbDirectoryHandle,
+		IdbFileHandle: () => IdbFileHandle,
 		JUNCTION_DRAG_EVENTS: () => JUNCTION_DRAG_EVENTS,
 		JUNCTION_RESIZE_EVENTS: () => JUNCTION_RESIZE_EVENTS,
 		JUNCTION_SELECT_EVENTS: () => JUNCTION_SELECT_EVENTS,
@@ -41117,6 +42663,7 @@ cacheWillUpdate: async ({ response }) => {
 		Matrix3D: () => Matrix3D,
 		Matrix4D: () => Matrix4D,
 		OOBTrigger: () => OOBTrigger,
+		OPFS_SUPPORT_KEY: () => OPFS_SUPPORT_KEY,
 		OWNER: () => "DOM",
 		Q: () => Q,
 		Qp: () => Qp,
@@ -41171,8 +42718,10 @@ cacheWillUpdate: async ({ response }) => {
 		adoptedStyleSheetsCache: () => adoptedStyleSheetsCache,
 		agWrapEvent: () => agWrapEvent,
 		alives: () => alives,
+		animKeyframeRefs: () => animKeyframeRefs,
 		animatable: () => animatable,
 		animate: () => animate,
+		appear: () => appear,
 		appendAsLayer: () => appendAsLayer,
 		appendAsOverlay: () => appendAsOverlay,
 		appendAsUnderlying: () => appendAsUnderlying,
@@ -41180,6 +42729,7 @@ cacheWillUpdate: async ({ response }) => {
 		appendScrollbarOverlay: () => appendScrollbarOverlay,
 		applyAnchorName: () => applyAnchorName,
 		applyNormalizedInlineStyle: () => applyNormalizedInlineStyle,
+		asProvidedFile: () => asProvidedFile,
 		asinRef: () => asinRef,
 		atan2Ref: () => atan2Ref,
 		atanRef: () => atanRef,
@@ -41201,6 +42751,7 @@ cacheWillUpdate: async ({ response }) => {
 		bindAnimatedBatch: () => bindAnimatedBatch,
 		bindBeh: () => bindBeh,
 		bindConditionalAnimation: () => bindConditionalAnimation,
+		bindCssAnimation: () => bindCssAnimation,
 		bindCtrl: () => bindCtrl,
 		bindDirectoryForLaunchedFiles: () => bindDirectoryForLaunchedFiles,
 		bindDraggable: () => bindDraggable,
@@ -41214,6 +42765,7 @@ cacheWillUpdate: async ({ response }) => {
 		bindPreset: () => bindPreset,
 		bindScrollbarPosition: () => bindScrollbarPosition,
 		bindSpring: () => bindSpring,
+		bindStorageRootsRefresher: () => bindStorageRootsRefresher,
 		bindStyle: () => bindStyle,
 		bindTransition: () => bindTransition,
 		bindTriggerHandlers: () => bindTriggerHandlers,
@@ -41229,7 +42781,9 @@ cacheWillUpdate: async ({ response }) => {
 		boolDepIconRef: () => boolDepIconRef,
 		booleanRef: () => booleanRef,
 		boundingBoxAnchorRef: () => boundingBoxAnchorRef,
+		buildAnimationTiming: () => buildAnimationTiming,
 		buildBakedCssText: () => buildBakedCssText,
+		buildWebAnimationKeyframes: () => buildWebAnimationKeyframes,
 		cacheBlobContentMap: () => cacheBlobContentMap,
 		cacheContentMap: () => cacheContentMap,
 		cacheMap: () => cacheMap,
@@ -41255,6 +42809,9 @@ cacheWillUpdate: async ({ response }) => {
 		colorScheme: () => colorScheme,
 		compactIconSrcForStorage: () => compactIconSrcForStorage,
 		compileInlineStyleAttribute: () => compileInlineStyleAttribute,
+		compileKeyframesCss: () => compileKeyframesCss,
+		compileTriggerCss: () => compileTriggerCss,
+		connectRemoteMountedFs: () => connectRemoteMountedFs,
 		constrainRectAspectRatio: () => constrainRectAspectRatio,
 		containsMarker: () => containsMarker,
 		convertPointerToValue: () => convertPointerToValue,
@@ -41262,6 +42819,7 @@ cacheWillUpdate: async ({ response }) => {
 		convertValueToPointer: () => convertValueToPointer,
 		copy: () => copy,
 		copyFromOneHandlerToAnother: () => copyFromOneHandlerToAnother,
+		copyHandleTree: () => copyHandleTree,
 		copyWithResult: () => copyWithResult,
 		correctValue: () => correctValue,
 		cosRef: () => cosRef,
@@ -41276,17 +42834,23 @@ cacheWillUpdate: async ({ response }) => {
 		createFileHandler: () => createFileHandler,
 		createHandler: () => createHandler,
 		createHistoryManager: () => createHistoryManager,
+		createHttpsFsTransport: () => createHttpsFsTransport,
+		createIndexedDbFsStore: () => createIndexedDbFsStore,
 		createJsonFile: () => createJsonFile,
 		createMarkdownFile: () => createMarkdownFile,
+		createMemoryIdbFsStore: () => createMemoryIdbFsStore,
 		createPanelUnderShadow: () => createPanelUnderShadow,
 		createReactiveScrollbarOverlay: () => createReactiveScrollbarOverlay,
 		createRect2D: () => createRect2D,
+		createRemoteProvideBackend: () => createRemoteProvideBackend,
 		createShapedTileShadow: () => createShapedTileShadow,
+		createSocketIoFsTransport: () => createSocketIoFsTransport,
 		createStyleId: () => createStyleId,
 		createTemplateManager: () => createTemplateManager,
 		createTextFile: () => createTextFile,
 		createTypedUnitValue: () => createTypedUnitValue,
 		createUnderlyingShadow: () => createUnderlyingShadow,
+		createWebSocketFsTransport: () => createWebSocketFsTransport,
 		crossProduct3D: () => crossProduct3D,
 		css: () => css,
 		cssEmptyLayerRule: () => cssEmptyLayerRule,
@@ -41309,6 +42873,8 @@ cacheWillUpdate: async ({ response }) => {
 		datasetRef: () => datasetRef,
 		decodeBase64ToBytes: () => decodeBase64ToBytes,
 		decodeDesktopState: () => decodeDesktopState,
+		decorHide: () => decorHide,
+		decorShow: () => decorShow,
 		defaultLogger: () => defaultLogger,
 		defaultZIndexShift: () => defaultZIndexShift,
 		defineAnimation: () => defineAnimation,
@@ -41316,6 +42882,8 @@ cacheWillUpdate: async ({ response }) => {
 		detectTypeByRelPath: () => detectTypeByRelPath,
 		directHandlers: () => directHandlers,
 		directoryCacheMap: () => directoryCacheMap,
+		disappear: () => disappear,
+		dispatchLifecycleEvent: () => dispatchLifecycleEvent,
 		disposeCachedComponents: () => disposeCachedComponents,
 		divideRef: () => divideRef,
 		divideVector2D: () => divideVector2D,
@@ -41349,6 +42917,7 @@ cacheWillUpdate: async ({ response }) => {
 		enhancedIntersectionBoxAnchorRef: () => enhancedIntersectionBoxAnchorRef,
 		ensureAdoptedSheetContent: () => ensureAdoptedSheetContent,
 		ensureHostStyles: () => ensureHostStyles,
+		ensureRemoteMountedFs: () => ensureRemoteMountedFs,
 		ensureStyleScopeSelector: () => ensureStyleScopeSelector,
 		ensureWorker: () => ensureWorker,
 		escapeCSSIdentifier: () => escapeCSSIdentifier,
@@ -41393,6 +42962,7 @@ cacheWillUpdate: async ({ response }) => {
 		getGlobalContextMenu: () => getGlobalContextMenu,
 		getHandler: () => getHandler,
 		getIDBItem: () => getIDBItem,
+		getIdbRoot: () => getIdbRoot,
 		getIgnoreNextPopState: () => getIgnoreNextPopState,
 		getInputValues: () => getInputValues,
 		getItem: () => getItem,
@@ -41446,6 +43016,7 @@ cacheWillUpdate: async ({ response }) => {
 		initClipboardReceiver: () => initClipboardReceiver,
 		initGlobalClipboard: () => initGlobalClipboard,
 		initHistory: () => initHistory,
+		initVisibility: () => initVisibility,
 		intersectionBoxAnchorRef: () => intersectionBoxAnchorRef,
 		invalidateBakedStyles: () => invalidateBakedStyles,
 		isAdoptedSheetEmpty: () => isAdoptedSheetEmpty,
@@ -41462,6 +43033,9 @@ cacheWillUpdate: async ({ response }) => {
 		isEffectivelyEmptyStyleText: () => isEffectivelyEmptyStyleText,
 		isElementVisible: () => isElementVisible,
 		isExternalHttpHrefForFavicon: () => isExternalHttpHrefForFavicon,
+		isFsDirectoryHandle: () => isFsDirectoryHandle,
+		isIdbAvailable: () => isIdbAvailable,
+		isIdbFsHandle: () => isIdbFsHandle,
 		isImageFile: () => isImageFile,
 		isLayerBlockRule: () => isLayerBlockRule,
 		isLocalStorageAvailable: () => isLocalStorageAvailable,
@@ -41469,7 +43043,12 @@ cacheWillUpdate: async ({ response }) => {
 		isMarkdownRelativeRef: () => isMarkdownRelativeRef,
 		isNativeCSSStyleValue: () => isNativeCSSStyleValue,
 		isNotExtended: () => isNotExtended,
+		isOpfsBackendActive: () => isOpfsBackendActive,
+		isOpfsCapabilityAvailable: () => isOpfsCapabilityAvailable,
+		isOpfsSupportEnabled: () => isOpfsSupportEnabled,
+		isProvidedDirectory: () => isProvidedDirectory,
 		isReactiveStyleValue: () => isReactiveStyleValue,
+		isReactiveTrigger: () => isReactiveTrigger,
 		isScrollDriven: () => isScrollDriven,
 		isShadowRoot: () => isShadowRoot,
 		isSpeechRecognitionAvailable: () => isSpeechRecognitionAvailable,
@@ -41523,6 +43102,7 @@ cacheWillUpdate: async ({ response }) => {
 		matchMappedRoot: () => matchMappedRoot,
 		matchMediaLink: () => matchMediaLink,
 		matchMediaRef: () => matchMediaRef,
+		matchProvideBackend: () => matchProvideBackend,
 		matrix2x2Ref: () => matrix2x2Ref,
 		matrix3x3Ref: () => matrix3x3Ref,
 		matrix4x4Ref: () => matrix4x4Ref,
@@ -41547,6 +43127,7 @@ cacheWillUpdate: async ({ response }) => {
 		normalizeCssForLayer: () => normalizeCssForLayer,
 		normalizeDataAsset: () => normalizeDataAsset,
 		normalizeIconSrcFromPayload: () => normalizeIconSrcFromPayload,
+		normalizeIdbNodePath: () => normalizeIdbNodePath,
 		normalizeIterationCount: () => normalizeIterationCount,
 		normalizeIterations: () => normalizeIterations,
 		normalizePath: () => normalizePath$1,
@@ -41633,6 +43214,7 @@ cacheWillUpdate: async ({ response }) => {
 		refCtl: () => refCtl,
 		refTrigger: () => refTrigger,
 		reflectControllers: () => reflectControllers,
+		refreshMappedStorageRoots: () => refreshMappedStorageRoots,
 		registerCloseable: () => registerCloseable,
 		registerColorProperty: () => registerColorProperty,
 		registerContextMenu: () => registerContextMenu,
@@ -41641,6 +43223,7 @@ cacheWillUpdate: async ({ response }) => {
 		registerModal: () => registerModal,
 		registerOverlay: () => registerOverlay,
 		registerOverlayElement: () => registerOverlayElement,
+		registerProvideBackend: () => registerProvideBackend,
 		registerSidebar: () => registerSidebar,
 		registerStyleTreeHook: () => registerStyleTreeHook,
 		registerTask: () => registerTask,
@@ -41666,6 +43249,7 @@ cacheWillUpdate: async ({ response }) => {
 		requestCopyViaCRX: () => requestCopyViaCRX,
 		requestMicrophonePermission: () => requestMicrophonePermission,
 		resizeTrigger: () => resizeTrigger,
+		resolveCssAnimationTarget: () => resolveCssAnimationTarget,
 		resolveDragging: () => resolveDragging,
 		resolveFileUnderDirectory: () => resolveFileUnderDirectory,
 		resolveLayerZIndex: () => resolveLayerZIndex,
@@ -41697,6 +43281,7 @@ cacheWillUpdate: async ({ response }) => {
 		setIgnoreNextPopState: () => setIgnoreNextPopState,
 		setInputValue: () => setInputValue,
 		setItem: () => setItem,
+		setOpfsSupportEnabled: () => setOpfsSupportEnabled,
 		setProperty: () => setProperty,
 		setSessionItem: () => setSessionItem,
 		setString: () => setString,
@@ -41744,12 +43329,15 @@ cacheWillUpdate: async ({ response }) => {
 		toText: () => toText,
 		transformRect2D: () => transformRect2D,
 		translate2D: () => translate2D,
+		tryRemoteMountedList: () => tryRemoteMountedList,
+		tryRemoteMountedRead: () => tryRemoteMountedRead,
 		unbakeComputedStyle: () => unbakeComputedStyle,
 		unbakeScreenColors: () => unbakeScreenColors,
 		unmountAsRoot: () => unmountAsRoot,
 		unpackHrefInline: () => unpackHrefInline,
 		unregisterCloseable: () => unregisterCloseable,
 		unregisterDirectoryRoot: () => unregisterDirectoryRoot,
+		unregisterProvideBackend: () => unregisterProvideBackend,
 		unwrapCssLayer: () => unwrapCssLayer,
 		updateInput: () => updateInput,
 		updateThemeBase: () => updateThemeBase,
@@ -41769,7 +43357,9 @@ cacheWillUpdate: async ({ response }) => {
 		visibleBySelectorRef: () => visibleBySelectorRef,
 		visibleLink: () => visibleLink,
 		visibleRef: () => visibleRef,
+		waitElementAnimations: () => waitElementAnimations,
 		walkExactFile: () => walkExactFile,
+		wantsDirectoryProvide: () => wantsDirectoryProvide,
 		watchFsDirectory: () => watchFsDirectory,
 		withInsetWithPointer: () => withInsetWithPointer,
 		withProperties: () => withProperties,
@@ -41845,13 +43435,12 @@ cacheWillUpdate: async ({ response }) => {
 		init_Refs();
 		init_TriggerCore();
 		init_FormBinding();
-		init_DynamicEngine();
-		init_StyleRules();
-		init_ThemeEngine();
 		init_file_utils();
 		init_opfs();
 		init_Base64Data();
 		init_OPFS();
+		init_IdbFs();
+		init_remote_fs();
 		init_OPFSMod();
 		init_FileOps();
 		init_WriteFileSmart_v2();
@@ -50269,7 +51858,7 @@ Apply the user's custom instructions above when processing the data. Prioritize 
 			console.warn("[SW-Broadcast] Failed to broadcast to clients:", error);
 		}
 	}
-	var manifest = [{"revision":"725fad53ea7e7faeed2eeddbf806fa14","url":"index.html"},{"revision":"528c7e9c0f8a41cfe096f0b1e888216e","url":"workers/opfs/OPFS.uniform.worker.js"},{"revision":"20f1277fa28afadec901875269c17934","url":"views/viewer.js"},{"revision":"a997e10cbf0af544d2779305ec1d96c8","url":"vendor/xlsx.js"},{"revision":"aa689cfe66df50189e85b19ec9d610df","url":"vendor/quill.js"},{"revision":"42cf392cc1234965cec990cd219c6a2d","url":"vendor/pdfjs-dist.js"},{"revision":"0f6b08abc3a91a9507a21bf46fe88003","url":"vendor/parchment.js"},{"revision":"776f5bb08a28e6bdcb0d881bdc785f94","url":"vendor/mammoth.js"},{"revision":"0bfca535a8bbb58f4c148d97b4ac5522","url":"vendor/lop.js"},{"revision":"c8741cf7f91408ce1ef47278156eac8f","url":"vendor/lodash.isequal.js"},{"revision":"f6c6602c08733d2d5474a44523a2139b","url":"vendor/lodash.clonedeep.js"},{"revision":"39fac3d6fe673e3aeabac7945f320696","url":"vendor/lodash-es.js"},{"revision":"ad18e855753678d16b95237f6f4127db","url":"vendor/jszip.js"},{"revision":"3be6e1ff8ce12b780c1129848c497a55","url":"vendor/fast-diff.js"},{"revision":"6fb6b129de239a1607bc4b6b79f8b9fa","url":"vendor/eventemitter3.js"},{"revision":"07f1b9397af6f4ac29980c832d4f3ab1","url":"vendor/dingbat-to-unicode.js"},{"revision":"f7447ea6adf08ccc0a78f24beee529a9","url":"vendor/bluebird.js"},{"revision":"b8d53040e646cc14be10c6f973a285d8","url":"vendor/base64-js.js"},{"revision":"a7018ffb2f665a8ec0433dab1f4ea1d3","url":"vendor/@xmldom_xmldom.js"},{"revision":"4b8116a6fa1dee7d129870976062230b","url":"vendor/@toon-format_toon.js"},{"revision":"249121960f98591470b47ac91f40dbdb","url":"shells/preference.js"},{"revision":"2a0c3839ddf37788f8ff8085a1428f9d","url":"shells/environment-window-views-browser-view.js"},{"revision":"ccde8d1947e5d1afb5d157090dfe96b2","url":"shells/environment-scss-main.scss_inline.js"},{"revision":"61d77f45c2a320a4c7e1bd32091c12de","url":"shells/environment-index.js"},{"revision":"ec31446123f72c37ee2d1931b759a150","url":"shells/environment-environment-overlay.js"},{"revision":"85eac0ed52f366f1ade696168e16c004","url":"shells/environment-components-wallpaper.js"},{"revision":"3c815e5aca7556d9b595907ce499b633","url":"shells/environment-components-taskbar-element-TaskBar.js"},{"revision":"a3384ae9e77ea43b35605e42bd1b6791","url":"shells/environment-components-statusbar-capacitor-native-safe-area.js"},{"revision":"e2f194508097bb53ecc1eccf92831cb3","url":"shells/environment-components-settings-QuickSettings.js"},{"revision":"cc3250cc658b04c3b8e9021b4114f78b","url":"shells/environment-components-explorer-ContextMenu.js"},{"revision":"69991a62ff0c6b8548d46ad2a6ee08f4","url":"shells/environment-components-calendar-CalendarFlyout.js"},{"revision":"029ea94f5671e5f33812cd1b1eea43a1","url":"shells/environment-components-app-menu-AppMenu.js"},{"revision":"5fc9406720b3ab0d82f5bcf669b93379","url":"shells/boot-index.js"},{"revision":"7b91a175e47b27b1b844142dcbfcdb28","url":"shells/boot-history-base.js"},{"revision":"c9a1087915c5e664dceda8ed97462136","url":"pwa/tsconfig.json"},{"revision":"ee9e7e6d4f21bd22ca7229e89ceb2eb3","url":"pwa/manifest.json"},{"revision":"ee9e7e6d4f21bd22ca7229e89ceb2eb3","url":"pwa/src/pwa/manifest.json"},{"revision":"dbe5738443bd2f8968640f5f4a54cc3a","url":"pwa/screenshots/wide.png"},{"revision":"6abe53c0bc5b12ad1d599472cabe67a4","url":"pwa/screenshots/mobile.png"},{"revision":"dbe5738443bd2f8968640f5f4a54cc3a","url":"pwa/screenshots/src/pwa/screenshots/wide.png"},{"revision":"6abe53c0bc5b12ad1d599472cabe67a4","url":"pwa/screenshots/src/pwa/screenshots/mobile.png"},{"revision":"b2551f591bca6071a1817b562de415fd","url":"pwa/icons/web-app-manifest-512x512.png"},{"revision":"fd4b03e8560d1edbf07d3f5145dd097d","url":"pwa/icons/web-app-manifest-192x192.png"},{"revision":"3bce2e3833893e5a8a165101478b043c","url":"pwa/icons/transparent.svg"},{"revision":"b2551f591bca6071a1817b562de415fd","url":"pwa/icons/maskable.png"},{"revision":"c526291d3c869698ca3331bc9a49a79d","url":"pwa/icons/icon.svg"},{"revision":"1e50d9387b630062ac5c9b83c6ff78ea","url":"pwa/icons/icon.png"},{"revision":"85d33b738dd7f349f3f7b5a810a72993","url":"pwa/icons/icon-96.png"},{"revision":"74ba61fd7ca6dde80a0f7118ce562d79","url":"pwa/icons/favicon.svg"},{"revision":"53d98bfac7dda7b084baac936b146880","url":"pwa/icons/favicon-96x96.png"},{"revision":"cf552e9b17402324652bb0f58466481e","url":"pwa/icons/apple-touch-icon.png"},{"revision":"b2551f591bca6071a1817b562de415fd","url":"pwa/icons/src/pwa/icons/web-app-manifest-512x512.png"},{"revision":"fd4b03e8560d1edbf07d3f5145dd097d","url":"pwa/icons/src/pwa/icons/web-app-manifest-192x192.png"},{"revision":"3bce2e3833893e5a8a165101478b043c","url":"pwa/icons/src/pwa/icons/transparent.svg"},{"revision":"b2551f591bca6071a1817b562de415fd","url":"pwa/icons/src/pwa/icons/maskable.png"},{"revision":"c526291d3c869698ca3331bc9a49a79d","url":"pwa/icons/src/pwa/icons/icon.svg"},{"revision":"1e50d9387b630062ac5c9b83c6ff78ea","url":"pwa/icons/src/pwa/icons/icon.png"},{"revision":"85d33b738dd7f349f3f7b5a810a72993","url":"pwa/icons/src/pwa/icons/icon-96.png"},{"revision":"74ba61fd7ca6dde80a0f7118ce562d79","url":"pwa/icons/src/pwa/icons/favicon.svg"},{"revision":"53d98bfac7dda7b084baac936b146880","url":"pwa/icons/src/pwa/icons/favicon-96x96.png"},{"revision":"cf552e9b17402324652bb0f58466481e","url":"pwa/icons/src/pwa/icons/apple-touch-icon.png"},{"revision":"5af73a0d5467b1c9d0fb2c28d820f771","url":"fest/veela.js"},{"revision":"5900a0393b94b2a269dc100b457b9ca1","url":"fest/core.js"},{"revision":"bd016f7a514ca38a467d2fb6c629c97d","url":"com/service.js"},{"revision":"cc9e220bd06e7a1c87d787f7e78fa337","url":"com/app.js"},{"revision":"f541f98f5f2ede68e8618fd43230d992","url":"chunks/window.js"},{"revision":"146f7fbbc8e3a591e975fecabe8fec55","url":"chunks/vite-preload-BsPm7yBB.js"},{"revision":"af08c65caabe2ab2e4976229ef910ab2","url":"chunks/views.js"},{"revision":"2b65c36f4b63fe48d3aafecac3df4549","url":"chunks/utils.js"},{"revision":"07ae37354676818db254cde733528cf2","url":"chunks/unified.js"},{"revision":"b0c0445328fce07781681a6f561cce5e","url":"chunks/transfer-history-runtime.js"},{"revision":"c31ed75217b6e53ac5aa4caf4ca276c0","url":"chunks/templates.js"},{"revision":"cf6bcf7c0aac40eb6c8377f2a6f8ca83","url":"chunks/tabbed.js"},{"revision":"62c426957578ea005d9a4abf0e1fcc58","url":"chunks/sw-page-bridge.js"},{"revision":"8a951a7b7dab6fada29b5f14b1c21bae","url":"chunks/sw-handling.js"},{"revision":"ed026959066884e736016953ef9e9668","url":"chunks/src9.js"},{"revision":"29c47379e563c9467dbf235b62ed7925","url":"chunks/src8.js"},{"revision":"b20e6ef27ba20e39af020bd153037191","url":"chunks/src7.js"},{"revision":"7905e461b07e5f8f27632598a316911a","url":"chunks/src6.js"},{"revision":"8896e4d2afd379f4c50d24fd1d82efd5","url":"chunks/src5.js"},{"revision":"c9de3cd8d8c170e8d7f8665a3e8195ae","url":"chunks/src4.js"},{"revision":"f86c0259919a397412acf029244cb828","url":"chunks/src3.js"},{"revision":"2b6cd427e1bf3897bf75058f0bf49acb","url":"chunks/src2.js"},{"revision":"25ca9f6d0200768c6eebff925c0097ad","url":"chunks/src11.js"},{"revision":"1beefc63adb3c28bacb855abe6f4d7e3","url":"chunks/src10.js"},{"revision":"d17b457717b2a27107b652969848f375","url":"chunks/src.js"},{"revision":"efa506f0166fb25c8d6cd330236ee248","url":"chunks/sku-ingress.js"},{"revision":"f0fdd85bde3ca5e6baf5ac5eb5f8f764","url":"chunks/shells.js"},{"revision":"3e42fc809cbe4013901962c6339603b6","url":"chunks/rolldown-runtime.js"},{"revision":"e02f74a4094ea549cce5fc643181cce1","url":"chunks/preview.js"},{"revision":"2adc47bc733f543c8a2416712416391a","url":"chunks/log-sanitizer.js"},{"revision":"6b16aef581520b8074765aee6baf491c","url":"chunks/launcher-state.js"},{"revision":"574e52d3851937cab8103f23cb97dfea","url":"chunks/launcher-bridge.js"},{"revision":"bd2dd1e8c4a8b4b4d36c927682296a92","url":"chunks/frontend-debug-capture2.js"},{"revision":"478620d4ae265cbdcee6ff075791932c","url":"chunks/frontend-debug-capture.js"},{"revision":"2804aa1e0899c472afd13700b82bf0a6","url":"chunks/environment.js"},{"revision":"8d7d13cbd3aded98c25c66ec2600917e","url":"chunks/environment-shell.js"},{"revision":"6989b76ed005d147b3657acee49061f8","url":"chunks/entities.js"},{"revision":"34c942400e7d33d4c807647c7b6d88b0","url":"chunks/ecosystem-skus.js"},{"revision":"82100a5cbf254a75a0bcc78475b72b05","url":"chunks/crx-control-session2.js"},{"revision":"4be124cadba155792d0eb60f9de2e7b2","url":"chunks/crx-control-session.js"},{"revision":"33b5dbbed488502e41e2270cf1b95da8","url":"chunks/crx-control-pair-modal2.js"},{"revision":"595ef65b24383b3cacccdccaf7a0a6ef","url":"chunks/crx-control-pair-modal.js"},{"revision":"37213ff4554815f6840b2acd5b0766ab","url":"chunks/core.js"},{"revision":"39891c5ee83bccd59aec343ea1b7ff3d","url":"chunks/channel-unknown.js"},{"revision":"ffd3356a7e7af45b9626dc1afec61cba","url":"chunks/capacitor-share-intent2.js"},{"revision":"2ac53ed1ba96798f3db2509de27228ff","url":"chunks/capacitor-share-intent.js"},{"revision":"ab275a1ff82b33cf9790b1a6a8cefbe7","url":"chunks/capacitor-settings-permissions2.js"},{"revision":"b3244babed3d3e854c520d2e422bf295","url":"chunks/capacitor-settings-permissions.js"},{"revision":"dde4116eff49f3ca7507e7f17d295ecd","url":"chunks/capacitor-permissions2.js"},{"revision":"991e87b8a86bcc51cfceeda81a151f1e","url":"chunks/capacitor-permissions.js"},{"revision":"1c83ab3e200ebd025501156553809617","url":"chunks/capacitor-clipboard-asset2.js"},{"revision":"7f85be2acf402efcb37c5299c93233ec","url":"chunks/capacitor-clipboard-asset.js"},{"revision":"31f9228cb6e59c198269a076e8954385","url":"chunks/admin-doors.js"},{"revision":"7fe50fa9d7161ffa53e3764845b71207","url":"chunks/WorkCenterState.js"},{"revision":"fb2771d43d0e7fa059afe0351d13ad30","url":"chunks/WorkCenter.js"},{"revision":"5e58e9c628d54a6500b18c8b64033610","url":"chunks/ViewTransferRouting.js"},{"revision":"1652025a7f7402cf779f837d6501f93d","url":"chunks/ShareTargetGateway.js"},{"revision":"79250262a7e90a84cb134fee345fb776","url":"chunks/RuntimeSettings.js"},{"revision":"47cafcb06882298623e06b7355c9caf1","url":"chunks/QuillEditor.js"},{"revision":"dc94e3b857e35559a08215daa372a54b","url":"chunks/MarkdownEditor.js"},{"revision":"53db4b287a0c4afe25e54f0916a3ca55","url":"chunks/DocxExport.js"},{"revision":"1e550d6eb113e50b3cc3bac0c62cb440","url":"chunks/CustomInstructions.js"},{"revision":"b4d695fd57ef5da041759b4d08a80220","url":"chunks/BootLoader.js"},{"revision":null,"url":"assets/index-BqJHILTM.js"},{"revision":null,"url":"assets/crossword.css"},{"revision":null,"url":"assets/OPFS.uniform.worker.js"}];
+	var manifest = [{"revision":"9a5a7dc2bdf58f43dc5cf12fd3ac10d8","url":"index.html"},{"revision":"98d2ae82fd33d5e2b53d15b83a2e53f9","url":"workers/opfs/OPFS.uniform.worker.js"},{"revision":"ac20af4f3bbecd42ddcc519c119482b5","url":"views/viewer.js"},{"revision":"a997e10cbf0af544d2779305ec1d96c8","url":"vendor/xlsx.js"},{"revision":"aa689cfe66df50189e85b19ec9d610df","url":"vendor/quill.js"},{"revision":"42cf392cc1234965cec990cd219c6a2d","url":"vendor/pdfjs-dist.js"},{"revision":"0f6b08abc3a91a9507a21bf46fe88003","url":"vendor/parchment.js"},{"revision":"776f5bb08a28e6bdcb0d881bdc785f94","url":"vendor/mammoth.js"},{"revision":"0bfca535a8bbb58f4c148d97b4ac5522","url":"vendor/lop.js"},{"revision":"c8741cf7f91408ce1ef47278156eac8f","url":"vendor/lodash.isequal.js"},{"revision":"f6c6602c08733d2d5474a44523a2139b","url":"vendor/lodash.clonedeep.js"},{"revision":"39fac3d6fe673e3aeabac7945f320696","url":"vendor/lodash-es.js"},{"revision":"ad18e855753678d16b95237f6f4127db","url":"vendor/jszip.js"},{"revision":"3be6e1ff8ce12b780c1129848c497a55","url":"vendor/fast-diff.js"},{"revision":"6fb6b129de239a1607bc4b6b79f8b9fa","url":"vendor/eventemitter3.js"},{"revision":"07f1b9397af6f4ac29980c832d4f3ab1","url":"vendor/dingbat-to-unicode.js"},{"revision":"f7447ea6adf08ccc0a78f24beee529a9","url":"vendor/bluebird.js"},{"revision":"b8d53040e646cc14be10c6f973a285d8","url":"vendor/base64-js.js"},{"revision":"a7018ffb2f665a8ec0433dab1f4ea1d3","url":"vendor/@xmldom_xmldom.js"},{"revision":"4b8116a6fa1dee7d129870976062230b","url":"vendor/@toon-format_toon.js"},{"revision":"249121960f98591470b47ac91f40dbdb","url":"shells/preference.js"},{"revision":"2a0c3839ddf37788f8ff8085a1428f9d","url":"shells/environment-window-views-browser-view.js"},{"revision":"ccde8d1947e5d1afb5d157090dfe96b2","url":"shells/environment-scss-main.scss_inline.js"},{"revision":"d6e880eee2a18183667c6a2a1a9f6032","url":"shells/environment-index.js"},{"revision":"ec31446123f72c37ee2d1931b759a150","url":"shells/environment-environment-overlay.js"},{"revision":"85eac0ed52f366f1ade696168e16c004","url":"shells/environment-components-wallpaper.js"},{"revision":"3c815e5aca7556d9b595907ce499b633","url":"shells/environment-components-taskbar-element-TaskBar.js"},{"revision":"a3384ae9e77ea43b35605e42bd1b6791","url":"shells/environment-components-statusbar-capacitor-native-safe-area.js"},{"revision":"e2f194508097bb53ecc1eccf92831cb3","url":"shells/environment-components-settings-QuickSettings.js"},{"revision":"5141d3a5663e0e2214466274333b5cf0","url":"shells/environment-components-explorer-ContextMenu.js"},{"revision":"69991a62ff0c6b8548d46ad2a6ee08f4","url":"shells/environment-components-calendar-CalendarFlyout.js"},{"revision":"7df65e333f7c2a665c8971fc0056d7e1","url":"shells/environment-components-app-menu-AppMenu.js"},{"revision":"4c19b5e23ec0d9268a9cedad795e942b","url":"shells/boot-index.js"},{"revision":"7b91a175e47b27b1b844142dcbfcdb28","url":"shells/boot-history-base.js"},{"revision":"c9a1087915c5e664dceda8ed97462136","url":"pwa/tsconfig.json"},{"revision":"ee9e7e6d4f21bd22ca7229e89ceb2eb3","url":"pwa/manifest.json"},{"revision":"ee9e7e6d4f21bd22ca7229e89ceb2eb3","url":"pwa/src/pwa/manifest.json"},{"revision":"dbe5738443bd2f8968640f5f4a54cc3a","url":"pwa/screenshots/wide.png"},{"revision":"6abe53c0bc5b12ad1d599472cabe67a4","url":"pwa/screenshots/mobile.png"},{"revision":"dbe5738443bd2f8968640f5f4a54cc3a","url":"pwa/screenshots/src/pwa/screenshots/wide.png"},{"revision":"6abe53c0bc5b12ad1d599472cabe67a4","url":"pwa/screenshots/src/pwa/screenshots/mobile.png"},{"revision":"b2551f591bca6071a1817b562de415fd","url":"pwa/icons/web-app-manifest-512x512.png"},{"revision":"fd4b03e8560d1edbf07d3f5145dd097d","url":"pwa/icons/web-app-manifest-192x192.png"},{"revision":"3bce2e3833893e5a8a165101478b043c","url":"pwa/icons/transparent.svg"},{"revision":"b2551f591bca6071a1817b562de415fd","url":"pwa/icons/maskable.png"},{"revision":"c526291d3c869698ca3331bc9a49a79d","url":"pwa/icons/icon.svg"},{"revision":"1e50d9387b630062ac5c9b83c6ff78ea","url":"pwa/icons/icon.png"},{"revision":"85d33b738dd7f349f3f7b5a810a72993","url":"pwa/icons/icon-96.png"},{"revision":"74ba61fd7ca6dde80a0f7118ce562d79","url":"pwa/icons/favicon.svg"},{"revision":"53d98bfac7dda7b084baac936b146880","url":"pwa/icons/favicon-96x96.png"},{"revision":"cf552e9b17402324652bb0f58466481e","url":"pwa/icons/apple-touch-icon.png"},{"revision":"b2551f591bca6071a1817b562de415fd","url":"pwa/icons/src/pwa/icons/web-app-manifest-512x512.png"},{"revision":"fd4b03e8560d1edbf07d3f5145dd097d","url":"pwa/icons/src/pwa/icons/web-app-manifest-192x192.png"},{"revision":"3bce2e3833893e5a8a165101478b043c","url":"pwa/icons/src/pwa/icons/transparent.svg"},{"revision":"b2551f591bca6071a1817b562de415fd","url":"pwa/icons/src/pwa/icons/maskable.png"},{"revision":"c526291d3c869698ca3331bc9a49a79d","url":"pwa/icons/src/pwa/icons/icon.svg"},{"revision":"1e50d9387b630062ac5c9b83c6ff78ea","url":"pwa/icons/src/pwa/icons/icon.png"},{"revision":"85d33b738dd7f349f3f7b5a810a72993","url":"pwa/icons/src/pwa/icons/icon-96.png"},{"revision":"74ba61fd7ca6dde80a0f7118ce562d79","url":"pwa/icons/src/pwa/icons/favicon.svg"},{"revision":"53d98bfac7dda7b084baac936b146880","url":"pwa/icons/src/pwa/icons/favicon-96x96.png"},{"revision":"cf552e9b17402324652bb0f58466481e","url":"pwa/icons/src/pwa/icons/apple-touch-icon.png"},{"revision":"5af73a0d5467b1c9d0fb2c28d820f771","url":"fest/veela.js"},{"revision":"9d19ce33634edc31b4b5a86d424302c8","url":"fest/core.js"},{"revision":"bd016f7a514ca38a467d2fb6c629c97d","url":"com/service.js"},{"revision":"2738e204c1749b3a94bd6f9fd10f21cb","url":"com/app.js"},{"revision":"f541f98f5f2ede68e8618fd43230d992","url":"chunks/window.js"},{"revision":"146f7fbbc8e3a591e975fecabe8fec55","url":"chunks/vite-preload-BsPm7yBB.js"},{"revision":"af08c65caabe2ab2e4976229ef910ab2","url":"chunks/views.js"},{"revision":"2b65c36f4b63fe48d3aafecac3df4549","url":"chunks/utils.js"},{"revision":"07ae37354676818db254cde733528cf2","url":"chunks/unified.js"},{"revision":"b0c0445328fce07781681a6f561cce5e","url":"chunks/transfer-history-runtime.js"},{"revision":"c31ed75217b6e53ac5aa4caf4ca276c0","url":"chunks/templates.js"},{"revision":"cf6bcf7c0aac40eb6c8377f2a6f8ca83","url":"chunks/tabbed.js"},{"revision":"62c426957578ea005d9a4abf0e1fcc58","url":"chunks/sw-page-bridge.js"},{"revision":"20c04bea13acecdc3fa513115849bbfe","url":"chunks/sw-handling.js"},{"revision":"3e8b846e86cce399ce037f6ce4ad9044","url":"chunks/src9.js"},{"revision":"29c47379e563c9467dbf235b62ed7925","url":"chunks/src8.js"},{"revision":"4fcea73e4d09e3b86c649019dd24ca36","url":"chunks/src7.js"},{"revision":"7905e461b07e5f8f27632598a316911a","url":"chunks/src6.js"},{"revision":"8896e4d2afd379f4c50d24fd1d82efd5","url":"chunks/src5.js"},{"revision":"c9de3cd8d8c170e8d7f8665a3e8195ae","url":"chunks/src4.js"},{"revision":"f86c0259919a397412acf029244cb828","url":"chunks/src3.js"},{"revision":"5425c601e95bc4562d2d9f8b41c557b4","url":"chunks/src2.js"},{"revision":"25ca9f6d0200768c6eebff925c0097ad","url":"chunks/src11.js"},{"revision":"a869f09461387733b4240e26e6d91af9","url":"chunks/src10.js"},{"revision":"98838617adb1157ded303b9b278a25af","url":"chunks/src.js"},{"revision":"20a94d9d5c0140b7b6001b38d53b9ef0","url":"chunks/sku-ingress.js"},{"revision":"f0fdd85bde3ca5e6baf5ac5eb5f8f764","url":"chunks/shells.js"},{"revision":"3e42fc809cbe4013901962c6339603b6","url":"chunks/rolldown-runtime.js"},{"revision":"46d73a9ed5408420800c9ae5410a6741","url":"chunks/preview.js"},{"revision":"2adc47bc733f543c8a2416712416391a","url":"chunks/log-sanitizer.js"},{"revision":"ad149c72c0b261ed7b58334765db0f9c","url":"chunks/launcher-state.js"},{"revision":"574e52d3851937cab8103f23cb97dfea","url":"chunks/launcher-bridge.js"},{"revision":"bd2dd1e8c4a8b4b4d36c927682296a92","url":"chunks/frontend-debug-capture2.js"},{"revision":"478620d4ae265cbdcee6ff075791932c","url":"chunks/frontend-debug-capture.js"},{"revision":"2804aa1e0899c472afd13700b82bf0a6","url":"chunks/environment.js"},{"revision":"02550dbe2668faa17613d15b435c0cb4","url":"chunks/environment-shell.js"},{"revision":"6989b76ed005d147b3657acee49061f8","url":"chunks/entities.js"},{"revision":"34c942400e7d33d4c807647c7b6d88b0","url":"chunks/ecosystem-skus.js"},{"revision":"82100a5cbf254a75a0bcc78475b72b05","url":"chunks/crx-control-session2.js"},{"revision":"4be124cadba155792d0eb60f9de2e7b2","url":"chunks/crx-control-session.js"},{"revision":"33b5dbbed488502e41e2270cf1b95da8","url":"chunks/crx-control-pair-modal2.js"},{"revision":"595ef65b24383b3cacccdccaf7a0a6ef","url":"chunks/crx-control-pair-modal.js"},{"revision":"37213ff4554815f6840b2acd5b0766ab","url":"chunks/core.js"},{"revision":"2be2836b0391d387e483da418177cd70","url":"chunks/channel-unknown.js"},{"revision":"e4ca216bd682a4de8ae68df4f4e36fc3","url":"chunks/capacitor-share-intent2.js"},{"revision":"850f8ba8eaa599d510699d01ab1338f3","url":"chunks/capacitor-share-intent.js"},{"revision":"ab275a1ff82b33cf9790b1a6a8cefbe7","url":"chunks/capacitor-settings-permissions2.js"},{"revision":"b3244babed3d3e854c520d2e422bf295","url":"chunks/capacitor-settings-permissions.js"},{"revision":"dde4116eff49f3ca7507e7f17d295ecd","url":"chunks/capacitor-permissions2.js"},{"revision":"991e87b8a86bcc51cfceeda81a151f1e","url":"chunks/capacitor-permissions.js"},{"revision":"1c83ab3e200ebd025501156553809617","url":"chunks/capacitor-clipboard-asset2.js"},{"revision":"7f85be2acf402efcb37c5299c93233ec","url":"chunks/capacitor-clipboard-asset.js"},{"revision":"31f9228cb6e59c198269a076e8954385","url":"chunks/admin-doors.js"},{"revision":"7fe50fa9d7161ffa53e3764845b71207","url":"chunks/WorkCenterState.js"},{"revision":"0a172b999a0cacd28aa057b22738e43e","url":"chunks/WorkCenter.js"},{"revision":"5e58e9c628d54a6500b18c8b64033610","url":"chunks/ViewTransferRouting.js"},{"revision":"1652025a7f7402cf779f837d6501f93d","url":"chunks/ShareTargetGateway.js"},{"revision":"79250262a7e90a84cb134fee345fb776","url":"chunks/RuntimeSettings.js"},{"revision":"47cafcb06882298623e06b7355c9caf1","url":"chunks/QuillEditor.js"},{"revision":"04800a3b9ea4de457baa457e0aac256b","url":"chunks/MarkdownEditor.js"},{"revision":"53db4b287a0c4afe25e54f0916a3ca55","url":"chunks/DocxExport.js"},{"revision":"1e550d6eb113e50b3cc3bac0c62cb440","url":"chunks/CustomInstructions.js"},{"revision":"8557742274efe8d2cd158fe7a26cb88b","url":"chunks/BootLoader.js"},{"revision":null,"url":"assets/index-DOBWK_lD.js"},{"revision":null,"url":"assets/crossword.css"},{"revision":null,"url":"assets/OPFS.uniform.worker.js"}];
 	cleanupOutdatedCaches();
 	if (manifest && true) precacheAndRoute(manifest.filter((entry) => {
 		const url = typeof entry === "string" ? entry : String(entry?.url || "");

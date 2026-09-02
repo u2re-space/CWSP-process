@@ -1,4 +1,5 @@
-import { Mn as resolveOverlayHost, fn as registerDirectoryRoot, jn as registerTransientOverlay, yn as placeOverlay } from "../com/app.js";
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../com/app.js","../chunks/rolldown-runtime.js"])))=>i.map(i=>d[i]);
+import { Mn as resolveOverlayHost, Or as __vitePreload, fn as registerDirectoryRoot, jn as registerTransientOverlay, yn as placeOverlay } from "../com/app.js";
 //#region src/frontend/shells/environment/components/explorer/fs-backend.ts
 function normalizeVirtualPath(path, asDirectory = true) {
 	let p = String(path || "/").trim() || "/";
@@ -572,6 +573,10 @@ function registerFsBackend(backend) {
 	const key = normalizeRoot(backend.root);
 	registry.set(key, backend);
 	notifyBackendRegistered(key);
+	bindFsBackendToProvide(backend);
+}
+function unregisterFsBackend(root) {
+	registry.delete(normalizeRoot(root));
 }
 /**
 * Longest-prefix match. A backend rooted at `/user/` matches `/user/links/`
@@ -598,23 +603,28 @@ function resolveFsBackend(path) {
 	}
 	return best;
 }
-var stripUserPrefix = (path) => {
-	const vpath = String(path || "").replace(/^\/+/, "");
-	if (vpath.startsWith("user/")) return "/" + vpath.slice(5);
-	return "/" + vpath;
-};
-var listOpfsUserDirectory = async (path) => {
-	const nav = typeof navigator !== "undefined" ? navigator : null;
-	const getDir = nav?.storage?.getDirectory;
-	if (typeof getDir !== "function") return [];
-	let root;
+var OPFS_SUPPORT_KEY = "cwsp.opfs.enabled";
+var isOpfsSupportEnabledSync = () => {
 	try {
-		root = await getDir.call(nav.storage);
+		if (typeof localStorage === "undefined") return true;
+		const value = localStorage.getItem(OPFS_SUPPORT_KEY);
+		return value !== "0" && value !== "false";
 	} catch {
-		return [];
+		return true;
 	}
+};
+var isOpfsCapabilityAvailableSync = () => typeof navigator !== "undefined" && typeof navigator.storage?.getDirectory === "function";
+var isOpfsBackendActiveSync = () => isOpfsCapabilityAvailableSync() && isOpfsSupportEnabledSync();
+var stripStoragePrefix = (path, scope) => {
+	const vpath = String(path || "").replace(/^\/+/, "");
+	const prefix = `${scope}/`;
+	if (vpath.startsWith(prefix)) return `/${vpath.slice(prefix.length)}`;
+	if (vpath === scope) return "/";
+	return `/${vpath}`;
+};
+var listHandleDirectory = async (root, path) => {
 	if (!root) return [];
-	const segments = stripUserPrefix(path).split("/").filter(Boolean);
+	const segments = stripStoragePrefix(path, normalizeVirtualPath(path, true).startsWith("/idb/") ? "idb" : "user").split("/").filter(Boolean);
 	let dir = root;
 	for (const seg of segments) try {
 		dir = await dir.getDirectoryHandle(seg, { create: false });
@@ -637,43 +647,147 @@ var listOpfsUserDirectory = async (path) => {
 	}
 	return entries;
 };
-function ensureDefaultFsBackends() {
-	if (!resolveFsBackend("/user/")) registerFsBackend({
-		root: "/user/",
+var readHandleFile = async (root, path, scope) => {
+	if (!root) return null;
+	const segments = stripStoragePrefix(path, scope).split("/").filter(Boolean);
+	if (!segments.length) return null;
+	let dir = root;
+	for (const seg of segments.slice(0, -1)) try {
+		dir = await dir.getDirectoryHandle(seg, { create: false });
+	} catch {
+		return null;
+	}
+	try {
+		return await (await dir.getFileHandle(segments[segments.length - 1], { create: false })).getFile();
+	} catch {
+		return null;
+	}
+};
+var bindFsBackendToProvide = (backend) => {
+	if (backend.root === "/bookmarks/" || backend.root === "/downloads/") return;
+	__vitePreload(async () => {
+		const { registerProvideBackend } = await import("../com/app.js").then((n) => n.Pt);
+		return { registerProvideBackend };
+	}, __vite__mapDeps([0,1]), import.meta.url).then(({ registerProvideBackend }) => {
+		registerProvideBackend({
+			root: backend.root,
+			list: async (path) => {
+				const rows = await backend.list(path);
+				const base = normalizeVirtualPath(path, true);
+				return rows.map((row) => ({
+					name: row.name,
+					kind: row.kind,
+					path: row.path || `${base}${row.name}${row.kind === "directory" ? "/" : ""}`
+				}));
+			},
+			readFile: backend.readFile,
+			writeFile: backend.writeFile ? async (path, file) => {
+				const slash = String(path || "").lastIndexOf("/");
+				const parent = slash >= 0 ? path.slice(0, slash + 1) : backend.root;
+				await backend.writeFile?.(parent, file);
+				return true;
+			} : void 0
+		});
+	}).catch(() => {});
+};
+var loadIdbRoot = async () => {
+	if (typeof indexedDB === "undefined") return null;
+	try {
+		const { getIdbRoot } = await __vitePreload(async () => {
+			const { getIdbRoot } = await import("../com/app.js").then((n) => n.Pt);
+			return { getIdbRoot };
+		}, __vite__mapDeps([0,1]), import.meta.url);
+		return await getIdbRoot();
+	} catch {
+		return null;
+	}
+};
+var resolveUserHandleRoot = async () => {
+	if (isOpfsBackendActiveSync()) try {
+		return await navigator.storage.getDirectory();
+	} catch {
+		return null;
+	}
+	return loadIdbRoot();
+};
+var createStorageFsBackend = (root, getRoot) => {
+	const scope = root === "/idb/" ? "idb" : "user";
+	return {
+		root,
 		writable: true,
 		async list(path) {
-			return listOpfsUserDirectory(path);
+			return listHandleDirectory(await getRoot().catch(() => null), path);
 		},
 		async readFile(path) {
-			const nav = typeof navigator !== "undefined" ? navigator : null;
-			const getDir = nav?.storage?.getDirectory;
-			if (typeof getDir !== "function") return null;
-			const root = await getDir.call(nav.storage).catch(() => null);
-			if (!root) return null;
-			const segments = stripUserPrefix(path).split("/").filter(Boolean);
-			if (!segments.length) return null;
-			let dir = root;
-			for (const seg of segments.slice(0, -1)) try {
-				dir = await dir.getDirectoryHandle(seg, { create: false });
-			} catch {
-				return null;
-			}
-			try {
-				return await (await dir.getFileHandle(segments[segments.length - 1], { create: false })).getFile();
-			} catch {
-				return null;
-			}
+			return readHandleFile(await getRoot().catch(() => null), path, scope);
+		},
+		async mkdir(parentPath, name) {
+			const handleRoot = await getRoot();
+			if (!handleRoot) return;
+			const segments = [...stripStoragePrefix(parentPath, scope).split("/").filter(Boolean), String(name || "").trim()].filter(Boolean);
+			let dir = handleRoot;
+			for (const seg of segments) dir = await dir.getDirectoryHandle(seg, { create: true });
+		},
+		async writeFile(parentPath, file) {
+			const handleRoot = await getRoot();
+			if (!handleRoot || !file) return;
+			const segments = stripStoragePrefix(parentPath, scope).split("/").filter(Boolean);
+			let dir = handleRoot;
+			for (const seg of segments) dir = await dir.getDirectoryHandle(seg, { create: true });
+			const writable = await (await dir.getFileHandle(file.name || `file-${Date.now()}`, { create: true })).createWritable();
+			await writable.write(file);
+			await writable.close();
+		},
+		async remove(path, recursive = true) {
+			const handleRoot = await getRoot();
+			if (!handleRoot) return;
+			const segments = stripStoragePrefix(path, scope).replace(/\/+$/g, "").split("/").filter(Boolean);
+			if (!segments.length) return;
+			const name = segments.pop();
+			let dir = handleRoot;
+			for (const seg of segments) dir = await dir.getDirectoryHandle(seg, { create: false });
+			await dir.removeEntry(name, { recursive });
 		}
-	});
+	};
+};
+function ensureDefaultFsBackends() {
+	if (!resolveFsBackend("/user/")) registerFsBackend(createStorageFsBackend("/user/", resolveUserHandleRoot));
+	if (isOpfsBackendActiveSync() && typeof indexedDB !== "undefined") {
+		if (!resolveFsBackend("/idb/")) registerFsBackend(createStorageFsBackend("/idb/", loadIdbRoot));
+	} else {
+		unregisterFsBackend("/idb/");
+		__vitePreload(async () => {
+			const { unregisterProvideBackend } = await import("../com/app.js").then((n) => n.Pt);
+			return { unregisterProvideBackend };
+		}, __vite__mapDeps([0,1]), import.meta.url).then(({ unregisterProvideBackend }) => {
+			unregisterProvideBackend("/idb/");
+		}).catch(() => {});
+	}
 	if (!resolveFsBackend("/assets/")) registerFsBackend({
 		root: "/assets/",
 		writable: false,
-		async list() {
-			return [];
+		async list(path) {
+			try {
+				const { tryRemoteMountedList } = await __vitePreload(async () => {
+					const { tryRemoteMountedList } = await import("../com/app.js").then((n) => n.Pt);
+					return { tryRemoteMountedList };
+				}, __vite__mapDeps([0,1]), import.meta.url);
+				return await tryRemoteMountedList(path) ?? [];
+			} catch {
+				return [];
+			}
 		},
 		async readFile(path) {
 			const p = String(path || "").trim();
 			if (!p || p.endsWith("/")) return null;
+			try {
+				const { tryRemoteMountedRead } = await __vitePreload(async () => {
+					const { tryRemoteMountedRead } = await import("../com/app.js").then((n) => n.Pt);
+					return { tryRemoteMountedRead };
+				}, __vite__mapDeps([0,1]), import.meta.url);
+				const remote = await tryRemoteMountedRead(p);
+				if (remote) return remote;
+			} catch {}
 			try {
 				const r = await fetch(p);
 				if (!r?.ok) return null;
@@ -685,6 +799,12 @@ function ensureDefaultFsBackends() {
 			}
 		}
 	});
+	__vitePreload(async () => {
+		const { ensureRemoteMountedFs } = await import("../com/app.js").then((n) => n.Pt);
+		return { ensureRemoteMountedFs };
+	}, __vite__mapDeps([0,1]), import.meta.url).then(({ ensureRemoteMountedFs }) => {
+		ensureRemoteMountedFs();
+	}).catch(() => {});
 	if (!resolveFsBackend("/bookmarks/")) {
 		const chromeAny = globalThis?.chrome;
 		if (chromeAny?.bookmarks) {

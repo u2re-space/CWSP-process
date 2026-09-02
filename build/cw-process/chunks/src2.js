@@ -1,5 +1,5 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./sw-page-bridge.js","./rolldown-runtime.js","../shells/boot-index.js","../com/app.js","../fest/core.js","../shells/boot-history-base.js","../com/service.js","../fest/veela.js","./BootLoader.js","../shells/preference.js","./capacitor-settings-permissions.js","./capacitor-permissions.js"])))=>i.map(i=>d[i]);
-import { Dr as __vitePreload, vr as loadAsAdopted } from "../com/app.js";
+import { Or as __vitePreload, vr as loadAsAdopted } from "../com/app.js";
 import { A as initializeLayers, dt as safeCachesDelete, ft as safeCachesKeys } from "../shells/boot-index.js";
 import { a as applyCwspSku } from "../shells/boot-history-base.js";
 import { checkPendingShareData, ensureAppCss, handleShareTarget, initReceivers, n as ensureServiceWorkerRegistered, setupLaunchQueueConsumer, t as dropStaleServiceWorkerRegistrations } from "./sw-handling.js";

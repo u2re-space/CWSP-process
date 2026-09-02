@@ -163,7 +163,14 @@ var skuIngressHint = (payload, opts) => {
 			sink
 		};
 	}
-	if (!sku || sku === "crx" || sku === "transfer") return void 0;
+	if (!sku || sku === "crx") return void 0;
+	if (sku === "transfer") return {
+		destination: "network",
+		action: "open",
+		filename,
+		contentType: kind,
+		sink: "transfer"
+	};
 	if (sku === "process") {
 		const row = resolveProcessIngressKind(settings, kind);
 		const hinted = payload.hint?.action;

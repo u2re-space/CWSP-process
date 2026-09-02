@@ -1,5 +1,5 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../shells/boot-index.js","./rolldown-runtime.js","../com/app.js","../fest/core.js","../shells/boot-history-base.js","../com/service.js","../fest/veela.js","./BootLoader.js","../shells/preference.js","./capacitor-settings-permissions.js","./capacitor-permissions.js","./RuntimeSettings.js","./sku-ingress.js"])))=>i.map(i=>d[i]);
-import { $t as isBase64Like, Dr as __vitePreload, It as bindDirectoryForLaunchedFiles, On as copy, kn as initClipboardReceiver, tn as parseDataUrl } from "../com/app.js";
+import { $t as isBase64Like, It as bindDirectoryForLaunchedFiles, On as copy, Or as __vitePreload, kn as initClipboardReceiver, tn as parseDataUrl } from "../com/app.js";
 import { $n as rememberProcessIngressSettings, Gn as allowProcessWebLaunchQueue, Jn as holdCapacitorIngressJob, Kn as allowProcessWebShareLaunch, Tr as classifyOpenKindFromPayload, Yn as instructionTextForIngress, _r as BROADCAST_CHANNELS, at as readProcessApiResultText, ct as storeShareTargetPayloadToCache, er as resolveProcessIngressKind, fn as unwrapSwInteropMessage, hr as unifiedMessaging, it as processApiAuthFromSettings, jt as loadSettings, lt as safeCacheMatch, ot as buildShareDataFromCachedPayload, qn as formatProcessIngressResult, rt as postProcessApi, st as consumeCachedShareTargetPayload, tr as writeProcessIngressClipboard, tt as unifiedMessaging$1, ut as safeCacheOpen } from "../shells/boot-index.js";
 import { _ as stashSkuHandoff, c as isCwspNativeHost, n as SKU_HUB_PATHS, s as inferCwspSkuFromLocation } from "../shells/boot-history-base.js";
 import { t as summarizeForLog$1 } from "./log-sanitizer.js";
@@ -1673,6 +1673,15 @@ var routeToTransferView = async (shareData, source, hint, pending = false) => {
 };
 /** Capacitor / sku-boot entry: stage files then run the same share pipeline as PWA. */
 var ingestSharePayload = async (shareData, source = "share-target") => {
+	const capacitorNative = (() => {
+		try {
+			const c = globalThis.Capacitor;
+			return typeof c?.isNativePlatform === "function" && Boolean(c.isNativePlatform());
+		} catch {
+			return false;
+		}
+	})();
+	if (capacitorNative && inferCwspSkuFromLocation() === "transfer") return true;
 	const files = Array.isArray(shareData.files) ? shareData.files.filter((f) => f instanceof File) : [];
 	try {
 		await storeShareTargetPayloadToCache({
@@ -1708,15 +1717,7 @@ var ingestSharePayload = async (shareData, source = "share-target") => {
 			src: String(shareData.url || shareData.sharedUrl || "")
 		});
 	} catch {}
-	const native = (() => {
-		try {
-			const c = globalThis.Capacitor;
-			return typeof c?.isNativePlatform === "function" && Boolean(c.isNativePlatform());
-		} catch {
-			return false;
-		}
-	})();
-	return routeToTransferView(shareData, source, extractTransferHint(shareData), native);
+	return routeToTransferView(shareData, source, extractTransferHint(shareData), capacitorNative);
 };
 /**
 * Extract processable content from share data
