@@ -1,6 +1,6 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./sw-page-bridge.js","./rolldown-runtime.js","../shells/boot-index.js","../com/app.js","../fest/core.js","../shells/boot-history-base.js","../com/service.js","../fest/veela.js","./BootLoader.js","../shells/preference.js","./capacitor-settings-permissions.js","./capacitor-permissions.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./sw-page-bridge.js","./rolldown-runtime.js","../shells/boot-index.js","../com/app.js","../fest/core.js","../shells/boot-history-base.js","../com/service.js","../fest/veela.js","./workcenter-command-wire.js","./sku-ingress.js","./BootLoader.js","../shells/preference.js","./capacitor-settings-permissions.js","./capacitor-permissions.js"])))=>i.map(i=>d[i]);
 import { Or as __vitePreload, vr as loadAsAdopted } from "../com/app.js";
-import { A as initializeLayers, dt as safeCachesDelete, ft as safeCachesKeys } from "../shells/boot-index.js";
+import { A as initializeLayers, ft as safeCachesDelete, pt as safeCachesKeys } from "../shells/boot-index.js";
 import { a as applyCwspSku } from "../shells/boot-history-base.js";
 import { checkPendingShareData, ensureAppCss, handleShareTarget, initReceivers, n as ensureServiceWorkerRegistered, setupLaunchQueueConsumer, t as dropStaleServiceWorkerRegistrations } from "./sw-handling.js";
 //#region src/shared/routing/pwa/pwa-handling.ts
@@ -242,7 +242,7 @@ var ServiceWorkerUpdateManager = class {
 			if (type === "ai-result" || type === "process-api-result" || type === "share-target-result" || type === "share-target-input" || type === "share-received" || type === "content-cached" || type === "content-received") __vitePreload(async () => {
 				const { ingestSwClientMessage } = await import("./sw-page-bridge.js").then((n) => n.a);
 				return { ingestSwClientMessage };
-			}, __vite__mapDeps([0,1,2,3,4,5,6,7]), import.meta.url).then(({ ingestSwClientMessage }) => {
+			}, __vite__mapDeps([0,1,2,3,4,5,6,7,8,9]), import.meta.url).then(({ ingestSwClientMessage }) => {
 				ingestSwClientMessage(event.data);
 			}).catch(() => void 0);
 			switch (type) {
@@ -499,7 +499,7 @@ var bootProcessSku = async (container, kind, view = "workcenter") => {
 	stampProcessSku(host);
 	if (host === "capacitor") try {
 		const { SystemBarType, SystemBars } = await __vitePreload(async () => {
-			const { SystemBarType, SystemBars } = await import("../shells/boot-index.js").then((n) => n.mn);
+			const { SystemBarType, SystemBars } = await import("../shells/boot-index.js").then((n) => n.hn);
 			return {
 				SystemBarType,
 				SystemBars
@@ -511,7 +511,7 @@ var bootProcessSku = async (container, kind, view = "workcenter") => {
 	const { bootMinimal } = await __vitePreload(async () => {
 		const { bootMinimal } = await import("./BootLoader.js");
 		return { bootMinimal };
-	}, __vite__mapDeps([8,3,1,4,2,5,6,7,9,10,11]), import.meta.url);
+	}, __vite__mapDeps([10,3,1,4,2,5,6,7,11,12,13]), import.meta.url);
 	await bootMinimal(container, resolved, { rememberChoice: false });
 };
 //#endregion

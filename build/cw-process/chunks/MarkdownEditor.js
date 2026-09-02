@@ -1,7 +1,7 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../com/app.js","./rolldown-runtime.js","./DocxExport.js","./BootLoader.js","../fest/core.js","../shells/boot-index.js","../shells/boot-history-base.js","../com/service.js","../fest/veela.js","../shells/preference.js","./capacitor-settings-permissions.js","./capacitor-permissions.js","./sku-ingress.js"])))=>i.map(i=>d[i]);
 import { $t as isBase64Like, Bt as mountPickedDirectory, Cr as cssLayerBlock, Dr as VIEWER_CSS_LAYER_ORDER, Gt as pickSidecarDirectoryFiles, Ht as originalRelFromRef, Jt as resolveFileUnderDirectory, Kt as provideBoundRelative, Lt as findEntryRelPath, Or as __vitePreload, Qt as decodeBase64ToBytes, Rt as indexDirectoryFiles, Tr as normalizeCssForLayer, Ut as pickAssetDirectory, Vt as observeFileSystemHandle, Wt as pickMarkdownFile, X as ensureStyleSheet, Yt as saveMarkdownBlob, Z as reinitializeRegistry, _r as unbakeScreenColors, an as getDir, cn as matchMappedRoot, dn as provide, en as normalizeDataAsset, fr as ref, gr as scheduleBakeScreenColors, ln as normalizePath, or as affected, qt as relPathCandidates, s as purify, sn as isVirtualFsPath, tn as parseDataUrl, un as openDirectory, vr as loadAsAdopted, wr as cssLayerOrder, xr as removeAdopted, zn as H, zt as isMarkdownRelativeRef } from "../com/app.js";
 import { c as sendViewProtocolMessage, l as createViewConstructor, n as createViewState, r as ExplorerChannelAction, s as ViewerChannelAction } from "../views/viewer.js";
-import { Cr as classifyOpenKind, Dr as looksLikePreviewableBinary, Ir as resolveOpenPolicy, Mr as rememberOpenPolicyFromSettings, Pr as resolveHostOpenPolicy, Z as ingressStampWasSuperseded, jt as loadSettings } from "../shells/boot-index.js";
+import { Fr as resolveHostOpenPolicy, Lr as resolveOpenPolicy, Mt as loadSettings, Nr as rememberOpenPolicyFromSettings, Or as looksLikePreviewableBinary, Z as ingressStampWasSuperseded, wr as classifyOpenKind } from "../shells/boot-index.js";
 import { _ as stashSkuHandoff, f as publicHrefForSku, h as shouldHandoffViewToSibling, v as takeSkuHandoff } from "../shells/boot-history-base.js";
 import { i as validateReadableFileForIngress, n as textIngressLooksCorrupt, t as pickAuthoritativeTransferFiles } from "../com/service.js";
 //#region ../../modules/views/markdown-view/src/theme.ts
@@ -2330,7 +2330,7 @@ var CwViewViewer = createViewConstructor("cw-view-viewer", (Base) => {
 				const g = globalThis;
 				if (typeof g.Capacitor?.isNativePlatform !== "function" || !g.Capacitor.isNativePlatform()) return;
 				const { invokeCwsPlatformIPC } = await __vitePreload(async () => {
-					const { invokeCwsPlatformIPC } = await import("../shells/boot-index.js").then((n) => n.sn);
+					const { invokeCwsPlatformIPC } = await import("../shells/boot-index.js").then((n) => n.cn);
 					return { invokeCwsPlatformIPC };
 				}, __vite__mapDeps([5,1,0,4,6,7,8]), import.meta.url);
 				const peek = await invokeCwsPlatformIPC({ channel: "launcher:pending-share" });
@@ -2342,7 +2342,7 @@ var CwViewViewer = createViewConstructor("cw-view-viewer", (Base) => {
 					const blob = read.echo || read;
 					if (blob?.data) {
 						const { dataUrlToFile } = await __vitePreload(async () => {
-							const { dataUrlToFile } = await import("./sku-ingress.js").then((n) => n.o);
+							const { dataUrlToFile } = await import("./sku-ingress.js").then((n) => n.u);
 							return { dataUrlToFile };
 						}, __vite__mapDeps([12,1,0,5,4,6,7,8]), import.meta.url);
 						file = await dataUrlToFile(blob.data, String(blob.name || echo.name || "shared.bin"), String(blob.mime || echo.mime || "application/octet-stream"));

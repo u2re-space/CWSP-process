@@ -120,6 +120,7 @@ export class ActionHistoryStore {
             this.state.entries = this.state.entries.slice(0, this.state.maxEntries);
         }
 
+        this.saveHistory();
         return fullEntry;
     }
 
@@ -131,6 +132,7 @@ export class ActionHistoryStore {
         if (index === -1) return false;
 
         Object.assign(this.state.entries[index], updates);
+        this.saveHistory();
         return true;
     }
 

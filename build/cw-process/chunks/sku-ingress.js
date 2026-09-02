@@ -1,17 +1,21 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../com/app.js","./rolldown-runtime.js","./ViewTransferRouting.js","../shells/boot-index.js","../fest/core.js","../shells/boot-history-base.js","../com/service.js","../fest/veela.js","./log-sanitizer.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./workcenter-command-wire.js","./rolldown-runtime.js","../com/app.js","./ViewTransferRouting.js","../shells/boot-index.js","../fest/core.js","../shells/boot-history-base.js","../com/service.js","../fest/veela.js","./log-sanitizer.js"])))=>i.map(i=>d[i]);
 import { r as __exportAll } from "./rolldown-runtime.js";
 const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
-import { Er as inferIngressChannels, Hr as surfaceForSku, Ir as resolveOpenPolicy, Lr as sinkToAction, Rr as sinkToDestination, Tr as classifyOpenKindFromPayload, Zn as peekProcessIngressSettings, er as resolveProcessIngressKind, jr as peekOpenPolicy } from "../shells/boot-index.js";
+import { Dr as inferIngressChannels, Er as classifyOpenKindFromPayload, Lr as resolveOpenPolicy, Mr as peekOpenPolicy, Qn as peekProcessIngressSettings, Rr as sinkToAction, Ur as surfaceForSku, tr as resolveProcessIngressKind, zr as sinkToDestination } from "../shells/boot-index.js";
 import { s as inferCwspSkuFromLocation } from "../shells/boot-history-base.js";
 //#region src/shared/routing/channel/sku-ingress.ts
 var sku_ingress_exports = /* @__PURE__ */ __exportAll({
 	applyLauncherIngress: () => applyLauncherIngress,
 	dataUrlToFile: () => dataUrlToFile,
+	dropHeldIngressFiles: () => dropHeldIngressFiles,
+	flushHeldIngressToWorkCenter: () => flushHeldIngressToWorkCenter,
 	holdIngressFiles: () => holdIngressFiles,
 	installShellImageOpenListener: () => installShellImageOpenListener,
 	isWallpaperCompatible: () => isWallpaperCompatible,
 	looksLikeDirectoryPath: () => looksLikeDirectoryPath,
 	looksLikeWallpaperFile: () => looksLikeWallpaperFile,
+	onHeldIngressFiles: () => onHeldIngressFiles,
+	peekHeldIngressFiles: () => peekHeldIngressFiles,
 	refineLauncherImageIngress: () => refineLauncherImageIngress,
 	skuIngressHint: () => skuIngressHint,
 	takeHeldIngressFiles: () => takeHeldIngressFiles
@@ -21,13 +25,107 @@ var sku_ingress_exports = /* @__PURE__ */ __exportAll({
 * Hold them in memory so Work Center can still attach the real blobs.
 */
 var heldIngressFiles = [];
-var holdIngressFiles = (files) => {
-	heldIngressFiles.length = 0;
-	if (!Array.isArray(files)) return;
-	for (const file of files) if (file instanceof File) heldIngressFiles.push(file);
+var heldIngressListeners = /* @__PURE__ */ new Set();
+var ingressFileKey = (file) => `${file.name}|${file.size}|${file.lastModified}`;
+var notifyHeldIngress = () => {
+	if (!heldIngressFiles.length) return;
+	const snapshot = heldIngressFiles.slice();
+	for (const listener of heldIngressListeners) try {
+		listener(snapshot);
+	} catch {}
 };
+var holdIngressFiles = (files) => {
+	const incoming = Array.isArray(files) ? files.filter((file) => file instanceof File) : [];
+	if (!incoming.length) return;
+	const seen = new Set(heldIngressFiles.map(ingressFileKey));
+	let added = 0;
+	for (const file of incoming) {
+		const key = ingressFileKey(file);
+		if (seen.has(key)) continue;
+		seen.add(key);
+		heldIngressFiles.push(file);
+		added += 1;
+	}
+	if (added === 0) {
+		notifyHeldIngress();
+		return;
+	}
+	notifyHeldIngress();
+};
+var peekHeldIngressFiles = () => heldIngressFiles.slice();
 var takeHeldIngressFiles = () => heldIngressFiles.splice(0, heldIngressFiles.length);
-var loadLauncherState = () => __vitePreload(() => import("../com/app.js").then((n) => n.ct), __vite__mapDeps([0,1]), import.meta.url);
+/** Drop only the Files that a view already attached — keep the rest of a merged hold. */
+var dropHeldIngressFiles = (files) => {
+	if (!files?.length) return;
+	const drop = new Set(files.filter((file) => file instanceof File).map(ingressFileKey));
+	if (!drop.size) return;
+	for (let i = heldIngressFiles.length - 1; i >= 0; i--) if (drop.has(ingressFileKey(heldIngressFiles[i]))) heldIngressFiles.splice(i, 1);
+};
+var collectWorkCenterFlushHosts = () => {
+	if (typeof document === "undefined") return [];
+	const hosts = [];
+	const seen = /* @__PURE__ */ new Set();
+	const add = (node) => {
+		if (!node || seen.has(node)) return;
+		seen.add(node);
+		hosts.push(node);
+	};
+	document.querySelectorAll("cw-workcenter-view").forEach(add);
+	document.querySelectorAll("[data-shell], cw-shell-minimal, cw-shell-immersive, cw-shell-content, cw-shell-environment").forEach((shell) => {
+		shell.shadowRoot?.querySelectorAll("cw-workcenter-view").forEach(add);
+	});
+	return hosts;
+};
+/**
+* Same-heap attach after share/launch. Unified `deliveredNow` is not proof chips painted
+* (settle + supersede can skip `handleMessage`; `navigate(workcenter)` remounts an empty draft).
+*/
+var flushHeldIngressToWorkCenter = async () => {
+	const files = peekHeldIngressFiles();
+	if (!files.length) return 0;
+	notifyHeldIngress();
+	try {
+		const { postWorkCenterCommand } = await __vitePreload(async () => {
+			const { postWorkCenterCommand } = await import("./workcenter-command-wire.js").then((n) => n.n);
+			return { postWorkCenterCommand };
+		}, __vite__mapDeps([0,1]), import.meta.url);
+		postWorkCenterCommand({
+			type: "attach.add",
+			files
+		});
+	} catch {}
+	console.log("[sku-ingress] Flushing held ingress to Work Center", {
+		fileCount: files.length,
+		names: files.map((file) => file.name)
+	});
+	for (const host of collectWorkCenterFlushHosts()) try {
+		if (typeof host.addFiles === "function") await host.addFiles(files);
+		else if (typeof host.handleMessage === "function") await host.handleMessage({
+			type: "content-attach",
+			data: {
+				files,
+				fileCount: files.length
+			}
+		});
+	} catch (error) {
+		console.warn("[sku-ingress] flush to Work Center failed", error);
+	}
+	return files.length;
+};
+/**
+* Work Center subscribes here so a hold after `sessionReady` still paints chips.
+* If files are already held, the listener runs immediately.
+*/
+var onHeldIngressFiles = (listener) => {
+	heldIngressListeners.add(listener);
+	if (heldIngressFiles.length) try {
+		listener(heldIngressFiles.slice());
+	} catch {}
+	return () => {
+		heldIngressListeners.delete(listener);
+	};
+};
+var loadLauncherState = () => __vitePreload(() => import("../com/app.js").then((n) => n.ct), __vite__mapDeps([2,1]), import.meta.url);
 var WALLPAPER_EXT = /* @__PURE__ */ new Set([
 	"png",
 	"jpg",
@@ -257,7 +355,7 @@ var applyLauncherIngress = async (payload) => {
 				getWallpaperStoragePointer,
 				WALLPAPER_IDB_MARKER
 			};
-		}, __vite__mapDeps([0,1]), import.meta.url);
+		}, __vite__mapDeps([2,1]), import.meta.url);
 		const { wallpaperState, persistWallpaper } = await loadLauncherState();
 		await setAppWallpaperFromBlob(image);
 		wallpaperState.src = getWallpaperStoragePointer() || WALLPAPER_IDB_MARKER;
@@ -313,7 +411,7 @@ var openShellImageInViewer = async (file) => {
 	const { dispatchViewTransfer } = await __vitePreload(async () => {
 		const { dispatchViewTransfer } = await import("./ViewTransferRouting.js").then((n) => n.t);
 		return { dispatchViewTransfer };
-	}, __vite__mapDeps([2,1,0,3,4,5,6,7,8]), import.meta.url);
+	}, __vite__mapDeps([3,1,2,4,5,6,7,8,9]), import.meta.url);
 	await dispatchViewTransfer({
 		source: "clipboard",
 		route: "clipboard",
@@ -337,7 +435,7 @@ var applyShellWallpaper = async (file) => {
 			getWallpaperStoragePointer,
 			WALLPAPER_IDB_MARKER
 		};
-	}, __vite__mapDeps([0,1]), import.meta.url);
+	}, __vite__mapDeps([2,1]), import.meta.url);
 	const { wallpaperState, persistWallpaper } = await loadLauncherState();
 	await setAppWallpaperFromBlob(file);
 	wallpaperState.src = getWallpaperStoragePointer() || WALLPAPER_IDB_MARKER;
@@ -358,17 +456,17 @@ var installShellImageOpenListener = () => {
 		(async () => {
 			try {
 				const { loadSettings } = await __vitePreload(async () => {
-					const { loadSettings } = await import("../shells/boot-index.js").then((n) => n.Dt);
+					const { loadSettings } = await import("../shells/boot-index.js").then((n) => n.Ot);
 					return { loadSettings };
-				}, __vite__mapDeps([3,1,0,4,5,6,7]), import.meta.url);
+				}, __vite__mapDeps([4,1,2,5,6,7,8]), import.meta.url);
 				const { peekOpenPolicy, rememberOpenPolicyFromSettings, resolveOpenPolicy } = await __vitePreload(async () => {
-					const { peekOpenPolicy, rememberOpenPolicyFromSettings, resolveOpenPolicy } = await import("../shells/boot-index.js").then((n) => n.Ar);
+					const { peekOpenPolicy, rememberOpenPolicyFromSettings, resolveOpenPolicy } = await import("../shells/boot-index.js").then((n) => n.jr);
 					return {
 						peekOpenPolicy,
 						rememberOpenPolicyFromSettings,
 						resolveOpenPolicy
 					};
-				}, __vite__mapDeps([3,1,0,4,5,6,7]), import.meta.url);
+				}, __vite__mapDeps([4,1,2,5,6,7,8]), import.meta.url);
 				const settings = await loadSettings().catch(() => null);
 				rememberOpenPolicyFromSettings(settings);
 				const sink = resolveOpenPolicy(settings?.openPolicy ?? peekOpenPolicy(), "shell", "image", "open");
@@ -380,7 +478,7 @@ var installShellImageOpenListener = () => {
 					const { dispatchViewTransfer } = await __vitePreload(async () => {
 						const { dispatchViewTransfer } = await import("./ViewTransferRouting.js").then((n) => n.t);
 						return { dispatchViewTransfer };
-					}, __vite__mapDeps([2,1,0,3,4,5,6,7,8]), import.meta.url);
+					}, __vite__mapDeps([3,1,2,4,5,6,7,8,9]), import.meta.url);
 					await dispatchViewTransfer({
 						source: "clipboard",
 						route: "clipboard",
@@ -400,7 +498,7 @@ var installShellImageOpenListener = () => {
 					const { dispatchViewTransfer } = await __vitePreload(async () => {
 						const { dispatchViewTransfer } = await import("./ViewTransferRouting.js").then((n) => n.t);
 						return { dispatchViewTransfer };
-					}, __vite__mapDeps([2,1,0,3,4,5,6,7,8]), import.meta.url);
+					}, __vite__mapDeps([3,1,2,4,5,6,7,8,9]), import.meta.url);
 					await dispatchViewTransfer({
 						source: "clipboard",
 						route: "clipboard",
@@ -428,4 +526,4 @@ var installShellImageOpenListener = () => {
 	});
 };
 //#endregion
-export { skuIngressHint as a, refineLauncherImageIngress as i, holdIngressFiles as n, sku_ingress_exports as o, installShellImageOpenListener as r, takeHeldIngressFiles as s, applyLauncherIngress as t };
+export { installShellImageOpenListener as a, refineLauncherImageIngress as c, takeHeldIngressFiles as d, holdIngressFiles as i, skuIngressHint as l, dropHeldIngressFiles as n, onHeldIngressFiles as o, flushHeldIngressToWorkCenter as r, peekHeldIngressFiles as s, applyLauncherIngress as t, sku_ingress_exports as u };

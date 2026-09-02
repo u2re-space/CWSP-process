@@ -1,204 +1,8 @@
 import { r as __exportAll } from "./rolldown-runtime.js";
-import { at as readProcessApiResultText, fn as unwrapSwInteropMessage, ot as buildShareDataFromCachedPayload, st as consumeCachedShareTargetPayload, tt as unifiedMessaging } from "../shells/boot-index.js";
+import { at as readProcessApiResultText, dt as safeCachePut, lt as safeCacheMatch, ot as buildShareDataFromCachedPayload, pn as unwrapSwInteropMessage, st as consumeCachedShareTargetPayload, tt as unifiedMessaging, ut as safeCacheOpen } from "../shells/boot-index.js";
 import "../shells/boot-history-base.js";
-//#region src/shared/other/config/Names.ts
-/**
-* Broadcast channel names used throughout the application
-*/
-var BROADCAST_CHANNELS = {
-	SHARE_TARGET: "rs-share-target",
-	TOAST: "rs-toast",
-	CLIPBOARD: "rs-clipboard",
-	WORK_CENTER: "rs-workcenter",
-	MARKDOWN_VIEWER: "rs-markdown-viewer",
-	SETTINGS: "rs-settings",
-	GENERAL: "rs-app-general",
-	MINIMAL_APP: "minimal-app",
-	MAIN_APP: "main-app",
-	FILE_EXPLORER: "file-explorer",
-	PRINT_VIEWER: "print-viewer",
-	SETTINGS_VIEWER: "settings-viewer",
-	HISTORY_VIEWER: "history-viewer",
-	MARKDOWN_VIEWER_CHANNEL: "markdown-viewer",
-	FILE_EXPLORER_CHANNEL: "file-explorer",
-	SETTINGS_CHANNEL: "settings",
-	HISTORY_CHANNEL: "history",
-	PRINT_CHANNEL: "print",
-	SERVICE_WORKCENTER: "rs-service-workcenter",
-	SERVICE_SETTINGS: "rs-service-settings",
-	SERVICE_VIEWER: "rs-service-viewer",
-	SERVICE_EXPLORER: "rs-service-explorer",
-	SERVICE_AIRPAD: "rs-service-airpad",
-	SERVICE_NETWORK: "rs-service-network",
-	SERVICE_PRINT: "rs-service-print",
-	SERVICE_HISTORY: "rs-service-history",
-	SERVICE_EDITOR: "rs-service-editor",
-	SERVICE_HOME: "rs-service-home"
-};
-var viewBroadcastChannelName = (viewId) => {
-	return `rs-view-${normalizeViewId(viewId) || "app"}`;
-};
-/**
-* Component and module identifiers
-*/
-var COMPONENTS = {
-	WORK_CENTER: "workcenter",
-	MARKDOWN_VIEWER: "markdown-viewer",
-	MARKDOWN_EDITOR: "markdown-editor",
-	RICH_EDITOR: "rich-editor",
-	SETTINGS: "settings",
-	HISTORY: "history",
-	FILE_PICKER: "file-picker",
-	FILE_EXPLORER: "file-explorer",
-	WORKCENTER_CORE: "workcenter-core",
-	BASIC_WORKCENTER: "basic-workcenter",
-	BASIC_VIEWER: "basic-viewer",
-	BASIC_EXPLORER: "basic-explorer",
-	BASIC_SETTINGS: "basic-settings",
-	BASIC_HISTORY: "basic-history",
-	BASIC_PRINT: "basic-print",
-	AIRPAD: "airpad",
-	NETWORK: "network",
-	HOME: "home",
-	EDITOR: "editor",
-	VIEWER: "viewer",
-	EXPLORER: "explorer",
-	PRINT: "print"
-};
-/**
-* Location hash identifiers for app navigation
-*/
-var ROUTE_HASHES = {
-	MARKDOWN_VIEWER: "#markdown-viewer",
-	MARKDOWN_EDITOR: "#markdown-editor",
-	RICH_EDITOR: "#rich-editor",
-	SETTINGS: "#settings",
-	HISTORY: "#history",
-	WORKCENTER: "#workcenter",
-	FILE_PICKER: "#file-picker",
-	FILE_EXPLORER: "#file-explorer",
-	PRINT: "#print",
-	AIRPAD: "#airpad",
-	NETWORK: "#network",
-	WORKCENTER_FILES: "#workcenter-files",
-	WORKCENTER_TEXT: "#workcenter-text",
-	WORKCENTER_IMAGES: "#workcenter-images",
-	WORKCENTER_PROCESSING: "#workcenter-processing",
-	SHARE_TARGET_TEXT: "#share-target-text",
-	SHARE_TARGET_FILES: "#share-target-files",
-	SHARE_TARGET_URL: "#share-target-url",
-	SHARE_TARGET_IMAGE: "#share-target-image"
-};
-/**
-* Destination identifiers for unified messaging
-*/
-var DESTINATIONS = {
-	WORKCENTER: "workcenter",
-	CLIPBOARD: "clipboard",
-	VIEWER: "viewer",
-	MARKDOWN_VIEWER: "markdown-viewer",
-	SETTINGS: "settings",
-	HISTORY: "history",
-	EXPLORER: "explorer",
-	FILE_EXPLORER: "file-explorer",
-	PRINT: "print",
-	PRINT_VIEWER: "print-viewer",
-	EDITOR: "editor",
-	AIRPAD: "airpad",
-	HOME: "home",
-	BASIC_APP: "basic-app",
-	MAIN_APP: "main-app"
-};
-var CANONICAL_VIEW_IDS = [
-	"viewer",
-	"workcenter",
-	"explorer",
-	"editor",
-	"settings",
-	"history",
-	"home",
-	"airpad",
-	"print"
-];
-/**
-* COMPAT: legacy shells still emit `markdown-viewer`, `file-explorer`, and
-* `basic-*` destinations. Keep alias resolution centralized here so transports,
-* views, and workers can agree on one canonical target vocabulary.
-*/
-var DESTINATION_ALIASES = {
-	viewer: [
-		DESTINATIONS.VIEWER,
-		DESTINATIONS.MARKDOWN_VIEWER,
-		COMPONENTS.BASIC_VIEWER
-	],
-	workcenter: [
-		DESTINATIONS.WORKCENTER,
-		COMPONENTS.BASIC_WORKCENTER,
-		COMPONENTS.WORKCENTER_CORE
-	],
-	explorer: [
-		DESTINATIONS.EXPLORER,
-		DESTINATIONS.FILE_EXPLORER,
-		COMPONENTS.BASIC_EXPLORER
-	],
-	editor: [
-		DESTINATIONS.EDITOR,
-		COMPONENTS.MARKDOWN_EDITOR,
-		COMPONENTS.RICH_EDITOR
-	],
-	settings: [
-		DESTINATIONS.SETTINGS,
-		BROADCAST_CHANNELS.SETTINGS_CHANNEL,
-		COMPONENTS.BASIC_SETTINGS
-	],
-	history: [
-		DESTINATIONS.HISTORY,
-		BROADCAST_CHANNELS.HISTORY_CHANNEL,
-		COMPONENTS.BASIC_HISTORY
-	],
-	print: [
-		DESTINATIONS.PRINT,
-		DESTINATIONS.PRINT_VIEWER,
-		COMPONENTS.BASIC_PRINT
-	],
-	airpad: [DESTINATIONS.AIRPAD],
-	home: [DESTINATIONS.HOME],
-	clipboard: [DESTINATIONS.CLIPBOARD],
-	"basic-app": [DESTINATIONS.BASIC_APP],
-	"main-app": [DESTINATIONS.MAIN_APP]
-};
-var DESTINATION_LOOKUP = Object.entries(DESTINATION_ALIASES).reduce((out, [canonical, aliases]) => {
-	out[canonical] = canonical;
-	for (const alias of aliases) out[String(alias).toLowerCase()] = canonical;
-	return out;
-}, {});
-var normalizeDestination = (value) => {
-	const raw = String(value || "").trim().toLowerCase();
-	if (!raw) return "";
-	return DESTINATION_LOOKUP[raw] || raw;
-};
-var normalizeViewId = (value) => {
-	const canonical = normalizeDestination(value);
-	if (CANONICAL_VIEW_IDS.includes(canonical)) return canonical;
-	return "viewer";
-};
-BROADCAST_CHANNELS.SERVICE_WORKCENTER, BROADCAST_CHANNELS.SERVICE_SETTINGS, BROADCAST_CHANNELS.SERVICE_VIEWER, BROADCAST_CHANNELS.SERVICE_EXPLORER, BROADCAST_CHANNELS.SERVICE_AIRPAD, BROADCAST_CHANNELS.SERVICE_NETWORK, BROADCAST_CHANNELS.SERVICE_PRINT, BROADCAST_CHANNELS.SERVICE_HISTORY, BROADCAST_CHANNELS.SERVICE_EDITOR, BROADCAST_CHANNELS.SERVICE_HOME;
-ROUTE_HASHES.WORKCENTER, ROUTE_HASHES.SETTINGS, ROUTE_HASHES.MARKDOWN_VIEWER, ROUTE_HASHES.FILE_EXPLORER, ROUTE_HASHES.NETWORK, ROUTE_HASHES.PRINT, ROUTE_HASHES.HISTORY, ROUTE_HASHES.MARKDOWN_EDITOR;
-//#endregion
-//#region src/shared/routing/channel/workcenter-command-wire.ts
-var WORKCENTER_COMMAND_TYPE = "workcenter-command";
-var postWorkCenterCommand = (command) => {
-	const envelope = {
-		type: WORKCENTER_COMMAND_TYPE,
-		command
-	};
-	const names = [BROADCAST_CHANNELS.WORK_CENTER, viewBroadcastChannelName("workcenter")];
-	for (const name of names) try {
-		const channel = new BroadcastChannel(name);
-		channel.postMessage(envelope);
-		channel.close();
-	} catch {}
-};
+import { t as postWorkCenterCommand } from "./workcenter-command-wire.js";
+import { i as holdIngressFiles } from "./sku-ingress.js";
 ({
 	process: "/workcenter?shared=1",
 	document: "/viewer?shared=1",
@@ -209,7 +13,36 @@ var postWorkCenterCommand = (command) => {
 }).process;
 //#endregion
 //#region src/shared/routing/pwa/sw-result-wire.ts
-var PROCESS_PENDING_PATH = "/process/pending";
+var PENDING_CACHE = "rs-process-pending-v1";
+var PENDING_CACHE_URL = "/process/pending.json";
+var loadPending = async () => {
+	try {
+		const cache = await safeCacheOpen(PENDING_CACHE);
+		const response = await safeCacheMatch(cache, PENDING_CACHE_URL);
+		if (!response) return [];
+		const json = await response.json();
+		return Array.isArray(json?.operations) ? json.operations : [];
+	} catch {
+		return [];
+	}
+};
+var savePending = async (operations) => {
+	const cache = await safeCacheOpen(PENDING_CACHE);
+	if (!cache) return;
+	await safeCachePut(cache, PENDING_CACHE_URL, new Response(JSON.stringify({ operations: operations.slice(-10) }), { headers: {
+		"Content-Type": "application/json; charset=utf-8",
+		"Cache-Control": "no-store"
+	} }));
+};
+var readPendingProcessResults = () => loadPending();
+var clearPendingProcessResults = async (ids) => {
+	if (!ids?.length) {
+		await savePending([]);
+		return;
+	}
+	const keep = new Set(ids);
+	await savePending((await loadPending()).filter((item) => !keep.has(item.id)));
+};
 //#endregion
 //#region src/shared/routing/pwa/sw-page-bridge.ts
 var sw_page_bridge_exports = /* @__PURE__ */ __exportAll({
@@ -302,6 +135,8 @@ var hydrateShareInput = async (data) => {
 };
 var deliverShareTargetInput = async (data) => {
 	const payload = await hydrateShareInput(data);
+	const files = Array.isArray(payload.files) ? payload.files.filter((file) => typeof File !== "undefined" && file instanceof File) : [];
+	if (files.length) holdIngressFiles(files);
 	return deliverSwResultToWorkCenter("share-target-input", payload, String(payload.text || payload.title || ""));
 };
 var deliverSwResultToWorkCenter = async (type, data, extraText = "") => {
@@ -363,11 +198,7 @@ var replayProcessPending = async () => {
 		if (!loc || !/^https?:$/.test(String(loc.protocol || ""))) return;
 		const href = String(loc.href || "");
 		if (href.startsWith("chrome-extension://") || href.startsWith("moz-extension://")) return;
-		const response = await fetch(PROCESS_PENDING_PATH, { cache: "no-store" });
-		const type = String(response.headers.get("content-type") || "").toLowerCase();
-		if (!response.ok || !type.includes("application/json")) return;
-		const json = await response.json();
-		const operations = Array.isArray(json?.operations) ? json.operations : [];
+		const operations = await readPendingProcessResults();
 		if (!operations.length) return;
 		for (const operation of operations) {
 			const opType = String(operation.type || "process-api-result");
@@ -378,10 +209,7 @@ var replayProcessPending = async () => {
 			}
 			await deliverSwResultToWorkCenter(opType, payload, String(operation.text || ""));
 		}
-		await fetch(PROCESS_PENDING_PATH, {
-			method: "DELETE",
-			cache: "no-store"
-		}).catch(() => void 0);
+		await clearPendingProcessResults();
 	} catch {}
 };
 /** Bind SW postMessage + deferred replay. Idempotent. */
@@ -436,4 +264,4 @@ var bindSwPageBridge = () => {
 	};
 };
 //#endregion
-export { sw_page_bridge_exports as a, ingestSwClientMessage as i, deliverShareTargetInput as n, postWorkCenterCommand as o, deliverSwResultToWorkCenter as r, bindSwPageBridge as t };
+export { sw_page_bridge_exports as a, ingestSwClientMessage as i, deliverShareTargetInput as n, deliverSwResultToWorkCenter as r, bindSwPageBridge as t };

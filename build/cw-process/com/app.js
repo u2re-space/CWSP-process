@@ -37064,20 +37064,26 @@ var tryOpenSocketIo = async () => {
 };
 var connectRemoteMountedFs = async (options) => {
 	const httpPath = options?.httpPath || "/ssre/fs";
-	const ws = await tryOpenWebSocket(options?.wsUrl || wsUrlFromHttp(httpPath));
-	if (ws) {
-		const transport = createWebSocketFsTransport(ws);
-		if ((await transport.request({ op: "mounts" }).catch(() => null))?.ok) return transport;
-		try {
-			ws.close();
-		} catch {}
-	}
-	const sio = await tryOpenSocketIo();
-	if (sio) {
-		if ((await sio.request({ op: "mounts" }).catch(() => null))?.ok) return sio;
-	}
 	const https = createHttpsFsTransport(httpPath);
-	return (await https.request({ op: "mounts" }).catch(() => null))?.ok ? https : null;
+	const probe = await https.request({ op: "mounts" }).catch(() => null);
+	if (!probe?.ok) return null;
+	if (options?.wsUrl || probe.ws === true) {
+		const ws = await tryOpenWebSocket(options?.wsUrl || wsUrlFromHttp(httpPath));
+		if (ws) {
+			const transport = createWebSocketFsTransport(ws);
+			if ((await transport.request({ op: "mounts" }).catch(() => null))?.ok) return transport;
+			try {
+				ws.close();
+			} catch {}
+		}
+	}
+	if (probe.socketio === true) {
+		const sio = await tryOpenSocketIo();
+		if (sio) {
+			if ((await sio.request({ op: "mounts" }).catch(() => null))?.ok) return sio;
+		}
+	}
+	return https;
 };
 var createRemoteProvideBackend = (root, transport) => ({
 	root,
@@ -50546,6 +50552,19 @@ var loadCachedWallpaperTheme = () => {
 */
 var applyThemeFromWallpaper = async (imgURL, opts) => {
 	const srcKey = typeof imgURL === "string" ? imgURL.slice(0, 2048) : `blob:${imgURL.name || "wallpaper"}:${imgURL.size}`;
+	if (typeof imgURL === "string") {
+		if (!imgURL) return null;
+		if (globalThis[Symbol.for("image.canvas.failedWallpaperSrc")]?.has(imgURL)) return null;
+		if (imgURL.startsWith("data:") && !/^data:image\//i.test(imgURL)) return null;
+		if (/video\/mp2t/i.test(imgURL)) return null;
+		if (/\/assets\/wallpaper\.jpg(?:$|[?#])/i.test(imgURL)) try {
+			const sku = String(document.documentElement?.dataset?.cwspSku || "").toLowerCase();
+			const host = String(globalThis.location?.hostname || "").toLowerCase();
+			if (sku === "process" || host === "process.u2re.space" || host === "workcenter.u2re.space" || host === "ai.u2re.space") return null;
+		} catch {
+			return null;
+		}
+	} else if (imgURL instanceof Blob && imgURL.type && !imgURL.type.startsWith("image/") && imgURL.type !== "application/octet-stream") return null;
 	const liveLuma = await sampleImageMeanLuma(imgURL);
 	if (liveLuma != null) applyWallpaperPaperFromLuma(liveLuma);
 	if (!opts?.force) try {
@@ -50616,7 +50635,7 @@ var wallpaperEpoch = 0;
 var currentOrientNumber = () => orientationNumberMap?.[getCorrectOrientation()] ?? 0;
 var isIdbPointer = (pointer) => pointer === "idb:rs-wallpaper" || pointer.startsWith("idb:");
 /** Stored `blob:` is always dead after reload; oversized `data:` is a quota leftover. */
-var isUnusableStoredUrl = (pointer) => pointer.startsWith("blob:") || pointer.startsWith("data:") && pointer.length > LOCAL_STORAGE_SAFE_CHARS;
+var isUnusableStoredUrl = (pointer) => pointer.startsWith("blob:") || pointer.startsWith("data:") && (pointer.length > LOCAL_STORAGE_SAFE_CHARS || !/^data:image\//i.test(pointer));
 var revokeLiveObjectUrl = () => {
 	wallpaperEpoch += 1;
 	if (liveObjectUrl && liveObjectUrl.startsWith("blob:")) try {
@@ -50729,8 +50748,9 @@ var resolveAppWallpaperUrl = async () => {
 			if (!isIdbPointer(pointer)) writeStoragePointer(WALLPAPER_IDB_MARKER);
 			return url;
 		}
-		return DEFAULT_WALLPAPER_URL;
+		return processHostSkipsBundledWallpaper() ? "" : DEFAULT_WALLPAPER_URL;
 	}
+	if (processHostSkipsBundledWallpaper() && (!pointer || pointer === DEFAULT_WALLPAPER_URL)) return "";
 	return pointer || DEFAULT_WALLPAPER_URL;
 };
 /** Durable pointer currently stored (`/assets/…` or {@link WALLPAPER_IDB_MARKER}). */
@@ -50859,14 +50879,19 @@ var initializeAppCanvasLayer = (container) => {
 	canvas.style.setProperty("background-color", "transparent", "important");
 	canvas.style.setProperty("opacity", "1", "important");
 	root.append(glow, canvas);
+	rememberMissingDefaultWallpaper();
 	const pointer = readStoragePointer();
 	const coldUrl = isIdbPointer(pointer) || pointer.startsWith("data:") || pointer.startsWith("blob:") ? DEFAULT_WALLPAPER_URL : pointer;
-	canvas.setAttribute("data-src", coldUrl);
+	if (coldUrl && !failedWallpaperSrc.has(coldUrl)) canvas.setAttribute("data-src", coldUrl);
 	const disposeOrient = syncCanvasOrient(canvas);
 	restoreWallpaperThemeCache();
 	syncGlowToTheme(glow);
 	(async () => {
 		const wallpaper = await resolveAppWallpaperUrl();
+		if (!wallpaper || failedWallpaperSrc.has(wallpaper)) {
+			syncGlowToTheme(glow);
+			return;
+		}
 		canvas.setAttribute("data-src", wallpaper);
 		syncCanvasOrient(canvas);
 		await applyThemeFromWallpaper(wallpaper.startsWith("blob:") ? await idbGetWallpaper() || wallpaper : wallpaper);
@@ -50926,6 +50951,19 @@ var sheduler = globalThis[shedulerSymbol];
 var failedWallpaperSrcSymbol = Symbol.for("image.canvas.failedWallpaperSrc");
 globalThis[failedWallpaperSrcSymbol] ??= /* @__PURE__ */ new Set();
 var failedWallpaperSrc = globalThis[failedWallpaperSrcSymbol];
+/** Process PWA does not ship `/assets/wallpaper.jpg` — skip the 404 + decode loop. */
+var processHostSkipsBundledWallpaper = () => {
+	try {
+		if (String(document.documentElement?.dataset?.cwspSku || "").toLowerCase() === "process") return true;
+		const host = String(globalThis.location?.hostname || "").toLowerCase();
+		return host === "process.u2re.space" || host === "workcenter.u2re.space" || host === "ai.u2re.space";
+	} catch {
+		return false;
+	}
+};
+var rememberMissingDefaultWallpaper = () => {
+	if (processHostSkipsBundledWallpaper()) failedWallpaperSrc.add(DEFAULT_WALLPAPER_URL);
+};
 var getImgWidth = (img) => {
 	return img?.naturalWidth || img?.width || 1;
 };
@@ -51099,6 +51137,10 @@ if (typeof HTMLCanvasElement != "undefined") UICanvas = class UICanvas extends H
 		this.#loading = ready;
 		if (!ready || typeof ready !== "string") return Promise.resolve();
 		if (failedWallpaperSrc.has(ready)) return Promise.resolve();
+		if (ready.startsWith("data:") && !/^data:image\//i.test(ready)) {
+			failedWallpaperSrc.add(ready);
+			return Promise.resolve();
+		}
 		return fetch(ready, {
 			cache: "force-cache",
 			mode: "same-origin"

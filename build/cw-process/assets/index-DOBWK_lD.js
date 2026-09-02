@@ -1,4 +1,4 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../chunks/src2.js","../com/app.js","../chunks/rolldown-runtime.js","../shells/boot-index.js","../fest/core.js","../shells/boot-history-base.js","../com/service.js","../fest/veela.js","../chunks/sw-handling.js","../chunks/log-sanitizer.js","../chunks/sw-page-bridge.js","../chunks/sku-ingress.js","../chunks/ViewTransferRouting.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../chunks/src2.js","../com/app.js","../chunks/rolldown-runtime.js","../shells/boot-index.js","../fest/core.js","../shells/boot-history-base.js","../com/service.js","../fest/veela.js","../chunks/sw-handling.js","../chunks/log-sanitizer.js","../chunks/workcenter-command-wire.js","../chunks/sw-page-bridge.js","../chunks/sku-ingress.js","../chunks/ViewTransferRouting.js"])))=>i.map(i=>d[i]);
 import "../chunks/vite-preload-BsPm7yBB.js";
 const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
 //#region src/frontend/boot/html-boot.ts
@@ -36,7 +36,7 @@ var showBootSplash = (mount, message) => {
 	}
 	try {
 		showBootSplash(mount, "Loading application modules…");
-		const loadMain = __vitePreload(() => import("../chunks/src2.js"), __vite__mapDeps([0,1,2,3,4,5,6,7,8,9,10,11,12]), import.meta.url);
+		const loadMain = __vitePreload(() => import("../chunks/src2.js"), __vite__mapDeps([0,1,2,3,4,5,6,7,8,9,10,11,12,13]), import.meta.url);
 		const timeout = new Promise((_, reject) => {
 			globalThis.setTimeout(() => {
 				reject(/* @__PURE__ */ new Error("Timed out loading app modules. Try: hard refresh (Ctrl+Shift+R), confirm Vite is running, check DevTools Network for failed /src/ requests. If you use HTTPS on a LAN IP behind a proxy, set VITE_DEV_SERVER_ORIGIN to the public origin (see shared/vite.config.js)."));

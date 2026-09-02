@@ -45,6 +45,21 @@ for (const name of fs.readdirSync(src)) {
     const htmlPath = path.join(dest, "index.html");
     if (fs.existsSync(htmlPath)) {
         let html = fs.readFileSync(htmlPath, "utf8");
+        html = html.replace(
+            /<link[^>]*rel=["']modulepreload["'][^>]*href=["']data:video\/mp2t[^"']*["'][^>]*>\s*/gi,
+            ""
+        );
+        html = html.replace(
+            /<link[^>]*href=["']data:video\/mp2t[^"']*["'][^>]*rel=["']modulepreload["'][^>]*>\s*/gi,
+            ""
+        );
+        html = html.replace(
+            /<link[^>]*rel=["']modulepreload["'][^>]*href=["'][^"']*\.ts["'][^>]*>\s*/gi,
+            ""
+        );
+        if (html.includes("data:video/mp2t") || html.includes("/src/index.ts")) {
+            console.log("[stage-cw-workcenter] stripped .ts / video/mp2t modulepreload from index.html");
+        }
         if (!html.includes("pwa/icons/icon.svg")) {
             html = html.replace(
                 "</head>",
