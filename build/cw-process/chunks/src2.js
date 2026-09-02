@@ -1,6 +1,6 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../shells/boot-index.js","./rolldown-runtime.js","../com/app.js","../fest/core.js","../shells/boot-history-base.js","../com/service.js","../fest/veela.js","./BootLoader.js","../shells/preference.js","./capacitor-settings-permissions.js","./capacitor-permissions.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./sw-page-bridge.js","./rolldown-runtime.js","../shells/boot-index.js","../com/app.js","../fest/core.js","../shells/boot-history-base.js","../com/service.js","../fest/veela.js","./BootLoader.js","../shells/preference.js","./capacitor-settings-permissions.js","./capacitor-permissions.js"])))=>i.map(i=>d[i]);
 import { Dr as __vitePreload, vr as loadAsAdopted } from "../com/app.js";
-import { O as initializeLayers } from "../shells/boot-index.js";
+import { A as initializeLayers, dt as safeCachesDelete, ft as safeCachesKeys } from "../shells/boot-index.js";
 import { a as applyCwspSku } from "../shells/boot-history-base.js";
 import { checkPendingShareData, ensureAppCss, handleShareTarget, initReceivers, n as ensureServiceWorkerRegistered, setupLaunchQueueConsumer, t as dropStaleServiceWorkerRegistrations } from "./sw-handling.js";
 //#region src/shared/routing/pwa/pwa-handling.ts
@@ -239,6 +239,12 @@ var ServiceWorkerUpdateManager = class {
 		});
 		navigator.serviceWorker.addEventListener("message", (event) => {
 			const { type, data } = event.data || {};
+			if (type === "ai-result" || type === "process-api-result" || type === "share-target-result" || type === "share-target-input" || type === "share-received" || type === "content-cached" || type === "content-received") __vitePreload(async () => {
+				const { ingestSwClientMessage } = await import("./sw-page-bridge.js").then((n) => n.a);
+				return { ingestSwClientMessage };
+			}, __vite__mapDeps([0,1,2,3,4,5,6,7]), import.meta.url).then(({ ingestSwClientMessage }) => {
+				ingestSwClientMessage(event.data);
+			}).catch(() => void 0);
 			switch (type) {
 				case "sw-update-ready":
 					console.log("[SW] Service worker reports update ready");
@@ -417,8 +423,8 @@ var checkForUpdates = async () => {
 var forceRefreshAssets = async () => {
 	console.log("[PWA] Force refreshing all cached assets");
 	try {
-		const cacheNames = await caches.keys();
-		await Promise.all(cacheNames.map((cacheName) => caches.delete(cacheName)));
+		const cacheNames = await safeCachesKeys();
+		await Promise.all(cacheNames.map((cacheName) => safeCachesDelete(cacheName)));
 		console.log("[PWA] All caches cleared");
 		globalThis?.location?.reload?.();
 	} catch (error) {
@@ -493,19 +499,19 @@ var bootProcessSku = async (container, kind, view = "workcenter") => {
 	stampProcessSku(host);
 	if (host === "capacitor") try {
 		const { SystemBarType, SystemBars } = await __vitePreload(async () => {
-			const { SystemBarType, SystemBars } = await import("../shells/boot-index.js").then((n) => n.nn);
+			const { SystemBarType, SystemBars } = await import("../shells/boot-index.js").then((n) => n.mn);
 			return {
 				SystemBarType,
 				SystemBars
 			};
-		}, __vite__mapDeps([0,1,2,3,4,5,6]), import.meta.url);
+		}, __vite__mapDeps([2,1,3,4,5,6,7]), import.meta.url);
 		await SystemBars.hide({ bar: SystemBarType.NavigationBar });
 	} catch {}
 	const resolved = resolveProcessBootView(view);
 	const { bootMinimal } = await __vitePreload(async () => {
 		const { bootMinimal } = await import("./BootLoader.js");
 		return { bootMinimal };
-	}, __vite__mapDeps([7,2,1,3,0,4,5,6,8,9,10]), import.meta.url);
+	}, __vite__mapDeps([8,3,1,4,2,5,6,7,9,10,11]), import.meta.url);
 	await bootMinimal(container, resolved, { rememberChoice: false });
 };
 //#endregion

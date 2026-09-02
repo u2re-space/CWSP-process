@@ -68,7 +68,7 @@ var bootProcessSku = async (container, kind, view = "workcenter") => {
 	stampProcessSku(host);
 	if (host === "capacitor") try {
 		const { SystemBarType, SystemBars } = await __vitePreload(async () => {
-			const { SystemBarType, SystemBars } = await import("../shells/boot-index.js").then((n) => n.en);
+			const { SystemBarType, SystemBars } = await import("../shells/boot-index.js").then((n) => n.fn);
 			return {
 				SystemBarType,
 				SystemBars

@@ -9,6 +9,7 @@ var KNOWN_PATH_MOUNTS = [
 	"explorer",
 	"workcenter",
 	"process",
+	"ai",
 	"kvm"
 ];
 /** Dedicated PWA hosts — app lives at `/`. Hub/LAN keep `/markdown` `/viewer` path mounts. */
@@ -19,6 +20,7 @@ var DEDICATED_SKU_HOSTS = [
 	"www.explorer.u2re.space",
 	"process.u2re.space",
 	"workcenter.u2re.space",
+	"ai.u2re.space",
 	"cwsp.u2re.space",
 	"www.cwsp.u2re.space",
 	"transfer.u2re.space"

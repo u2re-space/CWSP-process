@@ -1,5 +1,5 @@
 import { G as UIElement_default, Gn as E, H as applyWallpaperPaperFromLuma, K as __decorate, M as statusbar_default, Rn as defineElement, br as preloadStyle, fr as ref, sr as effect, zn as H } from "../com/app.js";
-import { Yt as CwsBridge } from "./boot-index.js";
+import { on as CwsBridge } from "./boot-index.js";
 import { t as toggleCalendarFlyout } from "./environment-components-calendar-CalendarFlyout.js";
 import { n as toggleQuickSettingsFlyout } from "./environment-components-settings-QuickSettings.js";
 //#region src/frontend/shells/environment/components/statusbar/statusbar.ts

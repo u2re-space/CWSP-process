@@ -1,4 +1,80 @@
-import { er as API_ENDPOINTS } from "../shells/boot-index.js";
+import { mr as API_ENDPOINTS } from "../shells/boot-index.js";
+//#region ../../modules/projects/subsystem/src/routing/pwa/sw-cache.ts
+var originHint = () => {
+	try {
+		const origin = globalThis.location?.origin;
+		if (origin) return origin;
+	} catch {}
+	return "https://localhost";
+};
+var toCacheRequestInfo = (requestLike) => {
+	if (!requestLike) return void 0;
+	return requestLike instanceof URL ? requestLike.toString() : requestLike;
+};
+var cacheKeyString = (request) => {
+	if (typeof request === "string") return request;
+	if (request instanceof Request) return request.url;
+	return "";
+};
+/**
+* Cache#match rejects blob:/data:/non-GET. chrome-extension: is valid in MV3.
+* Relative paths (`/share-target-data`) resolve against the worker origin.
+*/
+var isCacheApiKey = (request) => {
+	if (request instanceof Request && String(request.method || "GET").toUpperCase() !== "GET") return false;
+	const raw = cacheKeyString(request);
+	if (!raw) return false;
+	try {
+		const protocol = new URL(raw, originHint()).protocol;
+		return protocol === "http:" || protocol === "https:" || protocol === "chrome-extension:" || protocol === "moz-extension:";
+	} catch {
+		return raw.startsWith("/");
+	}
+};
+var asMatchKey = (request) => {
+	if (typeof request === "string") return request;
+	if (typeof Request !== "undefined" && request instanceof Request) return request;
+};
+var cachesApi = () => {
+	try {
+		return globalThis.caches || null;
+	} catch {
+		return null;
+	}
+};
+var safeCacheOpen = async (name) => {
+	const store = cachesApi();
+	if (!store || typeof store.open !== "function") return null;
+	try {
+		return await store.open(name);
+	} catch {
+		return null;
+	}
+};
+var safeCacheMatch = async (cache, requestLike) => {
+	const request = toCacheRequestInfo(requestLike);
+	if (!cache || !request) return void 0;
+	const key = asMatchKey(request);
+	if (!key || !isCacheApiKey(key)) return void 0;
+	const match = cache.match;
+	if (typeof match !== "function") return void 0;
+	try {
+		return await match.call(cache, key) ?? void 0;
+	} catch (error) {
+		console.warn("[SW] Cache.match failed:", request, error);
+		return;
+	}
+};
+var safeCacheDelete = async (cache, requestLike) => {
+	const request = toCacheRequestInfo(requestLike);
+	if (!cache || !request || typeof cache.delete !== "function") return false;
+	try {
+		return await cache.delete(request);
+	} catch {
+		return false;
+	}
+};
+//#endregion
 //#region ../../modules/projects/subsystem/src/routing/channel/ShareTargetGateway.ts
 /**
 * Helpers for moving share-target payloads between the service worker, Cache
@@ -11,18 +87,17 @@ import { er as API_ENDPOINTS } from "../shells/boot-index.js";
 var SHARE_CACHE_NAME = "share-target-data";
 var SHARE_CACHE_KEY = "/share-target-data";
 var SHARE_FILES_MANIFEST_KEY = "/share-target-files";
-var hasCaches = () => typeof globalThis !== "undefined" && "caches" in globalThis;
 /**
 * Rehydrate the cached share-target payload and optionally clear the consumed
 * cache entries so they are not replayed on the next app load.
 */
 var consumeCachedShareTargetPayload = async (opts = {}) => {
 	const clear = opts.clear !== false;
-	if (!hasCaches()) return null;
 	try {
-		const cache = await caches.open(SHARE_CACHE_NAME);
-		const metaResp = await cache.match(SHARE_CACHE_KEY);
-		const manifestResp = await cache.match(SHARE_FILES_MANIFEST_KEY);
+		const cache = await safeCacheOpen(SHARE_CACHE_NAME);
+		if (!cache) return null;
+		const metaResp = await safeCacheMatch(cache, SHARE_CACHE_KEY);
+		const manifestResp = await safeCacheMatch(cache, SHARE_FILES_MANIFEST_KEY);
 		if (!metaResp && !manifestResp) return null;
 		const meta = metaResp ? await metaResp.json().catch(() => null) : null;
 		const manifest = manifestResp ? await manifestResp.json().catch(() => null) : null;
@@ -31,7 +106,7 @@ var consumeCachedShareTargetPayload = async (opts = {}) => {
 		for (const fm of fileMeta) {
 			const fileKey = typeof fm?.key === "string" ? fm.key.trim() : String(fm?.key ?? "").trim();
 			if (!fileKey) continue;
-			const response = await cache.match(fileKey);
+			const response = await safeCacheMatch(cache, fileKey);
 			if (!response) continue;
 			const blob = await response.blob();
 			files.push(new File([blob], fm.name || "shared-file", {
@@ -40,9 +115,9 @@ var consumeCachedShareTargetPayload = async (opts = {}) => {
 			}));
 		}
 		if (clear) {
-			await cache.delete(SHARE_CACHE_KEY).catch(() => {});
-			await cache.delete(SHARE_FILES_MANIFEST_KEY).catch(() => {});
-			for (const fm of fileMeta) if (fm?.key) await cache.delete(fm.key).catch(() => {});
+			await safeCacheDelete(cache, SHARE_CACHE_KEY);
+			await safeCacheDelete(cache, SHARE_FILES_MANIFEST_KEY);
+			for (const fm of fileMeta) if (fm?.key) await safeCacheDelete(cache, fm.key);
 		}
 		return {
 			meta: meta || {},

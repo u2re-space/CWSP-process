@@ -2781,9 +2781,9 @@ cacheWillUpdate: async ({ response }) => {
 	};
 	//#endregion
 	//#region src/shared/other/config/ecosystem-skus.ts
-	var ECOSYSTEM_SKUS, SKU_SET, isCwspSku, readCwspSku, applyCwspSku, HUB_PUBLIC_HOSTS, SKU_PUBLIC_HOSTS, SKU_HUB_PATHS, currentHostname, firstPathSegment, isLanOrLoopbackHost, isHubPublicHost, skuForHubPathSegment, inferCwspSkuFromLocation, ensureCwspSkuFromLocation, isCwspNativeHost;
+	var ECOSYSTEM_SKUS$1, SKU_SET$1, isCwspSku$1, readCwspSku$1, applyCwspSku$1, HUB_PUBLIC_HOSTS$1, SKU_PUBLIC_HOSTS$1, SKU_HUB_PATHS$1, currentHostname$1, firstPathSegment$1, isLanOrLoopbackHost$1, isHubPublicHost$1, skuForHubPathSegment$1, inferCwspSkuFromLocation$1, ensureCwspSkuFromLocation$1, isCwspNativeHost;
 	var init_ecosystem_skus = __esmMin((() => {
-		ECOSYSTEM_SKUS = {
+		ECOSYSTEM_SKUS$1 = {
 			launcher: {
 				sku: "launcher",
 				androidPackage: "space.u2re.cw",
@@ -2845,25 +2845,25 @@ cacheWillUpdate: async ({ response }) => {
 				apkName: ""
 			}
 		};
-		SKU_SET = new Set(Object.keys(ECOSYSTEM_SKUS));
-		isCwspSku = (value) => typeof value === "string" && SKU_SET.has(value);
-		readCwspSku = () => {
+		SKU_SET$1 = new Set(Object.keys(ECOSYSTEM_SKUS$1));
+		isCwspSku$1 = (value) => typeof value === "string" && SKU_SET$1.has(value);
+		readCwspSku$1 = () => {
 			try {
 				const raw = String(document.documentElement?.dataset?.cwspSku || "").trim().toLowerCase();
-				return isCwspSku(raw) ? raw : "";
+				return isCwspSku$1(raw) ? raw : "";
 			} catch {
 				return "";
 			}
 		};
-		applyCwspSku = (sku) => {
+		applyCwspSku$1 = (sku) => {
 			try {
 				document.documentElement.dataset.cwspSku = sku;
-				const rec = ECOSYSTEM_SKUS[sku];
+				const rec = ECOSYSTEM_SKUS$1[sku];
 				if (rec.defaultView && !document.documentElement.dataset.cwspDefaultView) document.documentElement.dataset.cwspDefaultView = rec.defaultView;
 			} catch {}
 		};
-		HUB_PUBLIC_HOSTS = ["u2re.space", "www.u2re.space"];
-		SKU_PUBLIC_HOSTS = {
+		HUB_PUBLIC_HOSTS$1 = ["u2re.space", "www.u2re.space"];
+		SKU_PUBLIC_HOSTS$1 = {
 			document: ["md.u2re.space", "www.md.u2re.space"],
 			explorer: ["explorer.u2re.space", "www.explorer.u2re.space"],
 			process: [
@@ -2877,7 +2877,7 @@ cacheWillUpdate: async ({ response }) => {
 				"transfer.u2re.space"
 			]
 		};
-		SKU_HUB_PATHS = {
+		SKU_HUB_PATHS$1 = {
 			document: [
 				"markdown",
 				"document",
@@ -2895,44 +2895,44 @@ cacheWillUpdate: async ({ response }) => {
 			],
 			transfer: ["cwsp", "transfer"]
 		};
-		currentHostname = () => {
+		currentHostname$1 = () => {
 			try {
 				return String(globalThis.location?.hostname || "").toLowerCase();
 			} catch {
 				return "";
 			}
 		};
-		firstPathSegment = () => {
+		firstPathSegment$1 = () => {
 			try {
 				return (String(globalThis.location?.pathname || "/").split("?")[0] || "/").split("/").filter(Boolean)[0]?.toLowerCase() || "";
 			} catch {
 				return "";
 			}
 		};
-		isLanOrLoopbackHost = (host) => host === "localhost" || host === "127.0.0.1" || host === "::1" || /^\d{1,3}(\.\d{1,3}){3}$/.test(host);
-		isHubPublicHost = (hostname) => {
-			const host = String(hostname || currentHostname()).toLowerCase();
-			return HUB_PUBLIC_HOSTS.includes(host);
+		isLanOrLoopbackHost$1 = (host) => host === "localhost" || host === "127.0.0.1" || host === "::1" || /^\d{1,3}(\.\d{1,3}){3}$/.test(host);
+		isHubPublicHost$1 = (hostname) => {
+			const host = String(hostname || currentHostname$1()).toLowerCase();
+			return HUB_PUBLIC_HOSTS$1.includes(host);
 		};
-		skuForHubPathSegment = (segment) => {
+		skuForHubPathSegment$1 = (segment) => {
 			const seg = String(segment || "").trim().toLowerCase();
 			if (!seg) return "";
-			for (const sku of Object.keys(SKU_HUB_PATHS)) if (SKU_HUB_PATHS[sku].includes(seg)) return sku;
+			for (const sku of Object.keys(SKU_HUB_PATHS$1)) if (SKU_HUB_PATHS$1[sku].includes(seg)) return sku;
 			return "";
 		};
-		inferCwspSkuFromLocation = () => {
-			const stamped = readCwspSku();
+		inferCwspSkuFromLocation$1 = () => {
+			const stamped = readCwspSku$1();
 			if (stamped) return stamped;
-			const host = currentHostname();
-			for (const sku of Object.keys(SKU_PUBLIC_HOSTS)) if (SKU_PUBLIC_HOSTS[sku].includes(host)) return sku;
-			const fromPath = skuForHubPathSegment(firstPathSegment());
+			const host = currentHostname$1();
+			for (const sku of Object.keys(SKU_PUBLIC_HOSTS$1)) if (SKU_PUBLIC_HOSTS$1[sku].includes(host)) return sku;
+			const fromPath = skuForHubPathSegment$1(firstPathSegment$1());
 			if (fromPath) return fromPath;
-			if (isHubPublicHost(host) || isLanOrLoopbackHost(host)) return "launcher";
+			if (isHubPublicHost$1(host) || isLanOrLoopbackHost$1(host)) return "launcher";
 			return "";
 		};
-		ensureCwspSkuFromLocation = () => {
-			const sku = inferCwspSkuFromLocation();
-			if (sku) applyCwspSku(sku);
+		ensureCwspSkuFromLocation$1 = () => {
+			const sku = inferCwspSkuFromLocation$1();
+			if (sku) applyCwspSku$1(sku);
 			return sku;
 		};
 		isCwspNativeHost = () => {
@@ -2945,7 +2945,7 @@ cacheWillUpdate: async ({ response }) => {
 			}
 		};
 		try {
-			ensureCwspSkuFromLocation();
+			ensureCwspSkuFromLocation$1();
 		} catch {}
 	}));
 	//#endregion
@@ -11182,7 +11182,7 @@ cacheWillUpdate: async ({ response }) => {
 	}));
 	//#endregion
 	//#region ../../modules/projects/uniform.ts/src/newer/messaging/Protocol.ts
-	var PURPOSES$1, TYPES, DEFAULT_PURPOSE, asString, normalizePath$2, normalizeArgs, normalizeTransfer, normalizePurpose$1, inferType, inferOperation, inferProtocol, randomId$1, createProtocolEnvelope, isProtocolEnvelope, normalizeProtocolEnvelope;
+	var PURPOSES$1, DEFAULT_PURPOSE, asString, normalizePath$2, normalizeArgs, normalizeTransfer, normalizePurpose$1, inferType, inferOperation, inferProtocol, randomId$1, createProtocolEnvelope, isProtocolEnvelope, normalizeProtocolEnvelope;
 	var init_Protocol = __esmMin((() => {
 		PURPOSES$1 = /* @__PURE__ */ new Set([
 			"invoke",
@@ -11190,14 +11190,6 @@ cacheWillUpdate: async ({ response }) => {
 			"attach",
 			"deliver",
 			"defer"
-		]);
-		TYPES = /* @__PURE__ */ new Set([
-			"request",
-			"response",
-			"invoke",
-			"ack",
-			"act",
-			"ask"
 		]);
 		DEFAULT_PURPOSE = "mail";
 		asString = (value) => String(value ?? "").trim();
@@ -11222,7 +11214,7 @@ cacheWillUpdate: async ({ response }) => {
 		};
 		inferType = (input) => {
 			const explicit = asString(input.type);
-			if (TYPES.has(explicit)) return explicit;
+			if (explicit) return explicit;
 			const op = asString(input.op);
 			if (op === "get" || op === "set" || op === "apply" || op === "import") return "invoke";
 			if (input.error) return "response";
@@ -11952,6 +11944,64 @@ cacheWillUpdate: async ({ response }) => {
 			const path = String(pathname || "").split("?")[0] || "/";
 			return path === "/api/process" || path.startsWith(`/api/process/`) || path === "/api/processing" || path.startsWith("/process/ai") || path.startsWith("/process/processing") || path.startsWith("/process/api") || path === "/process/health";
 		};
+	}));
+	//#endregion
+	//#region ../../modules/projects/subsystem/src/routing/api/process-api-result.ts
+	var asTrimmed, fromChoices, fromRecognized, fromRecord, readProcessApiResultText;
+	var init_process_api_result = __esmMin((() => {
+		asTrimmed = (value) => typeof value === "string" ? value.trim() : "";
+		fromChoices = (value) => {
+			if (!Array.isArray(value) || !value.length) return "";
+			const first = value[0];
+			return asTrimmed(first?.message?.content) || asTrimmed(first?.text);
+		};
+		fromRecognized = (value) => {
+			const text = asTrimmed(value);
+			if (text) return text;
+			if (!Array.isArray(value) || !value.length) return "";
+			return value.map((item) => typeof item === "string" ? item : item == null ? "" : JSON.stringify(item)).filter(Boolean).join("\n").trim();
+		};
+		fromRecord = (row) => {
+			if (row.ok === false || row.success === false) return "";
+			const inner = row.result && typeof row.result === "object" ? row.result : null;
+			const candidates = [
+				row.data,
+				inner?.data,
+				inner?.text,
+				inner?.content,
+				row.text,
+				row.content,
+				row.verbose_data,
+				inner?.verbose_data,
+				row.output_text,
+				inner?.output_text
+			];
+			for (const item of candidates) {
+				const text = asTrimmed(item);
+				if (text) return text;
+			}
+			const recognized = fromRecognized(row.recognized_data ?? inner?.recognized_data);
+			if (recognized) return recognized;
+			const choices = fromChoices(row.choices ?? inner?.choices);
+			if (choices) return choices;
+			if (typeof inner?.result === "string") return inner.result.trim();
+			return "";
+		};
+		readProcessApiResultText = (json) => {
+			if (json == null) return "";
+			if (typeof json === "string") {
+				const trimmed = json.trim();
+				if (!trimmed) return "";
+				if (trimmed.startsWith("{") || trimmed.startsWith("[")) try {
+					return readProcessApiResultText(JSON.parse(trimmed)) || trimmed;
+				} catch {
+					return trimmed;
+				}
+				return trimmed;
+			}
+			if (typeof json !== "object") return String(json).trim();
+			return fromRecord(json);
+		};
 	})), BROADCAST_CHANNELS, VIEW_POST_API_SEGMENTS, isViewPostApiPath, viewBroadcastChannelName, COMPONENTS, ROUTE_HASHES, DESTINATIONS, CANONICAL_VIEW_IDS, DESTINATION_ALIASES, DESTINATION_LOOKUP, normalizeDestination, getDestinationAliases, normalizeViewId;
 	var init_Names = __esmMin((() => {
 		BROADCAST_CHANNELS = {
@@ -12141,10 +12191,15 @@ cacheWillUpdate: async ({ response }) => {
 		ROUTE_HASHES.WORKCENTER, ROUTE_HASHES.SETTINGS, ROUTE_HASHES.MARKDOWN_VIEWER, ROUTE_HASHES.FILE_EXPLORER, ROUTE_HASHES.NETWORK, ROUTE_HASHES.PRINT, ROUTE_HASHES.HISTORY, ROUTE_HASHES.MARKDOWN_EDITOR;
 	}));
 	//#endregion
+	//#region ../../modules/projects/subsystem/runtime/names.ts
+	var init_names = __esmMin((() => {
+		init_Names();
+	}));
+	//#endregion
 	//#region src/shared/routing/channel/UniformInterop.ts
 	var PROTOCOL_ALIASES, TRANSPORT_ALIASES, PURPOSES, randomId, normalizePurpose, normalizeInteropProtocolName, normalizeInteropTransportName, createInteropEnvelope;
 	var init_UniformInterop = __esmMin((() => {
-		init_Names();
+		init_names();
 		PROTOCOL_ALIASES = {
 			"chrome-runtime": "chrome",
 			"chrome-tabs": "chrome",
@@ -49187,89 +49242,17 @@ Apply the user's custom instructions above when processing the data. Prioritize 
 		}
 	};
 	//#endregion
-	//#region ../../modules/projects/subsystem/src/routing/channel/LogSanitizer.ts
-	init_src();
-	var DEFAULT_OPTIONS = {
-		maxStringLength: 180,
-		maxArrayLength: 8,
-		maxObjectKeys: 20,
-		maxDepth: 3
-	};
-	var isFileLike = (value) => typeof File !== "undefined" && value instanceof File;
-	var isBlobLike = (value) => typeof Blob !== "undefined" && value instanceof Blob;
-	var summarizeString = (value, maxStringLength) => {
-		if (!value) return value;
-		const parsedDataUrl = parseDataUrl(value);
-		if (parsedDataUrl) return `[data-url ${parsedDataUrl.mimeType || "application/octet-stream"}, length=${value.length}]`;
-		if (value.length > maxStringLength && isBase64Like(value)) return `[base64-like string, length=${value.length}]`;
-		if (value.length > maxStringLength) return `${value.slice(0, maxStringLength)}... [truncated ${value.length - maxStringLength} chars]`;
-		return value;
-	};
-	var summarizeFormData = (formData, options) => {
-		const entries = Array.from(formData.entries());
-		const keys = [...new Set(entries.map(([key]) => key))];
-		const preview = {};
-		for (const key of keys.slice(0, options.maxObjectKeys)) preview[key] = formData.getAll(key).slice(0, options.maxArrayLength).map((entry) => {
-			if (typeof entry === "string") return summarizeString(entry, options.maxStringLength);
-			if (isFileLike(entry)) return {
-				file: entry.name,
-				type: entry.type,
-				size: entry.size
-			};
-			return summarizeForLog(entry, options);
-		});
-		return {
-			kind: "FormData",
-			keyCount: keys.length,
-			keys,
-			preview
-		};
-	};
-	var summarizeRecord = (value, options, depth, seen) => {
-		if (depth >= options.maxDepth) return `[object depth>${options.maxDepth}]`;
-		if (seen.has(value)) return "[circular]";
-		seen.add(value);
-		const entries = Object.entries(value);
-		const sliced = entries.slice(0, options.maxObjectKeys);
-		const summary = {};
-		for (const [key, entryValue] of sliced) summary[key] = summarizeUnknown(entryValue, options, depth + 1, seen);
-		if (entries.length > options.maxObjectKeys) summary.__truncatedKeys = entries.length - options.maxObjectKeys;
-		return summary;
-	};
-	var summarizeUnknown = (value, options, depth, seen) => {
-		if (value == null) return value;
-		if (typeof value === "string") return summarizeString(value, options.maxStringLength);
-		if (typeof value === "number" || typeof value === "boolean" || typeof value === "bigint") return value;
-		if (typeof value === "symbol") return value.toString();
-		if (typeof value === "function") return `[function ${value.name || "anonymous"}]`;
-		if (typeof FormData !== "undefined" && value instanceof FormData) return summarizeFormData(value, options);
-		if (isFileLike(value)) return {
-			file: value.name,
-			type: value.type,
-			size: value.size
-		};
-		if (isBlobLike(value)) return {
-			blob: true,
-			type: value.type,
-			size: value.size
-		};
-		if (Array.isArray(value)) {
-			if (depth >= options.maxDepth) return `[array(${value.length}) depth>${options.maxDepth}]`;
-			const summary = value.slice(0, options.maxArrayLength).map((item) => summarizeUnknown(item, options, depth + 1, seen));
-			if (value.length > options.maxArrayLength) summary.push(`[${value.length - options.maxArrayLength} more items]`);
-			return summary;
+	//#region ../../modules/projects/subsystem/runtime/log-sanitizer.ts
+	function summarizeForLog(value) {
+		if (typeof value === "string") return value.slice(0, 240);
+		try {
+			return JSON.stringify(value)?.slice(0, 240) ?? "";
+		} catch {
+			return String(value);
 		}
-		if (typeof value === "object") return summarizeRecord(value, options, depth, seen);
-		return String(value);
-	};
-	var summarizeForLog = (value, partialOptions = {}) => {
-		return summarizeUnknown(value, {
-			...DEFAULT_OPTIONS,
-			...partialOptions
-		}, 0, /* @__PURE__ */ new WeakSet());
-	};
+	}
 	//#endregion
-	//#region src/shared/routing/api/process-local.ts
+	//#region ../../modules/projects/subsystem/src/routing/api/process-local.ts
 	init_process_api_path();
 	var PROCESS_LOCAL_DEFAULT_BASE_URL = "https://api.proxyapi.ru/openai/v1";
 	var PROCESS_LOCAL_DEFAULT_MODEL = "gpt-5.6-luna";
@@ -49364,7 +49347,7 @@ Apply the user's custom instructions above when processing the data. Prioritize 
 		}
 	};
 	//#endregion
-	//#region src/shared/routing/api/process-api-sw.ts
+	//#region ../../modules/projects/subsystem/src/routing/api/process-api-sw.ts
 	var pathOf = (url = "/") => {
 		try {
 			return new URL(url, "http://process.local").pathname;
@@ -49426,9 +49409,445 @@ Apply the user's custom instructions above when processing the data. Prioritize 
 		return m === "GET" || m === "HEAD" || m === "POST";
 	};
 	//#endregion
-	//#region src/pwa/sw.ts
+	//#region ../../modules/projects/subsystem/src/routing/channel/workcenter-command-wire.ts
+	init_process_api_result();
 	init_Names();
+	var WORKCENTER_COMMAND_TYPE = "workcenter-command";
+	var postWorkCenterCommand = (command) => {
+		const envelope = {
+			type: WORKCENTER_COMMAND_TYPE,
+			command
+		};
+		const names = [BROADCAST_CHANNELS.WORK_CENTER, viewBroadcastChannelName("workcenter")];
+		for (const name of names) try {
+			const channel = new BroadcastChannel(name);
+			channel.postMessage(envelope);
+			channel.close();
+		} catch {}
+	};
+	//#endregion
+	//#region ../../modules/projects/subsystem/src/routing/pwa/sw-cache.ts
+	var originHint = () => {
+		try {
+			const origin = globalThis.location?.origin;
+			if (origin) return origin;
+		} catch {}
+		return "https://localhost";
+	};
+	var toCacheRequestInfo = (requestLike) => {
+		if (!requestLike) return void 0;
+		return requestLike instanceof URL ? requestLike.toString() : requestLike;
+	};
+	var cacheKeyString = (request) => {
+		if (typeof request === "string") return request;
+		if (request instanceof Request) return request.url;
+		return "";
+	};
+	/**
+	* Cache#match rejects blob:/data:/non-GET. chrome-extension: is valid in MV3.
+	* Relative paths (`/share-target-data`) resolve against the worker origin.
+	*/
+	var isCacheApiKey = (request) => {
+		if (request instanceof Request && String(request.method || "GET").toUpperCase() !== "GET") return false;
+		const raw = cacheKeyString(request);
+		if (!raw) return false;
+		try {
+			const protocol = new URL(raw, originHint()).protocol;
+			return protocol === "http:" || protocol === "https:" || protocol === "chrome-extension:" || protocol === "moz-extension:";
+		} catch {
+			return raw.startsWith("/");
+		}
+	};
+	var asMatchKey = (request) => {
+		if (typeof request === "string") return request;
+		if (typeof Request !== "undefined" && request instanceof Request) return request;
+	};
+	var cachesApi = () => {
+		try {
+			return globalThis.caches || null;
+		} catch {
+			return null;
+		}
+	};
+	var safeCacheOpen = async (name) => {
+		const store = cachesApi();
+		if (!store || typeof store.open !== "function") return null;
+		try {
+			return await store.open(name);
+		} catch {
+			return null;
+		}
+	};
+	var safeCacheMatch = async (cache, requestLike) => {
+		const request = toCacheRequestInfo(requestLike);
+		if (!cache || !request) return void 0;
+		const key = asMatchKey(request);
+		if (!key || !isCacheApiKey(key)) return void 0;
+		const match = cache.match;
+		if (typeof match !== "function") return void 0;
+		try {
+			return await match.call(cache, key) ?? void 0;
+		} catch (error) {
+			console.warn("[SW] Cache.match failed:", request, error);
+			return;
+		}
+	};
+	var safeCachesMatch = async (requestLike) => {
+		const request = toCacheRequestInfo(requestLike);
+		const store = cachesApi();
+		if (!request || !store || !isCacheApiKey(request)) return void 0;
+		const match = store.match;
+		if (typeof match !== "function") return void 0;
+		try {
+			return await match.call(store, request) ?? void 0;
+		} catch (error) {
+			console.warn("[SW] caches.match failed:", request, error);
+			return;
+		}
+	};
+	var safeCachePut = async (cache, requestLike, response) => {
+		const request = toCacheRequestInfo(requestLike);
+		if (!cache || !request || typeof cache.put !== "function") return false;
+		const key = asMatchKey(request);
+		if (!key || !isCacheApiKey(key)) return false;
+		try {
+			await cache.put(key, response);
+			return true;
+		} catch (error) {
+			console.warn("[SW] Cache.put failed:", request, error);
+			return false;
+		}
+	};
+	//#endregion
+	//#region ../../modules/projects/subsystem/src/other/config/ecosystem-skus.ts
+	var ECOSYSTEM_SKUS = {
+		launcher: {
+			sku: "launcher",
+			androidPackage: "space.u2re.cw",
+			scheme: "space.u2re.cw",
+			phosphorIcon: "cross",
+			defaultView: "home",
+			shell: "environment",
+			apkManifest: "latest-launcher.json",
+			apkName: "cwsp-launcher.apk"
+		},
+		transfer: {
+			sku: "transfer",
+			androidPackage: "space.u2re.cwsp",
+			scheme: "space.u2re.cwsp",
+			phosphorIcon: "drone",
+			defaultView: "network",
+			shell: "minimal",
+			apkManifest: "latest.json",
+			apkName: "cwsp.apk"
+		},
+		explorer: {
+			sku: "explorer",
+			androidPackage: "space.u2re.explorer",
+			scheme: "space.u2re.explorer",
+			phosphorIcon: "folder",
+			defaultView: "explorer",
+			shell: "minimal",
+			apkManifest: "latest-explorer.json",
+			apkName: "cwsp-explorer.apk"
+		},
+		document: {
+			sku: "document",
+			androidPackage: "space.u2re.document",
+			scheme: "space.u2re.document",
+			phosphorIcon: "books",
+			defaultView: "viewer",
+			shell: "minimal",
+			apkManifest: "latest-document.json",
+			apkName: "cwsp-document.apk"
+		},
+		process: {
+			sku: "process",
+			androidPackage: "space.u2re.process",
+			scheme: "space.u2re.process",
+			phosphorIcon: "magic-wand",
+			defaultView: "workcenter",
+			shell: "minimal",
+			apkManifest: "latest-process.json",
+			apkName: "cwsp-process.apk"
+		},
+		crx: {
+			sku: "crx",
+			androidPackage: null,
+			scheme: "chrome-extension",
+			phosphorIcon: "cross",
+			defaultView: "home",
+			shell: "environment",
+			apkManifest: "",
+			apkName: ""
+		}
+	};
+	var SKU_SET = new Set(Object.keys(ECOSYSTEM_SKUS));
+	var isCwspSku = (value) => typeof value === "string" && SKU_SET.has(value);
+	var readCwspSku = () => {
+		try {
+			const raw = String(document.documentElement?.dataset?.cwspSku || "").trim().toLowerCase();
+			return isCwspSku(raw) ? raw : "";
+		} catch {
+			return "";
+		}
+	};
+	/** Stamp `data-cwsp-sku` so Settings / openView / APK update resolve the same host. */
+	var applyCwspSku = (sku) => {
+		try {
+			document.documentElement.dataset.cwspSku = sku;
+			const rec = ECOSYSTEM_SKUS[sku];
+			if (rec.defaultView && !document.documentElement.dataset.cwspDefaultView) document.documentElement.dataset.cwspDefaultView = rec.defaultView;
+		} catch {}
+	};
+	var HUB_PUBLIC_HOSTS = ["u2re.space", "www.u2re.space"];
+	var SKU_PUBLIC_HOSTS = {
+		document: ["md.u2re.space", "www.md.u2re.space"],
+		explorer: ["explorer.u2re.space", "www.explorer.u2re.space"],
+		process: [
+			"process.u2re.space",
+			"workcenter.u2re.space",
+			"ai.u2re.space"
+		],
+		transfer: [
+			"cwsp.u2re.space",
+			"www.cwsp.u2re.space",
+			"transfer.u2re.space"
+		]
+	};
+	/** Hub/LAN Fastify prefixes — never nest (`/viewer/explorer`). */
+	var SKU_HUB_PATHS = {
+		document: [
+			"markdown",
+			"document",
+			"viewer"
+		],
+		explorer: [
+			"explorer",
+			"files",
+			"fm"
+		],
+		process: [
+			"workcenter",
+			"process",
+			"ai"
+		],
+		transfer: ["cwsp", "transfer"]
+	};
+	var currentHostname = () => {
+		try {
+			return String(globalThis.location?.hostname || "").toLowerCase();
+		} catch {
+			return "";
+		}
+	};
+	var firstPathSegment = () => {
+		try {
+			return (String(globalThis.location?.pathname || "/").split("?")[0] || "/").split("/").filter(Boolean)[0]?.toLowerCase() || "";
+		} catch {
+			return "";
+		}
+	};
+	var isLanOrLoopbackHost = (host) => host === "localhost" || host === "127.0.0.1" || host === "::1" || /^\d{1,3}(\.\d{1,3}){3}$/.test(host);
+	var isHubPublicHost = (hostname) => {
+		const host = String(hostname || currentHostname()).toLowerCase();
+		return HUB_PUBLIC_HOSTS.includes(host);
+	};
+	var skuForHubPathSegment = (segment) => {
+		const seg = String(segment || "").trim().toLowerCase();
+		if (!seg) return "";
+		for (const sku of Object.keys(SKU_HUB_PATHS)) if (SKU_HUB_PATHS[sku].includes(seg)) return sku;
+		return "";
+	};
+	/** Host + hub/LAN path mount → SKU. `u2re.space/` stays launcher (full chrome). */
+	var inferCwspSkuFromLocation = () => {
+		const stamped = readCwspSku();
+		if (stamped) return stamped;
+		const host = currentHostname();
+		for (const sku of Object.keys(SKU_PUBLIC_HOSTS)) if (SKU_PUBLIC_HOSTS[sku].includes(host)) return sku;
+		const fromPath = skuForHubPathSegment(firstPathSegment());
+		if (fromPath) return fromPath;
+		if (isHubPublicHost(host) || isLanOrLoopbackHost(host)) return "launcher";
+		return "";
+	};
+	var ensureCwspSkuFromLocation = () => {
+		const sku = inferCwspSkuFromLocation();
+		if (sku) applyCwspSku(sku);
+		return sku;
+	};
+	try {
+		ensureCwspSkuFromLocation();
+	} catch {}
+	/** Process default — Work Center consumes `?shared=1` + share cache. */
+	var PROCESS_SHARE_LANDING_PATH = {
+		process: "/workcenter?shared=1",
+		document: "/viewer?shared=1",
+		explorer: "/?shared=1",
+		transfer: "/?shared=1",
+		launcher: "/?shared=1",
+		crx: "/?shared=1"
+	}.process;
+	//#endregion
+	//#region ../../modules/projects/subsystem/src/routing/pwa/sw-result-wire.ts
+	init_Names();
+	var PROCESS_PENDING_PATH = "/process/pending";
+	/** Process PWA share landing — Work Center consumes `?shared=1` + cache. */
+	var SHARE_LANDING_PATH = PROCESS_SHARE_LANDING_PATH;
+	var PENDING_CACHE = "rs-process-pending-v1";
+	var PENDING_CACHE_URL = "/process/pending.json";
+	var loadPending = async () => {
+		try {
+			const response = await safeCacheMatch(await safeCacheOpen(PENDING_CACHE), PENDING_CACHE_URL);
+			if (!response) return [];
+			const json = await response.json();
+			return Array.isArray(json?.operations) ? json.operations : [];
+		} catch {
+			return [];
+		}
+	};
+	var savePending = async (operations) => {
+		const cache = await safeCacheOpen(PENDING_CACHE);
+		if (!cache) return;
+		await safeCachePut(cache, PENDING_CACHE_URL, new Response(JSON.stringify({ operations: operations.slice(-10) }), { headers: {
+			"Content-Type": "application/json; charset=utf-8",
+			"Cache-Control": "no-store"
+		} }));
+	};
+	var storePendingProcessResult = async (item) => {
+		const operations = await loadPending();
+		operations.push(item);
+		await savePending(operations);
+	};
+	var clearPendingProcessResults = async (ids) => {
+		if (!ids?.length) {
+			await savePending([]);
+			return;
+		}
+		const keep = new Set(ids);
+		await savePending((await loadPending()).filter((item) => !keep.has(item.id)));
+	};
+	var pendingProcessJsonResponse = async () => new Response(JSON.stringify({ operations: await loadPending() }), { headers: {
+		"Content-Type": "application/json; charset=utf-8",
+		"Cache-Control": "no-store"
+	} });
+	var postChromeRuntime = (type, data, text = "") => {
+		try {
+			const runtime = globalThis.chrome?.runtime;
+			if (typeof runtime?.sendMessage !== "function") return;
+			runtime.sendMessage({
+				type,
+				data,
+				text
+			}, () => {
+				runtime.lastError;
+			});
+		} catch {}
+	};
+	var postSwResultToClients = async (type, data) => {
+		try {
+			const clients = await globalThis.clients?.matchAll?.({
+				type: "window",
+				includeUncontrolled: true
+			});
+			if (!clients) return;
+			for (const client of clients) client.postMessage({
+				type,
+				data
+			});
+		} catch {}
+	};
+	/** Live notify + optional pending stash. Safe from Process SW and process-api-sw. */
+	var publishSwFrontendResult = (input) => {
+		const text = String(input.text || readProcessApiResultText(input.data) || "").trim();
+		const data = input.data;
+		try {
+			const share = new BroadcastChannel(BROADCAST_CHANNELS.SHARE_TARGET);
+			share.postMessage({
+				type: input.type,
+				data,
+				text
+			});
+			share.close();
+		} catch {}
+		postWorkCenterCommand({
+			type: "ingress.apply",
+			payload: {
+				type: input.type,
+				data,
+				content: text
+			}
+		});
+		postChromeRuntime(input.type, data, text);
+		postSwResultToClients(input.type, data);
+		if (input.persist === false) return;
+		if (!text && input.type !== "share-received" && input.type !== "share-target-input") return;
+		storePendingProcessResult({
+			id: `${input.type}-${Date.now()}`,
+			type: input.type,
+			text: text || input.type,
+			raw: stripFilesForPending(data),
+			timestamp: Date.now()
+		}).catch(() => void 0);
+	};
+	var stripFilesForPending = (data) => {
+		if (!data || typeof data !== "object") return data;
+		const row = { ...data };
+		if ("files" in row) delete row.files;
+		if ("imageFiles" in row) delete row.imageFiles;
+		return row;
+	};
+	/**
+	* Share-target fan-out: files stay in Cache Storage; metadata + cloneable File[]
+	* go to clients. Existing windows are focused; the POST 302 still lands Work Center.
+	*/
+	var publishSwShareReceived = (data) => {
+		publishSwFrontendResult({
+			type: "share-received",
+			data,
+			text: String(data.text || data.title || data.url || ""),
+			persist: true
+		});
+		focusShareClients();
+	};
+	var focusShareClients = async () => {
+		try {
+			const first = (await globalThis.clients?.matchAll?.({
+				type: "window",
+				includeUncontrolled: true
+			}))?.[0];
+			if (first && typeof first.focus === "function") await first.focus();
+		} catch {}
+	};
+	//#endregion
+	//#region ../../modules/projects/subsystem/src/routing/pwa/sw-lifecycle.ts
+	var skipWaitingType = (value) => {
+		if (value == null) return false;
+		if (typeof value === "string") return value === "SKIP_WAITING" || value === "skipWaiting";
+		if (typeof value !== "object") return false;
+		const row = value;
+		const type = String(row.type || row.what || "");
+		return type === "SKIP_WAITING" || type === "skipWaiting";
+	};
+	var attachSwLifecycle = (scope = self) => {
+		const skip = () => Promise.resolve(scope.skipWaiting?.()).then(() => void 0);
+		scope.addEventListener?.("install", (event) => {
+			event.waitUntil?.(skip());
+		});
+		scope.addEventListener?.("activate", (event) => {
+			event.waitUntil?.(Promise.resolve(scope.clients?.claim?.()).then(() => void 0));
+		});
+		scope.addEventListener?.("message", (event) => {
+			const data = event.data;
+			if (!skipWaitingType(data)) return;
+			event.waitUntil?.(skip());
+		});
+	};
+	//#endregion
+	//#region src/pwa/sw.ts
+	init_names();
 	init_src$6();
+	init_process_api_result();
+	attachSwLifecycle(self);
 	/**
 	* Service Worker Content Association Registry
 	*/
@@ -49606,7 +50025,7 @@ Apply the user's custom instructions above when processing the data. Prioritize 
 				content
 			});
 			let redirectLocation;
-			if (context === "share-target") redirectLocation = `/basic${determineShareTargetRoute(content)}?cached=${cacheKey}`;
+			if (context === "share-target") redirectLocation = `${SHARE_LANDING_PATH}${SHARE_LANDING_PATH.includes("?") ? "&" : "?"}cached=${cacheKey}`;
 			else redirectLocation = `/?cached=${cacheKey}`;
 			console.log("[SW-Cache] Cached pipeline content:", summarizeForLog({
 				context,
@@ -49647,9 +50066,12 @@ Apply the user's custom instructions above when processing the data. Prioritize 
 	async function handleOpenAppAction(content, context, event) {
 		try {
 			await handleCacheAction(content, context, event);
-			const clients = await self.clients?.matchAll?.({ type: "window" });
+			const clients = await self.clients?.matchAll?.({
+				type: "window",
+				includeUncontrolled: true
+			});
 			let targetUrl;
-			if (context === "share-target") targetUrl = `/basic${determineShareTargetRoute(content)}`;
+			if (context === "share-target") targetUrl = SHARE_LANDING_PATH;
 			else targetUrl = `/?context=${context}`;
 			if (clients?.length > 0) {
 				await clients[0].focus();
@@ -49682,36 +50104,6 @@ Apply the user's custom instructions above when processing the data. Prioritize 
 			throw error;
 		}
 	}
-	/**
-	* Determine the appropriate route hash based on share-target content
-	*/
-	function determineShareTargetRoute(content) {
-		let contentType = "text";
-		if (content.files?.length > 0) {
-			if (content.files.some((file) => file.type?.startsWith("image/"))) contentType = "image";
-			else contentType = "file";
-		} else if (content.url) contentType = "url";
-		let routeHash;
-		switch (contentType) {
-			case "image":
-				routeHash = ROUTE_HASHES.SHARE_TARGET_IMAGE;
-				break;
-			case "file":
-				routeHash = ROUTE_HASHES.SHARE_TARGET_FILES;
-				break;
-			case "url":
-				routeHash = ROUTE_HASHES.SHARE_TARGET_URL;
-				break;
-			default: routeHash = ROUTE_HASHES.SHARE_TARGET_TEXT;
-		}
-		console.log("[ShareTarget] Route decision:", {
-			contentType,
-			routeHash,
-			fileCount: content?.files?.length || 0,
-			hasUrl: !!content?.url
-		});
-		return routeHash;
-	}
 	var CACHE_KEYS_DB_NAME = "sw-cache-keys";
 	var CACHE_KEYS_STORE_NAME = "keys";
 	var SW_CONTENT_CACHE_NAME = "sw-content-cache";
@@ -49721,45 +50113,6 @@ Apply the user's custom instructions above when processing the data. Prioritize 
 		if (!normalizedKey) throw new Error("Invalid SW cache key");
 		const safeKey = normalizedKey.replace(/^\/+/, "");
 		return new URL(`${SW_CONTENT_CACHE_PREFIX}${encodeURIComponent(safeKey)}`, self.location.origin).toString();
-	};
-	var toCacheRequestInfo = (requestLike) => {
-		if (!requestLike) return void 0;
-		return requestLike instanceof URL ? requestLike.toString() : requestLike;
-	};
-	/** Cache#match only accepts http(s) GET keys — blob:/data:/POST throw TypeError. */
-	var isCacheApiKey = (request) => {
-		if (request instanceof Request && request.method !== "GET") return false;
-		const raw = typeof request === "string" ? request : request instanceof Request ? request.url : "";
-		if (!raw) return false;
-		try {
-			const url = new URL(raw, self.location.origin);
-			return url.protocol === "http:" || url.protocol === "https:";
-		} catch {
-			return false;
-		}
-	};
-	var safeCacheMatch = async (cache, requestLike) => {
-		const request = toCacheRequestInfo(requestLike);
-		if (!cache || !request) return void 0;
-		/** Cache#match rejects non-Request / non-string (minified callers may pass plain objects). */
-		const key = typeof request === "string" ? request : request instanceof Request ? request : void 0;
-		if (!key || !isCacheApiKey(key)) return void 0;
-		try {
-			return await cache?.match?.(key);
-		} catch (error) {
-			console.warn("[SW] Cache.match failed:", request, error);
-			return;
-		}
-	};
-	var safeCachesMatch = async (requestLike) => {
-		const request = toCacheRequestInfo(requestLike);
-		if (!request || !isCacheApiKey(request)) return void 0;
-		try {
-			return await caches?.match?.(request);
-		} catch (error) {
-			console.warn("[SW] caches.match failed:", request, error);
-			return;
-		}
 	};
 	var safeIsUserScopePath = (pathname) => {
 		try {
@@ -49904,7 +50257,10 @@ Apply the user's custom instructions above when processing the data. Prioritize 
 	}
 	async function broadcastToClients(type, data) {
 		try {
-			const clients = await self.clients?.matchAll?.();
+			const clients = await self.clients?.matchAll?.({
+				type: "window",
+				includeUncontrolled: true
+			});
 			if (clients) for (const client of clients) client.postMessage({
 				type,
 				data
@@ -49913,7 +50269,7 @@ Apply the user's custom instructions above when processing the data. Prioritize 
 			console.warn("[SW-Broadcast] Failed to broadcast to clients:", error);
 		}
 	}
-	var manifest = [{"revision":"725fad53ea7e7faeed2eeddbf806fa14","url":"index.html"},{"revision":"528c7e9c0f8a41cfe096f0b1e888216e","url":"workers/opfs/OPFS.uniform.worker.js"},{"revision":"5cb43eb73f2e6457d5acd0b75993481f","url":"views/viewer.js"},{"revision":"a997e10cbf0af544d2779305ec1d96c8","url":"vendor/xlsx.js"},{"revision":"aa689cfe66df50189e85b19ec9d610df","url":"vendor/quill.js"},{"revision":"42cf392cc1234965cec990cd219c6a2d","url":"vendor/pdfjs-dist.js"},{"revision":"0f6b08abc3a91a9507a21bf46fe88003","url":"vendor/parchment.js"},{"revision":"776f5bb08a28e6bdcb0d881bdc785f94","url":"vendor/mammoth.js"},{"revision":"0bfca535a8bbb58f4c148d97b4ac5522","url":"vendor/lop.js"},{"revision":"c8741cf7f91408ce1ef47278156eac8f","url":"vendor/lodash.isequal.js"},{"revision":"f6c6602c08733d2d5474a44523a2139b","url":"vendor/lodash.clonedeep.js"},{"revision":"39fac3d6fe673e3aeabac7945f320696","url":"vendor/lodash-es.js"},{"revision":"ad18e855753678d16b95237f6f4127db","url":"vendor/jszip.js"},{"revision":"3be6e1ff8ce12b780c1129848c497a55","url":"vendor/fast-diff.js"},{"revision":"6fb6b129de239a1607bc4b6b79f8b9fa","url":"vendor/eventemitter3.js"},{"revision":"07f1b9397af6f4ac29980c832d4f3ab1","url":"vendor/dingbat-to-unicode.js"},{"revision":"f7447ea6adf08ccc0a78f24beee529a9","url":"vendor/bluebird.js"},{"revision":"b8d53040e646cc14be10c6f973a285d8","url":"vendor/base64-js.js"},{"revision":"a7018ffb2f665a8ec0433dab1f4ea1d3","url":"vendor/@xmldom_xmldom.js"},{"revision":"4b8116a6fa1dee7d129870976062230b","url":"vendor/@toon-format_toon.js"},{"revision":"249121960f98591470b47ac91f40dbdb","url":"shells/preference.js"},{"revision":"2a0c3839ddf37788f8ff8085a1428f9d","url":"shells/environment-window-views-browser-view.js"},{"revision":"ccde8d1947e5d1afb5d157090dfe96b2","url":"shells/environment-scss-main.scss_inline.js"},{"revision":"61d77f45c2a320a4c7e1bd32091c12de","url":"shells/environment-index.js"},{"revision":"ec31446123f72c37ee2d1931b759a150","url":"shells/environment-environment-overlay.js"},{"revision":"85eac0ed52f366f1ade696168e16c004","url":"shells/environment-components-wallpaper.js"},{"revision":"3c815e5aca7556d9b595907ce499b633","url":"shells/environment-components-taskbar-element-TaskBar.js"},{"revision":"2be7fb241b057c44926ab5e9853f4805","url":"shells/environment-components-statusbar-capacitor-native-safe-area.js"},{"revision":"e2f194508097bb53ecc1eccf92831cb3","url":"shells/environment-components-settings-QuickSettings.js"},{"revision":"cc3250cc658b04c3b8e9021b4114f78b","url":"shells/environment-components-explorer-ContextMenu.js"},{"revision":"69991a62ff0c6b8548d46ad2a6ee08f4","url":"shells/environment-components-calendar-CalendarFlyout.js"},{"revision":"029ea94f5671e5f33812cd1b1eea43a1","url":"shells/environment-components-app-menu-AppMenu.js"},{"revision":"3dbcb4036a6bb0056547bedcd37948b9","url":"shells/boot-index.js"},{"revision":"7b91a175e47b27b1b844142dcbfcdb28","url":"shells/boot-history-base.js"},{"revision":"ee9e7e6d4f21bd22ca7229e89ceb2eb3","url":"pwa/manifest.json"},{"revision":"ee9e7e6d4f21bd22ca7229e89ceb2eb3","url":"pwa/src/pwa/manifest.json"},{"revision":"dbe5738443bd2f8968640f5f4a54cc3a","url":"pwa/screenshots/wide.png"},{"revision":"6abe53c0bc5b12ad1d599472cabe67a4","url":"pwa/screenshots/mobile.png"},{"revision":"dbe5738443bd2f8968640f5f4a54cc3a","url":"pwa/screenshots/src/pwa/screenshots/wide.png"},{"revision":"6abe53c0bc5b12ad1d599472cabe67a4","url":"pwa/screenshots/src/pwa/screenshots/mobile.png"},{"revision":"b2551f591bca6071a1817b562de415fd","url":"pwa/icons/web-app-manifest-512x512.png"},{"revision":"fd4b03e8560d1edbf07d3f5145dd097d","url":"pwa/icons/web-app-manifest-192x192.png"},{"revision":"3bce2e3833893e5a8a165101478b043c","url":"pwa/icons/transparent.svg"},{"revision":"b2551f591bca6071a1817b562de415fd","url":"pwa/icons/maskable.png"},{"revision":"c526291d3c869698ca3331bc9a49a79d","url":"pwa/icons/icon.svg"},{"revision":"1e50d9387b630062ac5c9b83c6ff78ea","url":"pwa/icons/icon.png"},{"revision":"85d33b738dd7f349f3f7b5a810a72993","url":"pwa/icons/icon-96.png"},{"revision":"74ba61fd7ca6dde80a0f7118ce562d79","url":"pwa/icons/favicon.svg"},{"revision":"53d98bfac7dda7b084baac936b146880","url":"pwa/icons/favicon-96x96.png"},{"revision":"cf552e9b17402324652bb0f58466481e","url":"pwa/icons/apple-touch-icon.png"},{"revision":"b2551f591bca6071a1817b562de415fd","url":"pwa/icons/src/pwa/icons/web-app-manifest-512x512.png"},{"revision":"fd4b03e8560d1edbf07d3f5145dd097d","url":"pwa/icons/src/pwa/icons/web-app-manifest-192x192.png"},{"revision":"3bce2e3833893e5a8a165101478b043c","url":"pwa/icons/src/pwa/icons/transparent.svg"},{"revision":"b2551f591bca6071a1817b562de415fd","url":"pwa/icons/src/pwa/icons/maskable.png"},{"revision":"c526291d3c869698ca3331bc9a49a79d","url":"pwa/icons/src/pwa/icons/icon.svg"},{"revision":"1e50d9387b630062ac5c9b83c6ff78ea","url":"pwa/icons/src/pwa/icons/icon.png"},{"revision":"85d33b738dd7f349f3f7b5a810a72993","url":"pwa/icons/src/pwa/icons/icon-96.png"},{"revision":"74ba61fd7ca6dde80a0f7118ce562d79","url":"pwa/icons/src/pwa/icons/favicon.svg"},{"revision":"53d98bfac7dda7b084baac936b146880","url":"pwa/icons/src/pwa/icons/favicon-96x96.png"},{"revision":"cf552e9b17402324652bb0f58466481e","url":"pwa/icons/src/pwa/icons/apple-touch-icon.png"},{"revision":"5af73a0d5467b1c9d0fb2c28d820f771","url":"fest/veela.js"},{"revision":"5900a0393b94b2a269dc100b457b9ca1","url":"fest/core.js"},{"revision":"bd016f7a514ca38a467d2fb6c629c97d","url":"com/service.js"},{"revision":"02c890a75e82bd7b0f20cac95e4ddeae","url":"com/app.js"},{"revision":"f541f98f5f2ede68e8618fd43230d992","url":"chunks/window.js"},{"revision":"146f7fbbc8e3a591e975fecabe8fec55","url":"chunks/vite-preload-BsPm7yBB.js"},{"revision":"af08c65caabe2ab2e4976229ef910ab2","url":"chunks/views.js"},{"revision":"2b65c36f4b63fe48d3aafecac3df4549","url":"chunks/utils.js"},{"revision":"845d446fa2593bf489582bace3b2536e","url":"chunks/unified.js"},{"revision":"08cf72c51d28642a7ec773dffd69e92d","url":"chunks/transfer-history-runtime.js"},{"revision":"c31ed75217b6e53ac5aa4caf4ca276c0","url":"chunks/templates.js"},{"revision":"cf6bcf7c0aac40eb6c8377f2a6f8ca83","url":"chunks/tabbed.js"},{"revision":"67a915de60655c223ef35751fa8f1392","url":"chunks/sw-handling.js"},{"revision":"6ea2dcbaebf8f1dd2570665aa6f13ca6","url":"chunks/src9.js"},{"revision":"ac35d049b9ef3af6fab5a21bd817b6e8","url":"chunks/src8.js"},{"revision":"b20e6ef27ba20e39af020bd153037191","url":"chunks/src7.js"},{"revision":"7905e461b07e5f8f27632598a316911a","url":"chunks/src6.js"},{"revision":"8896e4d2afd379f4c50d24fd1d82efd5","url":"chunks/src5.js"},{"revision":"c9de3cd8d8c170e8d7f8665a3e8195ae","url":"chunks/src4.js"},{"revision":"f86c0259919a397412acf029244cb828","url":"chunks/src3.js"},{"revision":"258f1edf92b50936278c4cb1d9322f92","url":"chunks/src2.js"},{"revision":"684fdcabda53fad243757c9a305f8b7a","url":"chunks/src11.js"},{"revision":"cd79798e62bd844ed84ba5f5d11714fa","url":"chunks/src10.js"},{"revision":"d9d1146188d84864fbe06e8ef3483cf4","url":"chunks/src.js"},{"revision":"dab881cc0652ea4007c1c213c997e088","url":"chunks/sku-ingress.js"},{"revision":"4bd63064ec125f902ef0b5e020663e67","url":"chunks/shells.js"},{"revision":"3e42fc809cbe4013901962c6339603b6","url":"chunks/rolldown-runtime.js"},{"revision":"18c6d3a83304a322fe6c7d72206f65c2","url":"chunks/preview.js"},{"revision":"6b16aef581520b8074765aee6baf491c","url":"chunks/launcher-state.js"},{"revision":"4c80e95d6e04bc36636f0096b99da790","url":"chunks/launcher-bridge.js"},{"revision":"16c44f2d5e5841370647594f502a763c","url":"chunks/frontend-debug-capture2.js"},{"revision":"baedf64ba535313b3cc2079f409552b0","url":"chunks/frontend-debug-capture.js"},{"revision":"2804aa1e0899c472afd13700b82bf0a6","url":"chunks/environment.js"},{"revision":"049a296d863fe524c77a4ea20bc505c4","url":"chunks/environment-shell.js"},{"revision":"f4e7156f0a88da01e523718f11538e3a","url":"chunks/entities.js"},{"revision":"34c942400e7d33d4c807647c7b6d88b0","url":"chunks/ecosystem-skus.js"},{"revision":"82100a5cbf254a75a0bcc78475b72b05","url":"chunks/crx-control-session2.js"},{"revision":"4be124cadba155792d0eb60f9de2e7b2","url":"chunks/crx-control-session.js"},{"revision":"33b5dbbed488502e41e2270cf1b95da8","url":"chunks/crx-control-pair-modal2.js"},{"revision":"595ef65b24383b3cacccdccaf7a0a6ef","url":"chunks/crx-control-pair-modal.js"},{"revision":"37213ff4554815f6840b2acd5b0766ab","url":"chunks/core.js"},{"revision":"27e59e0657ba13f3e2c8f4cee3e038c2","url":"chunks/channel-unknown.js"},{"revision":"5ea85c1f6c7848a76c3feabbe90feb29","url":"chunks/capacitor-share-intent.js"},{"revision":"ab275a1ff82b33cf9790b1a6a8cefbe7","url":"chunks/capacitor-settings-permissions2.js"},{"revision":"b3244babed3d3e854c520d2e422bf295","url":"chunks/capacitor-settings-permissions.js"},{"revision":"dde4116eff49f3ca7507e7f17d295ecd","url":"chunks/capacitor-permissions2.js"},{"revision":"991e87b8a86bcc51cfceeda81a151f1e","url":"chunks/capacitor-permissions.js"},{"revision":"7f85be2acf402efcb37c5299c93233ec","url":"chunks/capacitor-clipboard-asset.js"},{"revision":"31f9228cb6e59c198269a076e8954385","url":"chunks/admin-doors.js"},{"revision":"7fe50fa9d7161ffa53e3764845b71207","url":"chunks/WorkCenterState.js"},{"revision":"d80a2d649020a1e5f1a8086b0620e7cb","url":"chunks/WorkCenter.js"},{"revision":"86110ad965ff6ae3e5bec1dbc43d5c46","url":"chunks/ViewTransferRouting.js"},{"revision":"21368faf11684c279e23bd98d55808c4","url":"chunks/ShareTargetGateway.js"},{"revision":"441e53c95b07e79591ddebabe079da27","url":"chunks/RuntimeSettings.js"},{"revision":"47cafcb06882298623e06b7355c9caf1","url":"chunks/QuillEditor.js"},{"revision":"07f1250ba035e3ffb996595cbd438d66","url":"chunks/MarkdownEditor.js"},{"revision":"6836f885f88c862080d07e558ebfbebe","url":"chunks/LogSanitizer.js"},{"revision":"53db4b287a0c4afe25e54f0916a3ca55","url":"chunks/DocxExport.js"},{"revision":"3baf7e49ccf1e07ebb600ac506b3dbfd","url":"chunks/CustomInstructions.js"},{"revision":"4009bbaa5dceb34c319aafd36c545689","url":"chunks/BootLoader.js"},{"revision":null,"url":"assets/index-BqJHILTM.js"},{"revision":null,"url":"assets/crossword.css"},{"revision":null,"url":"assets/OPFS.uniform.worker.js"}];
+	var manifest = [{"revision":"725fad53ea7e7faeed2eeddbf806fa14","url":"index.html"},{"revision":"528c7e9c0f8a41cfe096f0b1e888216e","url":"workers/opfs/OPFS.uniform.worker.js"},{"revision":"20f1277fa28afadec901875269c17934","url":"views/viewer.js"},{"revision":"a997e10cbf0af544d2779305ec1d96c8","url":"vendor/xlsx.js"},{"revision":"aa689cfe66df50189e85b19ec9d610df","url":"vendor/quill.js"},{"revision":"42cf392cc1234965cec990cd219c6a2d","url":"vendor/pdfjs-dist.js"},{"revision":"0f6b08abc3a91a9507a21bf46fe88003","url":"vendor/parchment.js"},{"revision":"776f5bb08a28e6bdcb0d881bdc785f94","url":"vendor/mammoth.js"},{"revision":"0bfca535a8bbb58f4c148d97b4ac5522","url":"vendor/lop.js"},{"revision":"c8741cf7f91408ce1ef47278156eac8f","url":"vendor/lodash.isequal.js"},{"revision":"f6c6602c08733d2d5474a44523a2139b","url":"vendor/lodash.clonedeep.js"},{"revision":"39fac3d6fe673e3aeabac7945f320696","url":"vendor/lodash-es.js"},{"revision":"ad18e855753678d16b95237f6f4127db","url":"vendor/jszip.js"},{"revision":"3be6e1ff8ce12b780c1129848c497a55","url":"vendor/fast-diff.js"},{"revision":"6fb6b129de239a1607bc4b6b79f8b9fa","url":"vendor/eventemitter3.js"},{"revision":"07f1b9397af6f4ac29980c832d4f3ab1","url":"vendor/dingbat-to-unicode.js"},{"revision":"f7447ea6adf08ccc0a78f24beee529a9","url":"vendor/bluebird.js"},{"revision":"b8d53040e646cc14be10c6f973a285d8","url":"vendor/base64-js.js"},{"revision":"a7018ffb2f665a8ec0433dab1f4ea1d3","url":"vendor/@xmldom_xmldom.js"},{"revision":"4b8116a6fa1dee7d129870976062230b","url":"vendor/@toon-format_toon.js"},{"revision":"249121960f98591470b47ac91f40dbdb","url":"shells/preference.js"},{"revision":"2a0c3839ddf37788f8ff8085a1428f9d","url":"shells/environment-window-views-browser-view.js"},{"revision":"ccde8d1947e5d1afb5d157090dfe96b2","url":"shells/environment-scss-main.scss_inline.js"},{"revision":"61d77f45c2a320a4c7e1bd32091c12de","url":"shells/environment-index.js"},{"revision":"ec31446123f72c37ee2d1931b759a150","url":"shells/environment-environment-overlay.js"},{"revision":"85eac0ed52f366f1ade696168e16c004","url":"shells/environment-components-wallpaper.js"},{"revision":"3c815e5aca7556d9b595907ce499b633","url":"shells/environment-components-taskbar-element-TaskBar.js"},{"revision":"a3384ae9e77ea43b35605e42bd1b6791","url":"shells/environment-components-statusbar-capacitor-native-safe-area.js"},{"revision":"e2f194508097bb53ecc1eccf92831cb3","url":"shells/environment-components-settings-QuickSettings.js"},{"revision":"cc3250cc658b04c3b8e9021b4114f78b","url":"shells/environment-components-explorer-ContextMenu.js"},{"revision":"69991a62ff0c6b8548d46ad2a6ee08f4","url":"shells/environment-components-calendar-CalendarFlyout.js"},{"revision":"029ea94f5671e5f33812cd1b1eea43a1","url":"shells/environment-components-app-menu-AppMenu.js"},{"revision":"5fc9406720b3ab0d82f5bcf669b93379","url":"shells/boot-index.js"},{"revision":"7b91a175e47b27b1b844142dcbfcdb28","url":"shells/boot-history-base.js"},{"revision":"c9a1087915c5e664dceda8ed97462136","url":"pwa/tsconfig.json"},{"revision":"ee9e7e6d4f21bd22ca7229e89ceb2eb3","url":"pwa/manifest.json"},{"revision":"ee9e7e6d4f21bd22ca7229e89ceb2eb3","url":"pwa/src/pwa/manifest.json"},{"revision":"dbe5738443bd2f8968640f5f4a54cc3a","url":"pwa/screenshots/wide.png"},{"revision":"6abe53c0bc5b12ad1d599472cabe67a4","url":"pwa/screenshots/mobile.png"},{"revision":"dbe5738443bd2f8968640f5f4a54cc3a","url":"pwa/screenshots/src/pwa/screenshots/wide.png"},{"revision":"6abe53c0bc5b12ad1d599472cabe67a4","url":"pwa/screenshots/src/pwa/screenshots/mobile.png"},{"revision":"b2551f591bca6071a1817b562de415fd","url":"pwa/icons/web-app-manifest-512x512.png"},{"revision":"fd4b03e8560d1edbf07d3f5145dd097d","url":"pwa/icons/web-app-manifest-192x192.png"},{"revision":"3bce2e3833893e5a8a165101478b043c","url":"pwa/icons/transparent.svg"},{"revision":"b2551f591bca6071a1817b562de415fd","url":"pwa/icons/maskable.png"},{"revision":"c526291d3c869698ca3331bc9a49a79d","url":"pwa/icons/icon.svg"},{"revision":"1e50d9387b630062ac5c9b83c6ff78ea","url":"pwa/icons/icon.png"},{"revision":"85d33b738dd7f349f3f7b5a810a72993","url":"pwa/icons/icon-96.png"},{"revision":"74ba61fd7ca6dde80a0f7118ce562d79","url":"pwa/icons/favicon.svg"},{"revision":"53d98bfac7dda7b084baac936b146880","url":"pwa/icons/favicon-96x96.png"},{"revision":"cf552e9b17402324652bb0f58466481e","url":"pwa/icons/apple-touch-icon.png"},{"revision":"b2551f591bca6071a1817b562de415fd","url":"pwa/icons/src/pwa/icons/web-app-manifest-512x512.png"},{"revision":"fd4b03e8560d1edbf07d3f5145dd097d","url":"pwa/icons/src/pwa/icons/web-app-manifest-192x192.png"},{"revision":"3bce2e3833893e5a8a165101478b043c","url":"pwa/icons/src/pwa/icons/transparent.svg"},{"revision":"b2551f591bca6071a1817b562de415fd","url":"pwa/icons/src/pwa/icons/maskable.png"},{"revision":"c526291d3c869698ca3331bc9a49a79d","url":"pwa/icons/src/pwa/icons/icon.svg"},{"revision":"1e50d9387b630062ac5c9b83c6ff78ea","url":"pwa/icons/src/pwa/icons/icon.png"},{"revision":"85d33b738dd7f349f3f7b5a810a72993","url":"pwa/icons/src/pwa/icons/icon-96.png"},{"revision":"74ba61fd7ca6dde80a0f7118ce562d79","url":"pwa/icons/src/pwa/icons/favicon.svg"},{"revision":"53d98bfac7dda7b084baac936b146880","url":"pwa/icons/src/pwa/icons/favicon-96x96.png"},{"revision":"cf552e9b17402324652bb0f58466481e","url":"pwa/icons/src/pwa/icons/apple-touch-icon.png"},{"revision":"5af73a0d5467b1c9d0fb2c28d820f771","url":"fest/veela.js"},{"revision":"5900a0393b94b2a269dc100b457b9ca1","url":"fest/core.js"},{"revision":"bd016f7a514ca38a467d2fb6c629c97d","url":"com/service.js"},{"revision":"cc9e220bd06e7a1c87d787f7e78fa337","url":"com/app.js"},{"revision":"f541f98f5f2ede68e8618fd43230d992","url":"chunks/window.js"},{"revision":"146f7fbbc8e3a591e975fecabe8fec55","url":"chunks/vite-preload-BsPm7yBB.js"},{"revision":"af08c65caabe2ab2e4976229ef910ab2","url":"chunks/views.js"},{"revision":"2b65c36f4b63fe48d3aafecac3df4549","url":"chunks/utils.js"},{"revision":"07ae37354676818db254cde733528cf2","url":"chunks/unified.js"},{"revision":"b0c0445328fce07781681a6f561cce5e","url":"chunks/transfer-history-runtime.js"},{"revision":"c31ed75217b6e53ac5aa4caf4ca276c0","url":"chunks/templates.js"},{"revision":"cf6bcf7c0aac40eb6c8377f2a6f8ca83","url":"chunks/tabbed.js"},{"revision":"62c426957578ea005d9a4abf0e1fcc58","url":"chunks/sw-page-bridge.js"},{"revision":"8a951a7b7dab6fada29b5f14b1c21bae","url":"chunks/sw-handling.js"},{"revision":"ed026959066884e736016953ef9e9668","url":"chunks/src9.js"},{"revision":"29c47379e563c9467dbf235b62ed7925","url":"chunks/src8.js"},{"revision":"b20e6ef27ba20e39af020bd153037191","url":"chunks/src7.js"},{"revision":"7905e461b07e5f8f27632598a316911a","url":"chunks/src6.js"},{"revision":"8896e4d2afd379f4c50d24fd1d82efd5","url":"chunks/src5.js"},{"revision":"c9de3cd8d8c170e8d7f8665a3e8195ae","url":"chunks/src4.js"},{"revision":"f86c0259919a397412acf029244cb828","url":"chunks/src3.js"},{"revision":"2b6cd427e1bf3897bf75058f0bf49acb","url":"chunks/src2.js"},{"revision":"25ca9f6d0200768c6eebff925c0097ad","url":"chunks/src11.js"},{"revision":"1beefc63adb3c28bacb855abe6f4d7e3","url":"chunks/src10.js"},{"revision":"d17b457717b2a27107b652969848f375","url":"chunks/src.js"},{"revision":"efa506f0166fb25c8d6cd330236ee248","url":"chunks/sku-ingress.js"},{"revision":"f0fdd85bde3ca5e6baf5ac5eb5f8f764","url":"chunks/shells.js"},{"revision":"3e42fc809cbe4013901962c6339603b6","url":"chunks/rolldown-runtime.js"},{"revision":"e02f74a4094ea549cce5fc643181cce1","url":"chunks/preview.js"},{"revision":"2adc47bc733f543c8a2416712416391a","url":"chunks/log-sanitizer.js"},{"revision":"6b16aef581520b8074765aee6baf491c","url":"chunks/launcher-state.js"},{"revision":"574e52d3851937cab8103f23cb97dfea","url":"chunks/launcher-bridge.js"},{"revision":"bd2dd1e8c4a8b4b4d36c927682296a92","url":"chunks/frontend-debug-capture2.js"},{"revision":"478620d4ae265cbdcee6ff075791932c","url":"chunks/frontend-debug-capture.js"},{"revision":"2804aa1e0899c472afd13700b82bf0a6","url":"chunks/environment.js"},{"revision":"8d7d13cbd3aded98c25c66ec2600917e","url":"chunks/environment-shell.js"},{"revision":"6989b76ed005d147b3657acee49061f8","url":"chunks/entities.js"},{"revision":"34c942400e7d33d4c807647c7b6d88b0","url":"chunks/ecosystem-skus.js"},{"revision":"82100a5cbf254a75a0bcc78475b72b05","url":"chunks/crx-control-session2.js"},{"revision":"4be124cadba155792d0eb60f9de2e7b2","url":"chunks/crx-control-session.js"},{"revision":"33b5dbbed488502e41e2270cf1b95da8","url":"chunks/crx-control-pair-modal2.js"},{"revision":"595ef65b24383b3cacccdccaf7a0a6ef","url":"chunks/crx-control-pair-modal.js"},{"revision":"37213ff4554815f6840b2acd5b0766ab","url":"chunks/core.js"},{"revision":"39891c5ee83bccd59aec343ea1b7ff3d","url":"chunks/channel-unknown.js"},{"revision":"ffd3356a7e7af45b9626dc1afec61cba","url":"chunks/capacitor-share-intent2.js"},{"revision":"2ac53ed1ba96798f3db2509de27228ff","url":"chunks/capacitor-share-intent.js"},{"revision":"ab275a1ff82b33cf9790b1a6a8cefbe7","url":"chunks/capacitor-settings-permissions2.js"},{"revision":"b3244babed3d3e854c520d2e422bf295","url":"chunks/capacitor-settings-permissions.js"},{"revision":"dde4116eff49f3ca7507e7f17d295ecd","url":"chunks/capacitor-permissions2.js"},{"revision":"991e87b8a86bcc51cfceeda81a151f1e","url":"chunks/capacitor-permissions.js"},{"revision":"1c83ab3e200ebd025501156553809617","url":"chunks/capacitor-clipboard-asset2.js"},{"revision":"7f85be2acf402efcb37c5299c93233ec","url":"chunks/capacitor-clipboard-asset.js"},{"revision":"31f9228cb6e59c198269a076e8954385","url":"chunks/admin-doors.js"},{"revision":"7fe50fa9d7161ffa53e3764845b71207","url":"chunks/WorkCenterState.js"},{"revision":"fb2771d43d0e7fa059afe0351d13ad30","url":"chunks/WorkCenter.js"},{"revision":"5e58e9c628d54a6500b18c8b64033610","url":"chunks/ViewTransferRouting.js"},{"revision":"1652025a7f7402cf779f837d6501f93d","url":"chunks/ShareTargetGateway.js"},{"revision":"79250262a7e90a84cb134fee345fb776","url":"chunks/RuntimeSettings.js"},{"revision":"47cafcb06882298623e06b7355c9caf1","url":"chunks/QuillEditor.js"},{"revision":"dc94e3b857e35559a08215daa372a54b","url":"chunks/MarkdownEditor.js"},{"revision":"53db4b287a0c4afe25e54f0916a3ca55","url":"chunks/DocxExport.js"},{"revision":"1e550d6eb113e50b3cc3bac0c62cb440","url":"chunks/CustomInstructions.js"},{"revision":"b4d695fd57ef5da041759b4d08a80220","url":"chunks/BootLoader.js"},{"revision":null,"url":"assets/index-BqJHILTM.js"},{"revision":null,"url":"assets/crossword.css"},{"revision":null,"url":"assets/OPFS.uniform.worker.js"}];
 	cleanupOutdatedCaches();
 	if (manifest && true) precacheAndRoute(manifest.filter((entry) => {
 		const url = typeof entry === "string" ? entry : String(entry?.url || "");
@@ -50023,10 +50379,7 @@ Apply the user's custom instructions above when processing the data. Prioritize 
 	* Notify frontend about received share target data
 	*/
 	var notifyShareReceived = (data) => {
-		broadcast(CHANNELS.SHARE_TARGET, {
-			type: "share-received",
-			data
-		});
+		publishSwShareReceived(data && typeof data === "object" ? data : { text: data });
 	};
 	/**
 	* Notify frontend about AI processing result
@@ -50035,6 +50388,11 @@ Apply the user's custom instructions above when processing the data. Prioritize 
 		broadcast(CHANNELS.SHARE_TARGET, {
 			type: "ai-result",
 			data: result
+		});
+		publishSwFrontendResult({
+			type: "ai-result",
+			data: result,
+			persist: result.success !== false
 		});
 	};
 	/**
@@ -50329,7 +50687,9 @@ Apply the user's custom instructions above when processing the data. Prioritize 
 				timestamp: shareData.timestamp,
 				fileCount: shareData.files.length,
 				imageCount: shareData.imageFiles.length,
-				aiEnabled: aiConfig.enabled
+				files: shareData.files,
+				aiEnabled: aiConfig.enabled,
+				source: "share-target"
 			});
 			console.log("[ShareTarget] AI processing config:", aiConfig);
 			console.log("[ShareTarget] Share data:", summarizeForLog(shareData));
@@ -50375,7 +50735,7 @@ Apply the user's custom instructions above when processing the data. Prioritize 
 			} else sendToast(aiConfig.apiKey !== null ? "Content received" : "Content received (configure AI for auto-processing)", "info");
 			return new Response(null, {
 				status: 302,
-				headers: { Location: "/share-target?shared=1" }
+				headers: { Location: SHARE_LANDING_PATH }
 			});
 		} catch (err) {
 			console.error("[ShareTarget] Handler error:", err);
@@ -50393,7 +50753,19 @@ Apply the user's custom instructions above when processing the data. Prioritize 
 		credentials: "same-origin",
 		cache: "no-store"
 	} }));
-	registerRoute(({ url, request }) => isProcessApiRequest(url?.pathname || "", request?.method), async ({ request }) => handleProcessApiFetch(request));
+	registerRoute(({ url, request }) => isProcessApiRequest(url?.pathname || "", request?.method), async ({ request }) => {
+		const response = await handleProcessApiFetch(request);
+		if (String(request?.method || "GET").toUpperCase() === "POST") response.clone().json().then((json) => {
+			const text = readProcessApiResultText(json);
+			if (!text) return;
+			publishSwFrontendResult({
+				type: "process-api-result",
+				data: json,
+				text
+			});
+		}).catch(() => void 0);
+		return response;
+	});
 	registerRoute(({ url }) => {
 		const host = url?.hostname || "";
 		const pathname = url?.pathname || "";
@@ -50937,7 +51309,10 @@ Apply the user's custom instructions above when processing the data. Prioritize 
 		}
 	});
 	async function notifyClients(type, data) {
-		(await self.clients?.matchAll?.() || []).forEach((client) => {
+		(await self.clients?.matchAll?.({
+			type: "window",
+			includeUncontrolled: true
+		}) || []).forEach((client) => {
 			client.postMessage({
 				type,
 				data
@@ -51116,6 +51491,13 @@ Apply the user's custom instructions above when processing the data. Prioritize 
 			});
 		}
 	}, "GET");
+	registerRoute(({ url }) => url?.pathname === PROCESS_PENDING_PATH, async ({ request }) => {
+		if (String(request?.method || "GET").toUpperCase() === "DELETE") {
+			await clearPendingProcessResults();
+			return new Response(JSON.stringify({ ok: true }), { headers: { "Content-Type": "application/json" } });
+		}
+		return pendingProcessJsonResponse();
+	});
 	registerRoute(({ url }) => url?.pathname === "/sw-content/available", async () => {
 		console.log("[SW] Received request for available cached content");
 		const cacheKeys = await getStoredCacheKeys();
@@ -51226,11 +51608,12 @@ Apply the user's custom instructions above when processing the data. Prioritize 
 				timestamp: shareData.timestamp,
 				fileCount: shareData.files.length,
 				imageCount: shareData.imageFiles.length,
+				files: shareData.files,
 				source: "launch-queue",
 				route: "launch-queue"
 			});
 			sendToast(`Received ${shareData.files.length} launched file(s)`, "info");
-			const targetUrl = "/share-target?shared=1";
+			const targetUrl = SHARE_LANDING_PATH;
 			const clientsList = await self.clients?.matchAll?.({
 				type: "window",
 				includeUncontrolled: true

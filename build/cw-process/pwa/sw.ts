@@ -43,6 +43,19 @@ import {
 import { summarizeForLog } from 'com/core/LogSanitizer';
 import * as FestCore from "@fest-lib/core";
 import { handleProcessApiFetch, isProcessApiRequest } from "com/routing/api/process-api-sw";
+import { readProcessApiResultText } from "com/routing/api/process-api-result";
+import {
+    PROCESS_PENDING_PATH,
+    SHARE_LANDING_PATH,
+    clearPendingProcessResults,
+    pendingProcessJsonResponse,
+    publishSwFrontendResult,
+    publishSwShareReceived
+} from "com/routing/pwa/sw-result-wire";
+import { safeCacheMatch, safeCachesMatch } from "com/routing/pwa/sw-cache";
+import { attachSwLifecycle } from "com/routing/pwa/sw-lifecycle";
+
+attachSwLifecycle(self);
 
 // ============================================================================
 // SERVICE WORKER CONTENT ASSOCIATION SYSTEM
@@ -260,9 +273,7 @@ async function handleCacheAction(content: any, context: SWContentContext, _event
         // Determine redirect location based on context
         let redirectLocation: string;
         if (context === 'share-target') {
-            // For share-target, redirect to specific basic app route
-            const routeHash = determineShareTargetRoute(content);
-            redirectLocation = `/basic${routeHash}?cached=${cacheKey}`;
+            redirectLocation = `${SHARE_LANDING_PATH}${SHARE_LANDING_PATH.includes("?") ? "&" : "?"}cached=${cacheKey}`;
         } else {
             // Default behavior for other contexts
             redirectLocation = `/?cached=${cacheKey}`;
@@ -321,13 +332,11 @@ async function handleOpenAppAction(content: any, context: SWContentContext, even
         await handleCacheAction(content, context, event);
 
         // Try to focus existing window or open new one
-        const clients = await (self as any).clients?.matchAll?.({ type: 'window' });
+        const clients = await (self as any).clients?.matchAll?.({ type: 'window', includeUncontrolled: true });
 
-        // Determine the target URL based on context
         let targetUrl: string;
         if (context === 'share-target') {
-            const routeHash = determineShareTargetRoute(content);
-            targetUrl = `/basic${routeHash}`;
+            targetUrl = SHARE_LANDING_PATH;
         } else {
             targetUrl = `/?context=${context}`;
         }
@@ -438,57 +447,6 @@ const toSWContentCacheRequest = (cacheKey: string): string => {
     // Use canonical URL keys for Cache API stability.
     const safeKey = normalizedKey.replace(/^\/+/, '');
     return new URL(`${SW_CONTENT_CACHE_PREFIX}${encodeURIComponent(safeKey)}`, self.location.origin).toString();
-};
-
-const toCacheRequestInfo = (requestLike: RequestInfo | URL | null | undefined): RequestInfo | undefined => {
-    if (!requestLike) return undefined;
-    return requestLike instanceof URL ? requestLike.toString() : requestLike;
-};
-
-/** Cache#match only accepts http(s) GET keys — blob:/data:/POST throw TypeError. */
-const isCacheApiKey = (request: RequestInfo): boolean => {
-    if (request instanceof Request && request.method !== "GET") return false;
-    const raw = typeof request === "string" ? request : request instanceof Request ? request.url : "";
-    if (!raw) return false;
-    try {
-        const url = new URL(raw, self.location.origin);
-        return url.protocol === "http:" || url.protocol === "https:";
-    } catch {
-        return false;
-    }
-};
-
-const safeCacheMatch = async (
-    cache: Cache | null | undefined,
-    requestLike: RequestInfo | URL | null | undefined
-): Promise<Response | undefined> => {
-    const request = toCacheRequestInfo(requestLike);
-    if (!cache || !request) return undefined;
-    /** Cache#match rejects non-Request / non-string (minified callers may pass plain objects). */
-    const key =
-        typeof request === 'string'
-            ? request
-            : request instanceof Request
-              ? request
-              : undefined;
-    if (!key || !isCacheApiKey(key)) return undefined;
-    try {
-        return await cache?.match?.(key);
-    } catch (error) {
-        console.warn('[SW] Cache.match failed:', request, error);
-        return undefined;
-    }
-};
-
-const safeCachesMatch = async (requestLike: RequestInfo | URL | null | undefined): Promise<Response | undefined> => {
-    const request = toCacheRequestInfo(requestLike);
-    if (!request || !isCacheApiKey(request)) return undefined;
-    try {
-        return await caches?.match?.(request);
-    } catch (error) {
-        console.warn('[SW] caches.match failed:', request, error);
-        return undefined;
-    }
 };
 
 const safeIsUserScopePath = (pathname: string): boolean => {
@@ -684,7 +642,7 @@ function openCacheKeysDB(): Promise<IDBDatabase> {
 // Broadcast to active clients
 async function broadcastToClients(type: string, data: any): Promise<void> {
     try {
-        const clients = await (self as any).clients?.matchAll?.();
+        const clients = await (self as any).clients?.matchAll?.({ type: "window", includeUncontrolled: true });
         if (clients) {
             for (const client of clients) {
                 client.postMessage({ type, data });
@@ -699,7 +657,8 @@ async function broadcastToClients(type: string, data: any): Promise<void> {
 
 //
 /** When true, this is the Vite dev worker (`/dev-sw.js`): precache + SWR would freeze HMR and the speed-dial shell. */
-const isViteDevServiceWorker = import.meta.env.DEV;
+// @ts-ignore
+const isViteDevServiceWorker = import.meta?.env?.DEV;
 
 // @ts-ignore
 const manifest = self.__WB_MANIFEST;
@@ -835,7 +794,8 @@ const sendToast = (message: string, kind: 'info' | 'success' | 'warning' | 'erro
  * Notify frontend about received share target data
  */
 const notifyShareReceived = (data: unknown): void => {
-    broadcast(CHANNELS.SHARE_TARGET, { type: 'share-received', data });
+    const row = data && typeof data === "object" ? (data as Record<string, unknown>) : { text: data };
+    publishSwShareReceived(row);
 };
 
 /**
@@ -843,6 +803,11 @@ const notifyShareReceived = (data: unknown): void => {
  */
 const notifyAIResult = (result: { success: boolean; data?: unknown; error?: string }): void => {
     broadcast(CHANNELS.SHARE_TARGET, { type: 'ai-result', data: result });
+    publishSwFrontendResult({
+        type: "ai-result",
+        data: result,
+        persist: result.success !== false
+    });
 };
 
 /**
@@ -1242,8 +1207,9 @@ registerRoute(({ url, request }) => isShareTargetUrl(url?.pathname) && request?.
             timestamp: shareData.timestamp,
             fileCount: shareData.files.length,
             imageCount: shareData.imageFiles.length,
-            // Mark whether AI will process this
-            aiEnabled: aiConfig.enabled
+            files: shareData.files,
+            aiEnabled: aiConfig.enabled,
+            source: "share-target"
         });
 
         // Step 5: AI Processing (async, non-blocking)
@@ -1318,7 +1284,7 @@ registerRoute(({ url, request }) => isShareTargetUrl(url?.pathname) && request?.
         return new Response(null, {
             status: 302,
             // Prefer share-target entry path (SPA), then app decides how to handle.
-            headers: { Location: '/share-target?shared=1' }
+            headers: { Location: SHARE_LANDING_PATH }
         });
     } catch (err: any) {
         console.error('[ShareTarget] Handler error:', err);
@@ -1359,7 +1325,21 @@ registerRoute(
 // INVARIANT: Process API must run before the /api NetworkOnly bypass.
 registerRoute(
     ({ url, request }) => isProcessApiRequest(url?.pathname || "", request?.method),
-    async ({ request }) => handleProcessApiFetch(request)
+    async ({ request }) => {
+        const response = await handleProcessApiFetch(request);
+        if (String(request?.method || "GET").toUpperCase() === "POST") {
+            void response
+                .clone()
+                .json()
+                .then((json) => {
+                    const text = readProcessApiResultText(json);
+                    if (!text) return;
+                    publishSwFrontendResult({ type: "process-api-result", data: json, text });
+                })
+                .catch(() => undefined);
+        }
+        return response;
+    }
 );
 
 registerRoute(
@@ -2068,7 +2048,7 @@ self.addEventListener?.('message', (e: any) => {
 
 // Notify all clients about events
 async function notifyClients(type: string, data?: any): Promise<void> {
-    const clients = await (self as any).clients?.matchAll?.() || [];
+    const clients = await (self as any).clients?.matchAll?.({ type: "window", includeUncontrolled: true }) || [];
     clients.forEach((client: any) => {
         client.postMessage({ type, data });
     });
@@ -2278,6 +2258,20 @@ registerRoute(
     'GET'
 );
 
+registerRoute(
+    ({ url }) => url?.pathname === PROCESS_PENDING_PATH,
+    async ({ request }) => {
+        const method = String(request?.method || "GET").toUpperCase();
+        if (method === "DELETE") {
+            await clearPendingProcessResults();
+            return new Response(JSON.stringify({ ok: true }), {
+                headers: { "Content-Type": "application/json" }
+            });
+        }
+        return pendingProcessJsonResponse();
+    }
+);
+
 // Handle requests for available cached content keys (specific route first)
 registerRoute(
     ({ url }) => url?.pathname === '/sw-content/available',
@@ -2450,12 +2444,13 @@ self.addEventListener?.('launchqueue', async (event: any) => {
             timestamp: shareData.timestamp,
             fileCount: shareData.files.length,
             imageCount: shareData.imageFiles.length,
+            files: shareData.files,
             source: 'launch-queue',
             route: 'launch-queue'
         });
         sendToast(`Received ${shareData.files.length} launched file(s)`, 'info');
 
-        const targetUrl = '/share-target?shared=1';
+        const targetUrl = SHARE_LANDING_PATH;
         const clientsList = await (self as any).clients?.matchAll?.({ type: 'window', includeUncontrolled: true }) || [];
         if (clientsList.length > 0) {
             await clientsList[0].focus?.();

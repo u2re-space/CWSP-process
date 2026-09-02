@@ -1,7 +1,7 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../com/app.js","./rolldown-runtime.js","./ViewTransferRouting.js","../shells/boot-index.js","../fest/core.js","../shells/boot-history-base.js","../com/service.js","../fest/veela.js","./LogSanitizer.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../com/app.js","./rolldown-runtime.js","./ViewTransferRouting.js","../shells/boot-index.js","../fest/core.js","../shells/boot-history-base.js","../com/service.js","../fest/veela.js","./log-sanitizer.js"])))=>i.map(i=>d[i]);
 import { r as __exportAll } from "./rolldown-runtime.js";
 const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
-import { Ar as sinkToDestination, Cr as peekOpenPolicy, Hn as resolveProcessIngressKind, Or as resolveOpenPolicy, Pr as surfaceForSku, _r as classifyOpenKindFromPayload, kr as sinkToAction, vr as inferIngressChannels, zn as peekProcessIngressSettings } from "../shells/boot-index.js";
+import { Er as inferIngressChannels, Hr as surfaceForSku, Ir as resolveOpenPolicy, Lr as sinkToAction, Rr as sinkToDestination, Tr as classifyOpenKindFromPayload, Zn as peekProcessIngressSettings, er as resolveProcessIngressKind, jr as peekOpenPolicy } from "../shells/boot-index.js";
 import { s as inferCwspSkuFromLocation } from "../shells/boot-history-base.js";
 //#region src/shared/routing/channel/sku-ingress.ts
 var sku_ingress_exports = /* @__PURE__ */ __exportAll({
@@ -351,11 +351,11 @@ var installShellImageOpenListener = () => {
 		(async () => {
 			try {
 				const { loadSettings } = await __vitePreload(async () => {
-					const { loadSettings } = await import("../shells/boot-index.js").then((n) => n.gt);
+					const { loadSettings } = await import("../shells/boot-index.js").then((n) => n.Dt);
 					return { loadSettings };
 				}, __vite__mapDeps([3,1,0,4,5,6,7]), import.meta.url);
 				const { peekOpenPolicy, rememberOpenPolicyFromSettings, resolveOpenPolicy } = await __vitePreload(async () => {
-					const { peekOpenPolicy, rememberOpenPolicyFromSettings, resolveOpenPolicy } = await import("../shells/boot-index.js").then((n) => n.Sr);
+					const { peekOpenPolicy, rememberOpenPolicyFromSettings, resolveOpenPolicy } = await import("../shells/boot-index.js").then((n) => n.Ar);
 					return {
 						peekOpenPolicy,
 						rememberOpenPolicyFromSettings,

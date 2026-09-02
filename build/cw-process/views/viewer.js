@@ -1,7 +1,7 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../com/app.js","../chunks/rolldown-runtime.js","../chunks/DocxExport.js","../chunks/BootLoader.js","../fest/core.js","../shells/boot-index.js","../shells/boot-history-base.js","../com/service.js","../fest/veela.js","../shells/preference.js","../chunks/capacitor-settings-permissions.js","../chunks/capacitor-permissions.js","../chunks/sku-ingress.js"])))=>i.map(i=>d[i]);
 import { r as __exportAll } from "../chunks/rolldown-runtime.js";
 import { $t as isBase64Like, Bt as mountPickedDirectory, Cr as cssLayerOrder, Dr as __vitePreload, Er as VIEWER_CSS_LAYER_ORDER, Gt as pickSidecarDirectoryFiles, Ht as originalRelFromRef, Jt as resolveFileUnderDirectory, Kt as provideBoundRelative, Lt as findEntryRelPath, Qt as decodeBase64ToBytes, Rt as indexDirectoryFiles, Sr as cssLayerBlock, Ut as pickAssetDirectory, Vt as observeFileSystemHandle, Wt as pickMarkdownFile, X as ensureStyleSheet, Yt as saveMarkdownBlob, Z as reinitializeRegistry, _r as unbakeScreenColors, an as getDir, cn as matchMappedRoot, dn as provide, en as normalizeDataAsset, fr as ref, gr as scheduleBakeScreenColors, hn as createProtocolEnvelope, ln as normalizePath, or as affected, qt as relPathCandidates, s as purify, sn as isVirtualFsPath, tn as parseDataUrl, un as openDirectory, vr as loadAsAdopted, wr as normalizeCssForLayer, xr as removeAdopted, zn as H, zt as isMarkdownRelativeRef } from "../com/app.js";
-import { Er as resolveHostOpenPolicy, Or as resolveOpenPolicy, Y as ingressStampWasSuperseded, bt as loadSettings, hr as classifyOpenKind, nr as sendProtocolMessage, wr as rememberOpenPolicyFromSettings, yr as looksLikePreviewableBinary } from "../shells/boot-index.js";
+import { Cr as classifyOpenKind, Dr as looksLikePreviewableBinary, Ir as resolveOpenPolicy, Mr as rememberOpenPolicyFromSettings, Pr as resolveHostOpenPolicy, Z as ingressStampWasSuperseded, jt as loadSettings, mr as sendProtocolMessage } from "../shells/boot-index.js";
 import { _ as stashSkuHandoff, f as publicHrefForSku, h as shouldHandoffViewToSibling, v as takeSkuHandoff } from "../shells/boot-history-base.js";
 import { i as validateReadableFileForIngress, n as textIngressLooksCorrupt, t as pickAuthoritativeTransferFiles } from "../com/service.js";
 //#region ../../modules/projects/subsystem/registry.ts
@@ -2510,7 +2510,7 @@ var CwViewViewer = createViewConstructor(TAG, (Base) => {
 				const g = globalThis;
 				if (typeof g.Capacitor?.isNativePlatform !== "function" || !g.Capacitor.isNativePlatform()) return;
 				const { invokeCwsPlatformIPC } = await __vitePreload(async () => {
-					const { invokeCwsPlatformIPC } = await import("../shells/boot-index.js").then((n) => n.Xt);
+					const { invokeCwsPlatformIPC } = await import("../shells/boot-index.js").then((n) => n.sn);
 					return { invokeCwsPlatformIPC };
 				}, __vite__mapDeps([5,1,0,4,6,7,8]), import.meta.url);
 				const peek = await invokeCwsPlatformIPC({ channel: "launcher:pending-share" });

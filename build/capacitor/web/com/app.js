@@ -32981,14 +32981,6 @@ var PURPOSES = /* @__PURE__ */ new Set([
 	"deliver",
 	"defer"
 ]);
-var TYPES = /* @__PURE__ */ new Set([
-	"request",
-	"response",
-	"invoke",
-	"ack",
-	"act",
-	"ask"
-]);
 var DEFAULT_PURPOSE = "mail";
 var asString = (value) => String(value ?? "").trim();
 var normalizePath$2 = (path) => {
@@ -33012,7 +33004,7 @@ var normalizePurpose = (purpose) => {
 };
 var inferType = (input) => {
 	const explicit = asString(input.type);
-	if (TYPES.has(explicit)) return explicit;
+	if (explicit) return explicit;
 	const op = asString(input.op);
 	if (op === "get" || op === "set" || op === "apply" || op === "import") return "invoke";
 	if (input.error) return "response";
@@ -51246,7 +51238,7 @@ async function getLauncherBridgeForSpeedDial() {
 /** Launch a sibling ecosystem APK by SKU (launcher HOME only). */
 async function launchEcosystemSku(sku) {
 	const { androidPackageForSku, isCwspSku } = await __vitePreload(async () => {
-		const { androidPackageForSku, isCwspSku } = await import("../shells/boot-index.js").then((n) => n.D);
+		const { androidPackageForSku, isCwspSku } = await import("../shells/boot-index.js").then((n) => n.k);
 		return {
 			androidPackageForSku,
 			isCwspSku
@@ -51263,7 +51255,7 @@ async function launchEcosystemSku(sku) {
 async function tryLaunchSiblingView(view) {
 	try {
 		const { isCwspNativeHost, readCwspSku, siblingSkuForView } = await __vitePreload(async () => {
-			const { isCwspNativeHost, readCwspSku, siblingSkuForView } = await import("../shells/boot-index.js").then((n) => n.D);
+			const { isCwspNativeHost, readCwspSku, siblingSkuForView } = await import("../shells/boot-index.js").then((n) => n.k);
 			return {
 				isCwspNativeHost,
 				readCwspSku,

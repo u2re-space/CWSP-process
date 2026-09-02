@@ -1,5 +1,5 @@
 import { X as ensureStyleSheet, br as preloadStyle, fr as ref, vn as dynamicTheme, yr as loadInlineStyle } from "../com/app.js";
-import { A as canonicalHubSettingsSection, L as resolveEffectiveHubSettingsSection, N as hubSettingsSectionPath, St as saveSettings, U as ViewRegistry, V as scheduleViewModulePrefetch, bt as loadSettings, ct as resyncThemeAfterAdoptedViewSheet, ht as withViewTransition, it as isEnabledView, lt as syncBrowserChromeTheme, mt as getTransitionDirection, nt as serviceChannels, st as applyTheme } from "../shells/boot-index.js";
+import { Et as withViewTransition, F as hubSettingsSectionPath, G as ViewRegistry, M as canonicalHubSettingsSection, Nt as saveSettings, Tt as getTransitionDirection, U as scheduleViewModulePrefetch, bt as syncBrowserChromeTheme, ht as isEnabledView, jt as loadSettings, pt as serviceChannels, vt as applyTheme, yt as resyncThemeAfterAdoptedViewSheet, z as resolveEffectiveHubSettingsSection } from "../shells/boot-index.js";
 import { h as shouldHandoffViewToSibling, p as publicHrefForView } from "../shells/boot-history-base.js";
 import { a as stripHistoryBase, i as pathForSkuHostView, n as initBootShellWindowActivity, o as withHistoryBase, r as ensureHistoryBaseDataset } from "../shells/preference.js";
 import { o as resolveOverlayMountPoint } from "../shells/environment-environment-overlay.js";

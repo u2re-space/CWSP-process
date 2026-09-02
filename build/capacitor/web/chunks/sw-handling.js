@@ -1,8 +1,8 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../shells/boot-index.js","./rolldown-runtime.js","../shells/boot-history-base.js","../com/app.js","../fest/core.js","../com/service.js","../fest/veela.js","./BootLoader.js","../shells/preference.js","./capacitor-settings-permissions.js","./capacitor-permissions.js","./RuntimeSettings.js","./sku-ingress.js"])))=>i.map(i=>d[i]);
 import { _ as stashSkuHandoff, c as isCwspNativeHost, n as SKU_HUB_PATHS, s as inferCwspSkuFromLocation } from "../shells/boot-history-base.js";
 import { $t as isBase64Like, Dr as __vitePreload, It as bindDirectoryForLaunchedFiles, On as copy, kn as initClipboardReceiver, tn as parseDataUrl } from "../com/app.js";
-import { $ as storeShareTargetPayloadToCache, $n as unifiedMessaging, Ln as rememberProcessIngressSettings, Mn as holdCapacitorIngressJob, Nn as instructionTextForIngress, Q as consumeCachedShareTargetPayload, Rn as resolveProcessIngressKind, X as unifiedMessaging$1, Z as buildShareDataFromCachedPayload, jn as formatProcessIngressResult, or as resolveProcessApiUrl, tr as BROADCAST_CHANNELS, ur as classifyOpenKindFromPayload, vt as loadSettings, zn as writeProcessIngressClipboard } from "../shells/boot-index.js";
-import { t as summarizeForLog$1 } from "./LogSanitizer.js";
+import { $n as writeProcessIngressClipboard, Cr as classifyOpenKindFromPayload, Gn as formatProcessIngressResult, Kn as holdCapacitorIngressJob, Qn as resolveProcessIngressKind, Un as allowProcessWebLaunchQueue, Wn as allowProcessWebShareLaunch, Zn as rememberProcessIngressSettings, at as readProcessApiResultText, ct as storeShareTargetPayloadToCache, hr as BROADCAST_CHANNELS$1, it as processApiAuthFromSettings, kt as loadSettings, lt as safeCacheMatch, ot as buildShareDataFromCachedPayload, pr as unifiedMessaging$1, qn as instructionTextForIngress, rt as postProcessApi, st as consumeCachedShareTargetPayload, tt as unifiedMessaging, un as unwrapSwInteropMessage, ut as safeCacheOpen } from "../shells/boot-index.js";
+import { t as summarizeForLog$1 } from "./log-sanitizer.js";
 import { a as skuIngressHint, i as refineLauncherImageIngress, r as installShellImageOpenListener, t as applyLauncherIngress } from "./sku-ingress.js";
 import { classifyIngressFile, classifyIngressFromBasename, dispatchViewTransfer } from "./ViewTransferRouting.js";
 //#region src/shared/boot/toast.ts
@@ -366,6 +366,435 @@ var initToastReceiver = () => {
 	return listenForToasts();
 };
 //#endregion
+//#region src/shared/other/config/Names.ts
+/**
+* Broadcast channel names used throughout the application
+*/
+var BROADCAST_CHANNELS = {
+	SHARE_TARGET: "rs-share-target",
+	TOAST: "rs-toast",
+	CLIPBOARD: "rs-clipboard",
+	WORK_CENTER: "rs-workcenter",
+	MARKDOWN_VIEWER: "rs-markdown-viewer",
+	SETTINGS: "rs-settings",
+	GENERAL: "rs-app-general",
+	MINIMAL_APP: "minimal-app",
+	MAIN_APP: "main-app",
+	FILE_EXPLORER: "file-explorer",
+	PRINT_VIEWER: "print-viewer",
+	SETTINGS_VIEWER: "settings-viewer",
+	HISTORY_VIEWER: "history-viewer",
+	MARKDOWN_VIEWER_CHANNEL: "markdown-viewer",
+	FILE_EXPLORER_CHANNEL: "file-explorer",
+	SETTINGS_CHANNEL: "settings",
+	HISTORY_CHANNEL: "history",
+	PRINT_CHANNEL: "print",
+	SERVICE_WORKCENTER: "rs-service-workcenter",
+	SERVICE_SETTINGS: "rs-service-settings",
+	SERVICE_VIEWER: "rs-service-viewer",
+	SERVICE_EXPLORER: "rs-service-explorer",
+	SERVICE_AIRPAD: "rs-service-airpad",
+	SERVICE_NETWORK: "rs-service-network",
+	SERVICE_PRINT: "rs-service-print",
+	SERVICE_HISTORY: "rs-service-history",
+	SERVICE_EDITOR: "rs-service-editor",
+	SERVICE_HOME: "rs-service-home"
+};
+var viewBroadcastChannelName = (viewId) => {
+	return `rs-view-${normalizeViewId(viewId) || "app"}`;
+};
+/**
+* Component and module identifiers
+*/
+var COMPONENTS = {
+	WORK_CENTER: "workcenter",
+	MARKDOWN_VIEWER: "markdown-viewer",
+	MARKDOWN_EDITOR: "markdown-editor",
+	RICH_EDITOR: "rich-editor",
+	SETTINGS: "settings",
+	HISTORY: "history",
+	FILE_PICKER: "file-picker",
+	FILE_EXPLORER: "file-explorer",
+	WORKCENTER_CORE: "workcenter-core",
+	BASIC_WORKCENTER: "basic-workcenter",
+	BASIC_VIEWER: "basic-viewer",
+	BASIC_EXPLORER: "basic-explorer",
+	BASIC_SETTINGS: "basic-settings",
+	BASIC_HISTORY: "basic-history",
+	BASIC_PRINT: "basic-print",
+	AIRPAD: "airpad",
+	NETWORK: "network",
+	HOME: "home",
+	EDITOR: "editor",
+	VIEWER: "viewer",
+	EXPLORER: "explorer",
+	PRINT: "print"
+};
+/**
+* Location hash identifiers for app navigation
+*/
+var ROUTE_HASHES = {
+	MARKDOWN_VIEWER: "#markdown-viewer",
+	MARKDOWN_EDITOR: "#markdown-editor",
+	RICH_EDITOR: "#rich-editor",
+	SETTINGS: "#settings",
+	HISTORY: "#history",
+	WORKCENTER: "#workcenter",
+	FILE_PICKER: "#file-picker",
+	FILE_EXPLORER: "#file-explorer",
+	PRINT: "#print",
+	AIRPAD: "#airpad",
+	NETWORK: "#network",
+	WORKCENTER_FILES: "#workcenter-files",
+	WORKCENTER_TEXT: "#workcenter-text",
+	WORKCENTER_IMAGES: "#workcenter-images",
+	WORKCENTER_PROCESSING: "#workcenter-processing",
+	SHARE_TARGET_TEXT: "#share-target-text",
+	SHARE_TARGET_FILES: "#share-target-files",
+	SHARE_TARGET_URL: "#share-target-url",
+	SHARE_TARGET_IMAGE: "#share-target-image"
+};
+/**
+* Destination identifiers for unified messaging
+*/
+var DESTINATIONS = {
+	WORKCENTER: "workcenter",
+	CLIPBOARD: "clipboard",
+	VIEWER: "viewer",
+	MARKDOWN_VIEWER: "markdown-viewer",
+	SETTINGS: "settings",
+	HISTORY: "history",
+	EXPLORER: "explorer",
+	FILE_EXPLORER: "file-explorer",
+	PRINT: "print",
+	PRINT_VIEWER: "print-viewer",
+	EDITOR: "editor",
+	AIRPAD: "airpad",
+	HOME: "home",
+	BASIC_APP: "basic-app",
+	MAIN_APP: "main-app"
+};
+var CANONICAL_VIEW_IDS = [
+	"viewer",
+	"workcenter",
+	"explorer",
+	"editor",
+	"settings",
+	"history",
+	"home",
+	"airpad",
+	"print"
+];
+/**
+* COMPAT: legacy shells still emit `markdown-viewer`, `file-explorer`, and
+* `basic-*` destinations. Keep alias resolution centralized here so transports,
+* views, and workers can agree on one canonical target vocabulary.
+*/
+var DESTINATION_ALIASES = {
+	viewer: [
+		DESTINATIONS.VIEWER,
+		DESTINATIONS.MARKDOWN_VIEWER,
+		COMPONENTS.BASIC_VIEWER
+	],
+	workcenter: [
+		DESTINATIONS.WORKCENTER,
+		COMPONENTS.BASIC_WORKCENTER,
+		COMPONENTS.WORKCENTER_CORE
+	],
+	explorer: [
+		DESTINATIONS.EXPLORER,
+		DESTINATIONS.FILE_EXPLORER,
+		COMPONENTS.BASIC_EXPLORER
+	],
+	editor: [
+		DESTINATIONS.EDITOR,
+		COMPONENTS.MARKDOWN_EDITOR,
+		COMPONENTS.RICH_EDITOR
+	],
+	settings: [
+		DESTINATIONS.SETTINGS,
+		BROADCAST_CHANNELS.SETTINGS_CHANNEL,
+		COMPONENTS.BASIC_SETTINGS
+	],
+	history: [
+		DESTINATIONS.HISTORY,
+		BROADCAST_CHANNELS.HISTORY_CHANNEL,
+		COMPONENTS.BASIC_HISTORY
+	],
+	print: [
+		DESTINATIONS.PRINT,
+		DESTINATIONS.PRINT_VIEWER,
+		COMPONENTS.BASIC_PRINT
+	],
+	airpad: [DESTINATIONS.AIRPAD],
+	home: [DESTINATIONS.HOME],
+	clipboard: [DESTINATIONS.CLIPBOARD],
+	"basic-app": [DESTINATIONS.BASIC_APP],
+	"main-app": [DESTINATIONS.MAIN_APP]
+};
+var DESTINATION_LOOKUP = Object.entries(DESTINATION_ALIASES).reduce((out, [canonical, aliases]) => {
+	out[canonical] = canonical;
+	for (const alias of aliases) out[String(alias).toLowerCase()] = canonical;
+	return out;
+}, {});
+var normalizeDestination = (value) => {
+	const raw = String(value || "").trim().toLowerCase();
+	if (!raw) return "";
+	return DESTINATION_LOOKUP[raw] || raw;
+};
+var normalizeViewId = (value) => {
+	const canonical = normalizeDestination(value);
+	if (CANONICAL_VIEW_IDS.includes(canonical)) return canonical;
+	return "viewer";
+};
+BROADCAST_CHANNELS.SERVICE_WORKCENTER, BROADCAST_CHANNELS.SERVICE_SETTINGS, BROADCAST_CHANNELS.SERVICE_VIEWER, BROADCAST_CHANNELS.SERVICE_EXPLORER, BROADCAST_CHANNELS.SERVICE_AIRPAD, BROADCAST_CHANNELS.SERVICE_NETWORK, BROADCAST_CHANNELS.SERVICE_PRINT, BROADCAST_CHANNELS.SERVICE_HISTORY, BROADCAST_CHANNELS.SERVICE_EDITOR, BROADCAST_CHANNELS.SERVICE_HOME;
+ROUTE_HASHES.WORKCENTER, ROUTE_HASHES.SETTINGS, ROUTE_HASHES.MARKDOWN_VIEWER, ROUTE_HASHES.FILE_EXPLORER, ROUTE_HASHES.NETWORK, ROUTE_HASHES.PRINT, ROUTE_HASHES.HISTORY, ROUTE_HASHES.MARKDOWN_EDITOR;
+//#endregion
+//#region src/shared/routing/channel/workcenter-command-wire.ts
+var WORKCENTER_COMMAND_TYPE = "workcenter-command";
+var postWorkCenterCommand = (command) => {
+	const envelope = {
+		type: WORKCENTER_COMMAND_TYPE,
+		command
+	};
+	const names = [BROADCAST_CHANNELS.WORK_CENTER, viewBroadcastChannelName("workcenter")];
+	for (const name of names) try {
+		const channel = new BroadcastChannel(name);
+		channel.postMessage(envelope);
+		channel.close();
+	} catch {}
+};
+({
+	process: "/workcenter?shared=1",
+	document: "/viewer?shared=1",
+	explorer: "/?shared=1",
+	transfer: "/?shared=1",
+	launcher: "/?shared=1",
+	crx: "/?shared=1"
+}).process;
+//#endregion
+//#region src/shared/routing/pwa/sw-result-wire.ts
+var PROCESS_PENDING_PATH = "/process/pending";
+//#endregion
+//#region src/shared/routing/pwa/sw-page-bridge.ts
+var RESULT_TYPES = /* @__PURE__ */ new Set([
+	"ai-result",
+	"share-target-result",
+	"share-target-input",
+	"share-received",
+	"process-api-result",
+	"content-cached",
+	"content-received",
+	"pending-operations",
+	"commit-to-clipboard"
+]);
+var bound$1 = false;
+var seenKeys = /* @__PURE__ */ new Set();
+var remember = (key) => {
+	if (!key || seenKeys.has(key)) return false;
+	seenKeys.add(key);
+	if (seenKeys.size > 48) {
+		const first = seenKeys.values().next().value;
+		if (first) seenKeys.delete(first);
+	}
+	return true;
+};
+var resultKey = (type, text, raw) => {
+	const id = raw && typeof raw === "object" ? String(raw.id || "") : "";
+	const fileSig = (raw && typeof raw === "object" && Array.isArray(raw.files) ? raw.files : []).map((file) => `${file?.name || ""}:${file?.size || 0}`).join(",");
+	return id || `${type}:${text.replace(/\s+/g, " ").slice(0, 400)}:${fileSig}`;
+};
+var asWorkCenterPayload = (type, data, text) => {
+	if (data && typeof data === "object") {
+		const row = data;
+		if (type === "share-target-input" || type === "share-received") return {
+			...row,
+			source: row.source || "share-target"
+		};
+		if (type === "ai-result" || type === "process-api-result") return row.success != null || row.data != null || row.fallback != null ? row : {
+			success: true,
+			data: text || row,
+			rawData: row
+		};
+		if (row.content != null || row.rawData != null) return row;
+	}
+	return {
+		content: text,
+		rawData: data,
+		timestamp: Date.now(),
+		source: "service-worker"
+	};
+};
+var hydrateShareInput = async (data) => {
+	const base = data && typeof data === "object" ? { ...data } : {};
+	const inline = Array.isArray(base.files) ? base.files.filter((file) => typeof File !== "undefined" && file instanceof File) : [];
+	if (inline.length) return {
+		...base,
+		files: inline,
+		fileCount: inline.length,
+		source: base.source || "share-target"
+	};
+	try {
+		const cached = await consumeCachedShareTargetPayload({ clear: false });
+		if (!cached) return {
+			...base,
+			source: base.source || "share-target"
+		};
+		const built = buildShareDataFromCachedPayload(cached);
+		const files = Array.isArray(cached.files) ? cached.files : [];
+		return {
+			...base,
+			...built,
+			files,
+			fileCount: files.length || Number(base.fileCount || built.fileCount || 0),
+			text: base.text || built.text,
+			title: base.title || built.title,
+			url: base.url || built.url || built.sharedUrl,
+			source: "share-target"
+		};
+	} catch {
+		return {
+			...base,
+			source: base.source || "share-target"
+		};
+	}
+};
+var deliverShareTargetInput = async (data) => {
+	const payload = await hydrateShareInput(data);
+	return deliverSwResultToWorkCenter("share-target-input", payload, String(payload.text || payload.title || ""));
+};
+var deliverSwResultToWorkCenter = async (type, data, extraText = "") => {
+	if (type === "share-received") return deliverShareTargetInput(data);
+	const text = extraText.trim() || readProcessApiResultText(data);
+	if (!remember(resultKey(type, text, data))) return false;
+	const payload = asWorkCenterPayload(type, data, text);
+	postWorkCenterCommand({
+		type: "ingress.apply",
+		payload: {
+			type,
+			data: payload,
+			content: text
+		}
+	});
+	try {
+		await unifiedMessaging.sendMessage({
+			type,
+			source: "sw-page-bridge",
+			destination: "workcenter",
+			data: payload,
+			metadata: {
+				priority: "high",
+				fromServiceWorker: true
+			}
+		});
+	} catch {}
+	return true;
+};
+var ingestSwClientMessage = (value) => {
+	const unwrapped = unwrapSwInteropMessage(value);
+	if (!unwrapped) return false;
+	const type = unwrapped.type;
+	if (!RESULT_TYPES.has(type)) return false;
+	if (type === "pending-operations" && Array.isArray(unwrapped.operations)) {
+		for (const operation of unwrapped.operations) {
+			const row = operation;
+			if (row?.type === "ai-result" || row?.data) deliverSwResultToWorkCenter("ai-result", row.data ?? row);
+		}
+		return true;
+	}
+	if (type === "commit-to-clipboard" && Array.isArray(unwrapped.results)) {
+		for (const result of unwrapped.results) {
+			const row = result;
+			if (row?.data) deliverSwResultToWorkCenter("ai-result", row.data);
+		}
+		return true;
+	}
+	if (type === "share-received" || type === "share-target-input") {
+		deliverShareTargetInput(unwrapped.data);
+		return true;
+	}
+	deliverSwResultToWorkCenter(type, unwrapped.data);
+	return true;
+};
+var replayProcessPending = async () => {
+	try {
+		const loc = globalThis.location;
+		if (!loc || !/^https?:$/.test(String(loc.protocol || ""))) return;
+		const href = String(loc.href || "");
+		if (href.startsWith("chrome-extension://") || href.startsWith("moz-extension://")) return;
+		const response = await fetch(PROCESS_PENDING_PATH, { cache: "no-store" });
+		const type = String(response.headers.get("content-type") || "").toLowerCase();
+		if (!response.ok || !type.includes("application/json")) return;
+		const json = await response.json();
+		const operations = Array.isArray(json?.operations) ? json.operations : [];
+		if (!operations.length) return;
+		for (const operation of operations) {
+			const opType = String(operation.type || "process-api-result");
+			const payload = operation.raw ?? operation.data ?? operation;
+			if (opType === "share-received" || opType === "share-target-input") {
+				await deliverShareTargetInput(payload);
+				continue;
+			}
+			await deliverSwResultToWorkCenter(opType, payload, String(operation.text || ""));
+		}
+		await fetch(PROCESS_PENDING_PATH, {
+			method: "DELETE",
+			cache: "no-store"
+		}).catch(() => void 0);
+	} catch {}
+};
+/** Bind SW postMessage + deferred replay. Idempotent. */
+var bindSwPageBridge = () => {
+	if (bound$1) return () => void 0;
+	bound$1 = true;
+	const onSwMessage = (event) => {
+		ingestSwClientMessage(event.data);
+	};
+	try {
+		navigator.serviceWorker?.addEventListener("message", onSwMessage);
+	} catch {}
+	const replayShareCache = () => {
+		consumeCachedShareTargetPayload({ clear: false }).then((cached) => {
+			if (!cached) return;
+			if (Date.now() - Number(cached.meta?.timestamp || Date.now()) > 3e5) return;
+			const hasFiles = Array.isArray(cached.files) && cached.files.length > 0;
+			const meta = cached.meta || {};
+			if (!hasFiles && !meta.text && !meta.url && !meta.title) return;
+			return deliverShareTargetInput({
+				...meta,
+				files: cached.files,
+				source: "share-target"
+			});
+		}).catch(() => void 0);
+	};
+	const replay = () => {
+		replayProcessPending();
+		replayShareCache();
+		unifiedMessaging.processQueuedMessages("workcenter").catch(() => void 0);
+	};
+	const onShow = () => replay();
+	const onVisible = () => {
+		if (globalThis.document?.visibilityState === "visible") replay();
+	};
+	globalThis.addEventListener?.("pageshow", onShow);
+	globalThis.addEventListener?.("online", onShow);
+	globalThis.addEventListener?.("visibilitychange", onVisible);
+	try {
+		navigator.serviceWorker?.addEventListener("controllerchange", onShow);
+	} catch {}
+	replay();
+	return () => {
+		bound$1 = false;
+		try {
+			navigator.serviceWorker?.removeEventListener("message", onSwMessage);
+			navigator.serviceWorker?.removeEventListener("controllerchange", onShow);
+		} catch {}
+		globalThis.removeEventListener?.("pageshow", onShow);
+		globalThis.removeEventListener?.("online", onShow);
+		globalThis.removeEventListener?.("visibilitychange", onVisible);
+	};
+};
+//#endregion
 //#region src/shared/routing/pwa/pwa-copy.ts
 /**
 * PWA Clipboard Handler
@@ -374,13 +803,8 @@ var initToastReceiver = () => {
 */
 var _pwaClipboardInitialized = false;
 var _cleanupFns = [];
-var sendShareTargetResultToWorkcenter = async (data, priority = "high") => {
-	await unifiedMessaging.sendMessage({
-		type: "share-target-result",
-		destination: "workcenter",
-		data,
-		metadata: { priority }
-	});
+var sendShareTargetResultToWorkcenter = async (data, _priority = "high") => {
+	await deliverSwResultToWorkCenter("share-target-result", data, String(data.content || ""));
 };
 var tryParseJSON = (data) => {
 	if (typeof data !== "string") return null;
@@ -531,7 +955,17 @@ var initPWAClipboard = () => {
 	if (typeof BroadcastChannel !== "undefined") {
 		const clipboardChannel = new BroadcastChannel("rs-clipboard");
 		const clipboardHandler = async (event) => {
-			const { type, data, operations } = event.data || {};
+			const unwrapped = unwrapSwInteropMessage(event.data) || {
+				type: "",
+				data: void 0,
+				operations: void 0,
+				raw: {}
+			};
+			const { type, data, operations } = {
+				type: unwrapped.type,
+				data: unwrapped.data,
+				operations: unwrapped.operations ?? event.data?.operations
+			};
 			console.log("[PWA-Copy] Clipboard channel message:", type, summarizeForLog$1(data));
 			if (type === "pending-operations" && operations && Array.isArray(operations)) {
 				console.log("[PWA-Copy] Received", operations.length, "pending operations via broadcast");
@@ -566,50 +1000,37 @@ var initPWAClipboard = () => {
 		});
 		const shareChannel = new BroadcastChannel("rs-share-target");
 		const shareHandler = async (event) => {
-			const { type, data } = event.data || {};
+			const unwrapped = unwrapSwInteropMessage(event.data);
+			const type = unwrapped?.type || event.data?.type;
+			const data = unwrapped?.data ?? event.data?.data;
 			console.log("[PWA-Copy] Share channel message:", type, summarizeForLog$1(data));
 			if (type === "copy-shared" && data) await copy(data, { showFeedback: true });
 			if (type === "share-received" && data) console.log("[PWA-Copy] Share received from SW:", summarizeForLog$1(data));
-			if (type === "ai-result" && data) {
+			if ((type === "ai-result" || type === "process-api-result") && data) {
 				console.log("[PWA-Copy] AI result from SW:", summarizeForLog$1(data));
-				if (data.success && data.data) {
-					const text = extractRecognizedContent(data.data);
+				const row = data;
+				if (row.success !== false) {
+					const text = extractRecognizedContent(row.data ?? data);
 					await copy(text, { showFeedback: true });
-					await unifiedMessaging.sendMessage({
-						type: "share-target-result",
-						destination: "workcenter",
-						data: {
-							content: typeof text === "string" ? text : JSON.stringify(text),
-							rawData: data.data,
-							timestamp: Date.now(),
-							source: "share-target",
-							action: "AI Processing",
-							metadata: {
-								fromServiceWorker: true,
-								shareTargetId: data.id || "unknown"
-							}
-						},
-						metadata: { priority: "high" }
-					});
+					await deliverSwResultToWorkCenter(type, {
+						success: true,
+						data: row.data ?? data,
+						content: typeof text === "string" ? text : JSON.stringify(text),
+						rawData: row.data ?? data,
+						timestamp: Date.now(),
+						source: "share-target",
+						action: "AI Processing"
+					}, typeof text === "string" ? text : "");
 				} else showToast({
-					message: data.error || "Processing failed",
+					message: row.error || "Processing failed",
 					kind: "error"
 				});
 			}
-			if (type === "share-received" && data) {
-				console.log("[PWA-Copy] Share received, broadcasting input to work center:", summarizeForLog$1(data));
-				await unifiedMessaging.sendMessage({
-					type: "share-target-input",
-					destination: "workcenter",
-					data: {
-						...data,
-						timestamp: Date.now(),
-						metadata: {
-							fromServiceWorker: true,
-							...data.metadata
-						}
-					},
-					metadata: { priority: "high" }
+			if ((type === "share-received" || type === "share-target-input") && data) {
+				console.log("[PWA-Copy] Share received, delivering input to work center:", summarizeForLog$1(data));
+				await deliverShareTargetInput({
+					...typeof data === "object" && data ? data : { text: data },
+					timestamp: Date.now()
 				});
 			}
 		};
@@ -620,14 +1041,16 @@ var initPWAClipboard = () => {
 		});
 		const swChannel = new BroadcastChannel("rs-sw");
 		const swHandler = async (event) => {
-			const { type, results } = event.data || {};
+			const unwrapped = unwrapSwInteropMessage(event.data);
+			const type = unwrapped?.type || event.data?.type;
+			const results = unwrapped?.results ?? event.data?.results;
 			console.log("[PWA-Copy] SW channel message:", type, summarizeForLog$1(results));
 			if (type === "commit-to-clipboard" && results && Array.isArray(results)) {
 				for (const result of results) if (result?.status === "queued" && result?.data) {
 					console.log("[PWA-Copy] Copying result data:", summarizeForLog$1(result.data));
 					const extractedContent = extractRecognizedContent(result.data);
 					await copy(extractedContent, { showFeedback: true });
-					await unifiedMessaging.sendMessage({
+					await unifiedMessaging$1.sendMessage({
 						type: "share-target-result",
 						destination: "workcenter",
 						data: {
@@ -665,6 +1088,60 @@ var cleanupPWAClipboard = () => {
 	_pwaClipboardInitialized = false;
 };
 //#endregion
+//#region src/shared/routing/pwa/ingress-host.ts
+var bound = false;
+var applyChromeRuntimeMail = (value) => ingestSwClientMessage(value);
+var applyNativeEvent = (value) => {
+	if (value == null) return false;
+	if (typeof value === "string") try {
+		return applyNativeEvent(JSON.parse(value));
+	} catch {
+		return ingestSwClientMessage({
+			type: "share-received",
+			data: {
+				text: value,
+				source: "share-target"
+			}
+		});
+	}
+	if (typeof value !== "object") return ingestSwClientMessage(value);
+	const row = value;
+	return ingestSwClientMessage(row.payload ?? row.data ?? row.envelope ?? row);
+};
+/** Bind SW + CRX + native inboxes. Idempotent. */
+var bindIngressHosts = () => {
+	if (bound) return () => void 0;
+	bound = true;
+	const unbindSw = bindSwPageBridge();
+	const onNative = (event) => {
+		applyNativeEvent(event.detail);
+	};
+	globalThis.addEventListener?.("cws-native-message", onNative);
+	let chromeListener = null;
+	try {
+		const runtime = globalThis.chrome?.runtime;
+		if (runtime?.id && runtime.onMessage?.addListener) {
+			chromeListener = (msg, _sender, sendResponse) => {
+				applyChromeRuntimeMail(msg);
+				try {
+					sendResponse?.({ ok: true });
+				} catch {}
+				return false;
+			};
+			runtime.onMessage.addListener(chromeListener);
+		}
+	} catch {}
+	return () => {
+		bound = false;
+		unbindSw();
+		globalThis.removeEventListener?.("cws-native-message", onNative);
+		try {
+			const runtime = globalThis.chrome?.runtime;
+			if (chromeListener && runtime?.onMessage?.removeListener) runtime.onMessage.removeListener(chromeListener);
+		} catch {}
+	};
+};
+//#endregion
 //#region src/shared/boot/history-base.ts
 var KNOWN_PATH_MOUNTS = [
 	"cwsp",
@@ -675,6 +1152,7 @@ var KNOWN_PATH_MOUNTS = [
 	"explorer",
 	"workcenter",
 	"process",
+	"ai",
 	"kvm"
 ];
 /** Dedicated PWA hosts — app lives at `/`. Hub/LAN keep `/markdown` `/viewer` path mounts. */
@@ -685,6 +1163,7 @@ var DEDICATED_SKU_HOSTS = [
 	"www.explorer.u2re.space",
 	"process.u2re.space",
 	"workcenter.u2re.space",
+	"ai.u2re.space",
 	"cwsp.u2re.space",
 	"www.cwsp.u2re.space",
 	"transfer.u2re.space"
@@ -732,6 +1211,9 @@ var bodyLooksLikeHtmlDocument = (snippet) => {
 	return head.startsWith("<!") || /^<\s*html[\s>]/i.test(head) || head.startsWith("<!--");
 };
 var PROBE_TIMEOUT_MS = 8e3;
+/** WHY: Vite 8 only inlines `import.meta.env.DEV` / `BASE_URL` on the exact member access — `(import.meta as any).env.DEV` stays undefined and we only probe `/sw.js` (SPA HTML). */
+var isViteDev = () => Boolean(void 0);
+var viteBaseUrl = () => String("./");
 var probeScriptUrl = async (url) => {
 	const ac = new AbortController();
 	const timer = setTimeout(() => ac.abort(), PROBE_TIMEOUT_MS);
@@ -841,7 +1323,7 @@ var dropStaleServiceWorkerRegistrations = async () => {
 };
 /** Vite base (e.g. `/` or `/apps/cw/`) — normalized with trailing slash. */
 var viteBasePrefix = () => {
-	const raw = String("./");
+	const raw = viteBaseUrl();
 	if (raw === "/" || raw === "") return "/";
 	return raw.endsWith("/") ? raw : `${raw}/`;
 };
@@ -887,14 +1369,7 @@ var scopeForServiceWorkerScript = (swUrl) => {
 	}
 };
 var getServiceWorkerCandidates = () => {
-	const isDev = Boolean({
-		"BASE_URL": "./",
-		"DEV": false,
-		"MODE": "capacitor",
-		"PROD": true,
-		"SSR": false,
-		"VITE_ENABLED_VIEWS": "workcenter,settings,history"
-	}.DEV);
+	const isDev = isViteDev();
 	const bases = serviceWorkerPathBases();
 	const perBaseDev = [];
 	const perBaseProd = [];
@@ -912,7 +1387,11 @@ var getServiceWorkerCandidates = () => {
 		...perBaseDev,
 		...devFallbacks,
 		...perBaseProd
-	] : [.../* @__PURE__ */ new Set([...perBaseProd, ...prod])];
+	] : [.../* @__PURE__ */ new Set([
+		...perBaseProd,
+		...prod,
+		"/dev-sw.js?dev-sw"
+	])];
 	return [...new Set(merged)];
 };
 var ensureServiceWorkerRegistered = async () => {
@@ -946,22 +1425,23 @@ var ensureServiceWorkerRegistered = async () => {
 	const candidates = getServiceWorkerCandidates();
 	const tryRegister = async (url) => {
 		const scope = scopeForServiceWorkerScript(url);
-		const isDevVirtualWorker = url.includes("/dev-sw.js?dev-sw");
+		if (url.includes("/dev-sw.js?dev-sw")) try {
+			return await navigator.serviceWorker.register(url, {
+				scope,
+				type: "module",
+				updateViaCache: "none"
+			});
+		} catch (eModule) {
+			if (isViteDev()) console.warn("[SW] Dev worker registration failed (module)", url, eModule);
+			return null;
+		}
 		try {
 			return await navigator.serviceWorker.register(url, {
 				scope,
 				updateViaCache: "none"
 			});
 		} catch (eClassic) {
-			if (isDevVirtualWorker) try {
-				return await navigator.serviceWorker.register(url, {
-					scope,
-					type: "module",
-					updateViaCache: "none"
-				});
-			} catch (eModule) {
-				return null;
-			}
+			if (isViteDev()) console.warn("[SW] Registration failed for", url, eClassic);
 			return null;
 		}
 	};
@@ -970,6 +1450,10 @@ var ensureServiceWorkerRegistered = async () => {
 		const reg = await tryRegister(url);
 		if (reg) return reg;
 	}
+	if (isViteDev()) try {
+		const probes = await Promise.all(candidates.map(probeScriptUrl));
+		console.warn("[SW] No service worker registered; candidates exhausted. Dev probes:", probes);
+	} catch {}
 	return null;
 };
 //#endregion
@@ -1153,6 +1637,19 @@ var activateWaitingWorker = (registration, reason) => {
 	waiting.postMessage({ type: "SKIP_WAITING" });
 	return true;
 };
+/** WHY: a new worker often reaches `waiting` after boot — DEV-only nudge left #434 stuck. */
+var bindWaitingActivation = (registration) => {
+	const nudge = (reason) => activateWaitingWorker(registration, reason);
+	nudge("initial");
+	try {
+		registration.addEventListener("updatefound", () => {
+			const worker = registration.installing;
+			worker?.addEventListener("statechange", () => {
+				if (worker.state === "installed") nudge("updatefound");
+			});
+		});
+	} catch {}
+};
 /** Re-fetch `sw.js` from network; helps when CDN/proxy cache or long-lived tabs hide updates. */
 var probeServiceWorkerUpdate = async (registration) => {
 	await dropStaleServiceWorkerRegistrations();
@@ -1193,28 +1690,14 @@ var initServiceWorker = async (_options = _swOptions) => {
 		}
 		try {
 			const registration = await ensureServiceWorkerRegistered();
-			const viteEnv = {
-				"BASE_URL": "./",
-				"DEV": false,
-				"MODE": "capacitor",
-				"PROD": true,
-				"SSR": false,
-				"VITE_ENABLED_VIEWS": "workcenter,settings,history"
-			};
 			if (!registration) {
-				if (viteEnv?.DEV) console.warn("[PWA] Service worker not registered (dev): probe failed for dev-sw/sw.js — check Vite BASE_URL matches vite-plugin-pwa dev worker path.");
-				else console.error("[PWA] Service worker registration failed: no valid sw.js found");
+				console.error("[PWA] Service worker registration failed: no valid sw.js found");
 				return null;
 			}
 			bindControllerChangeReload();
 			await probeServiceWorkerUpdate(registration);
 			bindServiceWorkerLifecycleUpdateChecks(registration);
-			if (viteEnv?.DEV && registration.waiting) activateWaitingWorker(registration, "initial");
-			try {
-				if (_swOptions?.immediate === true && registration.waiting) activateWaitingWorker(registration, "initial");
-			} catch (e) {
-				console.warn("[PWA] Failed to auto-activate waiting service worker:", e);
-			}
+			bindWaitingActivation(registration);
 			registration?.addEventListener?.("updatefound", () => {
 				const newWorker = registration?.installing;
 				if (newWorker) newWorker?.addEventListener?.("statechange", () => {
@@ -1224,17 +1707,7 @@ var initServiceWorker = async (_options = _swOptions) => {
 							message: "App update available",
 							kind: "info"
 						});
-						try {
-							if (_swOptions?.immediate === true && !activateWaitingWorker(registration, "updatefound") && viteEnv?.DEV) globalThis.setTimeout(() => {
-								try {
-									activateWaitingWorker(registration, "updatefound");
-								} catch (retryError) {
-									console.warn("[PWA] Delayed SW activation failed:", retryError);
-								}
-							}, 0);
-						} catch (e) {
-							console.warn("[PWA] Failed to auto-activate waiting service worker on updatefound:", e);
-						}
+						activateWaitingWorker(registration, "updatefound");
 					}
 				});
 			});
@@ -1242,7 +1715,7 @@ var initServiceWorker = async (_options = _swOptions) => {
 				globalThis?.clearInterval?.(_swUpdateInterval);
 				_swUpdateInterval = null;
 			}
-			if (!viteEnv?.DEV) _swUpdateInterval = globalThis?.setInterval?.(() => {
+			_swUpdateInterval = globalThis?.setInterval?.(() => {
 				registration?.update?.().catch?.(console.warn);
 			}, 3e5);
 			console.log("[PWA] Service worker registered successfully");
@@ -1258,7 +1731,12 @@ var _receiversCleanup = null;
 /** Initialize one-time clipboard/share receivers used by the window-side PWA bridge. */
 var initReceivers = () => {
 	if (_receiversCleanup) return;
-	_receiversCleanup = initPWAClipboard();
+	const clipboard = initPWAClipboard();
+	const hosts = bindIngressHosts();
+	_receiversCleanup = () => {
+		clipboard();
+		hosts();
+	};
 };
 var inferShareContentType = (shareData) => {
 	const files = Array.isArray(shareData.files) ? shareData.files.filter((f) => f instanceof File) : [];
@@ -1363,14 +1841,15 @@ var awaitHydratedSharePayloadWithRetries = async (base, maxAttempts = 12) => {
 * WHY: `extractShareContent` can see a title "handle" and skip the cache branch while `File[]` only lives in the cache.
 */
 var mergeUrlParamsShareWithCache = async (fromUrl) => {
-	if (!("caches" in globalThis)) return {
-		...fromUrl,
-		source: "share-target"
-	};
 	try {
-		const cache = await caches.open("share-target-data");
-		const shareKey = new URL("/share-target-data", globalThis.location.origin).href;
-		const response = await cache.match(shareKey);
+		const cache = await safeCacheOpen("share-target-data");
+		if (!cache) return {
+			...fromUrl,
+			source: "share-target"
+		};
+		const origin = globalThis.location?.origin || "https://localhost";
+		const shareKey = new URL("/share-target-data", origin).href;
+		const response = await safeCacheMatch(cache, shareKey) || await safeCacheMatch(cache, "/share-target-data");
 		if (!response) return {
 			...fromUrl,
 			source: "share-target"
@@ -1439,7 +1918,7 @@ var routeToTransferView = async (shareData, source, hint, pending = false) => {
 		rememberProcessIngressSettings(loadedSettings);
 		autoProcessShared = (loadedSettings?.ai?.autoProcessShared ?? true) !== false;
 		const { rememberOpenPolicyFromSettings } = await __vitePreload(async () => {
-			const { rememberOpenPolicyFromSettings } = await import("../shells/boot-index.js").then((n) => n.hr);
+			const { rememberOpenPolicyFromSettings } = await import("../shells/boot-index.js").then((n) => n.Or);
 			return { rememberOpenPolicyFromSettings };
 		}, __vite__mapDeps([0,1,2,3,4,5,6]), import.meta.url);
 		rememberOpenPolicyFromSettings(loadedSettings);
@@ -1632,6 +2111,14 @@ var ingestSharePayload = async (shareData, source = "share-target") => {
 			}
 		});
 	} catch {}
+	try {
+		await deliverShareTargetInput({
+			...shareData,
+			files,
+			source: shareData.source || source,
+			fileCount: files.length || shareData.fileCount
+		});
+	} catch {}
 	const file = files[0];
 	try {
 		const content = !!file && (/^text\/|json|markdown|xml|javascript|typescript/i.test(String(file.type || "")) || /\.(?:md|markdown|txt|json|html?|css|js|ts|tsx|yml|yaml|csv|log|xml)$/i.test(file.name)) && file ? await file.text() : String(shareData.text || "");
@@ -1728,7 +2215,19 @@ var deliverProcessIngressResult = async (text, raw, copyToClipboard) => {
 		});
 	}
 	try {
-		await unifiedMessaging$1.sendMessage({
+		postWorkCenterCommand({
+			type: "ingress.apply",
+			payload: {
+				type: "share-target-result",
+				data: {
+					content: text,
+					rawData: raw,
+					timestamp: Date.now(),
+					source: "share-target"
+				}
+			}
+		});
+		await unifiedMessaging.sendMessage({
 			type: "share-target-result",
 			source: "share-target",
 			destination: "workcenter",
@@ -1742,18 +2241,18 @@ var deliverProcessIngressResult = async (text, raw, copyToClipboard) => {
 			metadata: { priority: "high" }
 		});
 	} catch {
-		const workCenterChannel = new BroadcastChannel(BROADCAST_CHANNELS.WORK_CENTER);
-		workCenterChannel.postMessage({
-			type: "share-target-result",
-			data: {
-				content: text,
-				rawData: raw,
-				timestamp: Date.now(),
-				source: "share-target",
-				action: "Processing (/api/process/processing)"
+		postWorkCenterCommand({
+			type: "ingress.apply",
+			payload: {
+				type: "share-target-result",
+				data: {
+					content: text,
+					rawData: raw,
+					timestamp: Date.now(),
+					source: "share-target"
+				}
 			}
 		});
-		workCenterChannel.close();
 	}
 };
 /**
@@ -1866,30 +2365,26 @@ var runProcessShareTargetData = async (shareData, skipIfEmpty = false) => {
 		} else throw new Error("No processable content found");
 		const analyze = settings?.ai?.shareTargetMode === "analyze";
 		console.log("[ShareTarget] Calling unified processing API");
-		const response = await fetch(resolveProcessApiUrl("processing"), {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({
-				content: processingContent,
-				text: contentType === "text" ? processingContent : void 0,
-				input: processingContent,
-				url: type === "url" ? content : void 0,
-				contentType,
-				processingType: analyze ? "general-processing" : "recognize-content",
-				mode: analyze ? "analyze" : "smartRecognize",
-				customInstruction: customInstruction || void 0,
-				metadata: {
-					source: "share-target",
-					title: shareData.title || "Shared Content",
-					timestamp: Date.now(),
-					kind: ingress.kind,
-					instructionId: ingress.instructionId || ""
-				}
-			})
-		});
-		if (!response.ok) throw new Error(`Processing API failed: ${response.status}`);
-		const result = await response.json();
-		const text = extractProcessApiText(result);
+		const posted = await postProcessApi("processing", {
+			content: processingContent,
+			text: contentType === "text" ? processingContent : void 0,
+			input: processingContent,
+			url: type === "url" ? content : void 0,
+			contentType,
+			processingType: analyze ? "general-processing" : "recognize-content",
+			mode: analyze ? "analyze" : "smartRecognize",
+			customInstruction: customInstruction || void 0,
+			metadata: {
+				source: "share-target",
+				title: shareData.title || "Shared Content",
+				timestamp: Date.now(),
+				kind: ingress.kind,
+				instructionId: ingress.instructionId || ""
+			}
+		}, processApiAuthFromSettings(settings));
+		if (!posted.ok) throw new Error(`Processing API failed: ${posted.status || posted.error || "network"}`);
+		const result = posted.json;
+		const text = readProcessApiResultText(result) || extractProcessApiText(result);
 		console.log("[ShareTarget] Unified processing completed:", {
 			ok: result?.ok,
 			success: result?.success
@@ -1941,13 +2436,13 @@ var runProcessShareTargetData = async (shareData, skipIfEmpty = false) => {
 	}
 };
 var CHANNELS = {
-	SHARE_TARGET: BROADCAST_CHANNELS.SHARE_TARGET,
-	TOAST: BROADCAST_CHANNELS.TOAST,
-	CLIPBOARD: BROADCAST_CHANNELS.CLIPBOARD,
-	MINIMAL_APP: BROADCAST_CHANNELS.MINIMAL_APP,
-	MAIN_APP: BROADCAST_CHANNELS.MAIN_APP,
-	FILE_EXPLORER: BROADCAST_CHANNELS.FILE_EXPLORER,
-	PRINT_VIEWER: BROADCAST_CHANNELS.PRINT_VIEWER
+	SHARE_TARGET: BROADCAST_CHANNELS$1.SHARE_TARGET,
+	TOAST: BROADCAST_CHANNELS$1.TOAST,
+	CLIPBOARD: BROADCAST_CHANNELS$1.CLIPBOARD,
+	MINIMAL_APP: BROADCAST_CHANNELS$1.MINIMAL_APP,
+	MAIN_APP: BROADCAST_CHANNELS$1.MAIN_APP,
+	FILE_EXPLORER: BROADCAST_CHANNELS$1.FILE_EXPLORER,
+	PRINT_VIEWER: BROADCAST_CHANNELS$1.PRINT_VIEWER
 };
 /**
 * Fallback to server-side AI processing when client-side fails
@@ -2015,6 +2510,7 @@ var tryServerSideProcessing = async (shareData, copyToClipboard = true) => {
 * be staged or routed.
 */
 var handleShareTarget = () => {
+	if (!allowProcessWebShareLaunch()) console.log("[ShareTarget] Process PWA/Web OS share-target is off; launch-queue replay stays on");
 	const params = new URLSearchParams(globalThis?.location?.search);
 	const shared = params.get("shared");
 	const hasExplicitSharedFlow = shared === "1" || shared === "true" || shared === "test";
@@ -2167,13 +2663,14 @@ var handleShareTarget = () => {
 	})();
 	if (typeof BroadcastChannel !== "undefined") {
 		new BroadcastChannel(CHANNELS.SHARE_TARGET).addEventListener("message", async (event) => {
-			const msgType = event.data?.type;
-			const msgData = event.data?.data;
+			const unwrapped = unwrapSwInteropMessage(event.data);
+			const msgType = unwrapped?.type || event.data?.type;
+			const msgData = unwrapped?.data ?? event.data?.data;
 			console.log("[ShareTarget] Broadcast received:", {
 				type: msgType,
 				hasData: !!msgData
 			});
-			if (msgType === "share-received" && msgData) {
+			if ((msgType === "share-received" || msgType === "share-target-input") && msgData) {
 				console.log("[ShareTarget] Share notification received:", {
 					hasText: !!msgData.text,
 					hasUrl: !!msgData.url,
@@ -2206,6 +2703,10 @@ var handleShareTarget = () => {
 * transfer pipeline.
 */
 var setupLaunchQueueConsumer = async () => {
+	if (!allowProcessWebLaunchQueue()) {
+		console.log("[LaunchQueue] Process PWA/Web launch-queue is off");
+		return;
+	}
 	if (!("launchQueue" in globalThis)) {
 		console.log("[LaunchQueue] launchQueue API not available");
 		return;
