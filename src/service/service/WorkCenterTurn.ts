@@ -44,10 +44,35 @@ const flattenResponsesInput = (input: Array<Record<string, unknown>>): string =>
     return texts.join("\n\n").trim();
 };
 
+const hasVisualInput = (input: Array<Record<string, unknown>>): boolean => {
+    for (const item of input) {
+        const content = item?.content;
+        if (!Array.isArray(content)) continue;
+        for (const part of content) {
+            const type = String((part as { type?: unknown })?.type || "");
+            if (type === "input_image" || type === "input_file" || type === "image_url" || type === "image") {
+                return true;
+            }
+        }
+    }
+    return false;
+};
+
+const processApiTurnSignal = (signal?: AbortSignal): AbortSignal | undefined => {
+    const timed = typeof AbortSignal !== "undefined" && typeof AbortSignal.timeout === "function"
+        ? AbortSignal.timeout(12_000)
+        : undefined;
+    if (timed && signal && typeof AbortSignal.any === "function") return AbortSignal.any([signal, timed]);
+    return timed || signal;
+};
+
 const tryProcessApiTurn = async (
     input: Array<Record<string, unknown>>,
     options: Parameters<WorkCenterTurnExecutor>[1]
 ): Promise<ProcessDataWithInstructionResult | null> => {
+    // WHY: /api/process flatten drops images; a hung LAN POST would leave Thinking…
+    // after the in-page GPT path already extracted the answer.
+    if (hasVisualInput(input)) return null;
     const text = flattenResponsesInput(input);
     if (!text) return null;
     const settings = await loadSettings().catch(() => null);
@@ -61,7 +86,7 @@ const tryProcessApiTurn = async (
             customInstruction: options.instruction || options.customInstruction || undefined
         },
         auth,
-        { signal: options.signal }
+        { signal: processApiTurnSignal(options.signal) }
     );
     if (isProcessApiUnavailable(posted) || !posted.json) return null;
     const json = posted.json as { ok?: boolean; error?: string };

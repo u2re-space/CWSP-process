@@ -717,6 +717,10 @@ export const initiate = (NAME = "generic", tsconfig = {}, __dirname = resolve(".
         open: false,
         host: "0.0.0.0",
         ...(devServerOrigin ? { origin: devServerOrigin } : {}),
+        // WHY: Vite 8 HMR is `/?token=` — SPA rewrite to index.html makes the WS handshake 400.
+        hmr: {
+            path: "/__vite_hmr"
+        },
         allowedHosts: true,
         appType: 'spa',
         https,
@@ -774,9 +778,14 @@ export const initiate = (NAME = "generic", tsconfig = {}, __dirname = resolve(".
             server.middlewares.use((req, res, next) => {
                 const url = req.url || '';
                 const pathname = url.split('?')[0] || '';
+                const isViteHmr =
+                    String(req.headers?.upgrade || "").toLowerCase() === "websocket" ||
+                    pathname === "/__vite_hmr" ||
+                    pathname.startsWith("/@vite") ||
+                    /(?:^|[?&])token=/.test(url);
 
                 // PWA static assets (dev: servePwaSrcAsDistPlugin) — never rewrite to index.html.
-                if (pathname.startsWith("/pwa/")) {
+                if (isViteHmr || pathname.startsWith("/pwa/")) {
                     return next();
                 }
 
