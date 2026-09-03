@@ -444,8 +444,10 @@ export const getAIProcessingConfig = async (): Promise<AIProcessingConfig> => {
             customInstruction = active?.instruction?.trim() || '';
         }
 
+        /* WHY: per-kind attach|process lives on the page / Capacitor FGS.
+         * SW-side AI ignored attach and left warm shares without chips. */
         return {
-            enabled: true,
+            enabled: false,
             mode: 'recognize',
             customInstruction,
             apiKey: settings.ai.apiKey

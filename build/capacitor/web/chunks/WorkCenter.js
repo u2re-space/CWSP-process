@@ -4154,7 +4154,18 @@ var WorkCenterAttachmentIngress = class {
 				continue;
 			}
 			const hash = await localHash(file);
-			if (this.filesByHash.has(hash) || this.options.state.draft.attachments.some((item) => item.hash === hash)) continue;
+			const existing = this.options.state.draft.attachments.find((item) => item.hash === hash);
+			if (existing || this.filesByHash.has(hash)) {
+				added.push(existing || {
+					hash,
+					path: "",
+					name: file.name || "attachment",
+					type: file.type || "application/octet-stream",
+					size: file.size,
+					lastModified: file.lastModified || Date.now()
+				});
+				continue;
+			}
 			const ref = {
 				hash,
 				path: "",

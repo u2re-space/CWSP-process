@@ -96,7 +96,8 @@ var consumeNativePendingShare = async () => {
 		if (isDocumentSku()) return null;
 		const echo = peek.echo || peek;
 		const stashedAt = Number(echo.stashedAt || 0) || void 0;
-		if (!echo.text && !echo.title && !echo.name && !echo.url && !echo.hasFile) return null;
+		const flagged = echo.hasFile === true || echo.hasFile === "true" || echo.hasFile === 1 || echo.hasFile === "1";
+		if (!echo.text && !echo.title && !echo.name && !echo.url && !flagged) return null;
 		const { dataUrlToFile, filenameFromLocalShareUri, isAndroidLocalShareUri } = await __vitePreload(async () => {
 			const { dataUrlToFile, filenameFromLocalShareUri, isAndroidLocalShareUri } = await import("../views/viewer.js").then((n) => n.h);
 			return {
@@ -112,7 +113,10 @@ var consumeNativePendingShare = async () => {
 		let url = String(echo.url || "").trim();
 		const files = [];
 		const local = isAndroidLocalShareUri(url) || isAndroidLocalShareUri(text);
-		const wantFile = Boolean(echo.hasFile) || local || looksLikeFileShare(echo);
+		const wantFile = flagged || local || looksLikeFileShare({
+			...echo,
+			hasFile: flagged
+		});
 		const pullFile = async () => {
 			const read = await invokeCwsPlatformIPC({ channel: "launcher:read-share-file" });
 			const blob = read.echo || read;
@@ -174,6 +178,13 @@ var ingestParsedShare = async (input) => {
 		source: "share-target",
 		hint: filename ? { filename } : void 0
 	});
+	try {
+		const { flushHeldIngressToWorkCenter } = await __vitePreload(async () => {
+			const { flushHeldIngressToWorkCenter } = await import("../views/viewer.js").then((n) => n.h);
+			return { flushHeldIngressToWorkCenter };
+		}, __vite__mapDeps([7,1,2,3,0,4,5,6]), import.meta.url);
+		await flushHeldIngressToWorkCenter();
+	} catch {}
 };
 var installed = false;
 var ingestChain = Promise.resolve();
@@ -276,6 +287,18 @@ var installCapacitorShareIntentBridge = () => {
 		})().catch(() => {});
 	};
 	window.addEventListener("cws:shareIntent", handler);
+	const pullPending = () => {
+		if (isDocumentSku() || isTransferSku()) return;
+		try {
+			if (document.visibilityState && document.visibilityState !== "visible") return;
+		} catch {}
+		enqueueShareIngest(async () => {
+			const native = await consumeNativePendingShare().catch(() => null);
+			if (native) await ingestParsedShare(native);
+		});
+	};
+	document.addEventListener("visibilitychange", pullPending);
+	window.addEventListener("pageshow", pullPending);
 	enqueueShareIngest(async () => {
 		await new Promise((resolve) => {
 			const done = () => resolve();

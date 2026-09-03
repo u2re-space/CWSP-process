@@ -1500,6 +1500,14 @@ var SINK_OPTIONS = [
 	["external", "New tab / browser"],
 	["system", "Android / system chooser"]
 ];
+/** Document PWA has no Work Center / Explorer host — those sinks swallow drop/paste. */
+var DOCUMENT_VIEWER_SINK_OPTIONS = [
+	["ask", "Follow default / this app"],
+	["display", "Display here"],
+	["viewer", "Markdown (in this app)"],
+	["document", "Stay in this app"],
+	["external", "New tab / browser"]
+];
 var PLACEMENT_OPTIONS = [
 	["inline", "Inline window (same tab)"],
 	["native-window", "Separate window"],
@@ -1551,16 +1559,20 @@ var registerOpenFilesSettingsContribution = () => registerSettingsContribution({
 	order: 22,
 	render: (ctx) => {
 		const blocks = [settingsHint("Where files go when you open, share, or launch them. “Follow default” keeps the current app’s behavior.")];
-		if (showSurface(ctx, "viewer")) blocks.push(...section("Markdown / document", "Opened, pasted, dropped, or shared into the viewer.", [
-			settingsSelectField("When a file opens", "openPolicy.viewer.channels.open", SINK_OPTIONS),
-			settingsSelectField("Share target", "openPolicy.viewer.channels.share-target", SINK_OPTIONS),
-			settingsSelectField("Launch queue", "openPolicy.viewer.channels.launch-queue", SINK_OPTIONS),
-			settingsSelectField("Markdown", "openPolicy.viewer.kinds.markdown", SINK_OPTIONS),
-			settingsSelectField("Text", "openPolicy.viewer.kinds.text", SINK_OPTIONS),
-			settingsSelectField("Documents (PDF, Office)", "openPolicy.viewer.kinds.document", SINK_OPTIONS),
-			settingsSelectField("Images", "openPolicy.viewer.kinds.image", SINK_OPTIONS),
-			settingsSelectField("Other files", "openPolicy.viewer.kinds.other", SINK_OPTIONS)
-		]));
+		if (showSurface(ctx, "viewer")) {
+			const documentSku = ctx.sku === "document" || ctx.hubSection === "document" || ctx.surface === "markdown";
+			const viewerSinks = documentSku ? DOCUMENT_VIEWER_SINK_OPTIONS : SINK_OPTIONS;
+			blocks.push(...section("Markdown / document", documentSku ? "Drop, paste, share, and open always paint in this viewer. Sibling-app sinks are not available here." : "Opened, pasted, dropped, or shared into the viewer.", [
+				settingsSelectField("When a file opens", "openPolicy.viewer.channels.open", viewerSinks),
+				settingsSelectField("Share target", "openPolicy.viewer.channels.share-target", viewerSinks),
+				settingsSelectField("Launch queue", "openPolicy.viewer.channels.launch-queue", viewerSinks),
+				settingsSelectField("Markdown", "openPolicy.viewer.kinds.markdown", viewerSinks),
+				settingsSelectField("Text", "openPolicy.viewer.kinds.text", viewerSinks),
+				settingsSelectField("Documents (PDF, Office)", "openPolicy.viewer.kinds.document", viewerSinks),
+				settingsSelectField("Images", "openPolicy.viewer.kinds.image", viewerSinks),
+				settingsSelectField("Other files", "openPolicy.viewer.kinds.other", viewerSinks)
+			]));
+		}
 		if (showSurface(ctx, "explorer")) {
 			const android = ctx.surface === "capacitor" || ctx.surface === "native" || isCwspNativeHost();
 			blocks.push(...section("Explorer", android ? "These rows are Android-only. They do not change the site / PWA / CRX. Open / click is CWSP-document or Ask Android; a file-type row overrides it only when it is not “Follow Open / click”." : "These rows are site / PWA / CRX only. They do not change the Android Explorer APK. Markdown and images open in an inline window unless you pick a separate window or a new tab.", android ? [
