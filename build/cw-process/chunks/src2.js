@@ -1,6 +1,6 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./sw-page-bridge.js","./rolldown-runtime.js","../shells/boot-index.js","../com/app.js","../fest/core.js","../shells/boot-history-base.js","../com/service.js","../fest/veela.js","./workcenter-command-wire.js","./sku-ingress.js","./BootLoader.js","../shells/preference.js","./capacitor-settings-permissions.js","./capacitor-permissions.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./sw-page-bridge.js","./rolldown-runtime.js","../com/app.js","../views/viewer.js","../shells/boot-index.js","../fest/core.js","../shells/boot-history-base.js","../com/service.js","../fest/veela.js","./workcenter-command-wire.js","./capacitor-share-intent.js","./capacitor-permissions.js","./BootLoader.js","../shells/preference.js","./capacitor-settings-permissions.js"])))=>i.map(i=>d[i]);
 import { Or as __vitePreload, vr as loadAsAdopted } from "../com/app.js";
-import { A as initializeLayers, ft as safeCachesDelete, pt as safeCachesKeys } from "../shells/boot-index.js";
+import { A as initializeLayers, mt as safeCachesKeys, pt as safeCachesDelete } from "../shells/boot-index.js";
 import { a as applyCwspSku } from "../shells/boot-history-base.js";
 import { checkPendingShareData, ensureAppCss, handleShareTarget, initReceivers, n as ensureServiceWorkerRegistered, setupLaunchQueueConsumer, t as dropStaleServiceWorkerRegistrations } from "./sw-handling.js";
 //#region src/shared/routing/pwa/pwa-handling.ts
@@ -494,24 +494,36 @@ var showProcessBootFailure = (error, mount = document.body) => {
 	mount.style.cssText = "margin:0;padding:16px;font:14px/1.4 ui-monospace,monospace;background:#111;color:#f66;white-space:pre-wrap;";
 	mount.textContent = `[CWSP-process] boot failed\n\n${message}`;
 };
+/**
+* WHY: install the share bridge before `bootMinimal` so cold-start SEND/VIEW
+* is not dropped while BootLoader is still loading settings/styles.
+*/
+var installProcessShareIngress = () => {
+	try {
+		const g = globalThis;
+		if (typeof g.Capacitor?.isNativePlatform !== "function" || !g.Capacitor.isNativePlatform()) return;
+		__vitePreload(() => import("./capacitor-share-intent.js").then((mod) => mod.installCapacitorShareIntentBridge()), __vite__mapDeps([10,2,1,4,5,6,7,8,11]), import.meta.url).catch(() => void 0);
+	} catch {}
+};
 var bootProcessSku = async (container, kind, view = "workcenter") => {
 	const host = detectHostKind(kind);
 	stampProcessSku(host);
+	installProcessShareIngress();
 	if (host === "capacitor") try {
 		const { SystemBarType, SystemBars } = await __vitePreload(async () => {
-			const { SystemBarType, SystemBars } = await import("../shells/boot-index.js").then((n) => n.hn);
+			const { SystemBarType, SystemBars } = await import("../shells/boot-index.js").then((n) => n.gn);
 			return {
 				SystemBarType,
 				SystemBars
 			};
-		}, __vite__mapDeps([2,1,3,4,5,6,7]), import.meta.url);
+		}, __vite__mapDeps([4,1,2,5,6,7,8]), import.meta.url);
 		await SystemBars.hide({ bar: SystemBarType.NavigationBar });
 	} catch {}
 	const resolved = resolveProcessBootView(view);
 	const { bootMinimal } = await __vitePreload(async () => {
 		const { bootMinimal } = await import("./BootLoader.js");
 		return { bootMinimal };
-	}, __vite__mapDeps([10,3,1,4,2,5,6,7,11,12,13]), import.meta.url);
+	}, __vite__mapDeps([12,2,1,5,4,6,7,8,13,14,11]), import.meta.url);
 	await bootMinimal(container, resolved, { rememberChoice: false });
 };
 //#endregion

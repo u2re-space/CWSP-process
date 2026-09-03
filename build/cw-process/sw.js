@@ -12049,9 +12049,8 @@ cacheWillUpdate: async ({ response }) => {
 			return `https://${bare}:${defaultPort}/`;
 		};
 		CWSP_REMOTE_CONFIG_SYNC_CHANNEL = "cwsp.remote.connection.v1";
-	})), PROCESS_API_PUBLIC_ORIGIN, isProcessApiPath;
+	})), isProcessApiPath;
 	var init_process_api_path = __esmMin((() => {
-		PROCESS_API_PUBLIC_ORIGIN = "https://process.u2re.space";
 		isProcessApiPath = (pathname) => {
 			const path = String(pathname || "").split("?")[0] || "/";
 			return path === "/api/process" || path.startsWith(`/api/process/`) || path === "/api/processing" || path.startsWith("/process/ai") || path.startsWith("/process/processing") || path.startsWith("/process/api") || path === "/process/health";
@@ -12113,6 +12112,111 @@ cacheWillUpdate: async ({ response }) => {
 			}
 			if (typeof json !== "object") return String(json).trim();
 			return fromRecord(json);
+		};
+	}));
+	//#endregion
+	//#region ../../modules/projects/subsystem/src/routing/api/process-local.ts
+	var PROCESS_LOCAL_DEFAULT_BASE_URL, PROCESS_LOCAL_DEFAULT_MODEL, pick, processApiMissPayload, processApiJsonResponse, runLocalProcessFallback;
+	var init_process_local = __esmMin((() => {
+		PROCESS_LOCAL_DEFAULT_BASE_URL = "https://api.proxyapi.ru/openai/v1";
+		PROCESS_LOCAL_DEFAULT_MODEL = "gpt-5.6-luna";
+		pick = (...values) => {
+			for (const value of values) {
+				const text = String(value || "").trim();
+				if (text) return text;
+			}
+			return "";
+		};
+		processApiMissPayload = (source = "local") => ({
+			ok: false,
+			error: "Missing credentials",
+			layer: "api",
+			fallback: source
+		});
+		processApiJsonResponse = (json, status = 200) => new Response(JSON.stringify(json), {
+			status,
+			headers: {
+				"Content-Type": "application/json; charset=utf-8",
+				"Cache-Control": "no-store"
+			}
+		});
+		runLocalProcessFallback = async (body, source = "local") => {
+			if (!body || typeof body !== "object") return null;
+			const apiKey = pick(body.apiKey, body.bearerToken, body.token, body.provider?.apiKey);
+			if (!apiKey) return null;
+			const input = pick(body.input, body.text, body.url, body.content);
+			if (!input) return {
+				ok: false,
+				error: "Missing input (text/url/input)",
+				fallback: source
+			};
+			const baseUrl = pick(body.baseUrl, body.provider?.baseUrl, PROCESS_LOCAL_DEFAULT_BASE_URL).replace(/\/+$/, "");
+			const model = pick(body.model, body.provider?.model, PROCESS_LOCAL_DEFAULT_MODEL);
+			const instruction = pick(body.customInstruction);
+			const imageUrl = input.startsWith("data:image/") && input.includes(";base64,") ? input : "";
+			const extractNow = "Extract all readable text, equations, tables, and data. Output the content now. Do not ask what to do.";
+			const userContent = imageUrl ? [{
+				type: "text",
+				text: instruction ? `${extractNow}\n\n${instruction}` : extractNow
+			}, {
+				type: "image_url",
+				image_url: { url: imageUrl }
+			}] : input;
+			const messages = [...instruction && !imageUrl ? [{
+				role: "system",
+				content: instruction
+			}] : [], {
+				role: "user",
+				content: userContent
+			}];
+			try {
+				const res = await fetch(`${baseUrl}/chat/completions`, {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+						Authorization: `Bearer ${apiKey}`
+					},
+					body: JSON.stringify({
+						model,
+						messages
+					})
+				});
+				const json = await res.json().catch(() => null);
+				if (!res.ok) return {
+					ok: false,
+					error: String(json?.error?.message || `Provider ${res.status}`),
+					layer: "api",
+					fallback: source
+				};
+				const text = String(json?.choices?.[0]?.message?.content || "").trim();
+				if (!text) return {
+					ok: false,
+					error: "Empty provider response",
+					fallback: source
+				};
+				return {
+					ok: true,
+					mode: String(body.mode || "smartRecognize"),
+					customInstruction: Boolean(instruction),
+					provider: {
+						baseUrl,
+						model,
+						apiKeySource: "request"
+					},
+					result: {
+						ok: true,
+						text
+					},
+					fallback: source
+				};
+			} catch (error) {
+				return {
+					ok: false,
+					error: String(error instanceof Error ? error.message : error),
+					layer: "api",
+					fallback: source
+				};
+			}
 		};
 	})), BROADCAST_CHANNELS, VIEW_POST_API_SEGMENTS, isViewPostApiPath, viewBroadcastChannelName, COMPONENTS, ROUTE_HASHES, DESTINATIONS, CANONICAL_VIEW_IDS, DESTINATION_ALIASES, DESTINATION_LOOKUP, normalizeDestination, getDestinationAliases, normalizeViewId;
 	var init_Names = __esmMin((() => {
@@ -12417,6 +12521,19 @@ cacheWillUpdate: async ({ response }) => {
 	}));
 	//#endregion
 	//#region src/shared/routing/native/cws-bridge.ts
+	var cws_bridge_exports = /* @__PURE__ */ __exportAll({
+		CwsBridge: () => CwsBridge,
+		fetchCwsShellInfo: () => fetchCwsShellInfo,
+		getNativeUnifiedSettings: () => getNativeUnifiedSettings,
+		initCwsNativeBridge: () => initCwsNativeBridge,
+		invokeCwsNative: () => invokeCwsNative,
+		invokeCwsPlatformIPC: () => invokeCwsPlatformIPC,
+		isCapacitorCwsNativeShell: () => isCapacitorCwsNativeShell,
+		isCwsNativeIpcAvailable: () => isCwsNativeIpcAvailable,
+		isElectronCwsNativeShell: () => isElectronCwsNativeShell,
+		patchNativeUnifiedSettings: () => patchNativeUnifiedSettings,
+		patchNativeUnifiedSettingsDetailed: () => patchNativeUnifiedSettingsDetailed
+	});
 	/**
 	* Initialize the native bridge surface and normalize inbound native messages.
 	*
@@ -12483,6 +12600,19 @@ cacheWillUpdate: async ({ response }) => {
 		} catch {
 			return null;
 		}
+	}
+	/** Opaque channel → Kotlin/Compose (override {@code CwsBridgePlugin.invoke} in CWSAndroid for real routing). */
+	async function invokeCwsNative(channel, payload) {
+		const envelope = normalizeBridgeEnvelope(channel, payload);
+		const result = await CwsBridge.invoke({
+			channel,
+			payload,
+			envelope
+		});
+		return {
+			...result,
+			envelope: normalizeInvokeResultEnvelope(channel, payload ?? {}, result)
+		};
 	}
 	/**
 	* Canonical IPC invoker for frontend modules:
@@ -12560,6 +12690,10 @@ cacheWillUpdate: async ({ response }) => {
 		} catch {
 			return null;
 		}
+	}
+	/** Patch native-side settings through the same bridge used by transport/runtime configuration. */
+	async function patchNativeUnifiedSettings(appSettings) {
+		return (await patchNativeUnifiedSettingsDetailed(appSettings)).ok;
 	}
 	async function patchNativeUnifiedSettingsDetailed(appSettings) {
 		try {
@@ -12713,7 +12847,10 @@ cacheWillUpdate: async ({ response }) => {
 				return false;
 			}
 		};
-	})), kindDefault, DEFAULT_PROCESS_INGRESS, mergeProcessIngress, rememberProcessIngressSettings;
+	}));
+	//#endregion
+	//#region src/shared/other/config/process-ingress.ts
+	var kindDefault, DEFAULT_PROCESS_INGRESS, mergeProcessIngress, resolveProcessIngressPolicy, instructionTextForIngress, settingsPeek, rememberProcessIngressSettings, persistProcessIngressNativeSnapshot;
 	var init_process_ingress = __esmMin((() => {
 		init_open_policy();
 		kindDefault = (mode, copy) => ({
@@ -12747,17 +12884,60 @@ cacheWillUpdate: async ({ response }) => {
 					const src = layer.kinds[key];
 					if (!src || typeof src !== "object") continue;
 					const prev = out.kinds[key];
+					const mode = src.mode === "attach" || src.mode === "process" ? src.mode : prev.mode;
 					out.kinds[key] = {
-						mode: src.mode === "attach" || src.mode === "process" ? src.mode : prev.mode,
+						mode,
 						instructionId: typeof src.instructionId === "string" ? src.instructionId : prev.instructionId,
-						copyToClipboard: typeof src.copyToClipboard === "boolean" ? src.copyToClipboard : prev.copyToClipboard
+						copyToClipboard: mode === "process"
 					};
 				}
 			}
 			return out;
 		};
+		resolveProcessIngressPolicy = (settings) => mergeProcessIngress(DEFAULT_PROCESS_INGRESS, settings?.ai?.processIngress);
+		instructionTextForIngress = (settings, instructionId) => {
+			const list = settings?.ai?.customInstructions || [];
+			const id = String(instructionId || settings?.ai?.activeInstructionId || "").trim();
+			const byId = id ? list.find((item) => item.id === id) : null;
+			const byLabel = id ? list.find((item) => String(item.label || "").trim().toLowerCase() === id.toLowerCase()) : null;
+			const active = list.find((item) => item.id === settings?.ai?.activeInstructionId);
+			const enabled = list.find((item) => item.enabled !== false && String(item.instruction || "").trim());
+			return String(byId?.instruction || byLabel?.instruction || active?.instruction || enabled?.instruction || "").trim();
+		};
+		settingsPeek = null;
 		rememberProcessIngressSettings = (settings) => {
-			if (settings);
+			if (settings) settingsPeek = settings;
+			persistProcessIngressNativeSnapshot(settingsPeek);
+		};
+		persistProcessIngressNativeSnapshot = async (settings) => {
+			try {
+				const g = globalThis;
+				if (typeof g.Capacitor?.isNativePlatform !== "function" || !g.Capacitor.isNativePlatform()) return;
+			} catch {
+				return;
+			}
+			const policy = resolveProcessIngressPolicy(settings);
+			const kinds = {
+				markdown: policy.kinds.markdown.mode,
+				text: policy.kinds.text.mode,
+				document: policy.kinds.document.mode,
+				image: policy.kinds.image.mode,
+				url: policy.kinds.url.mode,
+				other: policy.kinds.other.mode
+			};
+			const instruction = instructionTextForIngress(settings);
+			try {
+				const { invokeCwsNative } = await Promise.resolve().then(() => (init_cws_bridge(), cws_bridge_exports));
+				await invokeCwsNative("settings:snapshot", {
+					apiKey: String(settings?.ai?.apiKey || "").trim(),
+					baseUrl: String(settings?.ai?.baseUrl || "").trim(),
+					model: String(settings?.ai?.model || "").trim(),
+					instruction,
+					instructionId: String(settings?.ai?.activeInstructionId || "").trim(),
+					kinds,
+					kindsJson: JSON.stringify(kinds)
+				});
+			} catch {}
 		};
 	}));
 	//#endregion
@@ -46091,6 +46271,7 @@ cacheWillUpdate: async ({ response }) => {
 				console.warn("[Settings] AirPad runtime sync failed:", e);
 			}
 			updateWebDavSettings(merged)?.catch?.(console.warn.bind(console));
+			rememberProcessIngressSettings(merged);
 			return merged;
 		};
 		joinPath = (base, name, addTrailingSlash = false) => {
@@ -46911,7 +47092,7 @@ cacheWillUpdate: async ({ response }) => {
 			} catch {}
 			if (canParseURL(trimmed)) return "url";
 			if (trimmed.includes("<svg") && trimmed.includes("</svg>")) return "xml";
-			if (trimmed.startsWith("data:image/") && trimmed.includes(";base64,") && !trimmed.includes("\n") && trimmed.length < 1e5) try {
+			if (trimmed.startsWith("data:image/") && trimmed.includes(";base64,") && !trimmed.includes("\n")) try {
 				const url = new URL(trimmed);
 				if (url.protocol === "data:" && url.pathname.startsWith("image/")) return "input_image";
 			} catch {}
@@ -49296,7 +49477,10 @@ Apply the user's custom instructions above when processing the data. Prioritize 
 							if (recognizedContent) processedItem = recognizedContent;
 						}
 					}
-					if (processedItem !== null && processedItem !== void 0) await gpt?.attachToRequest?.(processedItem);
+					if (processedItem !== null && processedItem !== void 0) {
+						const attachKind = dataType === "image" || isImageData(processedItem) ? "input_image" : null;
+						await gpt?.attachToRequest?.(processedItem, attachKind);
+					}
 				}
 			}
 			await gpt.askToDoAction(finalInstruction);
@@ -50875,102 +51059,9 @@ Apply the user's custom instructions above when processing the data. Prioritize 
 		}
 	}
 	//#endregion
-	//#region ../../modules/projects/subsystem/src/routing/api/process-local.ts
-	init_process_api_path();
-	var PROCESS_LOCAL_DEFAULT_BASE_URL = "https://api.proxyapi.ru/openai/v1";
-	var PROCESS_LOCAL_DEFAULT_MODEL = "gpt-5.6-luna";
-	var pick = (...values) => {
-		for (const value of values) {
-			const text = String(value || "").trim();
-			if (text) return text;
-		}
-		return "";
-	};
-	var processApiMissPayload = (source = "local") => ({
-		ok: false,
-		error: "Missing credentials",
-		layer: "api",
-		fallback: source
-	});
-	var processApiJsonResponse = (json, status = 200) => new Response(JSON.stringify(json), {
-		status,
-		headers: {
-			"Content-Type": "application/json; charset=utf-8",
-			"Cache-Control": "no-store"
-		}
-	});
-	/** OpenAI-compatible completion when CWSP core / VDS is down. */
-	var runLocalProcessFallback = async (body, source = "local") => {
-		if (!body || typeof body !== "object") return null;
-		const apiKey = pick(body.apiKey, body.bearerToken, body.token, body.provider?.apiKey);
-		if (!apiKey) return null;
-		const input = pick(body.input, body.text, body.url, body.content);
-		if (!input) return {
-			ok: false,
-			error: "Missing input (text/url/input)",
-			fallback: source
-		};
-		const baseUrl = pick(body.baseUrl, body.provider?.baseUrl, PROCESS_LOCAL_DEFAULT_BASE_URL).replace(/\/+$/, "");
-		const model = pick(body.model, body.provider?.model, PROCESS_LOCAL_DEFAULT_MODEL);
-		const instruction = pick(body.customInstruction);
-		const messages = [...instruction ? [{
-			role: "system",
-			content: instruction
-		}] : [], {
-			role: "user",
-			content: input
-		}];
-		try {
-			const res = await fetch(`${baseUrl}/chat/completions`, {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					Authorization: `Bearer ${apiKey}`
-				},
-				body: JSON.stringify({
-					model,
-					messages
-				})
-			});
-			const json = await res.json().catch(() => null);
-			if (!res.ok) return {
-				ok: false,
-				error: String(json?.error?.message || `Provider ${res.status}`),
-				layer: "api",
-				fallback: source
-			};
-			const text = String(json?.choices?.[0]?.message?.content || "").trim();
-			if (!text) return {
-				ok: false,
-				error: "Empty provider response",
-				fallback: source
-			};
-			return {
-				ok: true,
-				mode: String(body.mode || "smartRecognize"),
-				customInstruction: Boolean(instruction),
-				provider: {
-					baseUrl,
-					model,
-					apiKeySource: "request"
-				},
-				result: {
-					ok: true,
-					text
-				},
-				fallback: source
-			};
-		} catch (error) {
-			return {
-				ok: false,
-				error: String(error instanceof Error ? error.message : error),
-				layer: "api",
-				fallback: source
-			};
-		}
-	};
-	//#endregion
 	//#region ../../modules/projects/subsystem/src/routing/api/process-api-sw.ts
+	init_process_api_path();
+	init_process_local();
 	var pathOf = (url = "/") => {
 		try {
 			return new URL(url, "http://process.local").pathname;
@@ -51007,11 +51098,14 @@ Apply the user's custom instructions above when processing the data. Prioritize 
 			fallback: "sw"
 		}, 405);
 		const raw = await request.text();
-		const local = await runLocalProcessFallback(parseBody(raw), "sw");
-		if (local) return processApiJsonResponse(local);
+		const body = parseBody(raw);
+		const contentType = String(body?.contentType || "").toLowerCase();
+		if (!(contentType === "base64" || contentType.startsWith("image") || String(body?.processingType || "").includes("recognize"))) {
+			const local = await runLocalProcessFallback(body, "sw");
+			if (local && local.ok !== false) return processApiJsonResponse(local);
+		}
 		try {
-			const publicPath = pathname.startsWith("/api/process") ? pathname : "/api/process/processing";
-			const net = await fetch(`${PROCESS_API_PUBLIC_ORIGIN}${publicPath}`, {
+			const net = await fetch(request.url, {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
@@ -51021,7 +51115,10 @@ Apply the user's custom instructions above when processing the data. Prioritize 
 				cache: "no-store"
 			});
 			if (net.ok) {
-				if ((net.headers.get("content-type") || "").includes("json")) return net;
+				const type = net.headers.get("content-type") || "";
+				if (type.includes("json") || type.includes("text/plain")) return net;
+				const text = await net.clone().text();
+				if (text && !/^\s*</.test(text)) return net;
 			}
 		} catch {}
 		return processApiJsonResponse(processApiMissPayload("sw"));
@@ -51892,7 +51989,7 @@ Apply the user's custom instructions above when processing the data. Prioritize 
 			console.warn("[SW-Broadcast] Failed to broadcast to clients:", error);
 		}
 	}
-	var manifest = [{"revision":"69696ae84b2ea8c4296880c28d69195b","url":"index.html"},{"revision":"98d2ae82fd33d5e2b53d15b83a2e53f9","url":"workers/opfs/OPFS.uniform.worker.js"},{"revision":"a813db2504a47f0e42568b04ab678831","url":"views/viewer.js"},{"revision":"a997e10cbf0af544d2779305ec1d96c8","url":"vendor/xlsx.js"},{"revision":"aa689cfe66df50189e85b19ec9d610df","url":"vendor/quill.js"},{"revision":"42cf392cc1234965cec990cd219c6a2d","url":"vendor/pdfjs-dist.js"},{"revision":"0f6b08abc3a91a9507a21bf46fe88003","url":"vendor/parchment.js"},{"revision":"776f5bb08a28e6bdcb0d881bdc785f94","url":"vendor/mammoth.js"},{"revision":"0bfca535a8bbb58f4c148d97b4ac5522","url":"vendor/lop.js"},{"revision":"c8741cf7f91408ce1ef47278156eac8f","url":"vendor/lodash.isequal.js"},{"revision":"f6c6602c08733d2d5474a44523a2139b","url":"vendor/lodash.clonedeep.js"},{"revision":"39fac3d6fe673e3aeabac7945f320696","url":"vendor/lodash-es.js"},{"revision":"ad18e855753678d16b95237f6f4127db","url":"vendor/jszip.js"},{"revision":"3be6e1ff8ce12b780c1129848c497a55","url":"vendor/fast-diff.js"},{"revision":"6fb6b129de239a1607bc4b6b79f8b9fa","url":"vendor/eventemitter3.js"},{"revision":"07f1b9397af6f4ac29980c832d4f3ab1","url":"vendor/dingbat-to-unicode.js"},{"revision":"f7447ea6adf08ccc0a78f24beee529a9","url":"vendor/bluebird.js"},{"revision":"b8d53040e646cc14be10c6f973a285d8","url":"vendor/base64-js.js"},{"revision":"a7018ffb2f665a8ec0433dab1f4ea1d3","url":"vendor/@xmldom_xmldom.js"},{"revision":"4b8116a6fa1dee7d129870976062230b","url":"vendor/@toon-format_toon.js"},{"revision":"249121960f98591470b47ac91f40dbdb","url":"shells/preference.js"},{"revision":"2a0c3839ddf37788f8ff8085a1428f9d","url":"shells/environment-window-views-browser-view.js"},{"revision":"ccde8d1947e5d1afb5d157090dfe96b2","url":"shells/environment-scss-main.scss_inline.js"},{"revision":"d6e880eee2a18183667c6a2a1a9f6032","url":"shells/environment-index.js"},{"revision":"ec31446123f72c37ee2d1931b759a150","url":"shells/environment-environment-overlay.js"},{"revision":"85eac0ed52f366f1ade696168e16c004","url":"shells/environment-components-wallpaper.js"},{"revision":"3c815e5aca7556d9b595907ce499b633","url":"shells/environment-components-taskbar-element-TaskBar.js"},{"revision":"9edbd4ea8761eed3e5d949b7ed723eba","url":"shells/environment-components-statusbar-capacitor-native-safe-area.js"},{"revision":"e2f194508097bb53ecc1eccf92831cb3","url":"shells/environment-components-settings-QuickSettings.js"},{"revision":"5141d3a5663e0e2214466274333b5cf0","url":"shells/environment-components-explorer-ContextMenu.js"},{"revision":"69991a62ff0c6b8548d46ad2a6ee08f4","url":"shells/environment-components-calendar-CalendarFlyout.js"},{"revision":"7df65e333f7c2a665c8971fc0056d7e1","url":"shells/environment-components-app-menu-AppMenu.js"},{"revision":"0c24ae2cbb93db1e9a049050f51ff8e4","url":"shells/boot-index.js"},{"revision":"7b91a175e47b27b1b844142dcbfcdb28","url":"shells/boot-history-base.js"},{"revision":"c9a1087915c5e664dceda8ed97462136","url":"pwa/tsconfig.json"},{"revision":"ee9e7e6d4f21bd22ca7229e89ceb2eb3","url":"pwa/manifest.json"},{"revision":"ee9e7e6d4f21bd22ca7229e89ceb2eb3","url":"pwa/src/pwa/manifest.json"},{"revision":"dbe5738443bd2f8968640f5f4a54cc3a","url":"pwa/screenshots/wide.png"},{"revision":"6abe53c0bc5b12ad1d599472cabe67a4","url":"pwa/screenshots/mobile.png"},{"revision":"dbe5738443bd2f8968640f5f4a54cc3a","url":"pwa/screenshots/src/pwa/screenshots/wide.png"},{"revision":"6abe53c0bc5b12ad1d599472cabe67a4","url":"pwa/screenshots/src/pwa/screenshots/mobile.png"},{"revision":"b2551f591bca6071a1817b562de415fd","url":"pwa/icons/web-app-manifest-512x512.png"},{"revision":"fd4b03e8560d1edbf07d3f5145dd097d","url":"pwa/icons/web-app-manifest-192x192.png"},{"revision":"3bce2e3833893e5a8a165101478b043c","url":"pwa/icons/transparent.svg"},{"revision":"b2551f591bca6071a1817b562de415fd","url":"pwa/icons/maskable.png"},{"revision":"c526291d3c869698ca3331bc9a49a79d","url":"pwa/icons/icon.svg"},{"revision":"1e50d9387b630062ac5c9b83c6ff78ea","url":"pwa/icons/icon.png"},{"revision":"85d33b738dd7f349f3f7b5a810a72993","url":"pwa/icons/icon-96.png"},{"revision":"74ba61fd7ca6dde80a0f7118ce562d79","url":"pwa/icons/favicon.svg"},{"revision":"53d98bfac7dda7b084baac936b146880","url":"pwa/icons/favicon-96x96.png"},{"revision":"cf552e9b17402324652bb0f58466481e","url":"pwa/icons/apple-touch-icon.png"},{"revision":"b2551f591bca6071a1817b562de415fd","url":"pwa/icons/src/pwa/icons/web-app-manifest-512x512.png"},{"revision":"fd4b03e8560d1edbf07d3f5145dd097d","url":"pwa/icons/src/pwa/icons/web-app-manifest-192x192.png"},{"revision":"3bce2e3833893e5a8a165101478b043c","url":"pwa/icons/src/pwa/icons/transparent.svg"},{"revision":"b2551f591bca6071a1817b562de415fd","url":"pwa/icons/src/pwa/icons/maskable.png"},{"revision":"c526291d3c869698ca3331bc9a49a79d","url":"pwa/icons/src/pwa/icons/icon.svg"},{"revision":"1e50d9387b630062ac5c9b83c6ff78ea","url":"pwa/icons/src/pwa/icons/icon.png"},{"revision":"85d33b738dd7f349f3f7b5a810a72993","url":"pwa/icons/src/pwa/icons/icon-96.png"},{"revision":"74ba61fd7ca6dde80a0f7118ce562d79","url":"pwa/icons/src/pwa/icons/favicon.svg"},{"revision":"53d98bfac7dda7b084baac936b146880","url":"pwa/icons/src/pwa/icons/favicon-96x96.png"},{"revision":"cf552e9b17402324652bb0f58466481e","url":"pwa/icons/src/pwa/icons/apple-touch-icon.png"},{"revision":"5af73a0d5467b1c9d0fb2c28d820f771","url":"fest/veela.js"},{"revision":"9d19ce33634edc31b4b5a86d424302c8","url":"fest/core.js"},{"revision":"7af31eca9318ada3366023f8d79d327e","url":"com/service.js"},{"revision":"1a4b2b268e18c5ea3df895cbd84aefe8","url":"com/app.js"},{"revision":"41172b753a6cbe6ec026d34b23a86517","url":"chunks/workcenter-command-wire.js"},{"revision":"f541f98f5f2ede68e8618fd43230d992","url":"chunks/window.js"},{"revision":"146f7fbbc8e3a591e975fecabe8fec55","url":"chunks/vite-preload-BsPm7yBB.js"},{"revision":"af08c65caabe2ab2e4976229ef910ab2","url":"chunks/views.js"},{"revision":"2b65c36f4b63fe48d3aafecac3df4549","url":"chunks/utils.js"},{"revision":"77930700ea40823dfbc205c9fe649863","url":"chunks/unified.js"},{"revision":"9baef2e7e9355df15e5c81e37cf04d0b","url":"chunks/transfer-history-runtime.js"},{"revision":"c31ed75217b6e53ac5aa4caf4ca276c0","url":"chunks/templates.js"},{"revision":"cf6bcf7c0aac40eb6c8377f2a6f8ca83","url":"chunks/tabbed.js"},{"revision":"b4106beae7292d14b827e72020db3769","url":"chunks/sw-page-bridge.js"},{"revision":"ca2222be35d89ad4628ba6eab42a27c6","url":"chunks/sw-handling.js"},{"revision":"844c7bf91855a702d382ad026eb588ff","url":"chunks/src9.js"},{"revision":"4ec539e7029c289aff4da9cdab55ed4e","url":"chunks/src8.js"},{"revision":"4fcea73e4d09e3b86c649019dd24ca36","url":"chunks/src7.js"},{"revision":"7905e461b07e5f8f27632598a316911a","url":"chunks/src6.js"},{"revision":"8896e4d2afd379f4c50d24fd1d82efd5","url":"chunks/src5.js"},{"revision":"c9de3cd8d8c170e8d7f8665a3e8195ae","url":"chunks/src4.js"},{"revision":"f86c0259919a397412acf029244cb828","url":"chunks/src3.js"},{"revision":"2e0463980712e0a5b8bbc5cf057663ba","url":"chunks/src2.js"},{"revision":"50248012fc8fdd9bfc86e53a84b70258","url":"chunks/src11.js"},{"revision":"d964506c77e789fc3cfc47c7f361ec93","url":"chunks/src10.js"},{"revision":"8aee3e51aac4232fe2a918aaa8a62644","url":"chunks/src.js"},{"revision":"d634d612bf78dbfa8856527abf001a61","url":"chunks/sku-ingress.js"},{"revision":"38808d4111e2d888a53003dcdbb04c6d","url":"chunks/shells.js"},{"revision":"3e42fc809cbe4013901962c6339603b6","url":"chunks/rolldown-runtime.js"},{"revision":"f56563f87dc97f3f7d469cce52d9e132","url":"chunks/preview.js"},{"revision":"2adc47bc733f543c8a2416712416391a","url":"chunks/log-sanitizer.js"},{"revision":"ad149c72c0b261ed7b58334765db0f9c","url":"chunks/launcher-state.js"},{"revision":"50e655ba5d32a5876e810a25bcdd0279","url":"chunks/launcher-bridge.js"},{"revision":"f0b7c5f9ce275e1d13f4b1da1ec0b164","url":"chunks/frontend-debug-capture2.js"},{"revision":"34d3b764f19bc4c0cf625846e3a40e1b","url":"chunks/frontend-debug-capture.js"},{"revision":"2804aa1e0899c472afd13700b82bf0a6","url":"chunks/environment.js"},{"revision":"7e23896f43e5c9eb888e77baa6362488","url":"chunks/environment-shell.js"},{"revision":"3618bec82b4351f2ce2527a7ab253f1f","url":"chunks/entities.js"},{"revision":"34c942400e7d33d4c807647c7b6d88b0","url":"chunks/ecosystem-skus.js"},{"revision":"82100a5cbf254a75a0bcc78475b72b05","url":"chunks/crx-control-session2.js"},{"revision":"4be124cadba155792d0eb60f9de2e7b2","url":"chunks/crx-control-session.js"},{"revision":"33b5dbbed488502e41e2270cf1b95da8","url":"chunks/crx-control-pair-modal2.js"},{"revision":"595ef65b24383b3cacccdccaf7a0a6ef","url":"chunks/crx-control-pair-modal.js"},{"revision":"37213ff4554815f6840b2acd5b0766ab","url":"chunks/core.js"},{"revision":"7116a17e5755327cd9c6f6a5291b3302","url":"chunks/channel-unknown.js"},{"revision":"ab655478e9c68afb46e346241b1ae6fa","url":"chunks/capacitor-share-intent2.js"},{"revision":"b09bc421a8daad58c851b5dfc574a06f","url":"chunks/capacitor-share-intent.js"},{"revision":"ab275a1ff82b33cf9790b1a6a8cefbe7","url":"chunks/capacitor-settings-permissions2.js"},{"revision":"b3244babed3d3e854c520d2e422bf295","url":"chunks/capacitor-settings-permissions.js"},{"revision":"dde4116eff49f3ca7507e7f17d295ecd","url":"chunks/capacitor-permissions2.js"},{"revision":"991e87b8a86bcc51cfceeda81a151f1e","url":"chunks/capacitor-permissions.js"},{"revision":"1c83ab3e200ebd025501156553809617","url":"chunks/capacitor-clipboard-asset2.js"},{"revision":"7f85be2acf402efcb37c5299c93233ec","url":"chunks/capacitor-clipboard-asset.js"},{"revision":"31f9228cb6e59c198269a076e8954385","url":"chunks/admin-doors.js"},{"revision":"e90975c9facad55bb3d0d5420298e80d","url":"chunks/WorkCenterState.js"},{"revision":"a0c63f0e1b1ede499a1d6f01450a40dc","url":"chunks/WorkCenter.js"},{"revision":"f8e54ef9330fca84150ead99b208b562","url":"chunks/ViewTransferRouting.js"},{"revision":"5bffc803c25cd1941c68e51066ebc029","url":"chunks/ShareTargetGateway.js"},{"revision":"f416177d72721237c21ba0e1e0e1b6b0","url":"chunks/RuntimeSettings.js"},{"revision":"47cafcb06882298623e06b7355c9caf1","url":"chunks/QuillEditor.js"},{"revision":"af4c3bdb628df6aa4aaa339d25dbb584","url":"chunks/MarkdownEditor.js"},{"revision":"53db4b287a0c4afe25e54f0916a3ca55","url":"chunks/DocxExport.js"},{"revision":"d8860f1c47ec17b6a7f7a68bce6c7950","url":"chunks/CustomInstructions.js"},{"revision":"51efd9e59cdc6c18e42c61909adb4fb5","url":"chunks/BootLoader.js"},{"revision":null,"url":"assets/index-DOBWK_lD.js"},{"revision":null,"url":"assets/crossword.css"},{"revision":null,"url":"assets/OPFS.uniform.worker.js"}];
+	var manifest = [{"revision":"69696ae84b2ea8c4296880c28d69195b","url":"index.html"},{"revision":"98d2ae82fd33d5e2b53d15b83a2e53f9","url":"workers/opfs/OPFS.uniform.worker.js"},{"revision":"d1d96a9802d92b69b04523d84b7e95e2","url":"views/viewer.js"},{"revision":"a997e10cbf0af544d2779305ec1d96c8","url":"vendor/xlsx.js"},{"revision":"aa689cfe66df50189e85b19ec9d610df","url":"vendor/quill.js"},{"revision":"42cf392cc1234965cec990cd219c6a2d","url":"vendor/pdfjs-dist.js"},{"revision":"0f6b08abc3a91a9507a21bf46fe88003","url":"vendor/parchment.js"},{"revision":"776f5bb08a28e6bdcb0d881bdc785f94","url":"vendor/mammoth.js"},{"revision":"0bfca535a8bbb58f4c148d97b4ac5522","url":"vendor/lop.js"},{"revision":"c8741cf7f91408ce1ef47278156eac8f","url":"vendor/lodash.isequal.js"},{"revision":"f6c6602c08733d2d5474a44523a2139b","url":"vendor/lodash.clonedeep.js"},{"revision":"39fac3d6fe673e3aeabac7945f320696","url":"vendor/lodash-es.js"},{"revision":"ad18e855753678d16b95237f6f4127db","url":"vendor/jszip.js"},{"revision":"3be6e1ff8ce12b780c1129848c497a55","url":"vendor/fast-diff.js"},{"revision":"6fb6b129de239a1607bc4b6b79f8b9fa","url":"vendor/eventemitter3.js"},{"revision":"07f1b9397af6f4ac29980c832d4f3ab1","url":"vendor/dingbat-to-unicode.js"},{"revision":"f7447ea6adf08ccc0a78f24beee529a9","url":"vendor/bluebird.js"},{"revision":"b8d53040e646cc14be10c6f973a285d8","url":"vendor/base64-js.js"},{"revision":"a7018ffb2f665a8ec0433dab1f4ea1d3","url":"vendor/@xmldom_xmldom.js"},{"revision":"4b8116a6fa1dee7d129870976062230b","url":"vendor/@toon-format_toon.js"},{"revision":"249121960f98591470b47ac91f40dbdb","url":"shells/preference.js"},{"revision":"2a0c3839ddf37788f8ff8085a1428f9d","url":"shells/environment-window-views-browser-view.js"},{"revision":"ccde8d1947e5d1afb5d157090dfe96b2","url":"shells/environment-scss-main.scss_inline.js"},{"revision":"d6e880eee2a18183667c6a2a1a9f6032","url":"shells/environment-index.js"},{"revision":"ec31446123f72c37ee2d1931b759a150","url":"shells/environment-environment-overlay.js"},{"revision":"85eac0ed52f366f1ade696168e16c004","url":"shells/environment-components-wallpaper.js"},{"revision":"3c815e5aca7556d9b595907ce499b633","url":"shells/environment-components-taskbar-element-TaskBar.js"},{"revision":"9afa09ae2be2745ad65c5f57fdb94d59","url":"shells/environment-components-statusbar-capacitor-native-safe-area.js"},{"revision":"e2f194508097bb53ecc1eccf92831cb3","url":"shells/environment-components-settings-QuickSettings.js"},{"revision":"5141d3a5663e0e2214466274333b5cf0","url":"shells/environment-components-explorer-ContextMenu.js"},{"revision":"69991a62ff0c6b8548d46ad2a6ee08f4","url":"shells/environment-components-calendar-CalendarFlyout.js"},{"revision":"7df65e333f7c2a665c8971fc0056d7e1","url":"shells/environment-components-app-menu-AppMenu.js"},{"revision":"4335465a9f2156a268fb1c3159df74fc","url":"shells/boot-index.js"},{"revision":"7b91a175e47b27b1b844142dcbfcdb28","url":"shells/boot-history-base.js"},{"revision":"c9a1087915c5e664dceda8ed97462136","url":"pwa/tsconfig.json"},{"revision":"ee9e7e6d4f21bd22ca7229e89ceb2eb3","url":"pwa/manifest.json"},{"revision":"ee9e7e6d4f21bd22ca7229e89ceb2eb3","url":"pwa/src/pwa/manifest.json"},{"revision":"dbe5738443bd2f8968640f5f4a54cc3a","url":"pwa/screenshots/wide.png"},{"revision":"6abe53c0bc5b12ad1d599472cabe67a4","url":"pwa/screenshots/mobile.png"},{"revision":"dbe5738443bd2f8968640f5f4a54cc3a","url":"pwa/screenshots/src/pwa/screenshots/wide.png"},{"revision":"6abe53c0bc5b12ad1d599472cabe67a4","url":"pwa/screenshots/src/pwa/screenshots/mobile.png"},{"revision":"b2551f591bca6071a1817b562de415fd","url":"pwa/icons/web-app-manifest-512x512.png"},{"revision":"fd4b03e8560d1edbf07d3f5145dd097d","url":"pwa/icons/web-app-manifest-192x192.png"},{"revision":"3bce2e3833893e5a8a165101478b043c","url":"pwa/icons/transparent.svg"},{"revision":"b2551f591bca6071a1817b562de415fd","url":"pwa/icons/maskable.png"},{"revision":"c526291d3c869698ca3331bc9a49a79d","url":"pwa/icons/icon.svg"},{"revision":"1e50d9387b630062ac5c9b83c6ff78ea","url":"pwa/icons/icon.png"},{"revision":"85d33b738dd7f349f3f7b5a810a72993","url":"pwa/icons/icon-96.png"},{"revision":"74ba61fd7ca6dde80a0f7118ce562d79","url":"pwa/icons/favicon.svg"},{"revision":"53d98bfac7dda7b084baac936b146880","url":"pwa/icons/favicon-96x96.png"},{"revision":"cf552e9b17402324652bb0f58466481e","url":"pwa/icons/apple-touch-icon.png"},{"revision":"b2551f591bca6071a1817b562de415fd","url":"pwa/icons/src/pwa/icons/web-app-manifest-512x512.png"},{"revision":"fd4b03e8560d1edbf07d3f5145dd097d","url":"pwa/icons/src/pwa/icons/web-app-manifest-192x192.png"},{"revision":"3bce2e3833893e5a8a165101478b043c","url":"pwa/icons/src/pwa/icons/transparent.svg"},{"revision":"b2551f591bca6071a1817b562de415fd","url":"pwa/icons/src/pwa/icons/maskable.png"},{"revision":"c526291d3c869698ca3331bc9a49a79d","url":"pwa/icons/src/pwa/icons/icon.svg"},{"revision":"1e50d9387b630062ac5c9b83c6ff78ea","url":"pwa/icons/src/pwa/icons/icon.png"},{"revision":"85d33b738dd7f349f3f7b5a810a72993","url":"pwa/icons/src/pwa/icons/icon-96.png"},{"revision":"74ba61fd7ca6dde80a0f7118ce562d79","url":"pwa/icons/src/pwa/icons/favicon.svg"},{"revision":"53d98bfac7dda7b084baac936b146880","url":"pwa/icons/src/pwa/icons/favicon-96x96.png"},{"revision":"cf552e9b17402324652bb0f58466481e","url":"pwa/icons/src/pwa/icons/apple-touch-icon.png"},{"revision":"5af73a0d5467b1c9d0fb2c28d820f771","url":"fest/veela.js"},{"revision":"9d19ce33634edc31b4b5a86d424302c8","url":"fest/core.js"},{"revision":"7af31eca9318ada3366023f8d79d327e","url":"com/service.js"},{"revision":"1a4b2b268e18c5ea3df895cbd84aefe8","url":"com/app.js"},{"revision":"41172b753a6cbe6ec026d34b23a86517","url":"chunks/workcenter-command-wire.js"},{"revision":"f541f98f5f2ede68e8618fd43230d992","url":"chunks/window.js"},{"revision":"146f7fbbc8e3a591e975fecabe8fec55","url":"chunks/vite-preload-BsPm7yBB.js"},{"revision":"af08c65caabe2ab2e4976229ef910ab2","url":"chunks/views.js"},{"revision":"2b65c36f4b63fe48d3aafecac3df4549","url":"chunks/utils.js"},{"revision":"ee43e222ee430c204ddc83edcc153f6b","url":"chunks/unified.js"},{"revision":"b6310f505affcc233519d8fe770c3815","url":"chunks/transfer-history-runtime.js"},{"revision":"c910a64f95e56ae1a692058a5525d43f","url":"chunks/toast2.js"},{"revision":"cb79930b3da235be4886d6cc8672cb8e","url":"chunks/toast.js"},{"revision":"c31ed75217b6e53ac5aa4caf4ca276c0","url":"chunks/templates.js"},{"revision":"cf6bcf7c0aac40eb6c8377f2a6f8ca83","url":"chunks/tabbed.js"},{"revision":"25da9e0c0663c936300493f996c47bb4","url":"chunks/sw-page-bridge.js"},{"revision":"16c71c586ae51649b3f176cc5d556fb1","url":"chunks/sw-handling.js"},{"revision":"3658649f5d8d5e97b1149ffa0935678a","url":"chunks/src9.js"},{"revision":"ab61acadac4c07f2c6849a464301a544","url":"chunks/src8.js"},{"revision":"00c22c5fb9a90ac1d9ba56d45ae95ffb","url":"chunks/src7.js"},{"revision":"687612d3023352835efeb9aba103cb43","url":"chunks/src6.js"},{"revision":"26357c752011f8e627aacda9d343927d","url":"chunks/src5.js"},{"revision":"c9de3cd8d8c170e8d7f8665a3e8195ae","url":"chunks/src4.js"},{"revision":"f86c0259919a397412acf029244cb828","url":"chunks/src3.js"},{"revision":"8acf137bf8678fb59b20d9041cbebb74","url":"chunks/src2.js"},{"revision":"e6f9f247955741c04bbfe4b5b4c9517d","url":"chunks/src11.js"},{"revision":"363d57be09d36a00e23e676749bdd34d","url":"chunks/src10.js"},{"revision":"d3c2835b510a75c92b628fec84f1ec24","url":"chunks/src.js"},{"revision":"08b8cab912d19e7c61779d4cbd6978b7","url":"chunks/shells.js"},{"revision":"3e42fc809cbe4013901962c6339603b6","url":"chunks/rolldown-runtime.js"},{"revision":"ccf82245745a77a98d07ecba40a45408","url":"chunks/preview.js"},{"revision":"2adc47bc733f543c8a2416712416391a","url":"chunks/log-sanitizer.js"},{"revision":"ad149c72c0b261ed7b58334765db0f9c","url":"chunks/launcher-state.js"},{"revision":"b80e6da5dcea429a0e51d14cc6d07db0","url":"chunks/launcher-bridge.js"},{"revision":"ea492461991d70963682d015eeb37e51","url":"chunks/frontend-debug-capture2.js"},{"revision":"642a500649124271c8a9b40c1e02c99a","url":"chunks/frontend-debug-capture.js"},{"revision":"2804aa1e0899c472afd13700b82bf0a6","url":"chunks/environment.js"},{"revision":"08b87ae376c0f37fded9e51d956d10ea","url":"chunks/environment-shell.js"},{"revision":"bc82e3d8c7be9fef74b7a6cc8ef8111d","url":"chunks/entities.js"},{"revision":"34c942400e7d33d4c807647c7b6d88b0","url":"chunks/ecosystem-skus.js"},{"revision":"82100a5cbf254a75a0bcc78475b72b05","url":"chunks/crx-control-session2.js"},{"revision":"4be124cadba155792d0eb60f9de2e7b2","url":"chunks/crx-control-session.js"},{"revision":"33b5dbbed488502e41e2270cf1b95da8","url":"chunks/crx-control-pair-modal2.js"},{"revision":"595ef65b24383b3cacccdccaf7a0a6ef","url":"chunks/crx-control-pair-modal.js"},{"revision":"37213ff4554815f6840b2acd5b0766ab","url":"chunks/core.js"},{"revision":"f0993c41052a9e91278c361698f5bf01","url":"chunks/channel-unknown.js"},{"revision":"efa2f3601b66e471b3dd8d6b7e25f181","url":"chunks/capacitor-share-intent2.js"},{"revision":"dafd29ca3b7517cbf9f79e56c8eac365","url":"chunks/capacitor-share-intent.js"},{"revision":"ab275a1ff82b33cf9790b1a6a8cefbe7","url":"chunks/capacitor-settings-permissions2.js"},{"revision":"b3244babed3d3e854c520d2e422bf295","url":"chunks/capacitor-settings-permissions.js"},{"revision":"dde4116eff49f3ca7507e7f17d295ecd","url":"chunks/capacitor-permissions2.js"},{"revision":"991e87b8a86bcc51cfceeda81a151f1e","url":"chunks/capacitor-permissions.js"},{"revision":"1c83ab3e200ebd025501156553809617","url":"chunks/capacitor-clipboard-asset2.js"},{"revision":"7f85be2acf402efcb37c5299c93233ec","url":"chunks/capacitor-clipboard-asset.js"},{"revision":"31f9228cb6e59c198269a076e8954385","url":"chunks/admin-doors.js"},{"revision":"e90975c9facad55bb3d0d5420298e80d","url":"chunks/WorkCenterState.js"},{"revision":"e783be7c6e6cdd7f647e0ef0c877f52c","url":"chunks/WorkCenter.js"},{"revision":"2c6a9afdbea7ba0cf47392a75d2a4688","url":"chunks/ViewTransferRouting.js"},{"revision":"8e3c5d088c24dda36cbfa88b40723eae","url":"chunks/ShareTargetGateway.js"},{"revision":"1191bde994e374bff8fb7893916a8b30","url":"chunks/RuntimeSettings.js"},{"revision":"47cafcb06882298623e06b7355c9caf1","url":"chunks/QuillEditor.js"},{"revision":"69266fee7674150f30f15f16e909eef9","url":"chunks/MarkdownEditor.js"},{"revision":"53db4b287a0c4afe25e54f0916a3ca55","url":"chunks/DocxExport.js"},{"revision":"7161a748e7a5d08d27779217f0bc418a","url":"chunks/CustomInstructions.js"},{"revision":"e5baf017d48dd5421051cdb04a446011","url":"chunks/BootLoader.js"},{"revision":null,"url":"assets/index-DOBWK_lD.js"},{"revision":null,"url":"assets/crossword.css"},{"revision":null,"url":"assets/OPFS.uniform.worker.js"}];
 	cleanupOutdatedCaches();
 	if (manifest && true) precacheAndRoute(manifest.filter((entry) => {
 		const url = typeof entry === "string" ? entry : String(entry?.url || "");

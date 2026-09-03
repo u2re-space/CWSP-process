@@ -1,7 +1,7 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./CustomInstructions.js","./rolldown-runtime.js","../shells/boot-index.js","../shells/boot-history-base.js","../com/app.js","../fest/core.js","../com/service.js","../fest/veela.js","./utils.js"])))=>i.map(i=>d[i]);
 import { r as __exportAll } from "./rolldown-runtime.js";
 const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
-import { kt as loadSettings } from "../shells/boot-index.js";
+import { jt as loadSettings } from "../shells/boot-index.js";
 import { i as buildInstructionPrompt, n as SVG_GRAPHICS_ADDON, o as getIntermediateRecognitionInstruction, r as TRANSLATE_INSTRUCTION, s as getOutputFormatInstruction, t as LANGUAGE_INSTRUCTIONS } from "./utils.js";
 import "./core.js";
 import { a as unwrapUnwantedCodeBlocks, i as isImageData, n as getGPTInstance, r as getResponseFormat } from "./entities.js";
@@ -223,7 +223,10 @@ var processDataWithInstruction = async (input, options = {}, sendResponse) => {
 					if (recognizedContent) processedItem = recognizedContent;
 				}
 			}
-			if (processedItem !== null && processedItem !== void 0) await gpt?.attachToRequest?.(processedItem);
+			if (processedItem !== null && processedItem !== void 0) {
+				const attachKind = dataType === "image" || isImageData(processedItem) ? "input_image" : null;
+				await gpt?.attachToRequest?.(processedItem, attachKind);
+			}
 		}
 	}
 	await gpt.askToDoAction(finalInstruction);

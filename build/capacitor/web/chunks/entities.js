@@ -1,6 +1,6 @@
 import { r as __exportAll } from "./rolldown-runtime.js";
 import { Tn as JSOX } from "../com/app.js";
-import { Jr as canParseURL, kt as loadSettings } from "../shells/boot-index.js";
+import { Zr as canParseURL, jt as loadSettings } from "../shells/boot-index.js";
 import { t as CORE_ENTITY_EXTRACTION_INSTRUCTION } from "./core.js";
 import { t as encode } from "../vendor/@toon-format_toon.js";
 //#region src/service/model/GPT-Config.ts
@@ -44,7 +44,7 @@ var detectDataKindFromContent = (content) => {
 	} catch {}
 	if (canParseURL(trimmed)) return "url";
 	if (trimmed.includes("<svg") && trimmed.includes("</svg>")) return "xml";
-	if (trimmed.startsWith("data:image/") && trimmed.includes(";base64,") && !trimmed.includes("\n") && trimmed.length < 1e5) try {
+	if (trimmed.startsWith("data:image/") && trimmed.includes(";base64,") && !trimmed.includes("\n")) try {
 		const url = new URL(trimmed);
 		if (url.protocol === "data:" && url.pathname.startsWith("image/")) return "input_image";
 	} catch {}
@@ -435,6 +435,37 @@ var DEFAULT_REQUEST_TIMEOUTS = {
 	high: 9e5
 };
 var RETRY_DELAY = 2e3;
+/**
+* INVARIANT: `/v1/responses` assistant content is `output_text` | `refusal`.
+* Replay of chat history must not send `input_text` on role=assistant.
+*/
+var normalizeResponsesContentPart = (role, part) => {
+	if (!part || typeof part !== "object") return part;
+	const type = String(part.type || "");
+	if (role === "assistant") {
+		if (type === "refusal" || type === "output_text") return part;
+		if (type === "input_text" || type === "text" || !type) return {
+			...part,
+			type: "output_text"
+		};
+		return part;
+	}
+	if (type === "output_text" || type === "text") return {
+		...part,
+		type: "input_text"
+	};
+	return part;
+};
+var normalizeResponsesInputItem = (item) => {
+	if (!item || typeof item !== "object") return item;
+	if (item.type && item.type !== "message") return item;
+	const role = String(item.role || "user").toLowerCase();
+	if (!Array.isArray(item.content)) return item;
+	return {
+		...item,
+		content: item.content.map((part) => normalizeResponsesContentPart(role, part))
+	};
+};
 var getRuntimeAiSettings = () => {
 	return globalThis.runtimeSettings?.ai || {};
 };
@@ -596,7 +627,7 @@ var GPTResponses = class {
 					text: "What to do: " + actionWithDataType(dataInput)
 				},
 				additionalAction ? {
-					type: "text",
+					type: "input_text",
 					text: "Additional request data: " + additionalAction
 				} : null,
 				{
@@ -697,7 +728,7 @@ var GPTResponses = class {
 				uniquePending.set(Math.random().toString(), item);
 			}
 		}
-		const filteredInput = Array.from(uniquePending.values());
+		const filteredInput = Array.from(uniquePending.values()).map(normalizeResponsesInputItem);
 		const jsonInstructions = options?.responseFormat === "json" ? STRICT_JSON_INSTRUCTIONS : void 0;
 		const runtimeAi = getRuntimeAiSettings();
 		const configuredMaxTokens = typeof runtimeAi?.maxOutputTokens === "number" && Number.isFinite(runtimeAi.maxOutputTokens) ? Math.max(1, Math.floor(runtimeAi.maxOutputTokens)) : void 0;

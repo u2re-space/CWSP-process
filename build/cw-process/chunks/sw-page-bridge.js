@@ -1,8 +1,10 @@
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./sw-handling.js","../com/app.js","./rolldown-runtime.js","../views/viewer.js","../shells/boot-index.js","../fest/core.js","../shells/boot-history-base.js","../com/service.js","../fest/veela.js","./log-sanitizer.js","./ViewTransferRouting.js"])))=>i.map(i=>d[i]);
 import { r as __exportAll } from "./rolldown-runtime.js";
-import { at as readProcessApiResultText, dt as safeCachePut, lt as safeCacheMatch, ot as buildShareDataFromCachedPayload, pn as unwrapSwInteropMessage, st as consumeCachedShareTargetPayload, tt as unifiedMessaging, ut as safeCacheOpen } from "../shells/boot-index.js";
-import "../shells/boot-history-base.js";
+const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
+import { o as holdIngressFiles } from "../views/viewer.js";
+import { $n as peekProcessIngressSettings, Or as classifyOpenKindFromPayload, ct as consumeCachedShareTargetPayload, dt as safeCacheOpen, ft as safeCachePut, mn as unwrapSwInteropMessage, nr as resolveProcessIngressKind, nt as unifiedMessaging, ot as readProcessApiResultText, st as buildShareDataFromCachedPayload, ut as safeCacheMatch } from "../shells/boot-index.js";
+import { s as inferCwspSkuFromLocation } from "../shells/boot-history-base.js";
 import { t as postWorkCenterCommand } from "./workcenter-command-wire.js";
-import { i as holdIngressFiles } from "./sku-ingress.js";
 ({
 	process: "/workcenter?shared=1",
 	document: "/viewer?shared=1",
@@ -73,6 +75,13 @@ var remember = (key) => {
 	}
 	return true;
 };
+var shareIngressKey = (raw) => {
+	const row = raw && typeof raw === "object" ? raw : {};
+	const ts = Number(row.timestamp || 0);
+	const fileSig = (Array.isArray(row.files) ? row.files : []).map((file) => `${file?.name || ""}:${file?.size || 0}`).join(",");
+	if (ts > 0) return `share:${ts}:${fileSig}`;
+	return `share:${String(row.id || "")}:${fileSig}:${String(row.text || row.title || "").slice(0, 80)}`;
+};
 var resultKey = (type, text, raw) => {
 	const id = raw && typeof raw === "object" ? String(raw.id || "") : "";
 	const fileSig = (raw && typeof raw === "object" && Array.isArray(raw.files) ? raw.files : []).map((file) => `${file?.name || ""}:${file?.size || 0}`).join(",");
@@ -136,13 +145,48 @@ var hydrateShareInput = async (data) => {
 var deliverShareTargetInput = async (data) => {
 	const payload = await hydrateShareInput(data);
 	const files = Array.isArray(payload.files) ? payload.files.filter((file) => typeof File !== "undefined" && file instanceof File) : [];
+	if (!payload.timestamp) payload.timestamp = Date.now();
+	if (inferCwspSkuFromLocation() === "document") try {
+		const { ingestSharePayload } = await __vitePreload(async () => {
+			const { ingestSharePayload } = await import("./sw-handling.js");
+			return { ingestSharePayload };
+		}, __vite__mapDeps([0,1,2,3,4,5,6,7,8,9,10]), import.meta.url);
+		return await ingestSharePayload({
+			...payload,
+			files,
+			fileCount: files.length || Number(payload.fileCount || 0),
+			timestamp: Number(payload.timestamp)
+		}, "share-target");
+	} catch {
+		return false;
+	}
+	const kind = classifyOpenKindFromPayload({
+		files,
+		text: typeof payload.text === "string" ? payload.text : void 0,
+		url: typeof payload.url === "string" ? payload.url : void 0,
+		title: typeof payload.title === "string" ? payload.title : void 0,
+		hint: payload.hint
+	});
+	if (resolveProcessIngressKind(peekProcessIngressSettings(), kind).mode === "process") try {
+		const { processShareTargetData } = await __vitePreload(async () => {
+			const { processShareTargetData } = await import("./sw-handling.js");
+			return { processShareTargetData };
+		}, __vite__mapDeps([0,1,2,3,4,5,6,7,8,9,10]), import.meta.url);
+		return await processShareTargetData({
+			...payload,
+			files,
+			fileCount: files.length || Number(payload.fileCount || 0)
+		}, true);
+	} catch {
+		return false;
+	}
 	if (files.length) holdIngressFiles(files);
 	return deliverSwResultToWorkCenter("share-target-input", payload, String(payload.text || payload.title || ""));
 };
 var deliverSwResultToWorkCenter = async (type, data, extraText = "") => {
 	if (type === "share-received") return deliverShareTargetInput(data);
 	const text = extraText.trim() || readProcessApiResultText(data);
-	if (!remember(resultKey(type, text, data))) return false;
+	if (!remember(type === "share-target-input" ? shareIngressKey(data) : resultKey(type, text, data))) return false;
 	const payload = asWorkCenterPayload(type, data, text);
 	postWorkCenterCommand({
 		type: "ingress.apply",

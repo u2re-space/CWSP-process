@@ -1,8 +1,8 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./launcher-bridge.js","../shells/boot-index.js","./rolldown-runtime.js","../shells/boot-history-base.js","../com/app.js","../fest/core.js","../com/service.js","../fest/veela.js"])))=>i.map(i=>d[i]);
 import { _ as stashSkuHandoff, c as isCwspNativeHost, f as publicHrefForSku, h as shouldHandoffViewToSibling, p as publicHrefForView, r as androidPackageForSku, v as takeSkuHandoff } from "../shells/boot-history-base.js";
-import { $ as openUnifiedContextMenu, At as ensureDefaultFsBackends, Dr as __vitePreload, Mt as resolveFsBackend, _r as unbakeScreenColors, ar as toExplorerStoragePath, et as isBookmarksPath, gr as scheduleBakeScreenColors, ur as observe, vr as loadAsAdopted, xr as removeAdopted } from "../com/app.js";
-import { c as sendViewProtocolMessage, l as createViewConstructor, r as ExplorerChannelAction } from "../views/viewer.js";
-import { Ar as rememberOpenPolicyFromSettings, Gr as persistSpeedDialItems, Hr as addSpeedDialItem, Kr as persistSpeedDialMeta, Lr as sinkToOpenLinkTarget, Mr as resolveHostOpenPolicy, Nr as resolveOpenPlacement, Rr as skuForOpenSink, Sr as classifyOpenKindFromName, Tr as looksLikePreviewableBinary, Ur as createEmptySpeedDialItem, Vr as viewIdForOpenSink, Wr as ensureSpeedDialMeta, jr as resolveExplorerOpenSink, kr as peekOpenPolicy, kt as loadSettings, qr as speedDialItems, xr as classifyOpenKind } from "../shells/boot-index.js";
+import { $ as openUnifiedContextMenu, At as ensureDefaultFsBackends, Mt as resolveFsBackend, Or as __vitePreload, _r as unbakeScreenColors, ar as toExplorerStoragePath, et as isBookmarksPath, gr as scheduleBakeScreenColors, ur as observe, vr as loadAsAdopted, xr as removeAdopted } from "../com/app.js";
+import { C as sendViewProtocolMessage, v as ExplorerChannelAction, w as createViewConstructor } from "../views/viewer.js";
+import { Br as sinkToOpenLinkTarget, Fr as resolveHostOpenPolicy, Gr as addSpeedDialItem, Ir as resolveOpenPlacement, Jr as persistSpeedDialItems, Kr as createEmptySpeedDialItem, Mr as peekOpenPolicy, Nr as rememberOpenPolicyFromSettings, Or as looksLikePreviewableBinary, Pr as resolveExplorerOpenSink, Tr as classifyOpenKindFromName, Vr as skuForOpenSink, Wr as viewIdForOpenSink, Xr as speedDialItems, Yr as persistSpeedDialMeta, jt as loadSettings, qr as ensureSpeedDialMeta, wr as classifyOpenKind } from "../shells/boot-index.js";
 //#region ../CWSP-explorer/src/inject.ts
 /** Merge inject layers: menu items concatenate; handlers shallow-merge last-wins; onWire chains in order. */
 function mergeExplorerInject(...layers) {
@@ -346,6 +346,7 @@ var writePersistedExplorerPath = (path) => {
 function loadLastPath(explorer, initialPath) {
 	try {
 		ensureDefaultFsBackends();
+		__vitePreload(() => import("../com/app.js").then((n) => n.Pt).then((m) => m.ensureRemoteMountedFs()), __vite__mapDeps([4,2]), import.meta.url).catch(() => {});
 	} catch {}
 	if (initialPath && initialPath.trim()) {
 		explorer.path = toExplorerStoragePath(initialPath) || initialPath.trim();

@@ -1,8 +1,8 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../com/app.js","../chunks/rolldown-runtime.js","../chunks/DocxExport.js","../chunks/BootLoader.js","../fest/core.js","../shells/boot-index.js","../shells/boot-history-base.js","../com/service.js","../fest/veela.js","../shells/preference.js","../chunks/capacitor-settings-permissions.js","../chunks/capacitor-permissions.js","../chunks/sku-ingress.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../chunks/workcenter-command-wire.js","../chunks/rolldown-runtime.js","../com/app.js","../chunks/ViewTransferRouting.js","../shells/boot-index.js","../fest/core.js","../shells/boot-history-base.js","../com/service.js","../fest/veela.js","../chunks/log-sanitizer.js","../chunks/DocxExport.js","../chunks/BootLoader.js","../shells/preference.js","../chunks/capacitor-settings-permissions.js","../chunks/capacitor-permissions.js"])))=>i.map(i=>d[i]);
 import { r as __exportAll } from "../chunks/rolldown-runtime.js";
 import { $t as isBase64Like, Bt as mountPickedDirectory, Cr as cssLayerBlock, Dr as VIEWER_CSS_LAYER_ORDER, Gt as pickSidecarDirectoryFiles, Ht as originalRelFromRef, Jt as resolveFileUnderDirectory, Kt as provideBoundRelative, Lt as findEntryRelPath, Or as __vitePreload, Qt as decodeBase64ToBytes, Rt as indexDirectoryFiles, Tr as normalizeCssForLayer, Ut as pickAssetDirectory, Vt as observeFileSystemHandle, Wt as pickMarkdownFile, X as ensureStyleSheet, Yt as saveMarkdownBlob, Z as reinitializeRegistry, _r as unbakeScreenColors, an as getDir, cn as matchMappedRoot, dn as provide, en as normalizeDataAsset, fr as ref, gr as scheduleBakeScreenColors, hn as createProtocolEnvelope, ln as normalizePath, or as affected, qt as relPathCandidates, s as purify, sn as isVirtualFsPath, tn as parseDataUrl, un as openDirectory, vr as loadAsAdopted, wr as cssLayerOrder, xr as removeAdopted, zn as H, zt as isMarkdownRelativeRef } from "../com/app.js";
-import { Fr as resolveHostOpenPolicy, Lr as resolveOpenPolicy, Mt as loadSettings, Nr as rememberOpenPolicyFromSettings, Or as looksLikePreviewableBinary, Z as ingressStampWasSuperseded, hr as sendProtocolMessage, wr as classifyOpenKind } from "../shells/boot-index.js";
-import { _ as stashSkuHandoff, f as publicHrefForSku, h as shouldHandoffViewToSibling, v as takeSkuHandoff } from "../shells/boot-history-base.js";
+import { $n as peekProcessIngressSettings, Ar as looksLikePreviewableBinary, Br as sinkToAction, Er as classifyOpenKind, Fr as rememberOpenPolicyFromSettings, Gr as surfaceForSku, Lr as resolveHostOpenPolicy, Nt as loadSettings, Or as classifyOpenKindFromPayload, Pr as peekOpenPolicy, Vr as sinkToDestination, Z as ingressStampWasSuperseded, _r as sendProtocolMessage, kr as inferIngressChannels, nr as resolveProcessIngressKind, zr as resolveOpenPolicy } from "../shells/boot-index.js";
+import { _ as stashSkuHandoff, f as publicHrefForSku, h as shouldHandoffViewToSibling, s as inferCwspSkuFromLocation, v as takeSkuHandoff } from "../shells/boot-history-base.js";
 import { i as validateReadableFileForIngress, n as textIngressLooksCorrupt, t as pickAuthoritativeTransferFiles } from "../com/service.js";
 //#region ../../modules/projects/subsystem/registry.ts
 var ViewBase = class extends HTMLElement {
@@ -179,6 +179,558 @@ function createViewState(key, storage = globalThis.localStorage) {
 	};
 }
 //#endregion
+//#region src/shared/routing/channel/sku-ingress.ts
+var sku_ingress_exports = /* @__PURE__ */ __exportAll({
+	applyLauncherIngress: () => applyLauncherIngress,
+	dataUrlToFile: () => dataUrlToFile,
+	dropHeldIngressFiles: () => dropHeldIngressFiles,
+	filenameFromLocalShareUri: () => filenameFromLocalShareUri,
+	flushHeldIngressToWorkCenter: () => flushHeldIngressToWorkCenter,
+	holdIngressFiles: () => holdIngressFiles,
+	holdIngressFilesForPolicy: () => holdIngressFilesForPolicy,
+	installShellImageOpenListener: () => installShellImageOpenListener,
+	isAndroidLocalShareUri: () => isAndroidLocalShareUri,
+	isWallpaperCompatible: () => isWallpaperCompatible,
+	looksLikeDirectoryPath: () => looksLikeDirectoryPath,
+	looksLikeWallpaperFile: () => looksLikeWallpaperFile,
+	onHeldIngressFiles: () => onHeldIngressFiles,
+	peekHeldIngressFiles: () => peekHeldIngressFiles,
+	refineLauncherImageIngress: () => refineLauncherImageIngress,
+	registerWorkCenterFlushHost: () => registerWorkCenterFlushHost,
+	skuIngressHint: () => skuIngressHint,
+	takeHeldIngressFiles: () => takeHeldIngressFiles
+});
+/** Android Open-with / Share often ships `file:`/`content:` — that is not a web URL. */
+var isAndroidLocalShareUri = (value) => /^(file|content):/i.test(String(value || "").trim());
+var filenameFromLocalShareUri = (value) => {
+	const raw = String(value || "").trim();
+	if (!raw) return "";
+	try {
+		return decodeURIComponent(raw.replace(/^(?:file|content):\/\//i, "").split("?")[0] || "").split("/").filter(Boolean).pop() || "";
+	} catch {
+		return "";
+	}
+};
+/**
+* Same-tab File objects die when unified messaging queues through IDB/JSON.
+* Hold them in memory so Work Center can still attach the real blobs.
+*/
+var heldIngressFiles = [];
+var heldIngressListeners = /* @__PURE__ */ new Set();
+var ingressFileKey = (file) => `${file.name}|${file.size}|${file.lastModified}`;
+var notifyHeldIngress = () => {
+	if (!heldIngressFiles.length) return;
+	const snapshot = heldIngressFiles.slice();
+	for (const listener of heldIngressListeners) try {
+		listener(snapshot);
+	} catch {}
+};
+/** Hold Files only for attach-mode kinds. Process-mode shares must not stage chat chips. */
+var holdIngressFilesForPolicy = (files, payload, settings) => {
+	if (payload && resolveProcessIngressKind(settings || peekProcessIngressSettings(), classifyOpenKindFromPayload(payload)).mode === "process") return;
+	holdIngressFiles(files);
+};
+var holdIngressFiles = (files) => {
+	const incoming = Array.isArray(files) ? files.filter((file) => file instanceof File) : [];
+	if (!incoming.length) return;
+	const seen = new Set(heldIngressFiles.map(ingressFileKey));
+	let added = 0;
+	for (const file of incoming) {
+		const key = ingressFileKey(file);
+		if (seen.has(key)) continue;
+		seen.add(key);
+		heldIngressFiles.push(file);
+		added += 1;
+	}
+	if (added === 0) {
+		notifyHeldIngress();
+		return;
+	}
+	notifyHeldIngress();
+};
+var peekHeldIngressFiles = () => heldIngressFiles.slice();
+var takeHeldIngressFiles = () => heldIngressFiles.splice(0, heldIngressFiles.length);
+/** Drop only the Files that a view already attached — keep the rest of a merged hold. */
+var dropHeldIngressFiles = (files) => {
+	if (!files?.length) return;
+	const drop = new Set(files.filter((file) => file instanceof File).map(ingressFileKey));
+	if (!drop.size) return;
+	for (let i = heldIngressFiles.length - 1; i >= 0; i--) if (drop.has(ingressFileKey(heldIngressFiles[i]))) heldIngressFiles.splice(i, 1);
+};
+/** In-memory host — Process mounts the inner chat div, so `querySelector("cw-workcenter-view")` is empty. */
+var registeredWorkCenterFlushHost = null;
+var registerWorkCenterFlushHost = (host) => {
+	registeredWorkCenterFlushHost = host;
+	return () => {
+		if (registeredWorkCenterFlushHost === host) registeredWorkCenterFlushHost = null;
+	};
+};
+var collectWorkCenterFlushHosts = () => {
+	const hosts = [];
+	const seen = /* @__PURE__ */ new Set();
+	const add = (host) => {
+		if (!host || seen.has(host)) return;
+		seen.add(host);
+		hosts.push(host);
+	};
+	add(registeredWorkCenterFlushHost);
+	if (typeof document === "undefined") return hosts;
+	const addEl = (node) => add(node);
+	document.querySelectorAll("cw-workcenter-view").forEach(addEl);
+	document.querySelectorAll("[data-shell], cw-shell-minimal, cw-shell-immersive, cw-shell-content, cw-shell-environment").forEach((shell) => {
+		shell.shadowRoot?.querySelectorAll("cw-workcenter-view").forEach(addEl);
+	});
+	return hosts;
+};
+/**
+* Same-heap attach after share/launch. Unified `deliveredNow` is not proof chips painted
+* (settle + supersede can skip `handleMessage`; `navigate(workcenter)` remounts an empty draft).
+*/
+var flushHeldIngressToWorkCenter = async () => {
+	const files = peekHeldIngressFiles();
+	if (!files.length) return 0;
+	notifyHeldIngress();
+	try {
+		const { postWorkCenterCommand } = await __vitePreload(async () => {
+			const { postWorkCenterCommand } = await import("../chunks/workcenter-command-wire.js").then((n) => n.n);
+			return { postWorkCenterCommand };
+		}, __vite__mapDeps([0,1]), import.meta.url);
+		postWorkCenterCommand({
+			type: "attach.add",
+			files
+		});
+	} catch {}
+	console.log("[sku-ingress] Flushing held ingress to Work Center", {
+		fileCount: files.length,
+		names: files.map((file) => file.name)
+	});
+	for (const host of collectWorkCenterFlushHosts()) try {
+		if (typeof host.addFiles === "function") await host.addFiles(files);
+		else if (typeof host.handleMessage === "function") await host.handleMessage({
+			type: "content-attach",
+			data: {
+				files,
+				fileCount: files.length
+			}
+		});
+	} catch (error) {
+		console.warn("[sku-ingress] flush to Work Center failed", error);
+	}
+	return files.length;
+};
+/**
+* Work Center subscribes here so a hold after `sessionReady` still paints chips.
+* If files are already held, the listener runs immediately.
+*/
+var onHeldIngressFiles = (listener) => {
+	heldIngressListeners.add(listener);
+	if (heldIngressFiles.length) try {
+		listener(heldIngressFiles.slice());
+	} catch {}
+	return () => {
+		heldIngressListeners.delete(listener);
+	};
+};
+var loadLauncherState = () => __vitePreload(() => import("../com/app.js").then((n) => n.ct), __vite__mapDeps([2,1]), import.meta.url);
+var WALLPAPER_EXT = /* @__PURE__ */ new Set([
+	"png",
+	"jpg",
+	"jpeg",
+	"webp",
+	"gif",
+	"bmp",
+	"avif"
+]);
+var MIN_WALLPAPER_BYTES = 20480;
+var MAX_WALLPAPER_BYTES = 26214400;
+var MIN_WALLPAPER_EDGE = 320;
+var MAX_WALLPAPER_EDGE = 16384;
+var MIN_WALLPAPER_ASPECT = .3;
+var MAX_WALLPAPER_ASPECT = 3.5;
+var fileExt = (name) => {
+	const n = String(name || "").trim().toLowerCase();
+	const cut = n.lastIndexOf(".");
+	return cut > 0 ? n.slice(cut + 1) : "";
+};
+/** Directory-like path (share URL, launch path, or typed location). */
+var looksLikeDirectoryPath = (raw) => {
+	const t = String(raw || "").trim();
+	if (!t) return false;
+	if (/[/\\]$/.test(t)) return true;
+	const noQuery = t.split(/[?#]/)[0] || t;
+	if (/[/\\]$/.test(noQuery)) return true;
+	const base = noQuery.replace(/\\/g, "/");
+	const last = base.slice(base.lastIndexOf("/") + 1);
+	if (!last) return true;
+	if (/\.[a-z0-9]{1,8}$/i.test(last)) return false;
+	return /[/\\]/.test(noQuery) || /^(file|content|saf):/i.test(t);
+};
+/** Sync wallpaper gate — decode still required before paint. */
+var looksLikeWallpaperFile = (file) => {
+	if (!file) return false;
+	const mime = String(file.type || "").toLowerCase();
+	const ext = fileExt(file.name);
+	if (!(mime.startsWith("image/") || WALLPAPER_EXT.has(ext))) return false;
+	if (mime.includes("svg") || ext === "svg") return false;
+	if (file.size < MIN_WALLPAPER_BYTES || file.size > MAX_WALLPAPER_BYTES) return false;
+	return true;
+};
+/** Decode-time checks: edge length and aspect so icons / strips do not become wallpaper. */
+var isWallpaperCompatible = async (file) => {
+	if (!looksLikeWallpaperFile(file)) return false;
+	try {
+		const bmp = await createImageBitmap(file);
+		const w = bmp.width;
+		const h = bmp.height;
+		bmp.close?.();
+		if (w < MIN_WALLPAPER_EDGE || h < MIN_WALLPAPER_EDGE) return false;
+		if (w > MAX_WALLPAPER_EDGE || h > MAX_WALLPAPER_EDGE) return false;
+		const aspect = w / h;
+		return aspect >= MIN_WALLPAPER_ASPECT && aspect <= MAX_WALLPAPER_ASPECT;
+	} catch {
+		return false;
+	}
+};
+var firstFile = (payload) => {
+	return (Array.isArray(payload.files) ? payload.files : []).find((f) => f instanceof File);
+};
+var pathProbe = (payload) => {
+	const hintPath = typeof payload.hint?.source === "string" ? payload.hint.source.trim() : "";
+	if (hintPath) return hintPath;
+	const url = String(payload.url || "").trim();
+	if (url) return url;
+	const title = String(payload.title || "").trim();
+	if (title && /[/\\]/.test(title)) return title;
+	const text = String(payload.text || "").trim();
+	if (text && !/\s/.test(text) && /[/\\]/.test(text)) return text;
+	return "";
+};
+/**
+* Receiving SKU owns the share. Hub/CRX fall through to content-based routing.
+* WHY: otherwise process hands text to document, and document hands images to process.
+*/
+var isNativeCapacitor = () => {
+	try {
+		return Boolean(globalThis.Capacitor?.isNativePlatform?.());
+	} catch {
+		return false;
+	}
+};
+var skuDefaultDestination = (sku) => {
+	if (sku === "process") return "workcenter";
+	if (sku === "document") return "viewer";
+	if (sku === "explorer") return "explorer";
+	if (sku === "launcher") return "home";
+};
+var skuIngressHint = (payload, opts) => {
+	const sku = opts?.sku || inferCwspSkuFromLocation();
+	const settings = opts?.settings || peekProcessIngressSettings();
+	const file = firstFile(payload);
+	const path = pathProbe(payload);
+	const filename = payload.hint?.filename || file?.name || "";
+	const kind = classifyOpenKindFromPayload(payload);
+	const sourceToken = String(payload.source || payload.route || payload.hint?.source || "").toLowerCase();
+	const ingressSource = sourceToken.includes("launch") ? "launch-queue" : sourceToken.includes("share") ? "share-target" : sourceToken.includes("snip") ? "snip" : sourceToken.includes("capacitor") ? "capacitor" : "";
+	const surface = surfaceForSku(sku);
+	const channels = inferIngressChannels(ingressSource || void 0, isNativeCapacitor());
+	const sink = resolveOpenPolicy(opts?.openPolicy || peekOpenPolicy(), surface, kind, channels);
+	const skuDest = skuDefaultDestination(sku);
+	if (sku === "process") {
+		const row = resolveProcessIngressKind(settings, kind);
+		return {
+			destination: "workcenter",
+			action: row.mode === "attach" ? "attach" : "process",
+			filename,
+			source: path || payload.hint?.source,
+			contentType: kind,
+			instructionId: row.instructionId,
+			copyToClipboard: row.copyToClipboard
+		};
+	}
+	if (surface && sink !== "ask") {
+		if (sku === "explorer" && looksLikeDirectoryPath(path) && !file) return {
+			destination: "explorer",
+			action: "open",
+			filename,
+			source: path || payload.hint?.source,
+			contentType: kind
+		};
+		const destination = sinkToDestination(sink, skuDest || "workcenter");
+		if (destination === "workcenter") {
+			const row = resolveProcessIngressKind(settings, kind);
+			return {
+				destination,
+				action: row.mode === "attach" ? "attach" : "process",
+				filename,
+				source: path || payload.hint?.source,
+				contentType: kind,
+				sink,
+				instructionId: row.instructionId,
+				copyToClipboard: row.copyToClipboard
+			};
+		}
+		return {
+			destination,
+			action: sinkToAction(sink, "open"),
+			filename,
+			source: path || payload.hint?.source,
+			contentType: kind,
+			sink
+		};
+	}
+	if (!sku || sku === "crx") return void 0;
+	if (sku === "transfer") return {
+		destination: "network",
+		action: "open",
+		filename,
+		contentType: kind,
+		sink: "transfer"
+	};
+	if (sku === "document") return {
+		destination: "viewer",
+		action: "open",
+		filename,
+		contentType: kind
+	};
+	if (sku === "explorer") {
+		const dir = looksLikeDirectoryPath(path) && !file;
+		if ((Boolean(file) || Number(payload.fileCount || 0) > 0) && !dir) return {
+			destination: "viewer",
+			action: "open",
+			filename,
+			source: path || payload.hint?.source,
+			contentType: kind,
+			sink: "document"
+		};
+		return {
+			destination: "explorer",
+			action: "open",
+			filename,
+			source: path || payload.hint?.source,
+			contentType: kind
+		};
+	}
+	if (sku === "launcher") {
+		const hinted = payload.hint?.action;
+		const wallpaper = hinted === "wallpaper" || hinted !== "shortcut" && looksLikeWallpaperFile(file || null);
+		return {
+			destination: "home",
+			action: wallpaper ? "wallpaper" : "shortcut",
+			filename,
+			contentType: wallpaper ? "image" : void 0
+		};
+	}
+};
+/**
+* Wallpaper sink: keep home only when the photo passes size/aspect.
+* WHY: icons and strips must not become wallpaper — send those to the viewer.
+*/
+var refineLauncherImageIngress = async (hint, files) => {
+	if (!hint || hint.action !== "wallpaper") return hint;
+	if (!files?.length) return hint;
+	const image = files.find((f) => looksLikeWallpaperFile(f));
+	if (image && await isWallpaperCompatible(image)) return hint;
+	return {
+		...hint,
+		destination: "viewer",
+		action: "open",
+		contentType: "image",
+		sink: "viewer"
+	};
+};
+var dataUrlToFile = async (raw, name = "shared.bin", mime = "application/octet-stream") => {
+	const src = String(raw || "").trim();
+	if (!src) return null;
+	try {
+		const blob = src.startsWith("data:") ? await (await fetch(src)).blob() : new Blob([Uint8Array.from(atob(src.replace(/^data:[^,]*,/, "")), (c) => c.charCodeAt(0))], { type: mime });
+		return new File([blob], name, { type: blob.type || mime });
+	} catch {
+		return null;
+	}
+};
+/** Paint wallpaper or pin a Speed Dial tile. Used by shell share-target and launch-queue. */
+var applyLauncherIngress = async (payload) => {
+	const files = Array.isArray(payload.files) ? payload.files.filter((f) => f instanceof File) : [];
+	const image = files.find((f) => looksLikeWallpaperFile(f));
+	if ((payload.action === "wallpaper" || !payload.action) && image && await isWallpaperCompatible(image)) {
+		const { setAppWallpaperFromBlob, getWallpaperStoragePointer, WALLPAPER_IDB_MARKER } = await __vitePreload(async () => {
+			const { setAppWallpaperFromBlob, getWallpaperStoragePointer, WALLPAPER_IDB_MARKER } = await import("../com/app.js").then((n) => n.I);
+			return {
+				setAppWallpaperFromBlob,
+				getWallpaperStoragePointer,
+				WALLPAPER_IDB_MARKER
+			};
+		}, __vite__mapDeps([2,1]), import.meta.url);
+		const { wallpaperState, persistWallpaper } = await loadLauncherState();
+		await setAppWallpaperFromBlob(image);
+		wallpaperState.src = getWallpaperStoragePointer() || WALLPAPER_IDB_MARKER;
+		persistWallpaper();
+		return "wallpaper";
+	}
+	if (payload.action === "wallpaper") return "none";
+	const { pinSpeedDialLinkFromIntent, parseSpeedDialItemFromURL, parseSpeedDialItemFromSmartText, addSpeedDialItem, persistSpeedDialItems, persistSpeedDialMeta, findNextFreeSpeedDialCell } = await loadLauncherState();
+	const cell = findNextFreeSpeedDialCell();
+	const url = String(payload.url || "").trim();
+	const text = String(payload.text || "").trim();
+	const title = String(payload.title || files[0]?.name || "").trim();
+	if (url) {
+		if (pinSpeedDialLinkFromIntent({
+			url,
+			href: url,
+			label: title || void 0,
+			text,
+			source: "share-target"
+		}, cell)) {
+			persistSpeedDialItems();
+			persistSpeedDialMeta();
+			return "shortcut";
+		}
+	}
+	const fromUrl = url ? parseSpeedDialItemFromURL(url, cell) : null;
+	const fromText = !fromUrl && text ? parseSpeedDialItemFromSmartText(text, cell) || parseSpeedDialItemFromURL(text, cell) : null;
+	const item = fromUrl || fromText;
+	if (item) {
+		addSpeedDialItem(item);
+		persistSpeedDialItems();
+		persistSpeedDialMeta();
+		return "shortcut";
+	}
+	if (files[0]) {
+		if (pinSpeedDialLinkFromIntent({
+			label: files[0].name,
+			text: files[0].name,
+			mimeType: files[0].type,
+			source: "share-target",
+			action: "open-view"
+		}, cell)) {
+			persistSpeedDialItems();
+			persistSpeedDialMeta();
+			return "shortcut";
+		}
+	}
+	return "none";
+};
+var SHELL_IMAGE_OPEN_EVENT = "cwsp:shell-image-open";
+var shellImageOpenInstalled = false;
+var openShellImageInViewer = async (file) => {
+	const { dispatchViewTransfer } = await __vitePreload(async () => {
+		const { dispatchViewTransfer } = await import("../chunks/ViewTransferRouting.js").then((n) => n.t);
+		return { dispatchViewTransfer };
+	}, __vite__mapDeps([3,1,2,4,5,6,7,8,9]), import.meta.url);
+	await dispatchViewTransfer({
+		source: "clipboard",
+		route: "clipboard",
+		files: [file],
+		fileCount: 1,
+		hint: {
+			destination: "viewer",
+			action: "open",
+			filename: file.name,
+			contentType: "image",
+			sink: "viewer"
+		}
+	});
+};
+var applyShellWallpaper = async (file) => {
+	if (!await isWallpaperCompatible(file)) return false;
+	const { setAppWallpaperFromBlob, getWallpaperStoragePointer, WALLPAPER_IDB_MARKER } = await __vitePreload(async () => {
+		const { setAppWallpaperFromBlob, getWallpaperStoragePointer, WALLPAPER_IDB_MARKER } = await import("../com/app.js").then((n) => n.I);
+		return {
+			setAppWallpaperFromBlob,
+			getWallpaperStoragePointer,
+			WALLPAPER_IDB_MARKER
+		};
+	}, __vite__mapDeps([2,1]), import.meta.url);
+	const { wallpaperState, persistWallpaper } = await loadLauncherState();
+	await setAppWallpaperFromBlob(file);
+	wallpaperState.src = getWallpaperStoragePointer() || WALLPAPER_IDB_MARKER;
+	persistWallpaper();
+	return true;
+};
+/**
+* Home drop/paste: SpeedDial fires `cwsp:shell-image-open`. Policy picks wallpaper vs viewer.
+*/
+var installShellImageOpenListener = () => {
+	if (shellImageOpenInstalled || typeof window === "undefined") return;
+	shellImageOpenInstalled = true;
+	window.addEventListener(SHELL_IMAGE_OPEN_EVENT, (raw) => {
+		const ev = raw;
+		const file = ev.detail?.file;
+		if (!(file instanceof File)) return;
+		ev.preventDefault();
+		(async () => {
+			try {
+				const { loadSettings } = await __vitePreload(async () => {
+					const { loadSettings } = await import("../shells/boot-index.js").then((n) => n.kt);
+					return { loadSettings };
+				}, __vite__mapDeps([4,1,2,5,6,7,8]), import.meta.url);
+				const { peekOpenPolicy, rememberOpenPolicyFromSettings, resolveOpenPolicy } = await __vitePreload(async () => {
+					const { peekOpenPolicy, rememberOpenPolicyFromSettings, resolveOpenPolicy } = await import("../shells/boot-index.js").then((n) => n.Nr);
+					return {
+						peekOpenPolicy,
+						rememberOpenPolicyFromSettings,
+						resolveOpenPolicy
+					};
+				}, __vite__mapDeps([4,1,2,5,6,7,8]), import.meta.url);
+				const settings = await loadSettings().catch(() => null);
+				rememberOpenPolicyFromSettings(settings);
+				const sink = resolveOpenPolicy(settings?.openPolicy ?? peekOpenPolicy(), "shell", "image", "open");
+				if (sink === "viewer" || sink === "display") {
+					await openShellImageInViewer(file);
+					return;
+				}
+				if (sink === "document" || sink === "transfer" || sink === "system" || sink === "external") {
+					const { dispatchViewTransfer } = await __vitePreload(async () => {
+						const { dispatchViewTransfer } = await import("../chunks/ViewTransferRouting.js").then((n) => n.t);
+						return { dispatchViewTransfer };
+					}, __vite__mapDeps([3,1,2,4,5,6,7,8,9]), import.meta.url);
+					await dispatchViewTransfer({
+						source: "clipboard",
+						route: "clipboard",
+						files: [file],
+						fileCount: 1,
+						hint: {
+							destination: sink === "transfer" ? "network" : "viewer",
+							action: "open",
+							filename: file.name,
+							contentType: "image",
+							sink
+						}
+					});
+					return;
+				}
+				if (sink === "workcenter") {
+					const { dispatchViewTransfer } = await __vitePreload(async () => {
+						const { dispatchViewTransfer } = await import("../chunks/ViewTransferRouting.js").then((n) => n.t);
+						return { dispatchViewTransfer };
+					}, __vite__mapDeps([3,1,2,4,5,6,7,8,9]), import.meta.url);
+					await dispatchViewTransfer({
+						source: "clipboard",
+						route: "clipboard",
+						files: [file],
+						fileCount: 1,
+						hint: {
+							destination: "workcenter",
+							action: "attach",
+							filename: file.name,
+							contentType: "image"
+						}
+					});
+					return;
+				}
+				if (sink === "wallpaper" || sink === "ask") {
+					if (await applyShellWallpaper(file)) return;
+					if (sink === "wallpaper") await openShellImageInViewer(file);
+					return;
+				}
+				if (!await applyShellWallpaper(file)) await openShellImageInViewer(file);
+			} catch (error) {
+				console.warn("[sku-ingress] shell image open failed", error);
+			}
+		})();
+	});
+};
+//#endregion
 //#region src/frontend/views/viewer/theme.ts
 /** Effective scheme after resolving `system` (no prefers → dark). */
 function resolveViewerColorSchemePreference(mode) {
@@ -282,7 +834,7 @@ var writeClipboardText = (text) => {
 var getMarkedParser = async () => {
 	if (markedParserPromise) return markedParserPromise;
 	markedParserPromise = (async () => {
-		const [{ marked }, { default: markedKatex }] = await Promise.all([__vitePreload(() => import("../com/app.js").then((n) => n.o), __vite__mapDeps([0,1]), import.meta.url), __vitePreload(() => import("../com/app.js").then((n) => n.i), __vite__mapDeps([0,1]), import.meta.url)]);
+		const [{ marked }, { default: markedKatex }] = await Promise.all([__vitePreload(() => import("../com/app.js").then((n) => n.o), __vite__mapDeps([2,1]), import.meta.url), __vitePreload(() => import("../com/app.js").then((n) => n.i), __vite__mapDeps([2,1]), import.meta.url)]);
 		marked?.use?.(markedKatex({
 			throwOnError: false,
 			nonStandard: true,
@@ -321,6 +873,8 @@ var CwViewViewer = createViewConstructor(TAG, (Base) => {
 		pasteController = null;
 		documentOpenListener = null;
 		shareIntentListener = null;
+		visibilityOpenListener = null;
+		capacitorOpenPull = Promise.resolve();
 		/** Image/PDF opened before the render slot exists — paint after `render()`. */
 		pendingBinaryPreview = null;
 		/** INVARIANT: markdown `contentRef` must not overwrite an in-place image/PDF. */
@@ -1528,7 +2082,7 @@ var CwViewViewer = createViewConstructor(TAG, (Base) => {
 				const { downloadMarkdownAsDocx } = await __vitePreload(async () => {
 					const { downloadMarkdownAsDocx } = await import("../chunks/DocxExport.js");
 					return { downloadMarkdownAsDocx };
-				}, __vite__mapDeps([2,1,0]), import.meta.url);
+				}, __vite__mapDeps([10,1,2]), import.meta.url);
 				await downloadMarkdownAsDocx(content, {
 					title: this.options.filename || "Markdown Content",
 					filename: `document-${Date.now()}.docx`
@@ -1563,7 +2117,7 @@ var CwViewViewer = createViewConstructor(TAG, (Base) => {
 				const { bootLoader } = await __vitePreload(async () => {
 					const { bootLoader } = await import("../chunks/BootLoader.js");
 					return { bootLoader };
-				}, __vite__mapDeps([3,0,1,4,5,6,7,8,9,10,11]), import.meta.url);
+				}, __vite__mapDeps([11,2,1,5,4,6,7,8,12,13,14]), import.meta.url);
 				const shell = bootLoader.getShell();
 				if (shell?.navigate && ![
 					"window",
@@ -2464,6 +3018,13 @@ var CwViewViewer = createViewConstructor(TAG, (Base) => {
 				};
 				window.addEventListener("cws:shareIntent", this.shareIntentListener);
 			}
+			if (!this.visibilityOpenListener) {
+				this.visibilityOpenListener = () => {
+					if (document.visibilityState === "visible") this.pullCapacitorPendingOpen();
+				};
+				document.addEventListener("visibilitychange", this.visibilityOpenListener);
+				window.addEventListener("pageshow", this.visibilityOpenListener);
+			}
 			ensureViewerIconRuntime();
 			this._sheet ??= loadAsAdopted(viewer_default$1);
 			this.applyCustomStyles();
@@ -2490,6 +3051,11 @@ var CwViewViewer = createViewConstructor(TAG, (Base) => {
 				window.removeEventListener("cws:shareIntent", this.shareIntentListener);
 				this.shareIntentListener = null;
 			}
+			if (this.visibilityOpenListener) {
+				document.removeEventListener("visibilitychange", this.visibilityOpenListener);
+				window.removeEventListener("pageshow", this.visibilityOpenListener);
+				this.visibilityOpenListener = null;
+			}
 			this.windowDnDController?.abort();
 			this.windowDnDController = null;
 			if (this.customSheet) {
@@ -2505,46 +3071,63 @@ var CwViewViewer = createViewConstructor(TAG, (Base) => {
 		* WHY: Capacitor share-intent can fire before the viewer binds. Read the native
 		* pending-share stash here so a second open replaces the painted document.
 		*/
-		async pullCapacitorPendingOpen() {
+		pullCapacitorPendingOpen() {
+			this.capacitorOpenPull = this.capacitorOpenPull.then(() => this.pullCapacitorPendingOpenOnce(), () => this.pullCapacitorPendingOpenOnce());
+			return this.capacitorOpenPull;
+		}
+		async pullCapacitorPendingOpenOnce() {
 			try {
 				const g = globalThis;
 				if (typeof g.Capacitor?.isNativePlatform !== "function" || !g.Capacitor.isNativePlatform()) return;
 				const { invokeCwsPlatformIPC } = await __vitePreload(async () => {
-					const { invokeCwsPlatformIPC } = await import("../shells/boot-index.js").then((n) => n.cn);
+					const { invokeCwsPlatformIPC } = await import("../shells/boot-index.js").then((n) => n.ln);
 					return { invokeCwsPlatformIPC };
-				}, __vite__mapDeps([5,1,0,4,6,7,8]), import.meta.url);
+				}, __vite__mapDeps([4,1,2,5,6,7,8]), import.meta.url);
 				const peek = await invokeCwsPlatformIPC({ channel: "launcher:pending-share" });
 				if (!peek?.ok) return;
 				const echo = peek.echo || peek;
-				let file = null;
-				if (echo.hasFile) {
+				const stashedAt = Number(echo.stashedAt || 0) || 0;
+				if (!echo.text && !echo.title && !echo.name && !echo.url && echo.hasFile == null) return;
+				const flagged = echo.hasFile === true || echo.hasFile === "true" || echo.hasFile === 1 || echo.hasFile === "1";
+				const url = String(echo.url || "").trim();
+				const local = isAndroidLocalShareUri(url) || isAndroidLocalShareUri(echo.text);
+				const mime = String(echo.mime || "").toLowerCase();
+				const nameHint = String(echo.name || echo.title || "").toLowerCase();
+				const wantFile = flagged || local || mime.startsWith("image/") || mime.startsWith("application/") || /\.(md|markdown|txt|pdf|png|jpe?g|gif|webp|html?)$/i.test(nameHint);
+				const pullFile = async () => {
 					const read = await invokeCwsPlatformIPC({ channel: "launcher:read-share-file" });
 					const blob = read.echo || read;
-					if (blob?.data) {
-						const { dataUrlToFile } = await __vitePreload(async () => {
-							const { dataUrlToFile } = await import("../chunks/sku-ingress.js").then((n) => n.d);
-							return { dataUrlToFile };
-						}, __vite__mapDeps([12,1,0,5,4,6,7,8]), import.meta.url);
-						file = await dataUrlToFile(blob.data, String(blob.name || echo.name || "shared.bin"), String(blob.mime || echo.mime || "application/octet-stream"));
-					}
+					if (!blob?.data) return null;
+					return dataUrlToFile(blob.data, String(blob.name || echo.name || "shared.bin"), String(blob.mime || echo.mime || "application/octet-stream"));
+				};
+				let file = wantFile ? await pullFile() : null;
+				if (wantFile && !file) {
+					await invokeCwsPlatformIPC({ channel: "launcher:restash-share-file" }).catch(() => null);
+					file = await pullFile();
 				}
-				const source = String(echo.url || "").trim() || null;
+				const source = local ? null : url || null;
 				const filename = String(echo.name || echo.title || file?.name || "").trim();
 				const text = String(echo.text || "").trim();
 				let applied = false;
-				if (file && this.looksLikeBinaryPreviewFile(file)) {
-					this.showSharedBinaryPreview(file);
-					if (filename) this.options.filename = filename;
-					applied = true;
-				} else if (file && this.isTextLikeFile(file)) {
-					this.ingestOpenedMarkdownBody(await file.text().catch(() => ""), filename || file.name, source);
-					applied = true;
-				} else if (text) {
+				if (file) {
+					if (this.looksLikeBinaryPreviewFile(file)) {
+						this.showSharedBinaryPreview(file);
+						if (filename) this.options.filename = filename;
+						applied = true;
+					} else {
+						const body = await file.text().catch(() => "");
+						this.ingestOpenedMarkdownBody(body, filename || file.name, source);
+						applied = true;
+					}
+				} else if (text && !isAndroidLocalShareUri(text)) {
 					this.ingestOpenedMarkdownBody(text, filename, source);
 					applied = true;
-				}
+				} else if (url && !local) applied = await this.openMarkdownFromUrl(url, filename);
 				if (!applied) return;
-				await invokeCwsPlatformIPC({ channel: "launcher:ack-share" }).catch(() => null);
+				await invokeCwsPlatformIPC({
+					channel: "launcher:ack-share",
+					payload: stashedAt ? { stashedAt } : {}
+				}).catch(() => null);
 				if (this.binaryPreviewActive) return;
 				this.saveState();
 				this.repaintMarkdown();
@@ -2779,4 +3362,4 @@ var viewer_exports = /* @__PURE__ */ __exportAll({
 });
 var viewer_default = CwViewViewer;
 //#endregion
-export { HomeChannelAction as a, sendViewProtocolMessage as c, HistoryChannelAction as i, createViewConstructor as l, createViewState as n, SettingsChannelAction as o, ExplorerChannelAction as r, ViewerChannelAction as s, viewer_exports as t };
+export { sendViewProtocolMessage as C, ViewerChannelAction as S, createViewState as _, flushHeldIngressToWorkCenter as a, HomeChannelAction as b, installShellImageOpenListener as c, peekHeldIngressFiles as d, refineLauncherImageIngress as f, takeHeldIngressFiles as g, sku_ingress_exports as h, dropHeldIngressFiles as i, isAndroidLocalShareUri as l, skuIngressHint as m, applyLauncherIngress as n, holdIngressFiles as o, registerWorkCenterFlushHost as p, dataUrlToFile as r, holdIngressFilesForPolicy as s, viewer_exports as t, onHeldIngressFiles as u, ExplorerChannelAction as v, createViewConstructor as w, SettingsChannelAction as x, HistoryChannelAction as y };

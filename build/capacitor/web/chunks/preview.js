@@ -1,7 +1,7 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../shells/boot-index.js","./rolldown-runtime.js","../shells/boot-history-base.js","../com/app.js","../fest/core.js","../com/service.js","../fest/veela.js","./admin-doors.js","./transfer-history-runtime.js","./capacitor-permissions.js","./capacitor-share-intent.js","./capacitor-clipboard-asset.js"])))=>i.map(i=>d[i]);
 import { r as __exportAll } from "./rolldown-runtime.js";
-import { Dr as __vitePreload, or as affected, zn as H } from "../com/app.js";
-import { pt as isEnabledView } from "../shells/boot-index.js";
+import { Or as __vitePreload, or as affected, zn as H } from "../com/app.js";
+import { ht as isEnabledView } from "../shells/boot-index.js";
 import { t as ShellBase } from "./shells.js";
 import { a as SHELL_SLOT } from "../shells/environment-environment-overlay.js";
 //#region ../../modules/shells/minimal-shell/src/minimal.scss?inline
@@ -18,6 +18,21 @@ var minimal_default = "@layer shell.tokens, shell.base, shell.components, shell.
 * - Single content area for one active view
 * - NO split view, NO sidebar, NO tabs
 */
+/**
+* WHY: `preview.js` imports `isEnabledView` from unhashed `boot-index.js`.
+* A stale assets-cache copy binds `Ot` to the wrong export →
+* `isEnabledView is not a function` at module init and BootLoader dies.
+*/
+var viewIsEnabled = (viewId) => {
+	if (typeof isEnabledView === "function") return isEnabledView(viewId);
+	try {
+		const raw = String(document.documentElement?.dataset?.cwspEnabledViews || "");
+		if (!raw) return true;
+		return raw.split(/[\s,;]+/).filter(Boolean).includes(viewId);
+	} catch {
+		return true;
+	}
+};
 var MAIN_NAV_ITEMS = [
 	{
 		id: "viewer",
@@ -49,7 +64,7 @@ var MAIN_NAV_ITEMS = [
 		name: "History",
 		icon: "clock-counter-clockwise"
 	}
-].filter((item) => isEnabledView(item.id));
+].filter((item) => viewIsEnabled(item.id));
 /** Set of valid nav view IDs for fast lookup */
 var VALID_NAV_VIEW_IDS = new Set(MAIN_NAV_ITEMS.map((item) => item.id));
 /** Type guard for valid navigation view IDs */
@@ -145,7 +160,7 @@ var MinimalShell = class extends ShellBase {
 		navRight.appendChild(btn);
 		btn.addEventListener("click", () => {
 			__vitePreload(async () => {
-				const { loadSettings } = await import("../shells/boot-index.js").then((n) => n.Tt);
+				const { loadSettings } = await import("../shells/boot-index.js").then((n) => n.Dt);
 				return { loadSettings };
 			}, __vite__mapDeps([0,1,2,3,4,5,6]), import.meta.url).then(({ loadSettings }) => loadSettings()).then((s) => __vitePreload(async () => {
 				const { openAdminDoorFromCore } = await import("./admin-doors.js").then((n) => n.t);

@@ -179,7 +179,9 @@ export const processDataWithInstruction = async (
 			}
 
 			if (processedItem !== null && processedItem !== undefined) {
-				await gpt?.attachToRequest?.(processedItem);
+				const attachKind =
+					dataType === "image" || isImageData(processedItem) ? "input_image" : null;
+				await gpt?.attachToRequest?.(processedItem, attachKind);
 			}
 		}
 	}

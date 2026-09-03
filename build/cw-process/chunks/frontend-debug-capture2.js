@@ -1,4 +1,4 @@
-import { mn as Capacitor, sn as CwsBridge } from "../shells/boot-index.js";
+import { cn as CwsBridge, hn as Capacitor } from "../shells/boot-index.js";
 //#region ../../modules/projects/subsystem/src/boot/frontend-debug-capture.ts
 /**
 * Capacitor / WebView frontend log ring + native bridge for AI/agent debugging.

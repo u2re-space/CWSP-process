@@ -8,6 +8,7 @@ var WorkCenterStateManager = class {
 		const legacy = this.loadWorkCenterState();
 		const legacyPrompt = String(legacy.currentPrompt || "");
 		return {
+			...legacy,
 			files: [],
 			selectedFiles: [],
 			currentPrompt: legacyPrompt,
@@ -18,22 +19,21 @@ var WorkCenterStateManager = class {
 			messages: [],
 			sessionEpoch: 0,
 			sessionHydrated: false,
-			autoAction: false,
-			selectedInstruction: "",
-			outputFormat: "auto",
-			activeInputTab: "prompt",
-			activeResultsTab: "output",
-			selectedLanguage: "auto",
-			selectedTemplate: "",
-			recognitionFormat: "auto",
-			processingFormat: "markdown",
+			autoAction: legacy.autoAction || false,
+			selectedInstruction: legacy.selectedInstruction || "",
+			outputFormat: legacy.outputFormat || "auto",
+			activeInputTab: legacy.activeInputTab || "prompt",
+			activeResultsTab: legacy.activeResultsTab || "output",
+			selectedLanguage: legacy.selectedLanguage || "auto",
+			selectedTemplate: legacy.selectedTemplate || "",
+			recognitionFormat: legacy.recognitionFormat || "auto",
+			processingFormat: legacy.processingFormat || "markdown",
 			voiceRecording: false,
 			promptTemplates: this.loadPromptTemplates(),
 			lastRawResult: null,
 			recognizedData: null,
 			processedData: null,
-			currentProcessingStep: 0,
-			...legacy
+			currentProcessingStep: legacy.currentProcessingStep || 0
 		};
 	}
 	static saveState(state) {

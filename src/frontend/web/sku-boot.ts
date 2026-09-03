@@ -100,11 +100,19 @@ export const showProcessBootFailure = (error: unknown, mount: HTMLElement = docu
 };
 
 /**
- * WHY: Capacitor `cws:shareIntent` is ingested by `installCapacitorShareIntentBridge`
- * (SKU pipeline: AI or Work Center attach). This stamp-only hook stays for callers.
+ * WHY: install the share bridge before `bootMinimal` so cold-start SEND/VIEW
+ * is not dropped while BootLoader is still loading settings/styles.
  */
 export const installProcessShareIngress = (): void => {
-    /* share pipeline lives in capacitor-share-intent + initIngressPWA */
+    try {
+        const g = globalThis as { Capacitor?: { isNativePlatform?: () => boolean } };
+        if (typeof g.Capacitor?.isNativePlatform !== "function" || !g.Capacitor.isNativePlatform()) return;
+        void import("boot/capacitor-share-intent")
+            .then((mod) => mod.installCapacitorShareIntentBridge())
+            .catch(() => undefined);
+    } catch {
+        /* web / preview */
+    }
 };
 
 export const bootProcessSku = async (

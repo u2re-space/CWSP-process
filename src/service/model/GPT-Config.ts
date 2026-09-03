@@ -146,7 +146,8 @@ export const detectDataKindFromContent = (content: string): DataKind => {
     if (trimmed.includes('<svg') && trimmed.includes('</svg>')) return "xml";
 
     // Check for base64 image - only if the entire content is a data URL
-    if (trimmed.startsWith("data:image/") && trimmed.includes(";base64,") && !trimmed.includes("\n") && trimmed.length < 100000) {
+    /* WHY: screenshots exceed 100k chars as data URLs; that cap flattened vision into input_text. */
+    if (trimmed.startsWith("data:image/") && trimmed.includes(";base64,") && !trimmed.includes("\n")) {
         // Additional validation: try to parse as data URL
         try {
             const url = new URL(trimmed);

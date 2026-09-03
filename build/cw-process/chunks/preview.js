@@ -1,7 +1,7 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../shells/boot-index.js","./rolldown-runtime.js","../com/app.js","../fest/core.js","../shells/boot-history-base.js","../com/service.js","../fest/veela.js","./admin-doors.js","./transfer-history-runtime.js","./capacitor-permissions.js","./capacitor-share-intent.js","./capacitor-clipboard-asset.js"])))=>i.map(i=>d[i]);
 import { r as __exportAll } from "./rolldown-runtime.js";
 import { Or as __vitePreload, or as affected, zn as H } from "../com/app.js";
-import { gt as isEnabledView } from "../shells/boot-index.js";
+import { _t as isEnabledView } from "../shells/boot-index.js";
 import { t as ShellBase } from "./shells.js";
 import { a as SHELL_SLOT } from "../shells/environment-environment-overlay.js";
 //#region ../../modules/shells/minimal-shell/src/minimal.scss?inline
@@ -160,7 +160,7 @@ var MinimalShell = class extends ShellBase {
 		navRight.appendChild(btn);
 		btn.addEventListener("click", () => {
 			__vitePreload(async () => {
-				const { loadSettings } = await import("../shells/boot-index.js").then((n) => n.Ot);
+				const { loadSettings } = await import("../shells/boot-index.js").then((n) => n.kt);
 				return { loadSettings };
 			}, __vite__mapDeps([0,1,2,3,4,5,6]), import.meta.url).then(({ loadSettings }) => loadSettings()).then((s) => __vitePreload(async () => {
 				const { openAdminDoorFromCore } = await import("./admin-doors.js").then((n) => n.t);

@@ -20,6 +20,7 @@ function carrierPresent(data) {
 	if (hasFileLike(data.file) || hasFileLike(data.blob)) return true;
 	const files = data.files;
 	if (Array.isArray(files) && files.some((x) => hasFileLike(x))) return true;
+	if (Number(data.fileCount) > 0) return true;
 	if (String(data.path ?? data.into ?? "").trim().length > 0) return true;
 	if (String(data.text ?? data.content ?? "").trim().length > 0) return true;
 	return String(data.url ?? "").trim().length > 0;

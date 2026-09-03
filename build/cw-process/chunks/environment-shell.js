@@ -1,6 +1,6 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./src8.js","../com/app.js","./rolldown-runtime.js","../shells/boot-index.js","../fest/core.js","../shells/boot-history-base.js","../com/service.js","../fest/veela.js","./frontend-debug-capture.js","./src9.js","../views/viewer.js","./capacitor-permissions.js","./capacitor-settings-permissions.js","./CustomInstructions.js","./utils.js","./templates.js","./core.js","./admin-doors.js","./src.js","./src10.js","./src6.js","./transfer-history-runtime.js","./src11.js","./sku-ingress.js","./WorkCenter.js","./log-sanitizer.js","./entities.js","../vendor/@toon-format_toon.js","./unified.js","./RuntimeSettings.js","./ShareTargetGateway.js","./WorkCenterState.js","./src5.js","./src7.js","./launcher-state.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./src8.js","../com/app.js","./rolldown-runtime.js","../shells/boot-index.js","../fest/core.js","../shells/boot-history-base.js","../com/service.js","../fest/veela.js","./frontend-debug-capture.js","./src9.js","../views/viewer.js","./capacitor-permissions.js","./capacitor-settings-permissions.js","./CustomInstructions.js","./utils.js","./templates.js","./core.js","./admin-doors.js","./src.js","./src10.js","./src6.js","./transfer-history-runtime.js","./src11.js","./WorkCenter.js","./log-sanitizer.js","./entities.js","../vendor/@toon-format_toon.js","./unified.js","./RuntimeSettings.js","./ShareTargetGateway.js","./WorkCenterState.js","./src5.js","./src7.js","./launcher-state.js"])))=>i.map(i=>d[i]);
 import { B as refreshAppWallpaperPaint, Hn as hasActiveCloseable, Or as __vitePreload, U as restoreWallpaperThemeCache, Vn as closeHighestPriority, X as ensureStyleSheet, br as preloadStyle, fr as ref, yr as loadInlineStyle, z as initializeAppCanvasLayer } from "../com/app.js";
-import { gt as isEnabledView } from "../shells/boot-index.js";
+import { _t as isEnabledView } from "../shells/boot-index.js";
 import { n as initBootShellWindowActivity } from "../shells/preference.js";
 import { t as ShellBase } from "./shells.js";
 import { a as SHELL_SLOT, n as createEnvironmentShellContainer, r as defineEnvironmentShellContainer } from "../shells/environment-environment-overlay.js";
@@ -81,9 +81,9 @@ var CWSP_VIEW_LOADERS = {
 	viewer: () => __vitePreload(() => import("./src10.js"), __vite__mapDeps([19,1,2,10,3,4,5,6,7]), import.meta.url),
 	markdown: () => __vitePreload(() => import("./src10.js"), __vite__mapDeps([19,1,2,10,3,4,5,6,7]), import.meta.url),
 	history: () => __vitePreload(() => import("./src6.js"), __vite__mapDeps([20,1,2,10,3,4,5,6,7,21]), import.meta.url),
-	workcenter: () => __vitePreload(() => import("./src11.js"), __vite__mapDeps([22,1,2,5,23,3,4,6,7,24,25,14,13,26,16,27,28,29,30,31]), import.meta.url),
-	editor: () => __vitePreload(() => import("./src5.js"), __vite__mapDeps([32,1,2,10,3,4,5,6,7]), import.meta.url),
-	home: () => __vitePreload(() => import("./src7.js"), __vite__mapDeps([33,1,2,10,3,4,5,6,7,34]), import.meta.url)
+	workcenter: () => __vitePreload(() => import("./src11.js"), __vite__mapDeps([22,1,2,10,3,4,5,6,7,23,24,14,13,25,16,26,27,28,29,30]), import.meta.url),
+	editor: () => __vitePreload(() => import("./src5.js"), __vite__mapDeps([31,1,2,10,3,4,5,6,7]), import.meta.url),
+	home: () => __vitePreload(() => import("./src7.js"), __vite__mapDeps([32,1,2,10,3,4,5,6,7,33]), import.meta.url)
 };
 /** Views allowed as Speed Dial / floating windows (no airpad). */
 var CWSP_LAUNCHER_VIEWS = [
@@ -98,7 +98,7 @@ var CWSP_LAUNCHER_VIEWS = [
 ];
 async function seedCwspLauncherTiles() {
 	try {
-		const mod = await __vitePreload(() => import("./launcher-state.js").then((n) => n.A), __vite__mapDeps([34,2,1]), import.meta.url);
+		const mod = await __vitePreload(() => import("./launcher-state.js").then((n) => n.A), __vite__mapDeps([33,2,1]), import.meta.url);
 		const items = mod.speedDialItems;
 		if (!items || typeof items.findIndex !== "function") return;
 		let removedAirpad = false;
@@ -362,7 +362,7 @@ var EnvironmentShell = class extends ShellBase {
 		} else this.mountHomeDesktop(homeMount, shellContext);
 	}
 	mountHomeDesktop(homeMount, shellContext) {
-		mountViewModule(() => __vitePreload(() => import("./src7.js"), __vite__mapDeps([33,1,2,10,3,4,5,6,7,34]), import.meta.url), homeMount, { shellContext }).then((unmount) => {
+		mountViewModule(() => __vitePreload(() => import("./src7.js"), __vite__mapDeps([32,1,2,10,3,4,5,6,7,33]), import.meta.url), homeMount, { shellContext }).then((unmount) => {
 			this.homeUnmount = unmount;
 		}).catch((err) => {
 			console.warn("[EnvironmentShell] home-view failed", err);

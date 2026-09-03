@@ -1,6 +1,6 @@
 import { r as __exportAll } from "./rolldown-runtime.js";
 import { Tn as JSOX } from "../com/app.js";
-import { Mt as loadSettings, Zr as canParseURL } from "../shells/boot-index.js";
+import { $r as canParseURL, Nt as loadSettings } from "../shells/boot-index.js";
 import { t as CORE_ENTITY_EXTRACTION_INSTRUCTION } from "./core.js";
 import { t as encode } from "../vendor/@toon-format_toon.js";
 //#region src/service/model/GPT-Config.ts
@@ -44,7 +44,7 @@ var detectDataKindFromContent = (content) => {
 	} catch {}
 	if (canParseURL(trimmed)) return "url";
 	if (trimmed.includes("<svg") && trimmed.includes("</svg>")) return "xml";
-	if (trimmed.startsWith("data:image/") && trimmed.includes(";base64,") && !trimmed.includes("\n") && trimmed.length < 1e5) try {
+	if (trimmed.startsWith("data:image/") && trimmed.includes(";base64,") && !trimmed.includes("\n")) try {
 		const url = new URL(trimmed);
 		if (url.protocol === "data:" && url.pathname.startsWith("image/")) return "input_image";
 	} catch {}

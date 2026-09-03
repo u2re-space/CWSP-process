@@ -1,4 +1,4 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../chunks/src2.js","../com/app.js","../chunks/rolldown-runtime.js","../shells/boot-index.js","../fest/core.js","../shells/boot-history-base.js","../com/service.js","../fest/veela.js","../chunks/sw-handling.js","../chunks/log-sanitizer.js","../chunks/workcenter-command-wire.js","../chunks/sw-page-bridge.js","../chunks/sku-ingress.js","../chunks/ViewTransferRouting.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../chunks/src2.js","../com/app.js","../chunks/rolldown-runtime.js","../shells/boot-index.js","../fest/core.js","../shells/boot-history-base.js","../com/service.js","../fest/veela.js","../chunks/sw-handling.js","../views/viewer.js","../chunks/log-sanitizer.js","../chunks/sw-page-bridge.js","../chunks/workcenter-command-wire.js","../chunks/ViewTransferRouting.js"])))=>i.map(i=>d[i]);
 import "../chunks/vite-preload-BsPm7yBB.js";
 const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
 //#region src/frontend/boot/html-boot.ts

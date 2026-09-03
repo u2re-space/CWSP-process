@@ -1,11 +1,11 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./WorkCenterState.js","./rolldown-runtime.js","./templates.js","./core.js","../shells/boot-index.js","../com/app.js","../fest/core.js","../shells/boot-history-base.js","../com/service.js","../fest/veela.js","../vendor/pdfjs-dist.js","../vendor/mammoth.js","../vendor/lop.js","../vendor/bluebird.js","../vendor/base64-js.js","../vendor/jszip.js","../vendor/@xmldom_xmldom.js","../vendor/dingbat-to-unicode.js","../vendor/xlsx.js"])))=>i.map(i=>d[i]);
 import { o as __toESM, r as __exportAll } from "./rolldown-runtime.js";
 import { $t as isBase64Like, An as writeText, Or as __vitePreload, a as f, c as collectAttachmentCandidates, en as normalizeDataAsset, in as createContentAddressedStore, n as renderMathInElement, r as src_default, s as purify, t as renderSafeMarkdown, tn as parseDataUrl, zn as H } from "../com/app.js";
-import { $ as registerComponent, Mt as loadSettings, Q as initializeComponent, Sr as viewBroadcastChannelName, at as readProcessApiResultText, et as replayQueuedMessagesForDestination, it as processApiAuthFromSettings, mr as sendMessage, nt as isProcessApiUnavailable, pn as unwrapSwInteropMessage, rt as postProcessApi, vr as BROADCAST_CHANNELS, yr as ROUTE_HASHES } from "../shells/boot-index.js";
+import { g as takeHeldIngressFiles, i as dropHeldIngressFiles, l as isAndroidLocalShareUri, u as onHeldIngressFiles } from "../views/viewer.js";
+import { $ as initializeComponent, Nt as loadSettings, at as processApiAuthFromSettings, br as BROADCAST_CHANNELS, et as registerComponent, gr as sendMessage, it as postProcessApi, mn as unwrapSwInteropMessage, ot as readProcessApiResultText, rt as isProcessApiUnavailable, tt as replayQueuedMessagesForDestination, wr as viewBroadcastChannelName, xr as ROUTE_HASHES } from "../shells/boot-index.js";
 import { _ as stashSkuHandoff, h as shouldHandoffViewToSibling } from "../shells/boot-history-base.js";
 import { i as validateReadableFileForIngress } from "../com/service.js";
 import { t as summarizeForLog } from "./log-sanitizer.js";
-import { f as takeHeldIngressFiles, n as dropHeldIngressFiles, o as onHeldIngressFiles } from "./sku-ingress.js";
 import { i as buildInstructionPrompt } from "./utils.js";
 import { a as getCustomInstructions, o as getInstructionRegistry, s as setActiveInstruction } from "./CustomInstructions.js";
 import { o as extractJSONFromAIResponse } from "./entities.js";
@@ -1819,7 +1819,7 @@ var WorkCenterActions = class {
 		}
 		try {
 			const { unifiedMessaging } = await __vitePreload(async () => {
-				const { unifiedMessaging } = await import("../shells/boot-index.js").then((n) => n.sr);
+				const { unifiedMessaging } = await import("../shells/boot-index.js").then((n) => n.lr);
 				return { unifiedMessaging };
 			}, __vite__mapDeps([4,1,5,6,7,8,9]), import.meta.url);
 			let resultContent = typeof state.lastRawResult === "string" ? state.lastRawResult : JSON.stringify(state.lastRawResult, null, 2);
@@ -1880,7 +1880,7 @@ var WorkCenterActions = class {
 		}
 		try {
 			const { unifiedMessaging } = await __vitePreload(async () => {
-				const { unifiedMessaging } = await import("../shells/boot-index.js").then((n) => n.sr);
+				const { unifiedMessaging } = await import("../shells/boot-index.js").then((n) => n.lr);
 				return { unifiedMessaging };
 			}, __vite__mapDeps([4,1,5,6,7,8,9]), import.meta.url);
 			const resultContent = typeof state.lastRawResult === "string" ? state.lastRawResult : JSON.stringify(state.lastRawResult, null, 2);
@@ -4918,6 +4918,8 @@ var WorkCenterManager = class {
 	}
 	/** Normalize all channel/share payloads into the active conversation draft. */
 	async handleIncomingContent(data, contentType) {
+		const action = String(data?.hint?.action || data?.action || "").toLowerCase();
+		if (action === "process") return;
 		await this.whenSessionReady();
 		try {
 			const files = [];
@@ -4935,11 +4937,23 @@ var WorkCenterManager = class {
 			if (!files.length) files.push(...takeHeldIngressFiles());
 			const rawText = data?.text ?? data?.content;
 			const text = rawText === void 0 || rawText === null ? "" : typeof rawText === "string" ? rawText : JSON.stringify(rawText, null, 2);
-			if (!files.length && (String(data?.filename || "").trim() || text.trim())) files.push(new File([text], String(data?.filename || data?.title || `shared-${Date.now()}.txt`), { type: contentType === "markdown" ? "text/markdown" : "text/plain" }));
+			if (!files.length && !isAndroidLocalShareUri(text) && !isAndroidLocalShareUri(typeof data?.url === "string" ? data.url : "") && (String(data?.filename || "").trim() || text.trim())) files.push(new File([text], String(data?.filename || data?.title || `shared-${Date.now()}.txt`), { type: contentType === "markdown" ? "text/markdown" : "text/plain" }));
 			const attached = await this.attachmentIngress.addFiles(files);
 			if (attached.length) dropHeldIngressFiles(files);
-			if (typeof data?.url === "string") await this.attachmentIngress.addUrl(data.url);
-			if (text.trim() && attached.length === 0) await this.appendDraftText(text);
+			if (typeof data?.url === "string" && !isAndroidLocalShareUri(data.url)) await this.attachmentIngress.addUrl(data.url);
+			const source = String(data?.source || data?.route || "").toLowerCase();
+			const shareLike = action === "attach" || /share|launch|capacitor|sku-handoff|open-with/.test(source);
+			if (text.trim() && attached.length === 0 && !isAndroidLocalShareUri(text)) {
+				if (shareLike) {
+					const extra = await this.attachmentIngress.addFiles([new File([text], String(data?.filename || data?.title || `shared-${Date.now()}.txt`), { type: contentType === "markdown" ? "text/markdown" : "text/plain" })]);
+					if (extra.length) {
+						const live = queryLiveWorkCenterChats()[0];
+						if (live) this.adoptLiveRoot(live);
+						this.paintLiveConversation();
+						this.deps.showMessage(extra.length === 1 ? `Attached ${extra[0]?.name || "file"}` : `Attached ${extra.length} files`);
+					}
+				} else await this.appendDraftText(text);
+			}
 			if (attached.length) {
 				const live = queryLiveWorkCenterChats()[0];
 				if (live) this.adoptLiveRoot(live);
@@ -4985,17 +4999,7 @@ var WorkCenterManager = class {
 			await this.handleIncomingContent(message.data, message.contentType || "text");
 			return;
 		}
-		if (message.type === "share-target-result" && message.data) {
-			const note = this.resultText(message.data);
-			await this.applyArrivedResult(note, message.data, false);
-			await this.shareTarget.addShareTargetResult(this.state, {
-				...message.data,
-				content: note || message.data.content
-			});
-			this.ui.updateDataPipeline(this.state);
-			this.paintLiveConversation();
-			return;
-		}
+		if (message.type === "share-target-result") return;
 		if ((message.type === "ai-result" || message.type === "process-api-result") && message.data) {
 			const note = this.resultText(message.data);
 			if (message.data.success !== false) await this.applyArrivedResult(note, message.data, true);

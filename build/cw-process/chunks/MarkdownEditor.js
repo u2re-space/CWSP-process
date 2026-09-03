@@ -1,7 +1,7 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../com/app.js","./rolldown-runtime.js","./DocxExport.js","./BootLoader.js","../fest/core.js","../shells/boot-index.js","../shells/boot-history-base.js","../com/service.js","../fest/veela.js","../shells/preference.js","./capacitor-settings-permissions.js","./capacitor-permissions.js","./sku-ingress.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../com/app.js","./rolldown-runtime.js","./DocxExport.js","./BootLoader.js","../fest/core.js","../shells/boot-index.js","../shells/boot-history-base.js","../com/service.js","../fest/veela.js","../shells/preference.js","./capacitor-settings-permissions.js","./capacitor-permissions.js"])))=>i.map(i=>d[i]);
 import { $t as isBase64Like, Bt as mountPickedDirectory, Cr as cssLayerBlock, Dr as VIEWER_CSS_LAYER_ORDER, Gt as pickSidecarDirectoryFiles, Ht as originalRelFromRef, Jt as resolveFileUnderDirectory, Kt as provideBoundRelative, Lt as findEntryRelPath, Or as __vitePreload, Qt as decodeBase64ToBytes, Rt as indexDirectoryFiles, Tr as normalizeCssForLayer, Ut as pickAssetDirectory, Vt as observeFileSystemHandle, Wt as pickMarkdownFile, X as ensureStyleSheet, Yt as saveMarkdownBlob, Z as reinitializeRegistry, _r as unbakeScreenColors, an as getDir, cn as matchMappedRoot, dn as provide, en as normalizeDataAsset, fr as ref, gr as scheduleBakeScreenColors, ln as normalizePath, or as affected, qt as relPathCandidates, s as purify, sn as isVirtualFsPath, tn as parseDataUrl, un as openDirectory, vr as loadAsAdopted, wr as cssLayerOrder, xr as removeAdopted, zn as H, zt as isMarkdownRelativeRef } from "../com/app.js";
-import { c as sendViewProtocolMessage, l as createViewConstructor, n as createViewState, r as ExplorerChannelAction, s as ViewerChannelAction } from "../views/viewer.js";
-import { Fr as resolveHostOpenPolicy, Lr as resolveOpenPolicy, Mt as loadSettings, Nr as rememberOpenPolicyFromSettings, Or as looksLikePreviewableBinary, Z as ingressStampWasSuperseded, wr as classifyOpenKind } from "../shells/boot-index.js";
+import { C as sendViewProtocolMessage, S as ViewerChannelAction, _ as createViewState, l as isAndroidLocalShareUri, r as dataUrlToFile, v as ExplorerChannelAction, w as createViewConstructor } from "../views/viewer.js";
+import { Ar as looksLikePreviewableBinary, Er as classifyOpenKind, Fr as rememberOpenPolicyFromSettings, Lr as resolveHostOpenPolicy, Nt as loadSettings, Z as ingressStampWasSuperseded, zr as resolveOpenPolicy } from "../shells/boot-index.js";
 import { _ as stashSkuHandoff, f as publicHrefForSku, h as shouldHandoffViewToSibling, v as takeSkuHandoff } from "../shells/boot-history-base.js";
 import { i as validateReadableFileForIngress, n as textIngressLooksCorrupt, t as pickAuthoritativeTransferFiles } from "../com/service.js";
 //#region ../../modules/views/markdown-view/src/theme.ts
@@ -141,6 +141,8 @@ var CwViewViewer = createViewConstructor("cw-view-viewer", (Base) => {
 		pasteController = null;
 		documentOpenListener = null;
 		shareIntentListener = null;
+		visibilityOpenListener = null;
+		capacitorOpenPull = Promise.resolve();
 		/** Image/PDF opened before the render slot exists — paint after `render()`. */
 		pendingBinaryPreview = null;
 		/** INVARIANT: markdown `contentRef` must not overwrite an in-place image/PDF. */
@@ -2284,6 +2286,13 @@ var CwViewViewer = createViewConstructor("cw-view-viewer", (Base) => {
 				};
 				window.addEventListener("cws:shareIntent", this.shareIntentListener);
 			}
+			if (!this.visibilityOpenListener) {
+				this.visibilityOpenListener = () => {
+					if (document.visibilityState === "visible") this.pullCapacitorPendingOpen();
+				};
+				document.addEventListener("visibilitychange", this.visibilityOpenListener);
+				window.addEventListener("pageshow", this.visibilityOpenListener);
+			}
 			ensureViewerIconRuntime();
 			this._sheet ??= loadAsAdopted(src_default);
 			this.applyCustomStyles();
@@ -2310,6 +2319,11 @@ var CwViewViewer = createViewConstructor("cw-view-viewer", (Base) => {
 				window.removeEventListener("cws:shareIntent", this.shareIntentListener);
 				this.shareIntentListener = null;
 			}
+			if (this.visibilityOpenListener) {
+				document.removeEventListener("visibilitychange", this.visibilityOpenListener);
+				window.removeEventListener("pageshow", this.visibilityOpenListener);
+				this.visibilityOpenListener = null;
+			}
 			this.windowDnDController?.abort();
 			this.windowDnDController = null;
 			if (this.customSheet) {
@@ -2325,46 +2339,63 @@ var CwViewViewer = createViewConstructor("cw-view-viewer", (Base) => {
 		* WHY: Capacitor share-intent can fire before the viewer binds. Read the native
 		* pending-share stash here so a second open replaces the painted document.
 		*/
-		async pullCapacitorPendingOpen() {
+		pullCapacitorPendingOpen() {
+			this.capacitorOpenPull = this.capacitorOpenPull.then(() => this.pullCapacitorPendingOpenOnce(), () => this.pullCapacitorPendingOpenOnce());
+			return this.capacitorOpenPull;
+		}
+		async pullCapacitorPendingOpenOnce() {
 			try {
 				const g = globalThis;
 				if (typeof g.Capacitor?.isNativePlatform !== "function" || !g.Capacitor.isNativePlatform()) return;
 				const { invokeCwsPlatformIPC } = await __vitePreload(async () => {
-					const { invokeCwsPlatformIPC } = await import("../shells/boot-index.js").then((n) => n.cn);
+					const { invokeCwsPlatformIPC } = await import("../shells/boot-index.js").then((n) => n.ln);
 					return { invokeCwsPlatformIPC };
 				}, __vite__mapDeps([5,1,0,4,6,7,8]), import.meta.url);
 				const peek = await invokeCwsPlatformIPC({ channel: "launcher:pending-share" });
 				if (!peek?.ok) return;
 				const echo = peek.echo || peek;
-				let file = null;
-				if (echo.hasFile) {
+				const stashedAt = Number(echo.stashedAt || 0) || 0;
+				if (!echo.text && !echo.title && !echo.name && !echo.url && echo.hasFile == null) return;
+				const flagged = echo.hasFile === true || echo.hasFile === "true" || echo.hasFile === 1 || echo.hasFile === "1";
+				const url = String(echo.url || "").trim();
+				const local = isAndroidLocalShareUri(url) || isAndroidLocalShareUri(echo.text);
+				const mime = String(echo.mime || "").toLowerCase();
+				const nameHint = String(echo.name || echo.title || "").toLowerCase();
+				const wantFile = flagged || local || mime.startsWith("image/") || mime.startsWith("application/") || /\.(md|markdown|txt|pdf|png|jpe?g|gif|webp|html?)$/i.test(nameHint);
+				const pullFile = async () => {
 					const read = await invokeCwsPlatformIPC({ channel: "launcher:read-share-file" });
 					const blob = read.echo || read;
-					if (blob?.data) {
-						const { dataUrlToFile } = await __vitePreload(async () => {
-							const { dataUrlToFile } = await import("./sku-ingress.js").then((n) => n.d);
-							return { dataUrlToFile };
-						}, __vite__mapDeps([12,1,0,5,4,6,7,8]), import.meta.url);
-						file = await dataUrlToFile(blob.data, String(blob.name || echo.name || "shared.bin"), String(blob.mime || echo.mime || "application/octet-stream"));
-					}
+					if (!blob?.data) return null;
+					return dataUrlToFile(blob.data, String(blob.name || echo.name || "shared.bin"), String(blob.mime || echo.mime || "application/octet-stream"));
+				};
+				let file = wantFile ? await pullFile() : null;
+				if (wantFile && !file) {
+					await invokeCwsPlatformIPC({ channel: "launcher:restash-share-file" }).catch(() => null);
+					file = await pullFile();
 				}
-				const source = String(echo.url || "").trim() || null;
+				const source = local ? null : url || null;
 				const filename = String(echo.name || echo.title || file?.name || "").trim();
 				const text = String(echo.text || "").trim();
 				let applied = false;
-				if (file && this.looksLikeBinaryPreviewFile(file)) {
-					this.showSharedBinaryPreview(file);
-					if (filename) this.options.filename = filename;
-					applied = true;
-				} else if (file && this.isTextLikeFile(file)) {
-					this.ingestOpenedMarkdownBody(await file.text().catch(() => ""), filename || file.name, source);
-					applied = true;
-				} else if (text) {
+				if (file) {
+					if (this.looksLikeBinaryPreviewFile(file)) {
+						this.showSharedBinaryPreview(file);
+						if (filename) this.options.filename = filename;
+						applied = true;
+					} else {
+						const body = await file.text().catch(() => "");
+						this.ingestOpenedMarkdownBody(body, filename || file.name, source);
+						applied = true;
+					}
+				} else if (text && !isAndroidLocalShareUri(text)) {
 					this.ingestOpenedMarkdownBody(text, filename, source);
 					applied = true;
-				}
+				} else if (url && !local) applied = await this.openMarkdownFromUrl(url, filename);
 				if (!applied) return;
-				await invokeCwsPlatformIPC({ channel: "launcher:ack-share" }).catch(() => null);
+				await invokeCwsPlatformIPC({
+					channel: "launcher:ack-share",
+					payload: stashedAt ? { stashedAt } : {}
+				}).catch(() => null);
 				if (this.binaryPreviewActive) return;
 				this.saveState();
 				this.repaintMarkdown();
