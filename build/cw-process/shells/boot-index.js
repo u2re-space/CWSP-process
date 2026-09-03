@@ -1,6 +1,6 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../chunks/capacitor-settings-permissions2.js","../chunks/capacitor-permissions2.js","../chunks/crx-control-session.js","../com/app.js","../chunks/rolldown-runtime.js","../chunks/src3.js","../chunks/shells.js","./boot-history-base.js","./preference.js","./environment-environment-overlay.js","../chunks/toast.js","../chunks/preview.js","../chunks/src4.js","../chunks/window.js","../chunks/environment-shell.js","./environment-index.js","./environment-components-calendar-CalendarFlyout.js","./environment-components-settings-QuickSettings.js","./environment-components-statusbar-capacitor-native-safe-area.js","./environment-components-app-menu-AppMenu.js","./environment-components-taskbar-element-TaskBar.js","./environment-components-explorer-ContextMenu.js","./environment-components-wallpaper.js","./environment-scss-main.scss_inline.js","../chunks/tabbed.js","../chunks/environment.js","../chunks/src10.js","../views/viewer.js","../com/service.js","../chunks/src11.js","../chunks/WorkCenter.js","../chunks/log-sanitizer.js","../chunks/utils.js","../chunks/CustomInstructions.js","../chunks/entities.js","../chunks/core.js","../vendor/@toon-format_toon.js","../chunks/unified.js","../chunks/RuntimeSettings.js","../chunks/ShareTargetGateway.js","../chunks/WorkCenterState.js","../chunks/src9.js","../chunks/capacitor-permissions.js","../chunks/capacitor-settings-permissions.js","../chunks/templates.js","../chunks/admin-doors.js","../chunks/src8.js","../chunks/frontend-debug-capture.js","../chunks/src6.js","../chunks/transfer-history-runtime.js","../chunks/src.js","../chunks/src5.js","../chunks/src7.js","../fest/veela.js","../chunks/launcher-state.js","../chunks/crx-control-session2.js","../chunks/capacitor-share-intent2.js","../chunks/sw-handling.js","../chunks/sw-page-bridge.js","../chunks/workcenter-command-wire.js","../chunks/ViewTransferRouting.js"])))=>i.map(i=>d[i]);
 import { r as __exportAll } from "../chunks/rolldown-runtime.js";
-import { Cn as makeUIState, K as __decorate, Or as __vitePreload, Rn as defineElement, Tn as JSOX, W as UIElement, Xn as fixOrientToScreen, Zt as writeFileSmart, _n as normalizeProtocolEnvelope, gn as isProtocolEnvelope, hn as createProtocolEnvelope, hr as safe, mn as getUnifiedMessaging$2, mr as makeObjectAssignable, pn as createServiceChannelManager, pr as stringRef, qn as Q, ur as observe, vr as loadAsAdopted, wn as saveUIState, z as initializeAppCanvasLayer } from "../com/app.js";
+import { $t as writeFileSmart, Ar as __vitePreload, Bn as defineElement, Dn as JSOX, En as saveUIState, J as __decorate, K as UIElement, Qn as fixOrientToScreen, Tn as makeUIState, V as initializeAppCanvasLayer, Yn as Q, _n as createProtocolEnvelope, _r as safe, br as loadAsAdopted, fr as observe, gn as getUnifiedMessaging$2, gr as makeObjectAssignable, hn as createServiceChannelManager, hr as stringRef, vn as isProtocolEnvelope, yn as normalizeProtocolEnvelope } from "../com/app.js";
 import { t as withTimeout } from "../fest/core.js";
 import { c as inferCwspSkuFromLocation$1, d as isViewLocalToSurface$1, g as shouldHandoffViewToSibling, h as readCwspSku$1, l as isCwspNativeHost$1, m as publicHrefForView, n as SKU_HUB_PATHS$1 } from "./boot-history-base.js";
 import { r as validateIngressBeforeViewHandle } from "../com/service.js";
@@ -6738,7 +6738,7 @@ var isServiceWorkerScope$1 = () => {
 };
 var loadLureFs$1 = () => {
 	if (isServiceWorkerScope$1()) return Promise.reject(/* @__PURE__ */ new Error("@fest-lib/lure FS unavailable in ServiceWorkerGlobalScope"));
-	if (!lureFsPromise$1) lureFsPromise$1 = __vitePreload(() => import("../com/app.js").then((n) => n.Pt).then((m) => ({
+	if (!lureFsPromise$1) lureFsPromise$1 = __vitePreload(() => import("../com/app.js").then((n) => n.It).then((m) => ({
 		getDirectoryHandle: m.getDirectoryHandle,
 		readFile: m.readFile
 	})), __vite__mapDeps([3,4]), import.meta.url);
@@ -7195,7 +7195,7 @@ var cachedWallpaperPrimary$1 = () => {
 var extractFromImage$1 = async (src) => {
 	try {
 		const { applyThemeFromWallpaper } = await __vitePreload(async () => {
-			const { applyThemeFromWallpaper } = await import("../com/app.js").then((n) => n.I);
+			const { applyThemeFromWallpaper } = await import("../com/app.js").then((n) => n.R);
 			return { applyThemeFromWallpaper };
 		}, __vite__mapDeps([3,4]), import.meta.url);
 		return normalizeHexColor$1((await applyThemeFromWallpaper(src, { force: false }))?.primary);
@@ -7220,7 +7220,7 @@ var colorFromAppWallpaper$1 = async () => {
 	if (cached) return cached;
 	try {
 		const { resolveAppWallpaperUrl } = await __vitePreload(async () => {
-			const { resolveAppWallpaperUrl } = await import("../com/app.js").then((n) => n.I);
+			const { resolveAppWallpaperUrl } = await import("../com/app.js").then((n) => n.R);
 			return { resolveAppWallpaperUrl };
 		}, __vite__mapDeps([3,4]), import.meta.url);
 		const url = await resolveAppWallpaperUrl();
@@ -7577,7 +7577,7 @@ var resumeThemeAfterForeground$1 = (force = false) => {
 	(async () => {
 		try {
 			const { rehydrateAdoptedStyleSheets } = await __vitePreload(async () => {
-				const { rehydrateAdoptedStyleSheets } = await import("../com/app.js").then((n) => n.Pt);
+				const { rehydrateAdoptedStyleSheets } = await import("../com/app.js").then((n) => n.It);
 				return { rehydrateAdoptedStyleSheets };
 			}, __vite__mapDeps([3,4]), import.meta.url);
 			rehydrateAdoptedStyleSheets();
@@ -12999,7 +12999,7 @@ var isServiceWorkerScope = () => {
 };
 var loadLureFs = () => {
 	if (isServiceWorkerScope()) return Promise.reject(/* @__PURE__ */ new Error("@fest-lib/lure FS unavailable in ServiceWorkerGlobalScope"));
-	if (!lureFsPromise) lureFsPromise = __vitePreload(() => import("../com/app.js").then((n) => n.Pt).then((m) => ({
+	if (!lureFsPromise) lureFsPromise = __vitePreload(() => import("../com/app.js").then((n) => n.It).then((m) => ({
 		getDirectoryHandle: m.getDirectoryHandle,
 		readFile: m.readFile
 	})), __vite__mapDeps([3,4]), import.meta.url);
@@ -13355,7 +13355,7 @@ var cachedWallpaperPrimary = () => {
 var extractFromImage = async (src) => {
 	try {
 		const { applyThemeFromWallpaper } = await __vitePreload(async () => {
-			const { applyThemeFromWallpaper } = await import("../com/app.js").then((n) => n.I);
+			const { applyThemeFromWallpaper } = await import("../com/app.js").then((n) => n.R);
 			return { applyThemeFromWallpaper };
 		}, __vite__mapDeps([3,4]), import.meta.url);
 		return normalizeHexColor((await applyThemeFromWallpaper(src, { force: false }))?.primary);
@@ -13380,7 +13380,7 @@ var colorFromAppWallpaper = async () => {
 	if (cached) return cached;
 	try {
 		const { resolveAppWallpaperUrl } = await __vitePreload(async () => {
-			const { resolveAppWallpaperUrl } = await import("../com/app.js").then((n) => n.I);
+			const { resolveAppWallpaperUrl } = await import("../com/app.js").then((n) => n.R);
 			return { resolveAppWallpaperUrl };
 		}, __vite__mapDeps([3,4]), import.meta.url);
 		const url = await resolveAppWallpaperUrl();
@@ -13686,7 +13686,7 @@ var resumeThemeAfterForeground = (force = false) => {
 	(async () => {
 		try {
 			const { rehydrateAdoptedStyleSheets } = await __vitePreload(async () => {
-				const { rehydrateAdoptedStyleSheets } = await import("../com/app.js").then((n) => n.Pt);
+				const { rehydrateAdoptedStyleSheets } = await import("../com/app.js").then((n) => n.It);
 				return { rehydrateAdoptedStyleSheets };
 			}, __vite__mapDeps([3,4]), import.meta.url);
 			rehydrateAdoptedStyleSheets();
@@ -17201,7 +17201,7 @@ var STYLE_CONFIGS = {
 			if (isCapacitorCwsNativeShell$1()) {
 				__vitePreload(() => import("../chunks/capacitor-share-intent2.js").then((mod) => mod.installCapacitorShareIntentBridge()), __vite__mapDeps([56,3,4]), import.meta.url).catch(() => void 0);
 				__vitePreload(() => import("../chunks/capacitor-clipboard-asset2.js").then((mod) => mod.installCapacitorClipboardAssetBridge()), [], import.meta.url).catch(() => void 0);
-				__vitePreload(() => import("../com/app.js").then((n) => n.rr).then((mod) => mod.ensureNativeStorageProvide()), __vite__mapDeps([3,4]), import.meta.url).catch(() => void 0);
+				__vitePreload(() => import("../com/app.js").then((n) => n.ar).then((mod) => mod.ensureNativeStorageProvide()), __vite__mapDeps([3,4]), import.meta.url).catch(() => void 0);
 			}
 			try {
 				const { initFrontendDebugCapture } = await __vitePreload(async () => {

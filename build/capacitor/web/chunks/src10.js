@@ -1,5 +1,5 @@
 import { y as takeSkuHandoff } from "../shells/boot-history-base.js";
-import { K as __decorate, Rn as defineElement, W as UIElement, vr as loadAsAdopted, xr as removeAdopted } from "../com/app.js";
+import { Bn as defineElement, Cr as removeAdopted, J as __decorate, K as UIElement, br as loadAsAdopted } from "../com/app.js";
 import { a as flushHeldIngressToWorkCenter, d as peekHeldIngressFiles, p as registerWorkCenterFlushHost } from "../views/viewer.js";
 import { r as queryLiveWorkCenterChats, t as WorkCenterManager } from "./WorkCenter.js";
 //#region ../../modules/views/workcenter-view/src/scss/_index.scss?inline

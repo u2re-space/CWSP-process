@@ -1,4 +1,4 @@
-import { Sr as resolved } from "../com/app.js";
+import { wr as resolved } from "../com/app.js";
 //#region ../../modules/projects/core.ts/src/utils/PromiseUtils.ts
 var isThenable = (value) => value instanceof Promise || typeof value?.then == "function";
 function withTimeout(promise, timeoutMs, timeoutMessage = "Operation timed out") {

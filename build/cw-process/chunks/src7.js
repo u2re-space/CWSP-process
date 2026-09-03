@@ -1,8 +1,43 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./launcher-bridge.js","../shells/boot-index.js","./rolldown-runtime.js","../com/app.js","../fest/core.js","../shells/boot-history-base.js","../com/service.js","../fest/veela.js"])))=>i.map(i=>d[i]);
-import { $ as openUnifiedContextMenu, $n as updateVP, Bn as vector2Ref, Jn as DOMMixin, Kn as M, Mt as resolveFsBackend, Nn as elementPointerMap, Or as __vitePreload, Qn as orientationNumberMap, R as getWallpaperStoragePointer, Un as registerModal, V as setAppWallpaperFromBlob, Wn as navigate, Yn as ensureVirtualKeyboardOverlay, Zn as getCorrectOrientation, br as preloadStyle, dr as propRef, er as MOCElement, g as app_menu_default, jt as listVirtualRootEntriesFromRouter, lr as numberRef, nr as isInFocus, on as handleIncomingEntries, or as affected, u as installLauncherBackStack, ur as observe, vr as loadAsAdopted, xn as pointerAnchorRef, zn as H } from "../com/app.js";
+import { $n as getCorrectOrientation, Ar as __vitePreload, B as getWallpaperStoragePointer, Cn as pointerAnchorRef, Fn as elementPointerMap, Gn as registerModal, Hn as vector2Ref, Jn as M, Kn as navigate, M as toggleQuickSettingsFlyout, N as toggleCalendarFlyout, Nt as listVirtualRootEntriesFromRouter, Pt as resolveFsBackend, Sr as preloadStyle, U as setAppWallpaperFromBlob, Vn as H, Xn as DOMMixin, Zn as ensureVirtualKeyboardOverlay, br as loadAsAdopted, cn as handleIncomingEntries, cr as affected, dr as numberRef, er as orientationNumberMap, fr as observe, g as app_menu_default, ir as isInFocus, nr as MOCElement, pr as propRef, tr as updateVP, tt as openUnifiedContextMenu, u as installLauncherBackStack } from "../com/app.js";
 import { b as HomeChannelAction } from "../views/viewer.js";
 import { n as speed_dial_default, t as home_host_apply_default } from "../fest/veela.js";
 import { $ as resolveSpeedDialItemHref, A as isSpeedDialVirtualPath, B as parseSpeedDialItemFromJSON, C as getDefaultTileShape, Ct as normalizeOrient, D as gridLayoutState, E as getSpeedDialMirrorPath, Et as visualLayout, F as normalizeExternalWebHref, G as persistSpeedDialIconBlob, H as parseSpeedDialItemFromURL, I as normalizeItemIconBitmapScale, J as persistWallpaper, K as persistSpeedDialItems, L as normalizeOpenLinkTarget, M as looksLikeSpeedDialShortcutJson, N as markSpeedDialUserEditBeforeHydrate, O as isExternalWebHref, P as mirrorSpeedDialItems, Q as resolveSpeedDialIconUrl, R as openInDetachedBrowserWindow, S as findSpeedDialItem, St as markOccupiedSpan, T as getSpeedDialMeta, Tt as pointToLogicalCell, U as parseSpeedDialItemFromVirtualPath, V as parseSpeedDialItemFromSmartText, W as parseSpeedDialViewFromHref, X as removeSpeedDialItem, Y as refreshSpeedDialMirror, Z as resolveItemOpenLinkTarget, _ as defaultOpenLinkTargetForHref, _t as syncPlateGlyphInk, a as addSpeedDialItem, at as tileIconFetchSize, b as ensureSpeedDialMeta, bt as logicalToVisualCell, c as applySpeedDialSnapshot, ct as wasSpeedDialUserEdited, d as captureSpeedDialSnapshot, dt as createTileUiIconElement, et as setItemSpan, f as cloneSpeedDialItemPacked, ft as defaultIconScaleForDisplay, g as createWidgetSpeedDialItem, gt as normalizeTileShape, h as createSpeedDialItemFromClipboard, ht as normalizeIconDisplay, i as addClonedSpeedDialItem, it as stripCoreRailTilesFromGrid, k as isMirrorMode, l as buildSpeedDialViewPathHref, lt as ICON_DISPLAY_OPTIONS, m as createEmptySpeedDialItem, mt as isTileShapeValue, n as NAVIGATION_SHORTCUTS, nt as speedDialItems, o as applyIconScaleToPaintedNodes, ot as upsertSpeedDialItem, p as copySpeedDialItemToClipboard, pt as inferIconDisplay, q as persistSpeedDialMeta, r as SPEED_DIAL_MUTATION_EVENT, rt as speedDialMeta, s as applyItemIconScaleToElement, st as wallpaperState, t as ICON_BITMAP_SCALE_OPTIONS, tt as setSpeedDialMirrorPath, u as canUseNativeOpenUri, ut as TILE_SHAPE_OPTIONS, v as defaultWidgetSpan, vt as syncShapelessIconShadow, w as getItemSpan, wt as normalizeSpan, x as findNextFreeCellInSnapshot, xt as logicalToVisualSpan, y as emitSpeedDialMutation, yt as findNearestFreeRect, z as openInNewBrowserTab } from "./launcher-state.js";
+//#region ../../modules/views/home-view/src/ts/tiles-lock.ts
+var TILES_LOCKED_KEY = "cw::workspace::speed-dial::tiles-locked";
+/** Dispatched on `window` after {@link setTilesLocked}. */
+var TILES_LOCKED_EVENT = "cwsp-sd-tiles-lock";
+var isNativeCapacitorOrCoarse$1 = () => {
+	try {
+		const c = globalThis.Capacitor;
+		if (typeof c?.isNativePlatform === "function" && c.isNativePlatform()) return true;
+	} catch {}
+	return typeof matchMedia === "function" && matchMedia("(pointer: coarse)").matches;
+};
+/** WHY: phones default pinned so workspace/app-menu swipes win; mouse desktops stay editable. */
+var defaultTilesLocked = () => isNativeCapacitorOrCoarse$1();
+var isTilesLocked = () => {
+	try {
+		const v = localStorage.getItem(TILES_LOCKED_KEY);
+		if (v == null || !String(v).trim()) return defaultTilesLocked();
+		return v === "1" || v === "true" || v === "locked" || v === "pin";
+	} catch {
+		return defaultTilesLocked();
+	}
+};
+var applyTilesLockedAttr = (root) => {
+	(root || (typeof document !== "undefined" ? document.querySelector(".speed-dial-root") : null))?.toggleAttribute("data-tiles-locked", isTilesLocked());
+};
+var setTilesLocked = (locked) => {
+	try {
+		localStorage.setItem(TILES_LOCKED_KEY, locked ? "1" : "0");
+	} catch {}
+	applyTilesLockedAttr();
+	try {
+		window.dispatchEvent(new CustomEvent(TILES_LOCKED_EVENT, { detail: { locked } }));
+	} catch {}
+};
+//#endregion
 //#region ../../modules/views/home-view/src/ts/pointer-interaction.ts
 var DRAG_THRESHOLD_PX = 6;
 var SETTLE_DURATION_MS = 240;
@@ -164,6 +199,7 @@ var bindPointerInteraction = (node, options) => {
 		lastPointerClient = null;
 	};
 	const onPointerDown = (event) => {
+		if (isTilesLocked()) return;
 		if (pointerId !== null || event.button !== 0) return;
 		pointerId = event.pointerId;
 		lastPointerClient = null;
@@ -964,7 +1000,7 @@ var openNativeStorageByLinkTarget = async (path, linkTarget, mimeType) => {
 	if (!virtual) return false;
 	try {
 		const { openNativeStorageFile } = await __vitePreload(async () => {
-			const { openNativeStorageFile } = await import("../com/app.js").then((n) => n.rr);
+			const { openNativeStorageFile } = await import("../com/app.js").then((n) => n.ar);
 			return { openNativeStorageFile };
 		}, __vite__mapDeps([3,2]), import.meta.url);
 		const declared = String(mimeType || "").trim();
@@ -2879,7 +2915,7 @@ var openShortcutEditor = (options) => {
 };
 //#endregion
 //#region ../../modules/views/home-view/src/ts/core-rail.ts
-var RAIL_OPEN_KEY = "cw::workspace::speed-dial::core-rail-open";
+var RAIL_OPEN_KEY$1 = "cw::workspace::speed-dial::core-rail-open";
 /** Views that belong on the rail — not the freeform Speed Dial grid. */
 var CORE_RAIL_VIEWS = [
 	"apps",
@@ -2931,7 +2967,7 @@ var getCoreRailEntries = () => {
 };
 var isCoreRailOpen = () => {
 	try {
-		const v = localStorage.getItem(RAIL_OPEN_KEY);
+		const v = localStorage.getItem(RAIL_OPEN_KEY$1);
 		if (v == null || !String(v).trim()) return false;
 		return v === "1" || v === "true" || v === "open";
 	} catch {
@@ -2940,7 +2976,7 @@ var isCoreRailOpen = () => {
 };
 var setCoreRailOpen = (open) => {
 	try {
-		localStorage.setItem(RAIL_OPEN_KEY, open ? "1" : "0");
+		localStorage.setItem(RAIL_OPEN_KEY$1, open ? "1" : "0");
 	} catch {}
 };
 /**
@@ -3046,7 +3082,7 @@ function mountCoreRail(host) {
 		const path = typeof ev.composedPath === "function" ? ev.composedPath() : [];
 		for (const n of path) {
 			if (n === rail || n instanceof Node && rail.contains(n)) return true;
-			if (n instanceof Element && n.closest?.("dialog, .cw-context-menu-layer, .env-shell-app-menu, .speed-dial-editor, .sd-icon-picker")) return true;
+			if (n instanceof Element && n.closest?.("dialog, .cw-context-menu-layer, .env-shell-app-menu, .speed-dial-editor, .sd-icon-picker, .speed-dial-chrome-rail, ui-calendar-flyout, ui-quick-settings")) return true;
 		}
 		return false;
 	};
@@ -3060,6 +3096,146 @@ function mountCoreRail(host) {
 	document.addEventListener("pointerdown", onDocPointer, { capture: true });
 	return () => {
 		document.removeEventListener("pointerdown", onDocPointer, { capture: true });
+		rail.remove();
+	};
+}
+//#endregion
+//#region ../../modules/views/home-view/src/ts/chrome-rail.ts
+var RAIL_OPEN_KEY = "cw::workspace::speed-dial::chrome-rail-open";
+var isChromeRailOpen = () => {
+	try {
+		const v = localStorage.getItem(RAIL_OPEN_KEY);
+		if (v == null || !String(v).trim()) return false;
+		return v === "1" || v === "true" || v === "open";
+	} catch {
+		return false;
+	}
+};
+var setChromeRailOpen = (open) => {
+	try {
+		localStorage.setItem(RAIL_OPEN_KEY, open ? "1" : "0");
+	} catch {}
+};
+var lockEntry = (locked) => locked ? {
+	id: "tiles-lock",
+	label: "Unlock",
+	icon: "push-pin"
+} : {
+	id: "tiles-lock",
+	label: "Pin",
+	icon: "push-pin-slash"
+};
+var railActions = (locked) => [
+	{
+		id: "calendar",
+		label: "Calendar",
+		icon: "calendar-blank",
+		flyout: "calendar"
+	},
+	{
+		id: "quick-settings",
+		label: "Quick",
+		icon: "sliders-horizontal",
+		flyout: "quick-settings"
+	},
+	lockEntry(locked)
+];
+/** Mount collapsible left chrome rail into the Speed Dial root. */
+function mountChromeRail(host) {
+	if (!host || host.querySelector(".speed-dial-chrome-rail")) return () => void 0;
+	let open = isChromeRailOpen();
+	let locked = isTilesLocked();
+	const rail = document.createElement("aside");
+	rail.className = "speed-dial-chrome-rail";
+	rail.setAttribute("aria-label", "Launcher controls");
+	rail.setAttribute("data-chrome-flyout-side", "start");
+	rail.toggleAttribute("data-open", open);
+	const toggle = document.createElement("button");
+	toggle.type = "button";
+	toggle.className = "speed-dial-chrome-rail__toggle";
+	toggle.title = open ? "Hide controls" : "Show controls";
+	toggle.setAttribute("aria-expanded", open ? "true" : "false");
+	toggle.setAttribute("aria-controls", "speed-dial-chrome-rail-panel");
+	toggle.innerHTML = "<ui-icon icon=\"caret-right\" icon-style=\"duotone\" aria-hidden=\"true\"></ui-icon>";
+	const panel = document.createElement("div");
+	panel.id = "speed-dial-chrome-rail-panel";
+	panel.className = "speed-dial-chrome-rail__panel";
+	panel.setAttribute("role", "toolbar");
+	const paintEntries = () => {
+		panel.replaceChildren();
+		for (const entry of railActions(locked)) {
+			const btn = document.createElement("button");
+			btn.type = "button";
+			btn.className = "speed-dial-chrome-rail__item";
+			btn.title = entry.id === "tiles-lock" ? locked ? "Unlock layout — drag tiles" : "Pin layout — tiles stay put" : entry.id === "quick-settings" ? "Quick settings" : entry.label;
+			btn.setAttribute("aria-label", btn.title);
+			btn.dataset.action = entry.id;
+			if (entry.flyout) {
+				btn.setAttribute("data-chrome-flyout-anchor", entry.flyout);
+				btn.setAttribute("data-chrome-flyout-side", "start");
+				btn.setAttribute("aria-haspopup", "dialog");
+			}
+			if (entry.id === "tiles-lock") {
+				btn.setAttribute("aria-pressed", locked ? "true" : "false");
+				btn.toggleAttribute("data-pressed", locked);
+			}
+			btn.innerHTML = `<ui-icon icon="${entry.icon}" icon-style="duotone" aria-hidden="true"></ui-icon><span class="speed-dial-chrome-rail__label">${entry.label}</span>`;
+			btn.addEventListener("click", (ev) => {
+				ev.preventDefault();
+				ev.stopPropagation();
+				if (entry.id === "tiles-lock") {
+					setTilesLocked(!isTilesLocked());
+					return;
+				}
+				if (entry.flyout === "calendar") toggleCalendarFlyout(btn);
+				else if (entry.flyout === "quick-settings") toggleQuickSettingsFlyout(btn);
+			});
+			panel.append(btn);
+		}
+	};
+	const syncOpen = () => {
+		rail.toggleAttribute("data-open", open);
+		toggle.setAttribute("aria-expanded", open ? "true" : "false");
+		toggle.title = open ? "Hide controls" : "Show controls";
+		const icon = toggle.querySelector("ui-icon");
+		if (icon) icon.setAttribute("icon", open ? "caret-left" : "caret-right");
+		setChromeRailOpen(open);
+	};
+	const syncLock = () => {
+		locked = isTilesLocked();
+		applyTilesLockedAttr(host);
+		paintEntries();
+	};
+	toggle.addEventListener("click", (ev) => {
+		ev.preventDefault();
+		ev.stopPropagation();
+		open = !open;
+		syncOpen();
+	});
+	syncOpen();
+	syncLock();
+	rail.append(toggle, panel);
+	host.append(rail);
+	const isRailKeepOpenTarget = (ev) => {
+		const path = typeof ev.composedPath === "function" ? ev.composedPath() : [];
+		for (const n of path) {
+			if (n === rail || n instanceof Node && rail.contains(n)) return true;
+			if (n instanceof Element && n.closest?.("dialog, .cw-context-menu-layer, .env-shell-app-menu, .speed-dial-editor, .sd-icon-picker, .speed-dial-core-rail, ui-calendar-flyout, ui-quick-settings")) return true;
+		}
+		return false;
+	};
+	const onDocPointer = (ev) => {
+		if (!open) return;
+		if (ev.button != null && ev.button !== 0) return;
+		if (isRailKeepOpenTarget(ev)) return;
+		open = false;
+		syncOpen();
+	};
+	document.addEventListener("pointerdown", onDocPointer, { capture: true });
+	window.addEventListener(TILES_LOCKED_EVENT, syncLock);
+	return () => {
+		document.removeEventListener("pointerdown", onDocPointer, { capture: true });
+		window.removeEventListener(TILES_LOCKED_EVENT, syncLock);
 		rail.remove();
 	};
 }
@@ -3318,7 +3494,7 @@ var bindWidgetResize = (host, item, hooks) => {
 		};
 	};
 	handle.addEventListener("pointerdown", (ev) => {
-		if (ev.button !== 0) return;
+		if (ev.button !== 0 || isTilesLocked()) return;
 		ev.preventDefault();
 		ev.stopPropagation();
 		pointerId = ev.pointerId;
@@ -4162,7 +4338,25 @@ var tryOpenLauncherAppMenu = () => {
 var isEmptySpeedDialSurface = (root, target) => {
 	if (!(target instanceof Element)) return target === root;
 	if (!root.contains(target)) return false;
-	return !target.closest("[data-speed-dial-item], .ui-ws-item, dialog, .cw-context-menu-layer, .env-shell-app-menu, .speed-dial-editor");
+	return !target.closest("[data-speed-dial-item], .ui-ws-item, dialog, .cw-context-menu-layer, .env-shell-app-menu, .speed-dial-editor, .speed-dial-core-rail, .speed-dial-chrome-rail");
+};
+var isLauncherChromeHit = (target) => target instanceof Element && !!target.closest("dialog, .cw-context-menu-layer, .env-shell-app-menu, .speed-dial-editor, .sd-icon-picker, .speed-dial-core-rail, .speed-dial-chrome-rail, .speed-dial-workspace-pager, input, textarea, select, .sd-widget__search");
+/** WHY: pinned tiles skip drag — workspace / app-menu swipes may start on icons too. */
+var canStartDesktopSwipe = (root, target) => {
+	if (isLauncherChromeHit(target)) return false;
+	if (isTilesLocked()) {
+		if (!(target instanceof Node)) return target === root;
+		return root === target || root.contains(target);
+	}
+	return isEmptySpeedDialSurface(root, target);
+};
+var suppressTileClickAfterSwipe = (target) => {
+	const tile = target instanceof Element ? target.closest("[data-speed-dial-item]") : null;
+	if (!tile) return;
+	tile.dataset.interactionState = "onRelax";
+	window.setTimeout(() => {
+		if (tile.dataset.interactionState === "onRelax") tile.dataset.interactionState = "onHover";
+	}, 80);
 };
 var mountWorkspacePager = (root) => {
 	if (root.querySelector(".speed-dial-workspace-pager")) return;
@@ -4202,7 +4396,7 @@ var bindEmptySpaceSwipeOpenAppMenu = (root) => {
 	let startY = 0;
 	root.addEventListener("pointerdown", (ev) => {
 		if (ev.pointerType === "mouse") return;
-		if (!isEmptySpeedDialSurface(root, ev.target)) return;
+		if (!canStartDesktopSwipe(root, ev.target)) return;
 		if (document.querySelector(".env-shell-app-menu[data-open]")) return;
 		tracking = true;
 		pointerId = ev.pointerId;
@@ -4216,11 +4410,13 @@ var bindEmptySpaceSwipeOpenAppMenu = (root) => {
 		const dx = ev.clientX - startX;
 		const dy = ev.clientY - startY;
 		if (Math.abs(dx) >= SWIPE_WORKSPACE_MIN_DX && Math.abs(dx) > Math.abs(dy) * 1.1) {
+			suppressTileClickAfterSwipe(ev.target);
 			switchWorkspaceByDelta(dx < 0 ? 1 : -1);
 			return;
 		}
 		if (dy > -72) return;
 		if (Math.abs(dx) > Math.abs(dy) * SWIPE_APP_MENU_MAX_DX_RATIO) return;
+		suppressTileClickAfterSwipe(ev.target);
 		tryOpenLauncherAppMenu();
 	};
 	root.addEventListener("pointerup", endTrack, { passive: true });
@@ -4251,6 +4447,11 @@ var bindRootOrientation = (root) => {
 		}, { capture: true });
 	}
 	bindEmptySpaceSwipeOpenAppMenu(root);
+	applyTilesLockedAttr(root);
+	if (root.dataset.tilesLockBound !== "1") {
+		root.dataset.tilesLockBound = "1";
+		window.addEventListener(TILES_LOCKED_EVENT, () => applyTilesLockedAttr(root));
+	}
 	mountWorkspacePager(root);
 	bindIconGridShadowJanitor(root);
 	queueMicrotask(() => bindIconGridShadowJanitor(root));
@@ -5272,6 +5473,7 @@ function SpeedDial(makeView) {
 	const box = H`<div slot="underlay" style="pointer-events: auto; position: relative; contain: none; overflow: visible; display: grid;" id="home" class="speed-dial-root" tabindex="-1" ref=${(el) => {
 		bindRootOrientation(el);
 		mountCoreRail(el);
+		mountChromeRail(el);
 	}} on:dragover=${(ev) => acceptHomeLinkDragOver(ev)} on:drop=${(ev) => handleWallpaperDropOrPaste(ev)} on:paste=${(ev) => void handleWallpaperDropOrPaste(ev)} prop:onPaste=${async (ev) => await handleWallpaperDropOrPaste(ev)}>
         <div class="speed-dial-grid speed-dial-label-layer speed-dial-grid--labels ui-launcher-grid" data-layer="items" data-grid-layer="labels" data-grid-columns=${columnsRef} data-grid-rows=${rowsRef} data-grid-shape=${shapeRef}>
             ${M(speedDialItems, renderLabelItem)}

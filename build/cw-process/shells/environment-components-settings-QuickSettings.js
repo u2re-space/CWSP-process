@@ -1,4 +1,4 @@
-import { K as __decorate, N as quick_settings_default, P as getSpeedDialViewOpener, Rn as defineElement, W as UIElement, Wn as navigate, br as preloadStyle, er as MOCElement, zn as H } from "../com/app.js";
+import { Bn as defineElement, F as quick_settings_default, I as getSpeedDialViewOpener, J as __decorate, K as UIElement, Kn as navigate, Sr as preloadStyle, Vn as H, nr as MOCElement } from "../com/app.js";
 import { i as positionFlyout, n as closeChromeFlyout, o as toggleChromeFlyout, r as ensureOverlayRoot } from "./environment-components-calendar-CalendarFlyout.js";
 //#region src/frontend/shells/environment/components/settings/QuickSettings.ts
 /**
@@ -430,7 +430,7 @@ function toggleQuickSettingsFlyout(anchor) {
 			el.dataset.theme = pinned;
 			el.style.colorScheme = pinned;
 		}
-		positionFlyout(el, FLYOUT_KIND);
+		positionFlyout(el, FLYOUT_KIND, { anchor });
 		el.open();
 		return {
 			kind: FLYOUT_KIND,

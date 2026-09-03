@@ -1,5 +1,5 @@
 import { r as __exportAll } from "./rolldown-runtime.js";
-import { Cn as makeUIState, Dn as loadDesktopRaw, En as decodeDesktopState, Mt as resolveFsBackend, Nt as subscribeFsBackendRegister, Or as __vitePreload, Tn as JSOX, hr as safe, ir as resolveEntryIcon, mr as makeObjectAssignable, pr as stringRef, ur as observe, wn as saveUIState } from "../com/app.js";
+import { Ar as __vitePreload, Dn as JSOX, En as saveUIState, Ft as subscribeFsBackendRegister, On as decodeDesktopState, Pt as resolveFsBackend, Tn as makeUIState, _r as safe, fr as observe, gr as makeObjectAssignable, hr as stringRef, kn as loadDesktopRaw, or as resolveEntryIcon } from "../com/app.js";
 //#region ../../modules/views/home-view/src/ts/layout.ts
 var DEFAULT_LAYOUT = [4, 8];
 var clamp = (value, min, max) => {
@@ -1348,14 +1348,16 @@ var ensureCell = (cell) => {
 	return observe([0, 0]);
 };
 var createMetaState = (meta = {}) => {
+	const kind = String(meta.widgetKind || "").toLowerCase();
+	const inferredAction = String(meta.action || "").trim() || (kind === "search" || kind === "android" ? "widget" : "open-view");
 	return makeObjectAssignable(observe({
-		action: meta.action || "open-view",
 		view: meta.view || "",
 		href: meta.href || "",
 		description: meta.description || "",
 		entityType: meta.entityType || "",
 		tags: Array.isArray(meta.tags) ? [...meta.tags] : [],
-		...meta
+		...meta,
+		action: inferredAction
 	}));
 };
 var registryFromEntries = (entries) => {
@@ -1891,8 +1893,10 @@ var defaultWidgetSpan = (kind) => {
 };
 var getItemSpan = (id) => {
 	const meta = id ? getSpeedDialMeta(id) : null;
-	const kind = String(meta?.action || "").toLowerCase() === "widget" ? String(meta?.widgetKind || "").toLowerCase() : "";
-	const fallback = kind ? defaultWidgetSpan(kind) : [1, 1];
+	const item = id ? (speedDialItems || []).find((it) => it?.id === id) : null;
+	const isWidget = String(item?.action || "").toLowerCase() === "widget" || String(meta?.action || "").toLowerCase() === "widget";
+	const kind = isWidget ? String(meta?.widgetKind || "").toLowerCase() : "";
+	const fallback = kind ? defaultWidgetSpan(kind) : isWidget ? defaultWidgetSpan("clock") : [1, 1];
 	return normalizeSpan([metaNumber(meta?.spanCols, fallback[0]), metaNumber(meta?.spanRows, fallback[1])]);
 };
 var setItemSpan = (id, span) => {
@@ -1938,6 +1942,7 @@ var ensureSpeedDialMeta = (id, defaults = {}) => {
 	let changed = false;
 	for (const [key, value] of Object.entries(defaults)) {
 		if (value == null || value === "") continue;
+		if (key === "action" && String(meta.action || "").toLowerCase() === "widget" && String(value || "").toLowerCase() !== "widget") continue;
 		if (meta[key] !== value) {
 			meta[key] = value;
 			changed = true;
@@ -2653,14 +2658,14 @@ var migrateLegacyDesktopState = () => {
 	persistGridLayout();
 };
 migrateLegacyDesktopState();
-var applyGridSettings = (settings) => {
+var applyGridSettings = (settings, opts) => {
 	const gridConfig = settings?.grid || gridLayoutState;
 	const columns = Math.max(1, Math.min(16, Number(gridConfig?.columns) || gridLayoutState.columns || 4));
 	const rows = Math.max(1, Math.min(16, Number(gridConfig?.rows) || gridLayoutState.rows || 8));
 	const shape = normalizeTileShape(gridConfig?.shape ?? gridLayoutState.shape, "squircle");
 	const defaultAction = normalizeDefaultAction(gridConfig?.defaultAction ?? gridLayoutState.defaultAction, "open-link");
 	const iconScale = normalizeIconBitmapScale(gridConfig?.iconScale ?? gridLayoutState.iconScale, "fill");
-	if (relocateItemsToLayout(speedDialItems, [columns, rows], (item) => getItemSpan(item.id))) persistSpeedDialItems();
+	if ((opts?.relocate === true || opts?.relocate !== false && Boolean(settings?.grid)) && relocateItemsToLayout(speedDialItems, [columns, rows], (item) => getItemSpan(item.id))) persistSpeedDialItems();
 	if (gridLayoutState) {
 		gridLayoutState.columns = columns;
 		gridLayoutState.rows = rows;
@@ -2700,11 +2705,11 @@ if (typeof window !== "undefined") window.addEventListener(WORKSPACE_GRID_EVENT,
 		});
 		return;
 	}
-	applyGridSettings({ grid: detail });
+	applyGridSettings({ grid: detail }, { relocate: true });
 	detail.ack?.();
 });
 if (typeof globalThis !== "undefined" && typeof document !== "undefined") {
-	const run = () => applyGridSettings();
+	const run = () => applyGridSettings(void 0, { relocate: false });
 	if (typeof requestAnimationFrame === "function") requestAnimationFrame(run);
 	else queueMicrotask(run);
 }
@@ -3331,4 +3336,4 @@ var extractHttpUrlFromClipboardText = (raw) => {
 	return null;
 };
 //#endregion
-export { setItemSpan as $, launcher_state_exports as A, parseSpeedDialItemFromSmartText as B, getItemSpan as C, normalizeSpan as Ct, isExternalWebHref as D, gridLayoutState as E, normalizeItemIconBitmapScale as F, persistSpeedDialItems as G, parseSpeedDialItemFromVirtualPath as H, normalizeOpenLinkTarget as I, refreshSpeedDialMirror as J, persistSpeedDialMeta as K, openInDetachedBrowserWindow as L, markSpeedDialUserEditBeforeHydrate as M, mirrorSpeedDialItems as N, isMirrorMode as O, normalizeExternalWebHref as P, resolveSpeedDialItemHref as Q, openInNewBrowserTab as R, getDefaultTileShape as S, normalizeOrient as St, getSpeedDialMirrorPath as T, visualLayout as Tt, parseSpeedDialViewFromHref as U, parseSpeedDialItemFromURL as V, persistSpeedDialIconBlob as W, resolveItemOpenLinkTarget as X, removeSpeedDialItem as Y, resolveSpeedDialIconUrl as Z, defaultOpenLinkTargetForHref as _, syncShapelessIconShadow as _t, addSpeedDialItem as a, upsertSpeedDialItem as at, findNextFreeCellInSnapshot as b, logicalToVisualSpan as bt, applySpeedDialSnapshot as c, ICON_DISPLAY_OPTIONS as ct, captureSpeedDialSnapshot as d, defaultIconScaleForDisplay as dt, setSpeedDialMirrorPath as et, cloneSpeedDialItemPacked as f, inferIconDisplay as ft, createWidgetSpeedDialItem as g, syncPlateGlyphInk as gt, createSpeedDialItemFromClipboard as h, normalizeTileShape$1 as ht, addClonedSpeedDialItem as i, tileIconFetchSize as it, looksLikeSpeedDialShortcutJson as j, isSpeedDialVirtualPath as k, buildSpeedDialViewPathHref as l, TILE_SHAPE_OPTIONS as lt, createEmptySpeedDialItem as m, normalizeIconDisplay as mt, NAVIGATION_SHORTCUTS as n, speedDialMeta as nt, applyIconScaleToPaintedNodes as o, wallpaperState as ot, copySpeedDialItemToClipboard as p, isTileShapeValue as pt, persistWallpaper as q, SPEED_DIAL_MUTATION_EVENT as r, stripCoreRailTilesFromGrid as rt, applyItemIconScaleToElement as s, wasSpeedDialUserEdited as st, ICON_BITMAP_SCALE_OPTIONS as t, speedDialItems as tt, canUseNativeOpenUri as u, createTileUiIconElement as ut, emitSpeedDialMutation as v, findNearestFreeRect as vt, getSpeedDialMeta as w, pointToLogicalCell as wt, findSpeedDialItem as x, markOccupiedSpan as xt, ensureSpeedDialMeta as y, logicalToVisualCell as yt, parseSpeedDialItemFromJSON as z };
+export { resolveSpeedDialItemHref as $, isSpeedDialVirtualPath as A, parseSpeedDialItemFromJSON as B, getDefaultTileShape as C, normalizeOrient as Ct, gridLayoutState as D, getSpeedDialMirrorPath as E, visualLayout as Et, normalizeExternalWebHref as F, persistSpeedDialIconBlob as G, parseSpeedDialItemFromURL as H, normalizeItemIconBitmapScale as I, persistWallpaper as J, persistSpeedDialItems as K, normalizeOpenLinkTarget as L, looksLikeSpeedDialShortcutJson as M, markSpeedDialUserEditBeforeHydrate as N, isExternalWebHref as O, mirrorSpeedDialItems as P, resolveSpeedDialIconUrl as Q, openInDetachedBrowserWindow as R, findSpeedDialItem as S, markOccupiedSpan as St, getSpeedDialMeta as T, pointToLogicalCell as Tt, parseSpeedDialItemFromVirtualPath as U, parseSpeedDialItemFromSmartText as V, parseSpeedDialViewFromHref as W, removeSpeedDialItem as X, refreshSpeedDialMirror as Y, resolveItemOpenLinkTarget as Z, defaultOpenLinkTargetForHref as _, syncPlateGlyphInk as _t, addSpeedDialItem as a, tileIconFetchSize as at, ensureSpeedDialMeta as b, logicalToVisualCell as bt, applySpeedDialSnapshot as c, wasSpeedDialUserEdited as ct, captureSpeedDialSnapshot as d, createTileUiIconElement as dt, setItemSpan as et, cloneSpeedDialItemPacked as f, defaultIconScaleForDisplay as ft, createWidgetSpeedDialItem as g, normalizeTileShape$1 as gt, createSpeedDialItemFromClipboard as h, normalizeIconDisplay as ht, addClonedSpeedDialItem as i, stripCoreRailTilesFromGrid as it, launcher_state_exports as j, isMirrorMode as k, buildSpeedDialViewPathHref as l, ICON_DISPLAY_OPTIONS as lt, createEmptySpeedDialItem as m, isTileShapeValue as mt, NAVIGATION_SHORTCUTS as n, speedDialItems as nt, applyIconScaleToPaintedNodes as o, upsertSpeedDialItem as ot, copySpeedDialItemToClipboard as p, inferIconDisplay as pt, persistSpeedDialMeta as q, SPEED_DIAL_MUTATION_EVENT as r, speedDialMeta as rt, applyItemIconScaleToElement as s, wallpaperState as st, ICON_BITMAP_SCALE_OPTIONS as t, setSpeedDialMirrorPath as tt, canUseNativeOpenUri as u, TILE_SHAPE_OPTIONS as ut, defaultWidgetSpan as v, syncShapelessIconShadow as vt, getItemSpan as w, normalizeSpan as wt, findNextFreeCellInSnapshot as x, logicalToVisualSpan as xt, emitSpeedDialMutation as y, findNearestFreeRect as yt, openInNewBrowserTab as z };

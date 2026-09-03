@@ -1,5 +1,5 @@
 import { r as __exportAll } from "./rolldown-runtime.js";
-import { Tn as JSOX } from "../com/app.js";
+import { Dn as JSOX } from "../com/app.js";
 import { Zr as canParseURL, jt as loadSettings } from "../shells/boot-index.js";
 import { t as CORE_ENTITY_EXTRACTION_INSTRUCTION } from "./core.js";
 import { t as encode } from "../vendor/@toon-format_toon.js";

@@ -1,6 +1,6 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../shells/boot-index.js","./rolldown-runtime.js","../com/app.js","../fest/core.js","../shells/boot-history-base.js","../com/service.js","../fest/veela.js","./admin-doors.js","./transfer-history-runtime.js","./capacitor-permissions.js","./capacitor-share-intent.js","./capacitor-clipboard-asset.js"])))=>i.map(i=>d[i]);
 import { r as __exportAll } from "./rolldown-runtime.js";
-import { Or as __vitePreload, or as affected, zn as H } from "../com/app.js";
+import { Ar as __vitePreload, Vn as H, cr as affected } from "../com/app.js";
 import { _t as isEnabledView } from "../shells/boot-index.js";
 import { t as ShellBase } from "./shells.js";
 import { a as SHELL_SLOT } from "../shells/environment-environment-overlay.js";
@@ -246,7 +246,7 @@ var MinimalShell = class extends ShellBase {
 		requestAnimationFrame(() => {
 			element.style.removeProperty("translate");
 		});
-		__vitePreload(() => import("../com/app.js").then((n) => n.Pt).then((m) => {
+		__vitePreload(() => import("../com/app.js").then((n) => n.It).then((m) => {
 			m.rehydrateAdoptedStyleSheets?.(element);
 		}), __vite__mapDeps([2,1]), import.meta.url).catch(() => {});
 	}

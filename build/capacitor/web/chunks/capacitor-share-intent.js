@@ -130,7 +130,7 @@ var consumeNativePendingShare = async () => {
 			const virtual = String(url || text || "").trim().replace(/^file:\/\/(?:localhost)?/i, "").replace(/^(?:\/storage\/emulated\/0|\/mnt\/sdcard)(?=\/|$)/i, "/sdcard");
 			if (/^\/(?:sdcard|saf)(?:\/|$)/i.test(virtual)) try {
 				const { readNativeStorageFile } = await __vitePreload(async () => {
-					const { readNativeStorageFile } = await import("../com/app.js").then((n) => n.rr);
+					const { readNativeStorageFile } = await import("../com/app.js").then((n) => n.ar);
 					return { readNativeStorageFile };
 				}, __vite__mapDeps([3,1]), import.meta.url);
 				const file = await readNativeStorageFile(virtual);

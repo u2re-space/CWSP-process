@@ -1,5 +1,5 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../com/app.js","../chunks/rolldown-runtime.js"])))=>i.map(i=>d[i]);
-import { Mn as resolveOverlayHost, Or as __vitePreload, fn as registerDirectoryRoot, jn as registerTransientOverlay, yn as placeOverlay } from "../com/app.js";
+import { Ar as __vitePreload, Nn as registerTransientOverlay, Pn as resolveOverlayHost, mn as registerDirectoryRoot, xn as placeOverlay } from "../com/app.js";
 //#region src/frontend/shells/environment/components/explorer/fs-backend.ts
 function normalizeVirtualPath(path, asDirectory = true) {
 	let p = String(path || "/").trim() || "/";
@@ -682,7 +682,7 @@ var readHandleFile = async (root, path, scope) => {
 var bindFsBackendToProvide = (backend) => {
 	if (backend.root === "/bookmarks/" || backend.root === "/downloads/") return;
 	__vitePreload(async () => {
-		const { registerProvideBackend } = await import("../com/app.js").then((n) => n.Pt);
+		const { registerProvideBackend } = await import("../com/app.js").then((n) => n.It);
 		return { registerProvideBackend };
 	}, __vite__mapDeps([0,1]), import.meta.url).then(({ registerProvideBackend }) => {
 		registerProvideBackend({
@@ -710,7 +710,7 @@ var loadIdbRoot = async () => {
 	if (typeof indexedDB === "undefined") return null;
 	try {
 		const { getIdbRoot } = await __vitePreload(async () => {
-			const { getIdbRoot } = await import("../com/app.js").then((n) => n.Pt);
+			const { getIdbRoot } = await import("../com/app.js").then((n) => n.It);
 			return { getIdbRoot };
 		}, __vite__mapDeps([0,1]), import.meta.url);
 		return await getIdbRoot();
@@ -773,7 +773,7 @@ function ensureDefaultFsBackends() {
 	} else {
 		unregisterFsBackend("/idb/");
 		__vitePreload(async () => {
-			const { unregisterProvideBackend } = await import("../com/app.js").then((n) => n.Pt);
+			const { unregisterProvideBackend } = await import("../com/app.js").then((n) => n.It);
 			return { unregisterProvideBackend };
 		}, __vite__mapDeps([0,1]), import.meta.url).then(({ unregisterProvideBackend }) => {
 			unregisterProvideBackend("/idb/");
@@ -785,7 +785,7 @@ function ensureDefaultFsBackends() {
 		async list(path) {
 			try {
 				const { tryRemoteMountedList } = await __vitePreload(async () => {
-					const { tryRemoteMountedList } = await import("../com/app.js").then((n) => n.Pt);
+					const { tryRemoteMountedList } = await import("../com/app.js").then((n) => n.It);
 					return { tryRemoteMountedList };
 				}, __vite__mapDeps([0,1]), import.meta.url);
 				return await tryRemoteMountedList(path) ?? [];
@@ -798,7 +798,7 @@ function ensureDefaultFsBackends() {
 			if (!p || p.endsWith("/")) return null;
 			try {
 				const { tryRemoteMountedRead } = await __vitePreload(async () => {
-					const { tryRemoteMountedRead } = await import("../com/app.js").then((n) => n.Pt);
+					const { tryRemoteMountedRead } = await import("../com/app.js").then((n) => n.It);
 					return { tryRemoteMountedRead };
 				}, __vite__mapDeps([0,1]), import.meta.url);
 				const remote = await tryRemoteMountedRead(p);
@@ -816,7 +816,7 @@ function ensureDefaultFsBackends() {
 		}
 	});
 	__vitePreload(async () => {
-		const { ensureRemoteMountedFs } = await import("../com/app.js").then((n) => n.Pt);
+		const { ensureRemoteMountedFs } = await import("../com/app.js").then((n) => n.It);
 		return { ensureRemoteMountedFs };
 	}, __vite__mapDeps([0,1]), import.meta.url).then(({ ensureRemoteMountedFs }) => {
 		ensureRemoteMountedFs();

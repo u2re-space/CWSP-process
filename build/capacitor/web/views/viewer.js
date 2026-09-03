@@ -1,7 +1,7 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../chunks/workcenter-command-wire.js","../chunks/rolldown-runtime.js","../com/app.js","../chunks/ViewTransferRouting.js","../shells/boot-history-base.js","../shells/boot-index.js","../fest/core.js","../com/service.js","../fest/veela.js","../chunks/log-sanitizer.js","../chunks/DocxExport.js","../chunks/BootLoader.js","../shells/preference.js","../chunks/capacitor-settings-permissions.js","../chunks/capacitor-permissions.js"])))=>i.map(i=>d[i]);
 import { r as __exportAll } from "../chunks/rolldown-runtime.js";
 import { c as inferCwspSkuFromLocation, g as shouldHandoffViewToSibling, p as publicHrefForSku, v as stashSkuHandoff, y as takeSkuHandoff } from "../shells/boot-history-base.js";
-import { $t as isBase64Like, Bt as mountPickedDirectory, Cr as cssLayerBlock, Dr as VIEWER_CSS_LAYER_ORDER, Gt as pickSidecarDirectoryFiles, Ht as originalRelFromRef, Jt as resolveFileUnderDirectory, Kt as provideBoundRelative, Lt as findEntryRelPath, Or as __vitePreload, Qt as decodeBase64ToBytes, Rt as indexDirectoryFiles, Tr as normalizeCssForLayer, Ut as pickAssetDirectory, Vt as observeFileSystemHandle, Wt as pickMarkdownFile, X as ensureStyleSheet, Yt as saveMarkdownBlob, Z as reinitializeRegistry, _r as unbakeScreenColors, an as getDir, cn as matchMappedRoot, dn as provide, en as normalizeDataAsset, fr as ref, gr as scheduleBakeScreenColors, hn as createProtocolEnvelope, ln as normalizePath, or as affected, qt as relPathCandidates, s as purify, sn as isVirtualFsPath, tn as parseDataUrl, un as openDirectory, vr as loadAsAdopted, wr as cssLayerOrder, xr as removeAdopted, zn as H, zt as isMarkdownRelativeRef } from "../com/app.js";
+import { $ as reinitializeRegistry, Ar as __vitePreload, Bt as indexDirectoryFiles, Cr as removeAdopted, Dr as normalizeCssForLayer, Er as cssLayerOrder, Gt as pickAssetDirectory, Ht as mountPickedDirectory, Jt as provideBoundRelative, Kt as pickMarkdownFile, Q as ensureStyleSheet, Tr as cssLayerBlock, Ut as observeFileSystemHandle, Vn as H, Vt as isMarkdownRelativeRef, Wt as originalRelFromRef, Xt as resolveFileUnderDirectory, Yt as relPathCandidates, Zt as saveMarkdownBlob, _n as createProtocolEnvelope, br as loadAsAdopted, cr as affected, dn as normalizePath, en as decodeBase64ToBytes, fn as openDirectory, kr as VIEWER_CSS_LAYER_ORDER, ln as isVirtualFsPath, mr as ref, nn as normalizeDataAsset, pn as provide, qt as pickSidecarDirectoryFiles, rn as parseDataUrl, s as purify, sn as getDir, tn as isBase64Like, un as matchMappedRoot, vr as scheduleBakeScreenColors, yr as unbakeScreenColors, zt as findEntryRelPath } from "../com/app.js";
 import { Dr as inferIngressChannels, Er as classifyOpenKindFromPayload, Fr as resolveHostOpenPolicy, Lr as resolveOpenPolicy, Mr as peekOpenPolicy, Nr as rememberOpenPolicyFromSettings, Or as looksLikePreviewableBinary, Rr as sinkToAction, Ur as surfaceForSku, Z as ingressStampWasSuperseded, Zn as peekProcessIngressSettings, er as resolveProcessIngressKind, hr as sendProtocolMessage, jt as loadSettings, wr as classifyOpenKind, zr as sinkToDestination } from "../shells/boot-index.js";
 import { i as validateReadableFileForIngress, n as textIngressLooksCorrupt, t as pickAuthoritativeTransferFiles } from "../com/service.js";
 //#region ../../modules/projects/subsystem/registry.ts
@@ -337,7 +337,7 @@ var onHeldIngressFiles = (listener) => {
 		heldIngressListeners.delete(listener);
 	};
 };
-var loadLauncherState = () => __vitePreload(() => import("../com/app.js").then((n) => n.ct), __vite__mapDeps([2,1]), import.meta.url);
+var loadLauncherState = () => __vitePreload(() => import("../com/app.js").then((n) => n.ut), __vite__mapDeps([2,1]), import.meta.url);
 var WALLPAPER_EXT = /* @__PURE__ */ new Set([
 	"png",
 	"jpg",
@@ -561,7 +561,7 @@ var applyLauncherIngress = async (payload) => {
 	const image = files.find((f) => looksLikeWallpaperFile(f));
 	if ((payload.action === "wallpaper" || !payload.action) && image && await isWallpaperCompatible(image)) {
 		const { setAppWallpaperFromBlob, getWallpaperStoragePointer, WALLPAPER_IDB_MARKER } = await __vitePreload(async () => {
-			const { setAppWallpaperFromBlob, getWallpaperStoragePointer, WALLPAPER_IDB_MARKER } = await import("../com/app.js").then((n) => n.I);
+			const { setAppWallpaperFromBlob, getWallpaperStoragePointer, WALLPAPER_IDB_MARKER } = await import("../com/app.js").then((n) => n.R);
 			return {
 				setAppWallpaperFromBlob,
 				getWallpaperStoragePointer,
@@ -641,7 +641,7 @@ var openShellImageInViewer = async (file) => {
 var applyShellWallpaper = async (file) => {
 	if (!await isWallpaperCompatible(file)) return false;
 	const { setAppWallpaperFromBlob, getWallpaperStoragePointer, WALLPAPER_IDB_MARKER } = await __vitePreload(async () => {
-		const { setAppWallpaperFromBlob, getWallpaperStoragePointer, WALLPAPER_IDB_MARKER } = await import("../com/app.js").then((n) => n.I);
+		const { setAppWallpaperFromBlob, getWallpaperStoragePointer, WALLPAPER_IDB_MARKER } = await import("../com/app.js").then((n) => n.R);
 		return {
 			setAppWallpaperFromBlob,
 			getWallpaperStoragePointer,
@@ -1543,7 +1543,7 @@ var CwViewViewer = createViewConstructor(TAG, (Base) => {
 				if (isVirtualFsPath(src) || /^\/assets(?:\/|$)/i.test(src)) (async () => {
 					if (/^\/(?:sdcard|saf)(?:\/|$)/i.test(src)) try {
 						const { ensureNativeStorageProvide } = await __vitePreload(async () => {
-							const { ensureNativeStorageProvide } = await import("../com/app.js").then((n) => n.rr);
+							const { ensureNativeStorageProvide } = await import("../com/app.js").then((n) => n.ar);
 							return { ensureNativeStorageProvide };
 						}, __vite__mapDeps([2,1]), import.meta.url);
 						await ensureNativeStorageProvide();
@@ -1551,7 +1551,7 @@ var CwViewViewer = createViewConstructor(TAG, (Base) => {
 					let file = await provide(src).catch(() => null);
 					if (!file && /^\/(?:sdcard|saf)(?:\/|$)/i.test(src)) try {
 						const { readNativeStorageFile } = await __vitePreload(async () => {
-							const { readNativeStorageFile } = await import("../com/app.js").then((n) => n.rr);
+							const { readNativeStorageFile } = await import("../com/app.js").then((n) => n.ar);
 							return { readNativeStorageFile };
 						}, __vite__mapDeps([2,1]), import.meta.url);
 						file = await readNativeStorageFile(src);
@@ -1747,7 +1747,7 @@ var CwViewViewer = createViewConstructor(TAG, (Base) => {
 			if (isVirtualFsPath(normalizedSource)) {
 				if (/^\/(?:sdcard|saf)(?:\/|$)/i.test(normalizedSource)) try {
 					const { ensureNativeStorageProvide } = await __vitePreload(async () => {
-						const { ensureNativeStorageProvide } = await import("../com/app.js").then((n) => n.rr);
+						const { ensureNativeStorageProvide } = await import("../com/app.js").then((n) => n.ar);
 						return { ensureNativeStorageProvide };
 					}, __vite__mapDeps([2,1]), import.meta.url);
 					await ensureNativeStorageProvide();
@@ -1755,7 +1755,7 @@ var CwViewViewer = createViewConstructor(TAG, (Base) => {
 				let file = await provide(normalizedSource).catch(() => null);
 				if (!file && /^\/(?:sdcard|saf)(?:\/|$)/i.test(normalizedSource)) try {
 					const { readNativeStorageFile } = await __vitePreload(async () => {
-						const { readNativeStorageFile } = await import("../com/app.js").then((n) => n.rr);
+						const { readNativeStorageFile } = await import("../com/app.js").then((n) => n.ar);
 						return { readNativeStorageFile };
 					}, __vite__mapDeps([2,1]), import.meta.url);
 					file = await readNativeStorageFile(normalizedSource);

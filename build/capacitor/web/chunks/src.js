@@ -1,6 +1,6 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./launcher-bridge.js","../shells/boot-index.js","./rolldown-runtime.js","../shells/boot-history-base.js","../com/app.js","../fest/core.js","../com/service.js","../fest/veela.js"])))=>i.map(i=>d[i]);
 import { g as shouldHandoffViewToSibling, l as isCwspNativeHost, m as publicHrefForView, p as publicHrefForSku, r as androidPackageForSku, v as stashSkuHandoff, y as takeSkuHandoff } from "../shells/boot-history-base.js";
-import { $ as openUnifiedContextMenu, At as ensureDefaultFsBackends, Mt as resolveFsBackend, Or as __vitePreload, _r as unbakeScreenColors, ar as toExplorerStoragePath, et as isBookmarksPath, gr as scheduleBakeScreenColors, ur as observe, vr as loadAsAdopted, xr as removeAdopted } from "../com/app.js";
+import { Ar as __vitePreload, Cr as removeAdopted, Mt as ensureDefaultFsBackends, Pt as resolveFsBackend, br as loadAsAdopted, fr as observe, nt as isBookmarksPath, sr as toExplorerStoragePath, tt as openUnifiedContextMenu, vr as scheduleBakeScreenColors, yr as unbakeScreenColors } from "../com/app.js";
 import { C as sendViewProtocolMessage, v as ExplorerChannelAction, w as createViewConstructor } from "../views/viewer.js";
 import { Br as sinkToOpenLinkTarget, Fr as resolveHostOpenPolicy, Gr as addSpeedDialItem, Ir as resolveOpenPlacement, Jr as persistSpeedDialItems, Kr as createEmptySpeedDialItem, Mr as peekOpenPolicy, Nr as rememberOpenPolicyFromSettings, Or as looksLikePreviewableBinary, Pr as resolveExplorerOpenSink, Tr as classifyOpenKindFromName, Vr as skuForOpenSink, Wr as viewIdForOpenSink, Xr as speedDialItems, Yr as persistSpeedDialMeta, jt as loadSettings, qr as ensureSpeedDialMeta, wr as classifyOpenKind } from "../shells/boot-index.js";
 //#region ../CWSP-explorer/src/inject.ts
@@ -158,7 +158,7 @@ var openFileWithSystem = async (file, sourcePath, chooser) => {
 			})) return true;
 			if (isNativeStorageVirtualPath(href)) {
 				const { openNativeStorageFile } = await __vitePreload(async () => {
-					const { openNativeStorageFile } = await import("../com/app.js").then((n) => n.rr);
+					const { openNativeStorageFile } = await import("../com/app.js").then((n) => n.ar);
 					return { openNativeStorageFile };
 				}, __vite__mapDeps([4,2]), import.meta.url);
 				if (await openNativeStorageFile(href, {
@@ -218,7 +218,7 @@ var openExplorerSrcInTab = (sourcePath) => {
 /** WHY: `/sdcard/` `/saf/` open in one native IPC — no JS read, no WebView hop. */
 var openNativeStorageByPolicy = async (sourcePath, sink, mimeType) => {
 	const { openNativeStorageFile } = await __vitePreload(async () => {
-		const { openNativeStorageFile } = await import("../com/app.js").then((n) => n.rr);
+		const { openNativeStorageFile } = await import("../com/app.js").then((n) => n.ar);
 		return { openNativeStorageFile };
 	}, __vite__mapDeps([4,2]), import.meta.url);
 	const mime = String(mimeType || "").trim() || guessMimeFromName(sourcePath);
@@ -248,7 +248,7 @@ var nativeViewUri = async (sourcePath) => {
 	if (/^(content|file|https?):/i.test(p)) return p;
 	try {
 		const { resolveNativeStorageUri } = await __vitePreload(async () => {
-			const { resolveNativeStorageUri } = await import("../com/app.js").then((n) => n.rr);
+			const { resolveNativeStorageUri } = await import("../com/app.js").then((n) => n.ar);
 			return { resolveNativeStorageUri };
 		}, __vite__mapDeps([4,2]), import.meta.url);
 		const uri = await resolveNativeStorageUri(p);
@@ -357,7 +357,7 @@ var writePersistedExplorerPath = (path) => {
 function loadLastPath(explorer, initialPath) {
 	try {
 		ensureDefaultFsBackends();
-		__vitePreload(() => import("../com/app.js").then((n) => n.Pt).then((m) => m.ensureRemoteMountedFs()), __vite__mapDeps([4,2]), import.meta.url).catch(() => {});
+		__vitePreload(() => import("../com/app.js").then((n) => n.It).then((m) => m.ensureRemoteMountedFs()), __vite__mapDeps([4,2]), import.meta.url).catch(() => {});
 	} catch {}
 	if (initialPath && initialPath.trim()) {
 		explorer.path = toExplorerStoragePath(initialPath) || initialPath.trim();
@@ -625,7 +625,7 @@ function setupExplorerEvents(explorer, opts, inject, signal) {
 		} catch {}
 		if (!item.file) try {
 			const { provide } = await __vitePreload(async () => {
-				const { provide } = await import("../com/app.js").then((n) => n.Pt);
+				const { provide } = await import("../com/app.js").then((n) => n.It);
 				return { provide };
 			}, __vite__mapDeps([4,2]), import.meta.url);
 			item.file = await provide(sourcePath);

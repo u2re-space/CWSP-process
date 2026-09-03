@@ -1,5 +1,5 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./src7.js","../com/app.js","./rolldown-runtime.js","../shells/boot-index.js","../shells/boot-history-base.js","../fest/core.js","../com/service.js","../fest/veela.js","./frontend-debug-capture.js","./src8.js","../views/viewer.js","./capacitor-permissions.js","./capacitor-settings-permissions.js","./CustomInstructions.js","./utils.js","./templates.js","./core.js","./admin-doors.js","./src.js","./src9.js","./src5.js","./transfer-history-runtime.js","./src10.js","./WorkCenter.js","./entities.js","../vendor/@toon-format_toon.js","./unified.js","./RuntimeSettings.js","./log-sanitizer.js","./ShareTargetGateway.js","./WorkCenterState.js","./src4.js","./src6.js","./launcher-state.js"])))=>i.map(i=>d[i]);
-import { B as refreshAppWallpaperPaint, Hn as hasActiveCloseable, Or as __vitePreload, U as restoreWallpaperThemeCache, Vn as closeHighestPriority, X as ensureStyleSheet, br as preloadStyle, fr as ref, yr as loadInlineStyle, z as initializeAppCanvasLayer } from "../com/app.js";
+import { Ar as __vitePreload, G as restoreWallpaperThemeCache, H as refreshAppWallpaperPaint, Q as ensureStyleSheet, Sr as preloadStyle, Un as closeHighestPriority, V as initializeAppCanvasLayer, Wn as hasActiveCloseable, mr as ref, xr as loadInlineStyle } from "../com/app.js";
 import { ht as isEnabledView } from "../shells/boot-index.js";
 import { n as initBootShellWindowActivity } from "../shells/preference.js";
 import { t as ShellBase } from "./shells.js";
@@ -98,7 +98,7 @@ var CWSP_LAUNCHER_VIEWS = [
 ];
 async function seedCwspLauncherTiles() {
 	try {
-		const mod = await __vitePreload(() => import("./launcher-state.js").then((n) => n.A), __vite__mapDeps([33,2,1]), import.meta.url);
+		const mod = await __vitePreload(() => import("./launcher-state.js").then((n) => n.j), __vite__mapDeps([33,2,1]), import.meta.url);
 		const items = mod.speedDialItems;
 		if (!items || typeof items.findIndex !== "function") return;
 		let removedAirpad = false;

@@ -1,4 +1,4 @@
-import { vr as loadAsAdopted, zn as H } from "../com/app.js";
+import { Vn as H, br as loadAsAdopted } from "../com/app.js";
 import { Bn as parseConnectHostInput, Nt as loadSettings, Rn as buildEndpointOriginCandidates, S as writeClipboardTextToDevice, Un as resolveFleetWanGatewayHost, Vn as probeEndpointOriginReport, Wn as splitConnectHostList, a as initWebSocket, cn as CwsBridge, cr as resolveEcosystemToken, dn as invokeCwsNative, fn as invokeCwsPlatformIPC, i as disconnectWS, in as isPreferNativeWebsocketEnabled, nn as isMaintainHubSocketConnectionEnabled, o as isWSConnected, pn as isCapacitorCwsNativeShell, r as connectWS, rn as isNeutralinoNodeClipboardHubOwned, s as onWSConnectionChange, zn as collectEndpointProbeCandidates } from "../shells/boot-index.js";
 import { n as getFrontendDebugApi, r as initFrontendDebugCapture } from "./frontend-debug-capture.js";
 //#region ../../modules/views/network-view/src/network-probe-origin.ts
