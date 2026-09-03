@@ -4,7 +4,7 @@ const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule())
 import { Ar as normalizeOpenSink, Dr as inferIngressChannels, Er as classifyOpenKindFromPayload, Lr as resolveOpenPolicy, Mr as peekOpenPolicy, Qn as peekProcessIngressSettings, Sr as viewBroadcastChannelName, Ur as surfaceForSku, Vr as skuForOpenSink, hr as sendProtocolMessage, lr as enqueuePendingMessage, xr as normalizeDestination, zr as sinkToDestination } from "../shells/boot-index.js";
 import { _ as stashSkuHandoff, c as isCwspNativeHost, f as publicHrefForSku, g as siblingSkuForView, h as shouldHandoffViewToSibling, m as readCwspSku, o as ensureCwspSkuFromLocation, r as androidPackageForSku, s as inferCwspSkuFromLocation, t as ECOSYSTEM_SKUS } from "../shells/boot-history-base.js";
 import { t as summarizeForLog } from "./log-sanitizer.js";
-import { i as holdIngressFiles, l as skuIngressHint } from "./sku-ingress.js";
+import { i as holdIngressFiles, u as skuIngressHint } from "./sku-ingress.js";
 //#region src/shared/routing/channel/ViewTransferRouting.ts
 var ViewTransferRouting_exports = /* @__PURE__ */ __exportAll({
 	classifyIngressFile: () => classifyIngressFile,

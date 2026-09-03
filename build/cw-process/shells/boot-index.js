@@ -2116,8 +2116,6 @@ var DEFAULT_SETTINGS$1 = {
 		maxToolCalls: 8,
 		parallelToolCalls: true,
 		mcp: [],
-		shareTargetMode: "recognize",
-		autoProcessShared: true,
 		processIngress: {
 			autoProcess: true,
 			backgroundClipboard: true,
@@ -2321,22 +2319,18 @@ var mergeProcessIngress$1 = (...layers) => {
 	}
 	return out;
 };
-var resolveProcessIngressPolicy = (settings) => {
-	const merged = mergeProcessIngress$1(DEFAULT_PROCESS_INGRESS$1, settings?.ai?.processIngress);
-	if (settings?.ai?.autoProcessShared === false) merged.autoProcess = false;
-	return merged;
-};
+var resolveProcessIngressPolicy = (settings) => mergeProcessIngress$1(DEFAULT_PROCESS_INGRESS$1, settings?.ai?.processIngress);
 var resolveProcessIngressKind = (settings, kind) => {
 	const policy = resolveProcessIngressPolicy(settings);
 	const key = OPEN_KINDS$1.includes(kind) ? kind : "other";
 	const row = policy.kinds[key] || DEFAULT_PROCESS_INGRESS$1.kinds[key];
-	const mode = policy.autoProcess === false ? "attach" : row.mode === "attach" ? "attach" : "process";
+	const mode = row.mode === "attach" ? "attach" : "process";
 	return {
 		kind: key,
 		mode,
 		instructionId: row.instructionId || "",
 		copyToClipboard: mode === "process" && row.copyToClipboard !== false,
-		autoProcess: policy.autoProcess,
+		autoProcess: mode === "process",
 		backgroundClipboard: policy.backgroundClipboard
 	};
 };
@@ -2361,7 +2355,7 @@ var rememberProcessIngressSettings$1 = (settings) => {
 };
 var peekProcessIngressSettings = () => settingsPeek$1;
 /** True when a settings blob has been loaded (defaults still apply on Capacitor). */
-var processIngressSettingsFound = (settings) => Boolean(settings?.ai && (settings.ai.processIngress || typeof settings.ai.autoProcessShared === "boolean"));
+var processIngressSettingsFound = (settings) => Boolean(settings?.ai);
 /**
 * INVARIANT: Process PWA/Web is a Share Target (manifest `share_target`) and Launch Queue.
 * Capacitor/Android still uses OS Share + Open-with.
@@ -10905,8 +10899,6 @@ var DEFAULT_SETTINGS = {
 		maxToolCalls: 8,
 		parallelToolCalls: true,
 		mcp: [],
-		shareTargetMode: "recognize",
-		autoProcessShared: true,
 		processIngress: {
 			autoProcess: true,
 			backgroundClipboard: true,

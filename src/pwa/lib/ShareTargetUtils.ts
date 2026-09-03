@@ -434,9 +434,6 @@ export const getAIProcessingConfig = async (): Promise<AIProcessingConfig> => {
             };
         }
 
-        // Allow user to disable auto-processing for share target / file open flows.
-        const autoEnabled = (settings?.ai?.autoProcessShared ?? true) !== false;
-
         // Get active custom instruction
         let customInstruction = '';
         const instructions: CustomInstruction[] = settings.ai.customInstructions || [];
@@ -448,8 +445,8 @@ export const getAIProcessingConfig = async (): Promise<AIProcessingConfig> => {
         }
 
         return {
-            enabled: autoEnabled,
-            mode: (settings.ai.shareTargetMode as 'recognize' | 'analyze') || 'recognize',
+            enabled: true,
+            mode: 'recognize',
             customInstruction,
             apiKey: settings.ai.apiKey
         };

@@ -64,6 +64,10 @@ const isDirectDocument = (attachment: WorkCenterTurnAttachment): boolean =>
     !attachment.error &&
     attachment.original.size <= MAX_DIRECT_FILE_BYTES;
 
+/** INVARIANT: Responses API rejects `input_text` on assistant messages. */
+const textTypeForRole = (role: WorkCenterTurnRequest["messages"][number]["role"]): "input_text" | "output_text" =>
+    role === "assistant" ? "output_text" : "input_text";
+
 const fallbackParts = (attachment: WorkCenterTurnAttachment): Array<Record<string, unknown>> => {
     const text = attachment.fallbackText?.trim();
     if (text) {
@@ -91,7 +95,7 @@ export const buildWorkCenterTurnInput = async (
     const input = request.messages.map((message) => ({
         type: "message",
         role: message.role,
-        content: [{ type: "input_text", text: message.content }]
+        content: [{ type: textTypeForRole(message.role), text: message.content }]
     })) as Array<Record<string, unknown>>;
 
     let target = input.at(-1) as {

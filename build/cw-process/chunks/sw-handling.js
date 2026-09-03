@@ -5,7 +5,7 @@ import { _ as stashSkuHandoff, c as isCwspNativeHost, n as SKU_HUB_PATHS, s as i
 import { t as summarizeForLog$1 } from "./log-sanitizer.js";
 import { t as postWorkCenterCommand } from "./workcenter-command-wire.js";
 import { i as ingestSwClientMessage, n as deliverShareTargetInput, r as deliverSwResultToWorkCenter, t as bindSwPageBridge } from "./sw-page-bridge.js";
-import { a as installShellImageOpenListener, c as refineLauncherImageIngress, i as holdIngressFiles, l as skuIngressHint, r as flushHeldIngressToWorkCenter, s as peekHeldIngressFiles, t as applyLauncherIngress } from "./sku-ingress.js";
+import { a as installShellImageOpenListener, c as refineLauncherImageIngress, i as holdIngressFiles, r as flushHeldIngressToWorkCenter, s as peekHeldIngressFiles, t as applyLauncherIngress, u as skuIngressHint } from "./sku-ingress.js";
 import { i as dispatchViewTransfer, n as classifyIngressFile, r as classifyIngressFromBasename } from "./ViewTransferRouting.js";
 //#region src/shared/routing/pwa/sw-url.ts
 var isLikelyJavaScriptContentType = (contentType) => {
@@ -1435,11 +1435,7 @@ var hydrateTextPayloadFromFiles = async (shareData) => {
 var shouldForceWorkCenterAttachment = async (shareData) => {
 	const contentType = inferShareContentType(shareData);
 	if (typeof shareData.aiEnabled === "boolean") return shareData.aiEnabled === false && !(contentType === "text" || contentType === "markdown");
-	try {
-		return ((await loadSettings().catch(() => null))?.ai?.autoProcessShared ?? true) === false && !(contentType === "text" || contentType === "markdown");
-	} catch {
-		return false;
-	}
+	return false;
 };
 var extractTransferHint = (shareData) => {
 	const hint = shareData?.hint;
@@ -1557,24 +1553,19 @@ var routeToTransferView = async (shareData, source, hint, pending = false) => {
 		imageCountReported: preparedData.imageCount,
 		timestamp: preparedData.timestamp
 	}));
-	let autoProcessShared = true;
 	let loadedSettings = null;
 	try {
 		loadedSettings = await loadSettings().catch(() => null);
 		rememberProcessIngressSettings(loadedSettings);
-		autoProcessShared = (loadedSettings?.ai?.autoProcessShared ?? true) !== false;
 		const { rememberOpenPolicyFromSettings } = await __vitePreload(async () => {
 			const { rememberOpenPolicyFromSettings } = await import("../shells/boot-index.js").then((n) => n.jr);
 			return { rememberOpenPolicyFromSettings };
 		}, __vite__mapDeps([0,1,2,3,4,5,6]), import.meta.url);
 		rememberOpenPolicyFromSettings(loadedSettings);
-	} catch {
-		autoProcessShared = true;
-	}
+	} catch {}
 	const sku = inferCwspSkuFromLocation();
 	const skuHint = await refineLauncherImageIngress(skuIngressHint(preparedData, {
 		sku,
-		autoProcessShared,
 		settings: loadedSettings
 	}), files);
 	const forceAttachToWorkCenter = !skuHint && await shouldForceWorkCenterAttachment(preparedData);
@@ -2023,7 +2014,7 @@ var runProcessShareTargetData = async (shareData, skipIfEmpty = false) => {
 			contentType = "text";
 			console.log("[ShareTarget] Processing text content, length:", content.length);
 		} else throw new Error("No processable content found");
-		const analyze = settings?.ai?.shareTargetMode === "analyze";
+		const analyze = ingress.kind === "text" || ingress.kind === "markdown" || ingress.kind === "document" || ingress.kind === "url";
 		console.log("[ShareTarget] Calling unified processing API");
 		const posted = await postProcessApi("processing", {
 			content: processingContent,
@@ -2212,7 +2203,7 @@ var handleShareTarget = () => {
 				if (res.ok) {
 					const row = await res.json();
 					const { dataUrlToFile } = await __vitePreload(async () => {
-						const { dataUrlToFile } = await import("./sku-ingress.js").then((n) => n.u);
+						const { dataUrlToFile } = await import("./sku-ingress.js").then((n) => n.d);
 						return { dataUrlToFile };
 					}, __vite__mapDeps([12,1,2,0,3,4,5,6]), import.meta.url);
 					const files = [];

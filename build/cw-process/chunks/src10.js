@@ -2347,7 +2347,7 @@ var CwViewViewer = createViewConstructor(TAG, (Base) => {
 					const blob = read.echo || read;
 					if (blob?.data) {
 						const { dataUrlToFile } = await __vitePreload(async () => {
-							const { dataUrlToFile } = await import("./sku-ingress.js").then((n) => n.u);
+							const { dataUrlToFile } = await import("./sku-ingress.js").then((n) => n.d);
 							return { dataUrlToFile };
 						}, __vite__mapDeps([12,1,0,5,4,6,7,8]), import.meta.url);
 						file = await dataUrlToFile(blob.data, String(blob.name || echo.name || "shared.bin"), String(blob.mime || echo.mime || "application/octet-stream"));

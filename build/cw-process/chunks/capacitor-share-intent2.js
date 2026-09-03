@@ -93,7 +93,7 @@ var consumeNativePendingShare = async () => {
 			const blob = read.echo || read;
 			if (blob?.data) {
 				const { dataUrlToFile } = await __vitePreload(async () => {
-					const { dataUrlToFile } = await import("./sku-ingress.js").then((n) => n.u);
+					const { dataUrlToFile } = await import("./sku-ingress.js").then((n) => n.d);
 					return { dataUrlToFile };
 				}, __vite__mapDeps([7,1,2,0,3,4,5,6]), import.meta.url);
 				const file = await dataUrlToFile(blob.data, String(blob.name || echo.name || "shared.bin"), String(blob.mime || echo.mime || "application/octet-stream"));
@@ -150,7 +150,7 @@ var installCapacitorShareIntentBridge = () => {
 				const files = [];
 				if (asset?.data) {
 					const { dataUrlToFile } = await __vitePreload(async () => {
-						const { dataUrlToFile } = await import("./sku-ingress.js").then((n) => n.u);
+						const { dataUrlToFile } = await import("./sku-ingress.js").then((n) => n.d);
 						return { dataUrlToFile };
 					}, __vite__mapDeps([7,1,2,0,3,4,5,6]), import.meta.url);
 					const file = await dataUrlToFile(asset.data, String(asset.name || "shared.bin"), String(asset.mimeType || asset.type || "application/octet-stream"));
@@ -194,7 +194,7 @@ var installCapacitorShareIntentBridge = () => {
 						}
 					}
 					const { dataUrlToFile } = await __vitePreload(async () => {
-						const { dataUrlToFile } = await import("./sku-ingress.js").then((n) => n.u);
+						const { dataUrlToFile } = await import("./sku-ingress.js").then((n) => n.d);
 						return { dataUrlToFile };
 					}, __vite__mapDeps([7,1,2,0,3,4,5,6]), import.meta.url);
 					const files = [];

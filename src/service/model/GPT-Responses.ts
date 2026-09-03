@@ -39,6 +39,37 @@ export const DEFAULT_REQUEST_TIMEOUTS = {
 export const DEFAULT_MAX_RETRIES = 2;
 export const RETRY_DELAY = 2000; // 2 seconds
 
+/**
+ * INVARIANT: `/v1/responses` assistant content is `output_text` | `refusal`.
+ * Replay of chat history must not send `input_text` on role=assistant.
+ */
+const normalizeResponsesContentPart = (role: string, part: any): any => {
+    if (!part || typeof part !== "object") return part;
+    const type = String(part.type || "");
+    if (role === "assistant") {
+        if (type === "refusal" || type === "output_text") return part;
+        if (type === "input_text" || type === "text" || !type) {
+            return { ...part, type: "output_text" };
+        }
+        return part;
+    }
+    if (type === "output_text" || type === "text") {
+        return { ...part, type: "input_text" };
+    }
+    return part;
+};
+
+const normalizeResponsesInputItem = (item: any): any => {
+    if (!item || typeof item !== "object") return item;
+    if (item.type && item.type !== "message") return item;
+    const role = String(item.role || "user").toLowerCase();
+    if (!Array.isArray(item.content)) return item;
+    return {
+        ...item,
+        content: item.content.map((part: any) => normalizeResponsesContentPart(role, part))
+    };
+};
+
 const getRuntimeAiSettings = (): Record<string, any> => {
     return ((globalThis as any).runtimeSettings as any)?.ai || {};
 };
@@ -289,7 +320,7 @@ export class GPTResponses {
             role: "user",
             content: [
                 { type: "input_text", text: "What to do: " + actionWithDataType(dataInput) },
-                additionalAction ? { type: "text", text: "Additional request data: " + additionalAction } : null,
+                additionalAction ? { type: "input_text", text: "Additional request data: " + additionalAction } : null,
                 { type: "input_text", text: "\n === BEGIN:ATTACHED_DATA === \n" },
                 { ...usableData },
                 { type: "input_text", text: "\n === END:ATTACHED_DATA === \n" },
@@ -400,7 +431,7 @@ export class GPTResponses {
                 uniquePending.set(Math.random().toString(), item);
             }
         }
-        const filteredInput = Array.from(uniquePending.values());
+        const filteredInput = Array.from(uniquePending.values()).map(normalizeResponsesInputItem);
 
         // Build strict JSON instructions for json response format
         // Following OpenAI Responses API best practices

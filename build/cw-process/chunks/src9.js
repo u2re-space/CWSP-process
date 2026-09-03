@@ -617,17 +617,6 @@ var createAiSection = () => H`<section class="card settings-tab-panel is-active"
         </div>
       </details>
       <label class="field">
-        <span>Share target mode</span>
-        <select class="form-select" data-field="ai.shareTargetMode">
-          <option value="recognize">Recognize and copy</option>
-          <option value="analyze">Analyze and store</option>
-        </select>
-      </label>
-      <label class="field checkbox form-checkbox">
-        <input type="checkbox" data-field="ai.autoProcessShared" />
-        <span>Auto AI on Share Target / File Open (and copy to clipboard)</span>
-      </label>
-      <label class="field">
         <span>Response language</span>
         <select class="form-select" data-field="ai.responseLanguage"></select>
       </label>
@@ -1668,6 +1657,28 @@ var kindBlock = (kind) => [
 	instructionSelect("Default instruction", `ai.processIngress.kinds.${kind}.instructionId`),
 	settingsCheckboxField("Copy AI result to clipboard", `ai.processIngress.kinds.${kind}.copyToClipboard`)
 ];
+var isNativeSettingsSurface = () => {
+	try {
+		const root = document.documentElement;
+		const shell = String(root.dataset.cwspNativeShell || root.dataset.cwspSurface || "").toLowerCase();
+		if (shell.includes("capacitor") || shell === "native") return true;
+		const g = globalThis;
+		return Boolean(g.Capacitor?.isNativePlatform?.() || g.__CWS_NATIVE__);
+	} catch {
+		return false;
+	}
+};
+var dropRetiredProcessFlags = (settings) => {
+	if (settings.ai) {
+		delete settings.ai.autoProcessShared;
+		delete settings.ai.shareTargetMode;
+	}
+	const views = settings.views?.workcenter;
+	if (views) {
+		delete views.autoRunPinned;
+		delete views.defaultInstructionId;
+	}
+};
 var registerWorkcenterSettingsContribution = () => registerSettingsContribution({
 	id: "workcenter",
 	label: "Process",
@@ -1675,20 +1686,15 @@ var registerWorkcenterSettingsContribution = () => registerSettingsContribution(
 	requiresView: "workcenter",
 	manualFields: true,
 	render: () => settingsPanel("workcenter", "Process", [
-		settingsCheckboxField("Auto-run pinned tasks", "views.workcenter.autoRunPinned"),
-		settingsTextField("Default instruction id", "views.workcenter.defaultInstructionId", "(none)"),
-		settingsHeading("File types and incoming actions"),
-		settingsHint("PWA/Web Share Target and Launch Queue open files here. On Android, Share and Open with follow these per-type actions. “Run AI and write to clipboard” can keep a background service so the result still lands after Share."),
-		settingsHint("Chat and AI actions POST to `/api/process`. PWA service worker and Capacitor Java run the same key-on-request fallback as Fastify; dedicated hosts stay same-origin, LAN still uses process.u2re.space."),
-		settingsCheckboxField("Allow automatic AI for incoming files", "ai.processIngress.autoProcess"),
-		settingsCheckboxField("Android: keep background service for clipboard-write", "ai.processIngress.backgroundClipboard"),
-		settingsSelectField("AI action", "ai.shareTargetMode", [["recognize", "Recognize"], ["analyze", "Analyze"]]),
+		settingsHint("Share Target, file open, and Launch Queue use the action for each type. Attach puts the file in chat. Process runs AI (and copies the result when that box is on)."),
+		...isNativeSettingsSurface() ? [settingsCheckboxField("Android: keep background service for clipboard-write", "ai.processIngress.backgroundClipboard")] : [],
+		settingsHeading("Incoming file types"),
 		...OPEN_KINDS.flatMap((kind) => kindBlock(kind))
 	]),
 	load: (settings, panel) => {
 		settings.ai = settings.ai || {};
 		settings.ai.processIngress = mergeProcessIngress(settings.ai.processIngress);
-		if (settings.ai.autoProcessShared === false) settings.ai.processIngress.autoProcess = false;
+		dropRetiredProcessFlags(settings);
 		fillInstructionSelects(panel, settings);
 		bindContributionFields(panel, settings);
 	},
@@ -1696,7 +1702,7 @@ var registerWorkcenterSettingsContribution = () => registerSettingsContribution(
 		collectContributionFields(panel, settings);
 		settings.ai = settings.ai || {};
 		settings.ai.processIngress = mergeProcessIngress(settings.ai.processIngress);
-		settings.ai.autoProcessShared = settings.ai.processIngress.autoProcess !== false;
+		dropRetiredProcessFlags(settings);
 	}
 });
 //#endregion
@@ -2849,7 +2855,6 @@ var createSettingsView = (opts) => {
 	const requestTimeoutMedium = field("[data-field=\"ai.requestTimeout.medium\"]");
 	const requestTimeoutHigh = field("[data-field=\"ai.requestTimeout.high\"]");
 	const maxRetries = field("[data-field=\"ai.maxRetries\"]");
-	const mode = field("[data-field=\"ai.shareTargetMode\"]");
 	const syncCustomModelVisibility = () => {
 		const isCustom = (model?.value || "").trim() === "custom";
 		if (customModelGroup) customModelGroup.hidden = !isCustom;
@@ -2874,7 +2879,6 @@ var createSettingsView = (opts) => {
 		model.value = "custom";
 		syncCustomModelVisibility();
 	});
-	const autoProcessShared = field("[data-field=\"ai.autoProcessShared\"]");
 	const responseLanguage = field("[data-field=\"ai.responseLanguage\"]");
 	const translateResults = field("[data-field=\"ai.translateResults\"]");
 	const generateSvgGraphics = field("[data-field=\"ai.generateSvgGraphics\"]");
@@ -3118,8 +3122,6 @@ var createSettingsView = (opts) => {
 		if (requestTimeoutMedium) requestTimeoutMedium.value = String(s?.ai?.requestTimeout?.medium ?? 3e5);
 		if (requestTimeoutHigh) requestTimeoutHigh.value = String(s?.ai?.requestTimeout?.high ?? 9e5);
 		if (maxRetries) maxRetries.value = String(s?.ai?.maxRetries ?? 2);
-		if (mode) mode.value = s?.ai?.shareTargetMode || "recognize";
-		if (autoProcessShared) autoProcessShared.checked = (s?.ai?.autoProcessShared ?? true) !== false;
 		if (responseLanguage) responseLanguage.value = s?.ai?.responseLanguage || "auto";
 		if (translateResults) translateResults.checked = Boolean(s?.ai?.translateResults);
 		if (generateSvgGraphics) generateSvgGraphics.checked = Boolean(s?.ai?.generateSvgGraphics);
@@ -3639,33 +3641,38 @@ var createSettingsView = (opts) => {
 			}
 			const next = {
 				...current,
-				ai: hasPanel("ai") ? {
-					baseUrl: apiUrl?.value?.trim?.() || "",
-					apiKey: apiKey?.value?.trim?.() || "",
-					model: model?.value || "gpt-5.6-luna",
-					customModel: model?.value === "custom" ? customModel?.value?.trim?.() || "" : "",
-					defaultReasoningEffort: defaultReasoningEffort?.value || "medium",
-					defaultVerbosity: defaultVerbosity?.value || "medium",
-					maxOutputTokens: parseNumberOrDefault(maxOutputTokens?.value, 4e5),
-					contextTruncation: contextTruncation?.value || "disabled",
-					promptCacheRetention: promptCacheRetention?.value || "in-memory",
-					maxToolCalls: parseNumberOrDefault(maxToolCalls?.value, 8),
-					parallelToolCalls: (parallelToolCalls?.checked ?? true) !== false,
-					requestTimeout: {
-						low: parseNumberOrDefault(requestTimeoutLow?.value, 6e4),
-						medium: parseNumberOrDefault(requestTimeoutMedium?.value, 3e5),
-						high: parseNumberOrDefault(requestTimeoutHigh?.value, 9e5)
-					},
-					maxRetries: parseNumberOrDefault(maxRetries?.value, 2),
-					shareTargetMode: mode?.value || "recognize",
-					autoProcessShared: (autoProcessShared?.checked ?? true) !== false,
-					responseLanguage: responseLanguage?.value || "auto",
-					translateResults: Boolean(translateResults?.checked),
-					generateSvgGraphics: Boolean(generateSvgGraphics?.checked),
-					mcp: hasPanel("mcp") ? collectMcpConfigurations(mcpSection) : current.ai?.mcp || [],
-					customInstructions: current.ai?.customInstructions || [],
-					activeInstructionId: current.ai?.activeInstructionId || ""
-				} : current.ai || {},
+				ai: hasPanel("ai") ? (() => {
+					const nextAi = {
+						...current.ai || {},
+						baseUrl: apiUrl?.value?.trim?.() || "",
+						apiKey: apiKey?.value?.trim?.() || "",
+						model: model?.value || "gpt-5.6-luna",
+						customModel: model?.value === "custom" ? customModel?.value?.trim?.() || "" : "",
+						defaultReasoningEffort: defaultReasoningEffort?.value || "medium",
+						defaultVerbosity: defaultVerbosity?.value || "medium",
+						maxOutputTokens: parseNumberOrDefault(maxOutputTokens?.value, 4e5),
+						contextTruncation: contextTruncation?.value || "disabled",
+						promptCacheRetention: promptCacheRetention?.value || "in-memory",
+						maxToolCalls: parseNumberOrDefault(maxToolCalls?.value, 8),
+						parallelToolCalls: (parallelToolCalls?.checked ?? true) !== false,
+						requestTimeout: {
+							low: parseNumberOrDefault(requestTimeoutLow?.value, 6e4),
+							medium: parseNumberOrDefault(requestTimeoutMedium?.value, 3e5),
+							high: parseNumberOrDefault(requestTimeoutHigh?.value, 9e5)
+						},
+						maxRetries: parseNumberOrDefault(maxRetries?.value, 2),
+						responseLanguage: responseLanguage?.value || "auto",
+						translateResults: Boolean(translateResults?.checked),
+						generateSvgGraphics: Boolean(generateSvgGraphics?.checked),
+						mcp: hasPanel("mcp") ? collectMcpConfigurations(mcpSection) : current.ai?.mcp || [],
+						customInstructions: current.ai?.customInstructions || [],
+						activeInstructionId: current.ai?.activeInstructionId || "",
+						processIngress: current.ai?.processIngress
+					};
+					delete nextAi.shareTargetMode;
+					delete nextAi.autoProcessShared;
+					return nextAi;
+				})() : current.ai || {},
 				speech: hasPanel("ai") ? { language: speechLanguage?.value || "en-US" } : current.speech || {},
 				core: hasPanel("server") ? {
 					...current.core,
