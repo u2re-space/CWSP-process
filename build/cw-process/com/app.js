@@ -7167,6 +7167,7 @@ var createChromeDownloadsBackend$1 = (downloads) => {
 var storage_bridge_exports = /* @__PURE__ */ __exportAll({
 	canShowDirectoryPicker: () => canShowDirectoryPicker,
 	copyNativeStorageImage: () => copyNativeStorageImage,
+	ensureNativeStorageProvide: () => ensureNativeStorageProvide,
 	getAllFilesStatus: () => getAllFilesStatus,
 	isNativeStorageAvailable: () => isNativeStorageAvailable$1,
 	listNativeStorage: () => listNativeStorage$1,
@@ -7179,6 +7180,7 @@ var storage_bridge_exports = /* @__PURE__ */ __exportAll({
 	resolveNativeStorageRealPath: () => resolveNativeStorageRealPath,
 	resolveNativeStorageUri: () => resolveNativeStorageUri,
 	shareNativeStorageFile: () => shareNativeStorageFile,
+	toNativeStorageVirtualPath: () => toNativeStorageVirtualPath$1,
 	writeNativeClipboardImage: () => writeNativeClipboardImage
 });
 var api$1 = null;
@@ -7191,8 +7193,24 @@ var capacitorInvoke$1 = async (channel, payload = {}) => {
 	});
 	return r?.echo || r || {};
 };
+/**
+* WHY: Speed Dial / shortcuts store `file:///storage/emulated/0/…`, `/mnt/sdcard/…`,
+* or `sdcard/…`. CwsStorageHost only understands `/sdcard/` `/saf/`.
+*/
+var toNativeStorageVirtualPath$1 = (raw) => {
+	let s = String(raw || "").trim();
+	if (!s) return "";
+	try {
+		s = decodeURIComponent(s);
+	} catch {}
+	s = s.replace(/^file:\/\/(?:localhost)?/i, "");
+	if (/^\/(?:sdcard|saf)(?:\/|$)/i.test(s)) return s;
+	if (/^(?:sdcard|saf)(?:\/|$)/i.test(s)) return `/${s}`;
+	const mapped = s.replace(/^(?:\/storage\/emulated\/0|\/mnt\/sdcard|storage\/emulated\/0|mnt\/sdcard)(?=\/|$)/i, "/sdcard");
+	return /^\/sdcard(?:\/|$)/i.test(mapped) ? mapped : "";
+};
 var parseNativeStoragePath$1 = (virtualPath) => {
-	const raw = String(virtualPath || "").trim();
+	const raw = toNativeStorageVirtualPath$1(virtualPath) || String(virtualPath || "").trim();
 	if (!raw) return null;
 	const root = raw === "/saf" || raw.startsWith("/saf/") ? "saf" : raw === "/sdcard" || raw.startsWith("/sdcard/") ? "sdcard" : "";
 	if (!root) return null;
@@ -7335,7 +7353,43 @@ var openNativeStorageFile = async (virtualPath, opts = {}) => {
 		...mimeType ? { mimeType } : {},
 		...title ? { title } : {}
 	});
-	return echo.opened === true || echo.sent === true;
+	if (echo.opened === true || echo.sent === true || echo.ok === true) return true;
+	const err = String(echo.error || "");
+	if (err === "all-files-required" || parsed.root === "sdcard" && err === "not a file") {
+		if (!(await getAllFilesStatus()).allFilesAccess) await requestAllFilesAccess();
+	}
+	return false;
+};
+/**
+* WHY: Document / Process do not import Explorer path-router, so `provide("/sdcard/…")`
+* had no backend and the viewer stayed empty.
+*/
+var ensureNativeStorageProvide = async () => {
+	if (!isNativeStorageAvailable$1()) return;
+	try {
+		const { registerProvideBackend } = await __vitePreload(async () => {
+			const { registerProvideBackend } = await Promise.resolve().then(() => src_exports$2);
+			return { registerProvideBackend };
+		}, void 0, import.meta.url);
+		const bind = (root) => {
+			registerProvideBackend({
+				root,
+				list: async (path) => {
+					const parsed = parseNativeStoragePath$1(String(path || root));
+					const rows = await listNativeStorage$1(parsed?.root || (root === "/saf/" ? "saf" : "sdcard"), parsed?.rel || "/");
+					const base = String(path || root).endsWith("/") ? String(path || root) : `${path || root}/`;
+					return rows.filter((row) => row?.name).map((row) => ({
+						name: String(row.name),
+						kind: row.kind === "directory" ? "directory" : "file",
+						path: row.path || `${base}${row.name}${row.kind === "directory" ? "/" : ""}`
+					}));
+				},
+				readFile: (path) => readNativeStorageFile$1(path)
+			});
+		};
+		bind("/sdcard/");
+		bind("/saf/");
+	} catch {}
 };
 var pickSafTree = async () => {
 	if (api$1?.pickSaf) return api$1.pickSaf();
@@ -52287,8 +52341,24 @@ var capacitorInvoke = async (channel, payload = {}) => {
 	});
 	return r?.echo || r || {};
 };
+/**
+* WHY: Speed Dial / shortcuts store `file:///storage/emulated/0/…`, `/mnt/sdcard/…`,
+* or `sdcard/…`. CwsStorageHost only understands `/sdcard/` `/saf/`.
+*/
+var toNativeStorageVirtualPath = (raw) => {
+	let s = String(raw || "").trim();
+	if (!s) return "";
+	try {
+		s = decodeURIComponent(s);
+	} catch {}
+	s = s.replace(/^file:\/\/(?:localhost)?/i, "");
+	if (/^\/(?:sdcard|saf)(?:\/|$)/i.test(s)) return s;
+	if (/^(?:sdcard|saf)(?:\/|$)/i.test(s)) return `/${s}`;
+	const mapped = s.replace(/^(?:\/storage\/emulated\/0|\/mnt\/sdcard|storage\/emulated\/0|mnt\/sdcard)(?=\/|$)/i, "/sdcard");
+	return /^\/sdcard(?:\/|$)/i.test(mapped) ? mapped : "";
+};
 var parseNativeStoragePath = (virtualPath) => {
-	const raw = String(virtualPath || "").trim();
+	const raw = toNativeStorageVirtualPath(virtualPath) || String(virtualPath || "").trim();
 	if (!raw) return null;
 	const root = raw === "/saf" || raw.startsWith("/saf/") ? "saf" : raw === "/sdcard" || raw.startsWith("/sdcard/") ? "sdcard" : "";
 	if (!root) return null;

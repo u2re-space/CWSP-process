@@ -3,7 +3,7 @@ import { o as __toESM, r as __exportAll } from "./rolldown-runtime.js";
 import { $t as isBase64Like, An as writeText, Or as __vitePreload, a as f, c as collectAttachmentCandidates, en as normalizeDataAsset, in as createContentAddressedStore, n as renderMathInElement, r as src_default, s as purify, t as renderSafeMarkdown, tn as parseDataUrl, zn as H } from "../com/app.js";
 import { g as takeHeldIngressFiles, i as dropHeldIngressFiles, l as isAndroidLocalShareUri, u as onHeldIngressFiles } from "../views/viewer.js";
 import { $ as initializeComponent, Nt as loadSettings, at as processApiAuthFromSettings, br as BROADCAST_CHANNELS, et as registerComponent, gr as sendMessage, it as postProcessApi, mn as unwrapSwInteropMessage, ot as readProcessApiResultText, rt as isProcessApiUnavailable, tt as replayQueuedMessagesForDestination, wr as viewBroadcastChannelName, xr as ROUTE_HASHES } from "../shells/boot-index.js";
-import { _ as stashSkuHandoff, h as shouldHandoffViewToSibling } from "../shells/boot-history-base.js";
+import { g as shouldHandoffViewToSibling, v as stashSkuHandoff } from "../shells/boot-history-base.js";
 import { i as validateReadableFileForIngress } from "../com/service.js";
 import { t as summarizeForLog } from "./log-sanitizer.js";
 import { i as buildInstructionPrompt } from "./utils.js";

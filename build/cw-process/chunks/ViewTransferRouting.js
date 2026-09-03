@@ -3,7 +3,7 @@ import { r as __exportAll } from "./rolldown-runtime.js";
 const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
 import { m as skuIngressHint, o as holdIngressFiles } from "../views/viewer.js";
 import { $n as peekProcessIngressSettings, Cr as normalizeDestination, Gr as surfaceForSku, Mr as normalizeOpenSink, Or as classifyOpenKindFromPayload, Pr as peekOpenPolicy, Ur as skuForOpenSink, Vr as sinkToDestination, _r as sendProtocolMessage, dr as enqueuePendingMessage, kr as inferIngressChannels, wr as viewBroadcastChannelName, zr as resolveOpenPolicy } from "../shells/boot-index.js";
-import { _ as stashSkuHandoff, c as isCwspNativeHost, f as publicHrefForSku, g as siblingSkuForView, h as shouldHandoffViewToSibling, m as readCwspSku, o as ensureCwspSkuFromLocation, r as androidPackageForSku, s as inferCwspSkuFromLocation, t as ECOSYSTEM_SKUS } from "../shells/boot-history-base.js";
+import { _ as siblingSkuForView, c as inferCwspSkuFromLocation, g as shouldHandoffViewToSibling, h as readCwspSku, l as isCwspNativeHost, p as publicHrefForSku, r as androidPackageForSku, s as ensureCwspSkuFromLocation, t as ECOSYSTEM_SKUS, v as stashSkuHandoff } from "../shells/boot-history-base.js";
 import { t as summarizeForLog } from "./log-sanitizer.js";
 //#region src/shared/routing/channel/ViewTransferRouting.ts
 var ViewTransferRouting_exports = /* @__PURE__ */ __exportAll({

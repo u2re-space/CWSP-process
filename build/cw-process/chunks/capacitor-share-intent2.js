@@ -125,6 +125,17 @@ var consumeNativePendingShare = async () => {
 			if (file) files.push(file);
 		};
 		if (wantFile) await pullFile();
+		if (!files.length) {
+			const virtual = String(url || text || "").trim().replace(/^file:\/\/(?:localhost)?/i, "").replace(/^(?:\/storage\/emulated\/0|\/mnt\/sdcard)(?=\/|$)/i, "/sdcard");
+			if (/^\/(?:sdcard|saf)(?:\/|$)/i.test(virtual)) try {
+				const { readNativeStorageFile } = await __vitePreload(async () => {
+					const { readNativeStorageFile } = await import("../com/app.js").then((n) => n.rr);
+					return { readNativeStorageFile };
+				}, __vite__mapDeps([2,1]), import.meta.url);
+				const file = await readNativeStorageFile(virtual);
+				if (file) files.push(file);
+			} catch {}
+		}
 		if (wantFile && !files.length) {
 			const status = await invokeCwsPlatformIPC({ channel: "storage:all-files-status" }).catch(() => null);
 			if (!Boolean((status?.echo)?.allFilesAccess)) {

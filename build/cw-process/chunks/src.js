@@ -2,7 +2,7 @@ const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./launcher-bridge.js",
 import { $ as openUnifiedContextMenu, At as ensureDefaultFsBackends, Mt as resolveFsBackend, Or as __vitePreload, _r as unbakeScreenColors, ar as toExplorerStoragePath, et as isBookmarksPath, gr as scheduleBakeScreenColors, ur as observe, vr as loadAsAdopted, xr as removeAdopted } from "../com/app.js";
 import { C as sendViewProtocolMessage, v as ExplorerChannelAction, w as createViewConstructor } from "../views/viewer.js";
 import { Ar as looksLikePreviewableBinary, Dr as classifyOpenKindFromName, Er as classifyOpenKind, Fr as rememberOpenPolicyFromSettings, Hr as sinkToOpenLinkTarget, Ir as resolveExplorerOpenSink, Jr as createEmptySpeedDialItem, Kr as viewIdForOpenSink, Lr as resolveHostOpenPolicy, Nt as loadSettings, Pr as peekOpenPolicy, Qr as speedDialItems, Rr as resolveOpenPlacement, Ur as skuForOpenSink, Xr as persistSpeedDialItems, Yr as ensureSpeedDialMeta, Zr as persistSpeedDialMeta, qr as addSpeedDialItem } from "../shells/boot-index.js";
-import { _ as stashSkuHandoff, c as isCwspNativeHost, f as publicHrefForSku, h as shouldHandoffViewToSibling, p as publicHrefForView, r as androidPackageForSku, v as takeSkuHandoff } from "../shells/boot-history-base.js";
+import { g as shouldHandoffViewToSibling, l as isCwspNativeHost, m as publicHrefForView, p as publicHrefForSku, r as androidPackageForSku, v as stashSkuHandoff, y as takeSkuHandoff } from "../shells/boot-history-base.js";
 //#region ../CWSP-explorer/src/inject.ts
 /** Merge inject layers: menu items concatenate; handlers shallow-merge last-wins; onWire chains in order. */
 function mergeExplorerInject(...layers) {
@@ -156,6 +156,17 @@ var openFileWithSystem = async (file, sourcePath, chooser) => {
 				mimeType: mime,
 				title: "Open with"
 			})) return true;
+			if (isNativeStorageVirtualPath(href)) {
+				const { openNativeStorageFile } = await __vitePreload(async () => {
+					const { openNativeStorageFile } = await import("../com/app.js").then((n) => n.rr);
+					return { openNativeStorageFile };
+				}, __vite__mapDeps([3,2]), import.meta.url);
+				if (await openNativeStorageFile(href, {
+					chooser,
+					mimeType: mime,
+					title: "Open with"
+				})) return true;
+			}
 		}
 	} catch {}
 	if (isCwspNativeHost() && chooser && file.size > 0 && file.size <= 8388608) try {

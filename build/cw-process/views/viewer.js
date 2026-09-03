@@ -2,7 +2,7 @@ const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../chunks/workcenter-c
 import { r as __exportAll } from "../chunks/rolldown-runtime.js";
 import { $t as isBase64Like, Bt as mountPickedDirectory, Cr as cssLayerBlock, Dr as VIEWER_CSS_LAYER_ORDER, Gt as pickSidecarDirectoryFiles, Ht as originalRelFromRef, Jt as resolveFileUnderDirectory, Kt as provideBoundRelative, Lt as findEntryRelPath, Or as __vitePreload, Qt as decodeBase64ToBytes, Rt as indexDirectoryFiles, Tr as normalizeCssForLayer, Ut as pickAssetDirectory, Vt as observeFileSystemHandle, Wt as pickMarkdownFile, X as ensureStyleSheet, Yt as saveMarkdownBlob, Z as reinitializeRegistry, _r as unbakeScreenColors, an as getDir, cn as matchMappedRoot, dn as provide, en as normalizeDataAsset, fr as ref, gr as scheduleBakeScreenColors, hn as createProtocolEnvelope, ln as normalizePath, or as affected, qt as relPathCandidates, s as purify, sn as isVirtualFsPath, tn as parseDataUrl, un as openDirectory, vr as loadAsAdopted, wr as cssLayerOrder, xr as removeAdopted, zn as H, zt as isMarkdownRelativeRef } from "../com/app.js";
 import { $n as peekProcessIngressSettings, Ar as looksLikePreviewableBinary, Br as sinkToAction, Er as classifyOpenKind, Fr as rememberOpenPolicyFromSettings, Gr as surfaceForSku, Lr as resolveHostOpenPolicy, Nt as loadSettings, Or as classifyOpenKindFromPayload, Pr as peekOpenPolicy, Vr as sinkToDestination, Z as ingressStampWasSuperseded, _r as sendProtocolMessage, kr as inferIngressChannels, nr as resolveProcessIngressKind, zr as resolveOpenPolicy } from "../shells/boot-index.js";
-import { _ as stashSkuHandoff, f as publicHrefForSku, h as shouldHandoffViewToSibling, s as inferCwspSkuFromLocation, v as takeSkuHandoff } from "../shells/boot-history-base.js";
+import { c as inferCwspSkuFromLocation, g as shouldHandoffViewToSibling, p as publicHrefForSku, v as stashSkuHandoff, y as takeSkuHandoff } from "../shells/boot-history-base.js";
 import { i as validateReadableFileForIngress, n as textIngressLooksCorrupt, t as pickAuthoritativeTransferFiles } from "../com/service.js";
 //#region ../../modules/projects/subsystem/registry.ts
 var ViewBase = class extends HTMLElement {
@@ -201,7 +201,13 @@ var sku_ingress_exports = /* @__PURE__ */ __exportAll({
 	takeHeldIngressFiles: () => takeHeldIngressFiles
 });
 /** Android Open-with / Share often ships `file:`/`content:` — that is not a web URL. */
-var isAndroidLocalShareUri = (value) => /^(file|content):/i.test(String(value || "").trim());
+var isAndroidLocalShareUri = (value) => {
+	const raw = String(value || "").trim();
+	if (/^(file|content):/i.test(raw)) return true;
+	if (/^\/(?:sdcard|saf)(?:\/|$)/i.test(raw)) return true;
+	if (/^(?:\/storage\/emulated\/0|\/mnt\/sdcard)(?:\/|$)/i.test(raw)) return true;
+	return false;
+};
 var filenameFromLocalShareUri = (value) => {
 	const raw = String(value || "").trim();
 	if (!raw) return "";
@@ -1534,7 +1540,24 @@ var CwViewViewer = createViewConstructor(TAG, (Base) => {
 			if (contentParam.trim()) this.contentRef.value = contentParam;
 			else if (sourceParam) {
 				const src = String(sourceParam).trim();
-				if (isVirtualFsPath(src) || /^\/assets(?:\/|$)/i.test(src)) provide(src).then(async (file) => {
+				if (isVirtualFsPath(src) || /^\/assets(?:\/|$)/i.test(src)) (async () => {
+					if (/^\/(?:sdcard|saf)(?:\/|$)/i.test(src)) try {
+						const { ensureNativeStorageProvide } = await __vitePreload(async () => {
+							const { ensureNativeStorageProvide } = await import("../com/app.js").then((n) => n.rr);
+							return { ensureNativeStorageProvide };
+						}, __vite__mapDeps([2,1]), import.meta.url);
+						await ensureNativeStorageProvide();
+					} catch {}
+					let file = await provide(src).catch(() => null);
+					if (!file && /^\/(?:sdcard|saf)(?:\/|$)/i.test(src)) try {
+						const { readNativeStorageFile } = await __vitePreload(async () => {
+							const { readNativeStorageFile } = await import("../com/app.js").then((n) => n.rr);
+							return { readNativeStorageFile };
+						}, __vite__mapDeps([2,1]), import.meta.url);
+						file = await readNativeStorageFile(src);
+					} catch {
+						file = null;
+					}
 					if (!file) {
 						if (/^\/assets(?:\/|$)/i.test(src)) this.openMarkdownFromUrl(src, filenameParam ? String(filenameParam) : void 0);
 						return;
@@ -1543,7 +1566,7 @@ var CwViewViewer = createViewConstructor(TAG, (Base) => {
 						virtualPath: src,
 						filename: filenameParam ? String(filenameParam) : file.name
 					});
-				});
+				})();
 			}
 			if (this.element) this.syncToolbarDocumentTitle();
 		}
@@ -1722,7 +1745,23 @@ var CwViewViewer = createViewConstructor(TAG, (Base) => {
 			const normalizedSource = this.normalizeSourceUrl(source);
 			if (!normalizedSource) return false;
 			if (isVirtualFsPath(normalizedSource)) {
-				const file = await provide(normalizedSource).catch(() => null);
+				if (/^\/(?:sdcard|saf)(?:\/|$)/i.test(normalizedSource)) try {
+					const { ensureNativeStorageProvide } = await __vitePreload(async () => {
+						const { ensureNativeStorageProvide } = await import("../com/app.js").then((n) => n.rr);
+						return { ensureNativeStorageProvide };
+					}, __vite__mapDeps([2,1]), import.meta.url);
+					await ensureNativeStorageProvide();
+				} catch {}
+				let file = await provide(normalizedSource).catch(() => null);
+				if (!file && /^\/(?:sdcard|saf)(?:\/|$)/i.test(normalizedSource)) try {
+					const { readNativeStorageFile } = await __vitePreload(async () => {
+						const { readNativeStorageFile } = await import("../com/app.js").then((n) => n.rr);
+						return { readNativeStorageFile };
+					}, __vite__mapDeps([2,1]), import.meta.url);
+					file = await readNativeStorageFile(normalizedSource);
+				} catch {
+					file = null;
+				}
 				if (!file) return false;
 				const ok = await this.ingestOpenedFile(file, {
 					virtualPath: normalizedSource,

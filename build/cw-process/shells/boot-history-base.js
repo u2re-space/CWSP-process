@@ -1,4 +1,33 @@
+import { r as __exportAll } from "../chunks/rolldown-runtime.js";
 //#region src/shared/other/config/ecosystem-skus.ts
+var ecosystem_skus_exports = /* @__PURE__ */ __exportAll({
+	CWSP_SKU_HANDOFF_KEY: () => CWSP_SKU_HANDOFF_KEY,
+	ECOSYSTEM_SKUS: () => ECOSYSTEM_SKUS,
+	HUB_PUBLIC_HOSTS: () => HUB_PUBLIC_HOSTS,
+	SKU_HUB_PATHS: () => SKU_HUB_PATHS,
+	SKU_LOCAL_NAV_VIEWS: () => SKU_LOCAL_NAV_VIEWS,
+	SKU_PUBLIC_HOSTS: () => SKU_PUBLIC_HOSTS,
+	SKU_PUBLIC_HUB_PATH: () => SKU_PUBLIC_HUB_PATH,
+	VIEW_TO_SIBLING_SKU: () => VIEW_TO_SIBLING_SKU,
+	androidPackageForSku: () => androidPackageForSku,
+	apkManifestForSku: () => apkManifestForSku,
+	applyCwspSku: () => applyCwspSku,
+	ensureCwspSkuFromLocation: () => ensureCwspSkuFromLocation,
+	inferCwspSkuFromLocation: () => inferCwspSkuFromLocation,
+	isCwspNativeHost: () => isCwspNativeHost,
+	isCwspSku: () => isCwspSku,
+	isHubPublicHost: () => isHubPublicHost,
+	isViewLocalToSurface: () => isViewLocalToSurface,
+	isWebHubSurface: () => isWebHubSurface,
+	publicHrefForSku: () => publicHrefForSku,
+	publicHrefForView: () => publicHrefForView,
+	readCwspSku: () => readCwspSku,
+	shouldHandoffViewToSibling: () => shouldHandoffViewToSibling,
+	siblingSkuForView: () => siblingSkuForView,
+	skuForHubPathSegment: () => skuForHubPathSegment,
+	stashSkuHandoff: () => stashSkuHandoff,
+	takeSkuHandoff: () => takeSkuHandoff
+});
 var ECOSYSTEM_SKUS = {
 	launcher: {
 		sku: "launcher",
@@ -297,4 +326,4 @@ try {
 var androidPackageForSku = (sku) => ECOSYSTEM_SKUS[sku]?.androidPackage ?? null;
 var apkManifestForSku = (sku) => ECOSYSTEM_SKUS[sku]?.apkManifest || "";
 //#endregion
-export { stashSkuHandoff as _, applyCwspSku as a, isCwspNativeHost as c, isWebHubSurface as d, publicHrefForSku as f, siblingSkuForView as g, shouldHandoffViewToSibling as h, apkManifestForSku as i, isCwspSku as l, readCwspSku as m, SKU_HUB_PATHS as n, ensureCwspSkuFromLocation as o, publicHrefForView as p, androidPackageForSku as r, inferCwspSkuFromLocation as s, ECOSYSTEM_SKUS as t, isViewLocalToSurface as u, takeSkuHandoff as v };
+export { siblingSkuForView as _, applyCwspSku as a, inferCwspSkuFromLocation as c, isViewLocalToSurface as d, isWebHubSurface as f, shouldHandoffViewToSibling as g, readCwspSku as h, apkManifestForSku as i, isCwspNativeHost as l, publicHrefForView as m, SKU_HUB_PATHS as n, ecosystem_skus_exports as o, publicHrefForSku as p, androidPackageForSku as r, ensureCwspSkuFromLocation as s, ECOSYSTEM_SKUS as t, isCwspSku as u, stashSkuHandoff as v, takeSkuHandoff as y };

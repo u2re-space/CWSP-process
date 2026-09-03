@@ -1952,6 +1952,7 @@ var bootLoader = class BootLoader {
 			if (isCapacitorCwsNativeShell()) {
 				__vitePreload(() => import("./capacitor-share-intent.js").then((mod) => mod.installCapacitorShareIntentBridge()), __vite__mapDeps([0,1,2,3,4,5,6,7,8]), import.meta.url).catch(() => void 0);
 				__vitePreload(() => import("./capacitor-clipboard-asset.js").then((mod) => mod.installCapacitorClipboardAssetBridge()), __vite__mapDeps([9,8,2]), import.meta.url).catch(() => void 0);
+				__vitePreload(() => import("../com/app.js").then((n) => n.rr).then((mod) => mod.ensureNativeStorageProvide()), __vite__mapDeps([1,2]), import.meta.url).catch(() => void 0);
 			}
 			try {
 				const { initFrontendDebugCapture } = await __vitePreload(async () => {

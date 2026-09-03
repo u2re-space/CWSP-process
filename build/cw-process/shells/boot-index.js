@@ -2,7 +2,7 @@ const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../chunks/capacitor-se
 import { r as __exportAll } from "../chunks/rolldown-runtime.js";
 import { Cn as makeUIState, K as __decorate, Or as __vitePreload, Rn as defineElement, Tn as JSOX, W as UIElement, Xn as fixOrientToScreen, Zt as writeFileSmart, _n as normalizeProtocolEnvelope, gn as isProtocolEnvelope, hn as createProtocolEnvelope, hr as safe, mn as getUnifiedMessaging$2, mr as makeObjectAssignable, pn as createServiceChannelManager, pr as stringRef, qn as Q, ur as observe, vr as loadAsAdopted, wn as saveUIState, z as initializeAppCanvasLayer } from "../com/app.js";
 import { t as withTimeout } from "../fest/core.js";
-import { c as isCwspNativeHost$1, h as shouldHandoffViewToSibling, m as readCwspSku$1, n as SKU_HUB_PATHS$1, p as publicHrefForView, s as inferCwspSkuFromLocation$1, u as isViewLocalToSurface$1 } from "./boot-history-base.js";
+import { c as inferCwspSkuFromLocation$1, d as isViewLocalToSurface$1, g as shouldHandoffViewToSibling, h as readCwspSku$1, l as isCwspNativeHost$1, m as publicHrefForView, n as SKU_HUB_PATHS$1 } from "./boot-history-base.js";
 import { r as validateIngressBeforeViewHandle } from "../com/service.js";
 import { i as core_default, r as scss_default } from "../fest/veela.js";
 //#region src/shared/other/utils/Runtime.ts
@@ -17201,6 +17201,7 @@ var STYLE_CONFIGS = {
 			if (isCapacitorCwsNativeShell$1()) {
 				__vitePreload(() => import("../chunks/capacitor-share-intent2.js").then((mod) => mod.installCapacitorShareIntentBridge()), __vite__mapDeps([56,3,4]), import.meta.url).catch(() => void 0);
 				__vitePreload(() => import("../chunks/capacitor-clipboard-asset2.js").then((mod) => mod.installCapacitorClipboardAssetBridge()), [], import.meta.url).catch(() => void 0);
+				__vitePreload(() => import("../com/app.js").then((n) => n.rr).then((mod) => mod.ensureNativeStorageProvide()), __vite__mapDeps([3,4]), import.meta.url).catch(() => void 0);
 			}
 			try {
 				const { initFrontendDebugCapture } = await __vitePreload(async () => {

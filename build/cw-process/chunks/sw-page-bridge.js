@@ -3,7 +3,7 @@ import { r as __exportAll } from "./rolldown-runtime.js";
 const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
 import { a as flushHeldIngressToWorkCenter, o as holdIngressFiles } from "../views/viewer.js";
 import { $n as peekProcessIngressSettings, Or as classifyOpenKindFromPayload, ct as consumeCachedShareTargetPayload, dt as safeCacheOpen, ft as safeCachePut, mn as unwrapSwInteropMessage, nr as resolveProcessIngressKind, nt as unifiedMessaging, ot as readProcessApiResultText, st as buildShareDataFromCachedPayload, ut as safeCacheMatch } from "../shells/boot-index.js";
-import { s as inferCwspSkuFromLocation } from "../shells/boot-history-base.js";
+import { c as inferCwspSkuFromLocation } from "../shells/boot-history-base.js";
 import { t as postWorkCenterCommand } from "./workcenter-command-wire.js";
 ({
 	process: "/?shared=1",
