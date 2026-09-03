@@ -98,7 +98,7 @@ var CWSP_LAUNCHER_VIEWS = [
 ];
 async function seedCwspLauncherTiles() {
 	try {
-		const mod = await __vitePreload(() => import("./launcher-state.js").then((n) => n.A), __vite__mapDeps([33,2,1]), import.meta.url);
+		const mod = await __vitePreload(() => import("./launcher-state.js").then((n) => n.j), __vite__mapDeps([33,2,1]), import.meta.url);
 		const items = mod.speedDialItems;
 		if (!items || typeof items.findIndex !== "function") return;
 		let removedAirpad = false;

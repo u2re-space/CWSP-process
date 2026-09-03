@@ -41539,14 +41539,16 @@ var ensureCell = (cell) => {
 	return observe([0, 0]);
 };
 var createMetaState = (meta = {}) => {
+	const kind = String(meta.widgetKind || "").toLowerCase();
+	const inferredAction = String(meta.action || "").trim() || (kind === "search" || kind === "android" ? "widget" : "open-view");
 	return makeObjectAssignable(observe({
-		action: meta.action || "open-view",
 		view: meta.view || "",
 		href: meta.href || "",
 		description: meta.description || "",
 		entityType: meta.entityType || "",
 		tags: Array.isArray(meta.tags) ? [...meta.tags] : [],
-		...meta
+		...meta,
+		action: inferredAction
 	}));
 };
 var registryFromEntries = (entries) => {
@@ -42081,8 +42083,10 @@ var defaultWidgetSpan = (kind) => {
 };
 var getItemSpan = (id) => {
 	const meta = id ? getSpeedDialMeta(id) : null;
-	const kind = String(meta?.action || "").toLowerCase() === "widget" ? String(meta?.widgetKind || "").toLowerCase() : "";
-	const fallback = kind ? defaultWidgetSpan(kind) : [1, 1];
+	const item = id ? (speedDialItems || []).find((it) => it?.id === id) : null;
+	const isWidget = String(item?.action || "").toLowerCase() === "widget" || String(meta?.action || "").toLowerCase() === "widget";
+	const kind = isWidget ? String(meta?.widgetKind || "").toLowerCase() : "";
+	const fallback = kind ? defaultWidgetSpan(kind) : isWidget ? defaultWidgetSpan("clock") : [1, 1];
 	return normalizeSpan([metaNumber(meta?.spanCols, fallback[0]), metaNumber(meta?.spanRows, fallback[1])]);
 };
 var setItemSpan = (id, span) => {
@@ -42128,6 +42132,7 @@ var ensureSpeedDialMeta = (id, defaults = {}) => {
 	let changed = false;
 	for (const [key, value] of Object.entries(defaults)) {
 		if (value == null || value === "") continue;
+		if (key === "action" && String(meta.action || "").toLowerCase() === "widget" && String(value || "").toLowerCase() !== "widget") continue;
 		if (meta[key] !== value) {
 			meta[key] = value;
 			changed = true;
@@ -42843,14 +42848,14 @@ var migrateLegacyDesktopState = () => {
 	persistGridLayout();
 };
 migrateLegacyDesktopState();
-var applyGridSettings = (settings) => {
+var applyGridSettings = (settings, opts) => {
 	const gridConfig = settings?.grid || gridLayoutState;
 	const columns = Math.max(1, Math.min(16, Number(gridConfig?.columns) || gridLayoutState.columns || 4));
 	const rows = Math.max(1, Math.min(16, Number(gridConfig?.rows) || gridLayoutState.rows || 8));
 	const shape = normalizeTileShape(gridConfig?.shape ?? gridLayoutState.shape, "squircle");
 	const defaultAction = normalizeDefaultAction(gridConfig?.defaultAction ?? gridLayoutState.defaultAction, "open-link");
 	const iconScale = normalizeIconBitmapScale(gridConfig?.iconScale ?? gridLayoutState.iconScale, "fill");
-	if (relocateItemsToLayout(speedDialItems, [columns, rows], (item) => getItemSpan(item.id))) persistSpeedDialItems();
+	if ((opts?.relocate === true || opts?.relocate !== false && Boolean(settings?.grid)) && relocateItemsToLayout(speedDialItems, [columns, rows], (item) => getItemSpan(item.id))) persistSpeedDialItems();
 	if (gridLayoutState) {
 		gridLayoutState.columns = columns;
 		gridLayoutState.rows = rows;
@@ -42890,11 +42895,11 @@ if (typeof window !== "undefined") window.addEventListener(WORKSPACE_GRID_EVENT,
 		});
 		return;
 	}
-	applyGridSettings({ grid: detail });
+	applyGridSettings({ grid: detail }, { relocate: true });
 	detail.ack?.();
 });
 if (typeof globalThis !== "undefined" && typeof document !== "undefined") {
-	const run = () => applyGridSettings();
+	const run = () => applyGridSettings(void 0, { relocate: false });
 	if (typeof requestAnimationFrame === "function") requestAnimationFrame(run);
 	else queueMicrotask(run);
 }

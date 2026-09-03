@@ -122,7 +122,7 @@ var consumeNativePendingShare = async () => {
 			const read = await invokeCwsPlatformIPC({ channel: "launcher:read-share-file" });
 			const blob = read.echo || read;
 			if (!blob?.data) return;
-			const file = await dataUrlToFile(blob.data, String(blob.name || echo.name || filenameFromLocalShareUri(url || text) || "shared.bin"), String(blob.mime || echo.mime || "application/octet-stream"));
+			const file = await dataUrlToFile(blob.data, String(echo.name || blob.name || filenameFromLocalShareUri(url || text) || "shared.bin").replace(/^open-\d+-/i, ""), String(blob.mime || echo.mime || "application/octet-stream"));
 			if (file) files.push(file);
 		};
 		if (wantFile) await pullFile();

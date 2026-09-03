@@ -212,7 +212,7 @@ var filenameFromLocalShareUri = (value) => {
 	const raw = String(value || "").trim();
 	if (!raw) return "";
 	try {
-		return decodeURIComponent(raw.replace(/^(?:file|content):\/\//i, "").split("?")[0] || "").split("/").filter(Boolean).pop() || "";
+		return (decodeURIComponent(raw.replace(/^(?:file|content):\/\//i, "").split("?")[0] || "").split("/").filter(Boolean).pop() || "").replace(/^open-\d+-/i, "");
 	} catch {
 		return "";
 	}
