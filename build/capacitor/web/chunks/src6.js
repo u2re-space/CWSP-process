@@ -914,6 +914,93 @@ var tryLaunchLinkTargetSku = async (target) => {
 	if (target === "workcenter" || target === "explorer") return tryLaunchSiblingView(target);
 	return false;
 };
+/** Explorer virtual path → CwsStorageHost `/sdcard/` `/saf/`. */
+var nativeStorageVirtualPath = (raw) => {
+	const s = String(raw || "").trim();
+	if (!s) return "";
+	if (/^\/(?:sdcard|saf)(?:\/|$)/i.test(s)) return s;
+	if (/^(?:sdcard|saf)(?:\/|$)/i.test(s)) return `/${s}`;
+	let stripped = s.replace(/^file:\/\/(?:localhost)?/i, "");
+	try {
+		stripped = decodeURIComponent(stripped);
+	} catch {}
+	if (/^\/(?:sdcard|saf)(?:\/|$)/i.test(stripped)) return stripped;
+	const mapped = stripped.replace(/^(?:\/storage\/emulated\/0|\/mnt\/sdcard|storage\/emulated\/0|mnt\/sdcard)(?=\/|$)/i, "/sdcard");
+	return /^\/sdcard(?:\/|$)/i.test(mapped) ? mapped : "";
+};
+var collectItemNativePath = (meta, item, extra = "") => nativeStorageVirtualPath(String(meta?.path || item?.path || extra || meta?.href || item?.href || ""));
+var SKU_ANDROID_PACKAGE = {
+	document: "space.u2re.document",
+	viewer: "space.u2re.document",
+	workcenter: "space.u2re.process",
+	transfer: "space.u2re.transfer",
+	explorer: "space.u2re.explorer"
+};
+var packageForLinkTarget = async (target) => {
+	try {
+		const { androidPackageForSku } = await __vitePreload(async () => {
+			const { androidPackageForSku } = await import("../shells/boot-history-base.js").then((n) => n.o);
+			return { androidPackageForSku };
+		}, __vite__mapDeps([3,2]), import.meta.url);
+		if (target === "document" || target === "viewer") return androidPackageForSku("document") || SKU_ANDROID_PACKAGE.document;
+		if (target === "workcenter") return androidPackageForSku("process") || SKU_ANDROID_PACKAGE.workcenter;
+		if (target === "transfer") return androidPackageForSku("transfer") || SKU_ANDROID_PACKAGE.transfer;
+		if (target === "explorer") return androidPackageForSku("explorer") || SKU_ANDROID_PACKAGE.explorer;
+	} catch {}
+	return SKU_ANDROID_PACKAGE[target] || "";
+};
+/**
+* WHY: `/sdcard/note.md` has no scheme — Cap `openUri` rejects it. FileProvider + SEND/VIEW
+* through `storage:open` is the one hop that reaches Document / Process / the system sheet.
+*/
+var openNativeStorageByLinkTarget = async (path, linkTarget, mimeType) => {
+	const virtual = nativeStorageVirtualPath(path);
+	if (!virtual) return false;
+	try {
+		const { openNativeStorageFile } = await __vitePreload(async () => {
+			const { openNativeStorageFile } = await import("../com/app.js").then((n) => n.rr);
+			return { openNativeStorageFile };
+		}, __vite__mapDeps([4,2]), import.meta.url);
+		const declared = String(mimeType || "").trim();
+		const systemMime = !declared || /^text\/(?:x-)?markdown$/i.test(declared) || /^application\/json$/i.test(declared) || declared.startsWith("text/") && declared !== "text/html" ? "text/plain" : declared;
+		const mime = String(mimeType || "").trim();
+		if (linkTarget === "external-app" || linkTarget === "new-tab" || linkTarget === "native-window") return openNativeStorageFile(virtual, {
+			chooser: true,
+			mimeType: systemMime,
+			title: "Open with"
+		});
+		if (linkTarget === "inline") {
+			if (/\.(md|markdown|txt|pdf|png|jpe?g|gif|webp|svg|html?)$/i.test(virtual)) {
+				const pkg = await packageForLinkTarget("document");
+				if (pkg && await openNativeStorageFile(virtual, {
+					packageName: pkg,
+					chooser: false,
+					mimeType: mime,
+					title: "Open"
+				})) return true;
+			}
+			return openNativeStorageFile(virtual, {
+				chooser: true,
+				mimeType: systemMime,
+				title: "Open with"
+			});
+		}
+		const pkg = await packageForLinkTarget(linkTarget);
+		if (pkg && await openNativeStorageFile(virtual, {
+			packageName: pkg,
+			chooser: false,
+			mimeType: mime,
+			title: "Open"
+		})) return true;
+		return openNativeStorageFile(virtual, {
+			chooser: true,
+			mimeType: systemMime,
+			title: "Open with"
+		});
+	} catch {
+		return false;
+	}
+};
 /** Apply fetched Android icon to a launcher `ui-icon` via resource + presentation mode. */
 function applyLauncherIconToUiIcon(host, objectUrl, mode = "colored") {
 	const url = String(objectUrl || "").trim();
@@ -1186,15 +1273,21 @@ var installBuiltins = () => {
 		const item = context?.items?.find?.((i) => i?.id === context?.id) || null;
 		const metaMap = context?.meta;
 		const meta = item && metaMap?.get ? metaMap.get(item.id) : null;
+		const linkTarget = context?.openLinkTarget != null ? normalizeOpenLinkTarget(context.openLinkTarget) : meta?.openLinkTarget != null && String(meta.openLinkTarget).trim() ? normalizeOpenLinkTarget(meta.openLinkTarget) : "inline";
+		const nativePath = collectItemNativePath(meta, item || entityDesc);
+		if (nativePath && !nativePath.endsWith("/")) {
+			if (await openNativeStorageByLinkTarget(nativePath, linkTarget, guessMimeFromHrefOrLabel(nativePath, String(meta?.description || item?.label || entityDesc?.label || "")))) return;
+			showError("Allow all-files access, then open again");
+			return;
+		}
 		const rawTarget = meta?.view || entityDesc?.view || entityDesc?.type || "";
 		const targetView = resolveOpenViewTarget(String(rawTarget || ""));
 		if (!targetView) {
 			showError("No view target");
 			return;
 		}
-		if (await tryLaunchSiblingView(targetView)) return;
+		if (!nativePath && await tryLaunchSiblingView(targetView)) return;
 		const viewMaker = context?.viewMaker ?? getSpeedDialViewOpener();
-		const linkTarget = context?.openLinkTarget != null ? normalizeOpenLinkTarget(context.openLinkTarget) : meta?.openLinkTarget != null && String(meta.openLinkTarget).trim() ? normalizeOpenLinkTarget(meta.openLinkTarget) : "inline";
 		if (linkTarget === "viewer" || linkTarget === "document" || linkTarget === "explorer" || linkTarget === "workcenter" || linkTarget === "transfer") {
 			if (await tryLaunchLinkTargetSku(linkTarget)) return;
 			ensureHashNavigation(viewIdForLinkTarget(linkTarget), viewMaker, {});
@@ -1225,11 +1318,17 @@ var installBuiltins = () => {
 		const metaMap = context?.meta;
 		const meta = item && metaMap?.get ? metaMap.get(item.id) : null;
 		const raw = meta?.href || item?.href || context?.href || resolveSpeedDialItemHref(item);
+		const nativePath = nativeStorageVirtualPath(String(meta?.path || item?.path || raw || ""));
 		const viewFromMeta = resolveOpenViewTarget(String(meta?.view || ""));
 		const externalHref = isExternalWebHref(raw) ? normalizeExternalWebHref(raw) || normalizeSpeedDialOpenHref(String(raw || "")) : "";
 		const view = externalHref ? "" : resolveOpenViewTarget(parseSpeedDialViewFromHref(String(raw || ""))) || viewFromMeta;
 		const linkTarget = context?.openLinkTarget != null ? normalizeOpenLinkTarget(context.openLinkTarget) : resolveItemOpenLinkTarget(meta);
 		const opener = context?.viewMaker ?? getSpeedDialViewOpener();
+		if (nativePath) {
+			if (await openNativeStorageByLinkTarget(nativePath, linkTarget, guessMimeFromHrefOrLabel(nativePath, String(meta?.description || item?.label || "")))) return;
+			showError("Allow all-files access, then open again");
+			return;
+		}
 		if (linkTarget === "inline") {
 			if (externalHref && typeof opener === "function") try {
 				opener("browser", {
@@ -1399,6 +1498,11 @@ var installBuiltins = () => {
 		const meta = (itemId && metaMap?.get ? metaMap.get(itemId) : null) || entityDesc?.meta || null;
 		const pkg = String(meta?.packageName || entityDesc?.packageName || "").trim();
 		const shortcutId = String(meta?.shortcutId || entityDesc?.shortcutId || "").trim();
+		const linkTarget = context?.openLinkTarget != null ? normalizeOpenLinkTarget(context.openLinkTarget) : resolveItemOpenLinkTarget(meta);
+		const nativePath = collectItemNativePath(meta, item || entityDesc);
+		if (nativePath && !nativePath.endsWith("/")) {
+			if (await openNativeStorageByLinkTarget(nativePath, linkTarget, guessMimeFromHrefOrLabel(nativePath, String(meta?.description || item?.label || "")))) return;
+		}
 		if (!pkg || !shortcutId) {
 			showError("Shortcut missing");
 			return;
@@ -1415,14 +1519,24 @@ var installBuiltins = () => {
 	actionRegistry.set("open-path", async (context, entityDesc) => {
 		const metaMap = context?.meta;
 		const itemId = String(entityDesc?.id || context?.id || "").trim();
+		const item = context?.items?.find?.((row) => row?.id === itemId) || null;
 		const meta = (itemId && metaMap?.get ? metaMap.get(itemId) : null) || entityDesc?.meta || null;
-		const path = String(entityDesc?.path || meta?.path || context?.path || "").trim();
+		const path = String(entityDesc?.path || meta?.path || item?.path || context?.path || meta?.href || "").trim();
 		if (!path) {
 			showError("Path is missing");
 			return;
 		}
 		const opener = context?.viewMaker || getSpeedDialViewOpener();
-		if (path.endsWith("/") || entityDesc?.kind === "directory" || meta?.kind === "directory") {
+		const linkTarget = context?.openLinkTarget != null ? normalizeOpenLinkTarget(context.openLinkTarget) : resolveItemOpenLinkTarget(meta);
+		const isDirectory = path.endsWith("/") || entityDesc?.kind === "directory" || meta?.kind === "directory";
+		const nativePath = nativeStorageVirtualPath(path);
+		if (nativePath && !isDirectory) {
+			if (await openNativeStorageByLinkTarget(nativePath, linkTarget, guessMimeFromHrefOrLabel(nativePath, String(meta?.description || item?.label || "")))) return;
+			showError("Allow all-files access, then open again");
+			return;
+		}
+		if (isDirectory) {
+			if (linkTarget === "explorer" && await tryLaunchLinkTargetSku("explorer")) return;
 			await opener?.("explorer", {
 				path,
 				initialPath: path
@@ -2471,7 +2585,7 @@ var openShortcutEditor = (options) => {
                 </div>
                 <div class="modal-field" data-field="href">
                     <label for="sd-edit-href">Link</label>
-                    <input id="sd-edit-href" name="href" type="text" inputmode="url" autocomplete="off" placeholder="/settings?native=1, /workcenter, or https://…" />
+                    <input id="sd-edit-href" name="href" type="text" inputmode="url" autocomplete="off" placeholder="/sdcard/Download/note.md, /settings, or https://…" />
                 </div>
                 <div class="modal-field" data-field="open-link-target">
                     <label for="sd-edit-open-target">Open link in</label>
@@ -4104,7 +4218,10 @@ var schedulePersistItems = () => {
 };
 var resolveItemAction = (item, override) => {
 	if (override) return override;
-	return getSpeedDialMeta(item.id)?.action || item?.action || "open-view";
+	const entry = getSpeedDialMeta(item.id);
+	const action = entry?.action || item?.action || "open-view";
+	if (action === "open-view" && nativeStorageVirtualPath(String(entry?.path || item.path || entry?.href || ""))) return "open-path";
+	return action;
 };
 var BASE_ACTION_OPTIONS = [
 	{
@@ -5163,7 +5280,7 @@ var openItemEditor = (item, opts) => {
 		})),
 		registerForBackNavigation: true,
 		isViewAction: (value) => value === "open-view",
-		isHrefAction: (value) => value === "open-link" || value === "copy-link" || value === "open-view",
+		isHrefAction: (value) => value === "open-link" || value === "copy-link" || value === "open-view" || value === "open-path",
 		isWidgetAction: (value) => value === "widget",
 		onSave: (next) => {
 			workingItem.label.value = next.label;
@@ -5172,6 +5289,21 @@ var openItemEditor = (item, opts) => {
 			workingMeta.action = workingItem.action;
 			workingMeta.view = next.view;
 			workingMeta.href = next.href;
+			{
+				const href = String(next.href || "").trim();
+				const nativePath = /^\/(?:sdcard|saf)(?:\/|$)/i.test(href) ? href : href.replace(/^(?:\/storage\/emulated\/0|\/mnt\/sdcard)(?=\/|$)/i, "/sdcard");
+				if (/^\/(?:sdcard|saf)(?:\/|$)/i.test(nativePath)) {
+					workingMeta.path = nativePath;
+					workingItem.path = nativePath;
+					if (!workingItem.action || workingItem.action === "open-view") {
+						workingItem.action = "open-path";
+						workingMeta.action = "open-path";
+					}
+				} else if (workingItem.action === "open-path" && href) {
+					workingMeta.path = href;
+					workingItem.path = href;
+				}
+			}
 			workingMeta.description = next.description;
 			workingMeta.shape = next.shape;
 			workingMeta.iconDisplay = normalizeIconDisplay(next.iconDisplay) || "glyph";
@@ -5183,10 +5315,7 @@ var openItemEditor = (item, opts) => {
 				const rawUrl = String(next.iconUrl || "").trim();
 				workingMeta.iconUrl = workingMeta.iconDisplay === "glyph" || !isDurableIconResourceUrl(rawUrl) ? "" : /^data:/i.test(rawUrl) ? persistSpeedDialIconBlob(workingItem.id, rawUrl) : rawUrl;
 			}
-			{
-				const v = String(next.openLinkTarget || "").toLowerCase();
-				workingMeta.openLinkTarget = v === "native-window" || v === "native" || v === "window" ? "native-window" : v === "new-tab" || v === "tab" || v === "browser" || v === "browser-tab" ? "new-tab" : v === "external-app" || v === "app" || v === "chooser" || v === "open-with" || v === "open-in-app" ? "external-app" : "inline";
-			}
+			workingMeta.openLinkTarget = normalizeOpenLinkTarget(next.openLinkTarget);
 			if (workingItem.action === "widget") {
 				const kind = String(next.widgetKind || "").toLowerCase();
 				workingMeta.widgetKind = kind === "search" || kind === "android" || kind === "clock" ? kind : "clock";

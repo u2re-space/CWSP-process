@@ -1,4 +1,4 @@
-import { _ as stashSkuHandoff, v as takeSkuHandoff } from "../shells/boot-history-base.js";
+import { v as stashSkuHandoff, y as takeSkuHandoff } from "../shells/boot-history-base.js";
 import { Wt as pickMarkdownFile, Yt as saveMarkdownBlob, fr as ref, vr as loadAsAdopted, xr as removeAdopted, zn as H } from "../com/app.js";
 import { _ as createViewState } from "../views/viewer.js";
 //#region ../../modules/views/editor-view/src/editor.scss?inline

@@ -76,13 +76,13 @@ function mergeNativeOpt(viewId, opts) {
 }
 var CWSP_VIEW_LOADERS = {
 	network: () => __vitePreload(() => import("./src7.js"), __vite__mapDeps([0,1,2,3,4,5,6,7,8]), import.meta.url),
-	settings: () => __vitePreload(() => import("./src8.js"), __vite__mapDeps([9,4,1,2,10,3,5,6,7,11,12,13,14,15,16,17]), import.meta.url),
-	explorer: () => __vitePreload(() => import("./src.js"), __vite__mapDeps([18,4,1,2,10,3,5,6,7]), import.meta.url),
-	viewer: () => __vitePreload(() => import("./src9.js"), __vite__mapDeps([19,4,1,2,10,3,5,6,7]), import.meta.url),
-	markdown: () => __vitePreload(() => import("./src9.js"), __vite__mapDeps([19,4,1,2,10,3,5,6,7]), import.meta.url),
+	settings: () => __vitePreload(() => import("./src8.js"), __vite__mapDeps([9,4,2,1,10,3,5,6,7,11,12,13,14,15,16,17]), import.meta.url),
+	explorer: () => __vitePreload(() => import("./src.js"), __vite__mapDeps([18,4,2,1,10,3,5,6,7]), import.meta.url),
+	viewer: () => __vitePreload(() => import("./src9.js"), __vite__mapDeps([19,4,2,1,10,3,5,6,7]), import.meta.url),
+	markdown: () => __vitePreload(() => import("./src9.js"), __vite__mapDeps([19,4,2,1,10,3,5,6,7]), import.meta.url),
 	history: () => __vitePreload(() => import("./src5.js"), __vite__mapDeps([20,1,2,10,4,3,5,6,7,21]), import.meta.url),
-	workcenter: () => __vitePreload(() => import("./src10.js"), __vite__mapDeps([22,4,1,2,10,3,5,6,7,23,14,13,24,16,25,26,27,28,29,30]), import.meta.url),
-	editor: () => __vitePreload(() => import("./src4.js"), __vite__mapDeps([31,4,1,2,10,3,5,6,7]), import.meta.url),
+	workcenter: () => __vitePreload(() => import("./src10.js"), __vite__mapDeps([22,4,2,1,10,3,5,6,7,23,14,13,24,16,25,26,27,28,29,30]), import.meta.url),
+	editor: () => __vitePreload(() => import("./src4.js"), __vite__mapDeps([31,4,2,1,10,3,5,6,7]), import.meta.url),
 	home: () => __vitePreload(() => import("./src6.js"), __vite__mapDeps([32,1,2,10,4,3,5,6,7,33]), import.meta.url)
 };
 /** Views allowed as Speed Dial / floating windows (no airpad). */

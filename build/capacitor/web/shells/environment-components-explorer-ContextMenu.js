@@ -236,8 +236,24 @@ var capacitorInvoke = async (channel, payload = {}) => {
 	});
 	return r?.echo || r || {};
 };
+/**
+* WHY: Speed Dial / shortcuts store `file:///storage/emulated/0/…`, `/mnt/sdcard/…`,
+* or `sdcard/…`. CwsStorageHost only understands `/sdcard/` `/saf/`.
+*/
+var toNativeStorageVirtualPath = (raw) => {
+	let s = String(raw || "").trim();
+	if (!s) return "";
+	try {
+		s = decodeURIComponent(s);
+	} catch {}
+	s = s.replace(/^file:\/\/(?:localhost)?/i, "");
+	if (/^\/(?:sdcard|saf)(?:\/|$)/i.test(s)) return s;
+	if (/^(?:sdcard|saf)(?:\/|$)/i.test(s)) return `/${s}`;
+	const mapped = s.replace(/^(?:\/storage\/emulated\/0|\/mnt\/sdcard|storage\/emulated\/0|mnt\/sdcard)(?=\/|$)/i, "/sdcard");
+	return /^\/sdcard(?:\/|$)/i.test(mapped) ? mapped : "";
+};
 var parseNativeStoragePath = (virtualPath) => {
-	const raw = String(virtualPath || "").trim();
+	const raw = toNativeStorageVirtualPath(virtualPath) || String(virtualPath || "").trim();
 	if (!raw) return null;
 	const root = raw === "/saf" || raw.startsWith("/saf/") ? "saf" : raw === "/sdcard" || raw.startsWith("/sdcard/") ? "sdcard" : "";
 	if (!root) return null;

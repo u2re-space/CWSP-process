@@ -1,5 +1,5 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./launcher-bridge.js","../shells/boot-index.js","./rolldown-runtime.js","../shells/boot-history-base.js","../com/app.js","../fest/core.js","../com/service.js","../fest/veela.js"])))=>i.map(i=>d[i]);
-import { _ as stashSkuHandoff, c as isCwspNativeHost, f as publicHrefForSku, h as shouldHandoffViewToSibling, p as publicHrefForView, r as androidPackageForSku, v as takeSkuHandoff } from "../shells/boot-history-base.js";
+import { g as shouldHandoffViewToSibling, l as isCwspNativeHost, m as publicHrefForView, p as publicHrefForSku, r as androidPackageForSku, v as stashSkuHandoff, y as takeSkuHandoff } from "../shells/boot-history-base.js";
 import { $ as openUnifiedContextMenu, At as ensureDefaultFsBackends, Mt as resolveFsBackend, Or as __vitePreload, _r as unbakeScreenColors, ar as toExplorerStoragePath, et as isBookmarksPath, gr as scheduleBakeScreenColors, ur as observe, vr as loadAsAdopted, xr as removeAdopted } from "../com/app.js";
 import { C as sendViewProtocolMessage, v as ExplorerChannelAction, w as createViewConstructor } from "../views/viewer.js";
 import { Br as sinkToOpenLinkTarget, Fr as resolveHostOpenPolicy, Gr as addSpeedDialItem, Ir as resolveOpenPlacement, Jr as persistSpeedDialItems, Kr as createEmptySpeedDialItem, Mr as peekOpenPolicy, Nr as rememberOpenPolicyFromSettings, Or as looksLikePreviewableBinary, Pr as resolveExplorerOpenSink, Tr as classifyOpenKindFromName, Vr as skuForOpenSink, Wr as viewIdForOpenSink, Xr as speedDialItems, Yr as persistSpeedDialMeta, jt as loadSettings, qr as ensureSpeedDialMeta, wr as classifyOpenKind } from "../shells/boot-index.js";
@@ -156,6 +156,17 @@ var openFileWithSystem = async (file, sourcePath, chooser) => {
 				mimeType: mime,
 				title: "Open with"
 			})) return true;
+			if (isNativeStorageVirtualPath(href)) {
+				const { openNativeStorageFile } = await __vitePreload(async () => {
+					const { openNativeStorageFile } = await import("../com/app.js").then((n) => n.rr);
+					return { openNativeStorageFile };
+				}, __vite__mapDeps([4,2]), import.meta.url);
+				if (await openNativeStorageFile(href, {
+					chooser,
+					mimeType: mime,
+					title: "Open with"
+				})) return true;
+			}
 		}
 	} catch {}
 	if (isCwspNativeHost() && chooser && file.size > 0 && file.size <= 8388608) try {

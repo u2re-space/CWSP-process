@@ -1,4 +1,4 @@
-import { v as takeSkuHandoff } from "../shells/boot-history-base.js";
+import { y as takeSkuHandoff } from "../shells/boot-history-base.js";
 import { K as __decorate, Rn as defineElement, W as UIElement, vr as loadAsAdopted, xr as removeAdopted } from "../com/app.js";
 import { a as flushHeldIngressToWorkCenter, d as peekHeldIngressFiles, p as registerWorkCenterFlushHost } from "../views/viewer.js";
 import { r as queryLiveWorkCenterChats, t as WorkCenterManager } from "./WorkCenter.js";

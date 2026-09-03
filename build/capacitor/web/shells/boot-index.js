@@ -1,6 +1,6 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../chunks/capacitor-settings-permissions2.js","../chunks/capacitor-permissions2.js","../chunks/crx-control-session.js","../com/app.js","../chunks/rolldown-runtime.js","../chunks/src2.js","../chunks/shells.js","./boot-history-base.js","./preference.js","./environment-environment-overlay.js","../chunks/toast.js","../chunks/preview.js","../chunks/src3.js","../chunks/window.js","../chunks/environment-shell.js","./environment-index.js","./environment-components-calendar-CalendarFlyout.js","./environment-components-settings-QuickSettings.js","./environment-components-statusbar-capacitor-native-safe-area.js","./environment-components-app-menu-AppMenu.js","./environment-components-taskbar-element-TaskBar.js","./environment-components-explorer-ContextMenu.js","./environment-components-wallpaper.js","./environment-scss-main.scss_inline.js","../chunks/tabbed.js","../chunks/environment.js","../chunks/src9.js","../views/viewer.js","../com/service.js","../chunks/src10.js","../chunks/WorkCenter.js","../chunks/utils.js","../chunks/CustomInstructions.js","../chunks/entities.js","../chunks/core.js","../vendor/@toon-format_toon.js","../chunks/unified.js","../chunks/RuntimeSettings.js","../chunks/log-sanitizer.js","../chunks/ShareTargetGateway.js","../chunks/WorkCenterState.js","../chunks/src8.js","../chunks/capacitor-permissions.js","../chunks/capacitor-settings-permissions.js","../chunks/templates.js","../chunks/admin-doors.js","../chunks/src7.js","../chunks/frontend-debug-capture.js","../chunks/src5.js","../chunks/transfer-history-runtime.js","../chunks/src.js","../chunks/src4.js","../chunks/src6.js","../fest/veela.js","../chunks/launcher-state.js","../chunks/crx-control-session2.js","../chunks/capacitor-share-intent2.js","../chunks/sw-handling.js","../chunks/ViewTransferRouting.js","../chunks/workcenter-command-wire.js"])))=>i.map(i=>d[i]);
 import { r as __exportAll } from "../chunks/rolldown-runtime.js";
-import { c as isCwspNativeHost$1, h as shouldHandoffViewToSibling, m as readCwspSku$1, n as SKU_HUB_PATHS$1, p as publicHrefForView, s as inferCwspSkuFromLocation$1, u as isViewLocalToSurface$1 } from "./boot-history-base.js";
+import { c as inferCwspSkuFromLocation$1, d as isViewLocalToSurface$1, g as shouldHandoffViewToSibling, h as readCwspSku$1, l as isCwspNativeHost$1, m as publicHrefForView, n as SKU_HUB_PATHS$1 } from "./boot-history-base.js";
 import { Cn as makeUIState, K as __decorate, Or as __vitePreload, Rn as defineElement, Tn as JSOX, W as UIElement, Xn as fixOrientToScreen, Zt as writeFileSmart, _n as normalizeProtocolEnvelope, gn as isProtocolEnvelope, hn as createProtocolEnvelope, hr as safe, mn as getUnifiedMessaging$2, mr as makeObjectAssignable, pn as createServiceChannelManager, pr as stringRef, qn as Q, ur as observe, vr as loadAsAdopted, wn as saveUIState, z as initializeAppCanvasLayer } from "../com/app.js";
 import { t as withTimeout } from "../fest/core.js";
 import { r as validateIngressBeforeViewHandle } from "../com/service.js";
@@ -9636,19 +9636,19 @@ function registerDefaultViews() {
 		id: "viewer",
 		name: "Viewer",
 		icon: "eye",
-		loader: () => __vitePreload(() => import("../chunks/src9.js"), __vite__mapDeps([26,7,3,4,27,28]), import.meta.url)
+		loader: () => __vitePreload(() => import("../chunks/src9.js"), __vite__mapDeps([26,7,4,3,27,28]), import.meta.url)
 	});
 	ViewRegistry.register({
 		id: "workcenter",
 		name: "Work Center",
 		icon: "lightning",
-		loader: () => __vitePreload(() => import("../chunks/src10.js"), __vite__mapDeps([29,7,3,4,27,28,30,31,32,33,34,35,36,37,38,39,40]), import.meta.url)
+		loader: () => __vitePreload(() => import("../chunks/src10.js"), __vite__mapDeps([29,7,4,3,27,28,30,31,32,33,34,35,36,37,38,39,40]), import.meta.url)
 	});
 	ViewRegistry.register({
 		id: "settings",
 		name: "Settings",
 		icon: "gear",
-		loader: () => __vitePreload(() => import("../chunks/src8.js"), __vite__mapDeps([41,7,3,4,27,28,42,43,32,31,44,34,45]), import.meta.url)
+		loader: () => __vitePreload(() => import("../chunks/src8.js"), __vite__mapDeps([41,7,4,3,27,28,42,43,32,31,44,34,45]), import.meta.url)
 	});
 	ViewRegistry.register({
 		id: "network",
@@ -9666,13 +9666,13 @@ function registerDefaultViews() {
 		id: "explorer",
 		name: "Explorer",
 		icon: "folder",
-		loader: () => __vitePreload(() => import("../chunks/src.js"), __vite__mapDeps([50,7,3,4,27,28]), import.meta.url)
+		loader: () => __vitePreload(() => import("../chunks/src.js"), __vite__mapDeps([50,7,4,3,27,28]), import.meta.url)
 	});
 	ViewRegistry.register({
 		id: "editor",
 		name: "Editor",
 		icon: "pencil",
-		loader: () => __vitePreload(() => import("../chunks/src4.js"), __vite__mapDeps([51,7,3,4,27,28]), import.meta.url)
+		loader: () => __vitePreload(() => import("../chunks/src4.js"), __vite__mapDeps([51,7,4,3,27,28]), import.meta.url)
 	});
 	ViewRegistry.register({
 		id: "home",
@@ -9684,7 +9684,7 @@ function registerDefaultViews() {
 		id: "print",
 		name: "Print",
 		icon: "printer",
-		loader: () => __vitePreload(() => import("../chunks/src9.js"), __vite__mapDeps([26,7,3,4,27,28]), import.meta.url)
+		loader: () => __vitePreload(() => import("../chunks/src9.js"), __vite__mapDeps([26,7,4,3,27,28]), import.meta.url)
 	});
 }
 var defaultTheme = {
@@ -17183,6 +17183,7 @@ var STYLE_CONFIGS = {
 			if (isCapacitorCwsNativeShell$1()) {
 				__vitePreload(() => import("../chunks/capacitor-share-intent2.js").then((mod) => mod.installCapacitorShareIntentBridge()), __vite__mapDeps([56,3,4]), import.meta.url).catch(() => void 0);
 				__vitePreload(() => import("../chunks/capacitor-clipboard-asset2.js").then((mod) => mod.installCapacitorClipboardAssetBridge()), [], import.meta.url).catch(() => void 0);
+				__vitePreload(() => import("../com/app.js").then((n) => n.rr).then((mod) => mod.ensureNativeStorageProvide()), __vite__mapDeps([3,4]), import.meta.url).catch(() => void 0);
 			}
 			try {
 				const { initFrontendDebugCapture } = await __vitePreload(async () => {
@@ -17217,7 +17218,7 @@ var STYLE_CONFIGS = {
 				const { initIngressPWA } = await __vitePreload(async () => {
 					const { initIngressPWA } = await import("../chunks/sw-handling.js");
 					return { initIngressPWA };
-				}, __vite__mapDeps([57,7,3,4,27,28,38,58,59]), import.meta.url);
+				}, __vite__mapDeps([57,7,4,3,27,28,38,58,59]), import.meta.url);
 				await initIngressPWA();
 			} catch (e) {
 				console.warn("[BootLoader] Share-target / service worker ingress failed (non-fatal):", e);

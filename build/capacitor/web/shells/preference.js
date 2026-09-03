@@ -1,4 +1,4 @@
-import { c as isCwspNativeHost, n as SKU_HUB_PATHS, s as inferCwspSkuFromLocation } from "./boot-history-base.js";
+import { c as inferCwspSkuFromLocation, l as isCwspNativeHost, n as SKU_HUB_PATHS } from "./boot-history-base.js";
 //#region src/frontend/boot/history-base.ts
 var KNOWN_PATH_MOUNTS = [
 	"cwsp",
