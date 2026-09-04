@@ -657,6 +657,9 @@ var runWhenIdle$2 = (cb, timeout = 100) => {
 	}), 0);
 };
 var KEYBOARD_OVERLAY_PX = 80;
+var capacitorKeyboardHeight = 0;
+var capacitorKeyboardBound = false;
+var viewportTrackingStarted = false;
 var virtualKeyboard = () => {
 	try {
 		return globalThis.navigator?.virtualKeyboard ?? null;
@@ -733,7 +736,8 @@ var readLayoutViewport = () => {
 	const vvTop = Number(vv?.offsetTop) || 0;
 	const vkH = Number(virtualKeyboard()?.boundingBox?.height) || 0;
 	const vvOverlap = innerH > 0 && vvH > 0 ? innerH - vvH - vvTop : 0;
-	const keyboard = vkH >= KEYBOARD_OVERLAY_PX ? vkH : vvOverlap >= KEYBOARD_OVERLAY_PX ? vvOverlap : 0;
+	const capH = capacitorKeyboardHeight;
+	let keyboard = capH >= KEYBOARD_OVERLAY_PX ? capH : vkH >= KEYBOARD_OVERLAY_PX ? vkH : vvOverlap >= KEYBOARD_OVERLAY_PX ? vvOverlap : 0;
 	const candidateW = Math.max(innerW, vvW);
 	const candidateH = Math.max(innerH, vvH + vvTop, keyboard > 0 ? vvH + keyboard : 0);
 	const orient = typeof matchMedia !== "undefined" && matchMedia("(orientation: landscape)")?.matches ? "l" : "p";
@@ -743,6 +747,10 @@ var readLayoutViewport = () => {
 		layoutLockH = 0;
 	}
 	const suddenShrink = layoutLockH > 0 && layoutLockH - candidateH >= KEYBOARD_OVERLAY_PX;
+	if (keyboard < KEYBOARD_OVERLAY_PX && suddenShrink) {
+		const shrink = Math.max(0, layoutLockH - candidateH, layoutLockH - (vvH + vvTop));
+		if (shrink >= KEYBOARD_OVERLAY_PX) keyboard = shrink;
+	}
 	if (!(keyboard > 0 || isImeTarget(document.activeElement) || suddenShrink)) {
 		layoutLockW = candidateW;
 		layoutLockH = candidateH;
@@ -774,7 +782,8 @@ var getAvailSize = () => {
 		"--vv-scale": String(vv?.scale ?? 1),
 		"--lv-width": `${layout.width}px`,
 		"--lv-height": `${layout.height}px`,
-		"--keyboard-overlay-height": `${layout.keyboard}px`
+		"--keyboard-overlay-height": `${layout.keyboard}px`,
+		"--virtual-keyboard-height": `${layout.keyboard}px`
 	};
 	if (typeof document !== "undefined") document.documentElement.toggleAttribute("data-vk-open", layout.keyboard > 0);
 	if (typeof screen != "undefined") {
@@ -825,6 +834,40 @@ var getCorrectOrientation = () => {
 	return orientationType;
 };
 var passiveOpts = { passive: true };
+var bindCapacitorKeyboard = () => {
+	if (capacitorKeyboardBound || typeof globalThis === "undefined") return;
+	const cap = globalThis.Capacitor;
+	const Keyboard = cap?.Plugins?.Keyboard;
+	if (!Keyboard?.addListener) return;
+	if (typeof cap.isNativePlatform === "function" && !cap.isNativePlatform()) return;
+	capacitorKeyboardBound = true;
+	try {
+		Keyboard.setScroll?.({ isDisabled: true });
+	} catch {}
+	try {
+		Keyboard.setResizeMode?.({ mode: "none" });
+	} catch {}
+	const onShow = (info) => {
+		const next = Number(info?.keyboardHeight) || 0;
+		if (next > 0) capacitorKeyboardHeight = next;
+		updateVP();
+	};
+	const onHide = () => {
+		capacitorKeyboardHeight = 0;
+		updateVP();
+	};
+	Keyboard.addListener("keyboardWillShow", onShow);
+	Keyboard.addListener("keyboardDidShow", onShow);
+	Keyboard.addListener("keyboardWillHide", onHide);
+	Keyboard.addListener("keyboardDidHide", onHide);
+};
+/** Start IME / visualViewport listeners once (Process Capacitor has no SpeedDial). */
+var ensureViewportTracking = () => {
+	if (viewportTrackingStarted || typeof window === "undefined") return;
+	viewportTrackingStarted = true;
+	bindCapacitorKeyboard();
+	whenAnyScreenChanges(() => {});
+};
 var whenAnyScreenChanges = (cb) => {
 	let ticking = false;
 	const update = () => {
@@ -838,6 +881,7 @@ var whenAnyScreenChanges = (cb) => {
 		}
 	};
 	const unsubscribers = [];
+	bindCapacitorKeyboard();
 	unsubscribers.push(addEvent(navigator?.virtualKeyboard, "geometrychange", update, passiveOpts));
 	unsubscribers.push(addEvent(window?.visualViewport, "scroll", () => {
 		pinOverlayScroll();
@@ -851,6 +895,7 @@ var whenAnyScreenChanges = (cb) => {
 	unsubscribers.push(addEvent(matchMedia("(orientation: portrait)"), "change", update));
 	unsubscribers.push(addEvent(matchMedia("(orientation: landscape)"), "change", update));
 	unsubscribers.push(addEvent(document, "focusin", () => {
+		bindCapacitorKeyboard();
 		ensureVirtualKeyboardOverlay();
 		if (isImeTarget(document.activeElement)) {
 			layoutLockW = Math.max(layoutLockW, Number(window.innerWidth) || 0, Number(window.visualViewport?.width) || 0);
@@ -25144,4 +25189,4 @@ var src_exports = /* @__PURE__ */ __exportAll({
 	writeText: () => writeText
 });
 //#endregion
-export { ClosePriority as $, pointerAnchorRef as A, writeText as B, createContentAddressedStore as C, dynamicTheme as D, converter as E, decodeDesktopState as F, makeTask as G, resolveOverlayHost as H, loadDesktopRaw as I, GLitElement as J, getBy as K, copy as L, makeUIState as M, saveUIState as N, placeOverlay as O, JSOX as P, vector2Ref as Q, initClipboardReceiver as R, setString as S, parse as T, elementPointerMap as U, registerTransientOverlay as V, bindOutsideDismiss as W, property as X, defineElement as Y, H as Z, decodeBase64ToBytes as _, whenAnyScreenChanges as _t, isMarkdownRelativeRef as a, navigate as at, parseDataUrl as b, isInFocus as bt, originalRelFromRef as c, Q as ct, provideBoundRelative as d, DOMMixin as dt, closeHighestPriority as et, relPathCandidates as f, ensureVirtualKeyboardOverlay as ft, writeFileSmart as g, updateVP as gt, createFileHandler as h, orientationNumberMap as ht, indexDirectoryFiles as i, registerModal as it, getSpeechPrompt as j, createTemplateManager as k, pickMarkdownFile as l, bindWith as lt, saveMarkdownBlob as m, getCorrectOrientation as mt, getCachedComponent as n, initBackNavigation as nt, mountPickedDirectory as o, E as ot, resolveFileUnderDirectory as p, fixOrientToScreen as pt, navigationEnable as q, bindDirectoryForLaunchedFiles as r, registerCloseable as rt, observeFileSystemHandle as s, M$1 as st, src_exports as t, hasActiveCloseable as tt, pickSidecarDirectoryFiles as u, handleStyleChange as ut, isBase64Like as v, MOCElement as vt, oklch as w, StorageKeys as x, makeRAFCycle as xt, normalizeDataAsset as y, addEvent as yt, initGlobalClipboard as z };
+export { ClosePriority as $, pointerAnchorRef as A, writeText as B, createContentAddressedStore as C, dynamicTheme as D, converter as E, decodeDesktopState as F, makeTask as G, resolveOverlayHost as H, loadDesktopRaw as I, GLitElement as J, getBy as K, copy as L, makeUIState as M, saveUIState as N, placeOverlay as O, JSOX as P, vector2Ref as Q, initClipboardReceiver as R, setString as S, makeRAFCycle as St, parse as T, elementPointerMap as U, registerTransientOverlay as V, bindOutsideDismiss as W, property as X, defineElement as Y, H as Z, decodeBase64ToBytes as _, updateVP as _t, isMarkdownRelativeRef as a, navigate as at, parseDataUrl as b, addEvent as bt, originalRelFromRef as c, Q as ct, provideBoundRelative as d, DOMMixin as dt, closeHighestPriority as et, relPathCandidates as f, ensureViewportTracking as ft, writeFileSmart as g, orientationNumberMap as gt, createFileHandler as h, getCorrectOrientation as ht, indexDirectoryFiles as i, registerModal as it, getSpeechPrompt as j, createTemplateManager as k, pickMarkdownFile as l, bindWith as lt, saveMarkdownBlob as m, fixOrientToScreen as mt, getCachedComponent as n, initBackNavigation as nt, mountPickedDirectory as o, E as ot, resolveFileUnderDirectory as p, ensureVirtualKeyboardOverlay as pt, navigationEnable as q, bindDirectoryForLaunchedFiles as r, registerCloseable as rt, observeFileSystemHandle as s, M$1 as st, src_exports as t, hasActiveCloseable as tt, pickSidecarDirectoryFiles as u, handleStyleChange as ut, isBase64Like as v, whenAnyScreenChanges as vt, oklch as w, StorageKeys as x, isInFocus as xt, normalizeDataAsset as y, MOCElement as yt, initGlobalClipboard as z };

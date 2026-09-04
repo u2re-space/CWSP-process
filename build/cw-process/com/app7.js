@@ -2572,6 +2572,31 @@ var WorkCenterEvents = class {
 			this.templates.applyInstruction(this.state, instruction.value);
 			WorkCenterStateManager.saveState(this.state);
 		});
+		this.bindPopoverDismiss(root, "[data-workcenter-request-options]", "[data-action=\"open-request-options\"]");
+		this.bindPopoverDismiss(root, "[data-workcenter-secondary]", "[data-action=\"open-secondary\"]");
+	}
+	bindPopoverDismiss(root, panelSelector, triggerSelector) {
+		const hidePanel = () => {
+			const panel = root.querySelector(panelSelector);
+			if (!panel || panel.hidden) return;
+			panel.hidden = true;
+			root.querySelector(triggerSelector)?.setAttribute("aria-expanded", "false");
+		};
+		const hideIfOutside = (event) => {
+			const panel = root.querySelector(panelSelector);
+			if (!panel || panel.hidden) return;
+			const path = event.composedPath();
+			if (path.includes(panel)) return;
+			const trigger = root.querySelector(triggerSelector);
+			if (trigger && path.includes(trigger)) return;
+			hidePanel();
+		};
+		window.addEventListener("pointerdown", hideIfOutside, true);
+		window.addEventListener("focusin", hideIfOutside, true);
+		root.addEventListener("keydown", (event) => {
+			if (event.key !== "Escape") return;
+			hidePanel();
+		});
 	}
 	setupVoiceInput(root) {
 		const voice = root.querySelector("[data-action=\"voice-input\"]");
@@ -2653,28 +2678,67 @@ var WorkCenterEvents = class {
 		const handle = root.querySelector("[data-composer-resize]");
 		const composer = root.querySelector("[data-workcenter-composer]");
 		if (!handle || !composer) return;
+		const applyHeight = (clientY, startY, startHeight, limit) => {
+			const next = Math.min(limit, Math.max(72, startHeight + (startY - clientY)));
+			composer.style.setProperty("--wc-composer-min", `${next}px`);
+			syncWorkCenterComposerHeight(root);
+		};
+		let pointerDrag = false;
 		handle.addEventListener("pointerdown", (event) => {
-			if (event.button !== 0) return;
+			if (event.isPrimary === false) return;
+			if (event.pointerType === "mouse" && event.button !== 0) return;
+			pointerDrag = true;
 			event.preventDefault();
-			handle.setPointerCapture?.(event.pointerId);
+			event.stopPropagation();
+			try {
+				handle.setPointerCapture?.(event.pointerId);
+			} catch {}
 			const startY = event.clientY;
 			const startHeight = composer.getBoundingClientRect().height;
 			const hostHeight = root.getBoundingClientRect().height || startHeight;
 			const limit = Math.max(96, hostHeight * .75);
 			const onMove = (move) => {
-				const next = Math.min(limit, Math.max(72, startHeight + (startY - move.clientY)));
-				composer.style.setProperty("--wc-composer-min", `${next}px`);
-				syncWorkCenterComposerHeight(root);
+				if (move.pointerId !== event.pointerId) return;
+				move.preventDefault();
+				applyHeight(move.clientY, startY, startHeight, limit);
+			};
+			const onUp = (up) => {
+				if (up.pointerId !== event.pointerId) return;
+				pointerDrag = false;
+				window.removeEventListener("pointermove", onMove);
+				window.removeEventListener("pointerup", onUp);
+				window.removeEventListener("pointercancel", onUp);
+				try {
+					handle.releasePointerCapture?.(event.pointerId);
+				} catch {}
+			};
+			window.addEventListener("pointermove", onMove, { passive: false });
+			window.addEventListener("pointerup", onUp);
+			window.addEventListener("pointercancel", onUp);
+		}, { passive: false });
+		handle.addEventListener("touchstart", (event) => {
+			if (pointerDrag || event.touches.length !== 1) return;
+			event.preventDefault();
+			event.stopPropagation();
+			const startY = event.touches[0].clientY;
+			const startHeight = composer.getBoundingClientRect().height;
+			const hostHeight = root.getBoundingClientRect().height || startHeight;
+			const limit = Math.max(96, hostHeight * .75);
+			const onMove = (move) => {
+				const touch = move.touches[0];
+				if (!touch) return;
+				move.preventDefault();
+				applyHeight(touch.clientY, startY, startHeight, limit);
 			};
 			const onUp = () => {
-				handle.removeEventListener("pointermove", onMove);
-				handle.removeEventListener("pointerup", onUp);
-				handle.removeEventListener("pointercancel", onUp);
+				window.removeEventListener("touchmove", onMove);
+				window.removeEventListener("touchend", onUp);
+				window.removeEventListener("touchcancel", onUp);
 			};
-			handle.addEventListener("pointermove", onMove);
-			handle.addEventListener("pointerup", onUp);
-			handle.addEventListener("pointercancel", onUp);
-		});
+			window.addEventListener("touchmove", onMove, { passive: false });
+			window.addEventListener("touchend", onUp);
+			window.addEventListener("touchcancel", onUp);
+		}, { passive: false });
 	}
 	findAttachment(hash) {
 		if (!hash) return null;
@@ -3622,6 +3686,11 @@ var ActionHistoryStore = class {
 var actionHistory = new ActionHistoryStore();
 //#endregion
 //#region ../../modules/views/workcenter-view/src/ts/WorkCenterHistory.ts
+/**
+* Work Center action-history list and overlay.
+*
+* FIND:workcenter-action-history
+*/
 var WorkCenterHistory = class {
 	container = null;
 	deps;
@@ -3763,16 +3832,28 @@ var WorkCenterHistory = class {
         </div>
       </div>
     </div>`;
+		const closeModal = () => {
+			window.removeEventListener("keydown", onKey);
+			modal.remove();
+		};
+		const onKey = (event) => {
+			if (event.key === "Escape") closeModal();
+		};
+		window.addEventListener("keydown", onKey);
 		modal.addEventListener("click", (e) => {
 			const target = e.target;
+			if (!target.closest(".modal-content")) {
+				closeModal();
+				return;
+			}
 			const action = target.getAttribute("data-action") || target.closest("[data-action]")?.getAttribute("data-action");
 			const entryId = target.getAttribute("data-restore-action") || target.getAttribute("data-view-details");
-			if (action === "close-modal") modal.remove();
+			if (action === "close-modal") closeModal();
 			else if (action === "export-history") this.exportActionHistory();
 			else if (action === "clear-history") {
 				if (confirm("Are you sure you want to clear all action history?")) {
 					actionHistory.clearEntries();
-					modal.remove();
+					closeModal();
 					this.updateRecentHistory({});
 				}
 			} else if (entryId) {
@@ -3780,7 +3861,7 @@ var WorkCenterHistory = class {
 				if (entry) {
 					if (target.hasAttribute("data-restore-action") && entry.result) {
 						this.deps.showMessage?.("Result restored from history");
-						modal.remove();
+						closeModal();
 					} else if (target.hasAttribute("data-view-details")) this.showActionDetails(entry);
 				}
 			}

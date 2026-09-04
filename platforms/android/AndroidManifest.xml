@@ -59,6 +59,7 @@
             android:exported="true"
             android:launchMode="singleTask"
             android:hardwareAccelerated="true"
+            android:windowSoftInputMode="adjustNothing"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation|density">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

@@ -19,6 +19,11 @@ const config: CapacitorConfig = {
         SystemBars: {
             style: "DARK",
             insetsHandling: "disable"
+        },
+        /* WHY: overlay IME; Work Center lifts `.workcenter-composer` via `--virtual-keyboard-height`. */
+        Keyboard: {
+            resize: "none",
+            resizeOnFullScreen: true
         }
     },
     server: {

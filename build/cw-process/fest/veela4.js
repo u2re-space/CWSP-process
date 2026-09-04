@@ -1,7 +1,7 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../chunks/cws-bridge.js","../chunks/rolldown-runtime.js","./core3.js","./core2.js","./uniform.js","../assets/index-C9QTqpCS.js","../chunks/airpad-cwsp-client-parity.js","../chunks/multi-value-list.js","../vendor/@capacitor_core.js","../chunks/UniformInterop2.js","../chunks/names.js","../vendor/culori.js","./core.js","./object.js","./core4.js","./core5.js"])))=>i.map(i=>d[i]);
 import { t as __vitePreload } from "../assets/index-C9QTqpCS.js";
 import { gt as loadAsAdopted } from "./core.js";
-import { ct as Q, pt as fixOrientToScreen } from "./core4.js";
+import { ct as Q, mt as fixOrientToScreen } from "./core4.js";
 import { i as initializeAppCanvasLayer } from "../vendor/culori.js";
 import { a as loadSettings, s as saveSettings } from "../vendor/jsox.js";
 import { n as applyGridSettings } from "../chunks/StateStorage.js";

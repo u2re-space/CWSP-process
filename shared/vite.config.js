@@ -1,5 +1,16 @@
 import { existsSync, readFileSync, readdirSync, realpathSync, rmSync } from "node:fs";
+import { createRequire } from "node:module";
 import { join, resolve } from "node:path";
+
+/* WHY: same as scripts/force-https1.mjs — ESM assignment does not patch Vite's
+ * `const { createSecureServer } = await import("node:http2")`. */
+{
+    const require = createRequire(import.meta.url);
+    const http2 = require("node:http2");
+    const https1 = require("node:https");
+    http2.createSecureServer = (options, listener) =>
+        typeof listener === "function" ? https1.createServer(options, listener) : https1.createServer(options);
+}
 
 import {
     assetFileNames as distAssetFileNames,
@@ -515,6 +526,41 @@ export const initiate = (NAME = "generic", tsconfig = {}, __dirname = resolve(".
         process.env.NODE_ENV === "production";
     /** Set `VITE_PWA_DEV_DISABLE=1` when the dev service worker still causes stale UI (same tab as old precache). */
     const pwaDevServiceWorkerEnabled = process.env.VITE_PWA_DEV_DISABLE !== "1";
+    /* WHY: Vite HMR on `wss://LAN/?token=` still gets HTML frames (`Invalid frame
+     * header`) even after HTTP/1.1. The client then polls and `location.reload()`.
+     * Default off so LAN boot stays up. Re-enable: VITE_HMR=1 (path /__vite_hmr). */
+    const hmrEnabled = process.env.VITE_HMR === "1";
+    /* WHY: Vite 8 still injects `@vite/client` when `hmr: false`. That client opens
+     * `wss://LAN/?token=` → Invalid frame header → poll → reload. Serve a no-WS stub. */
+    const viteClientStubSource = readFileSync(resolve(import.meta.dirname, "vite-client-stub.js"), "utf8");
+    const isViteClientRequest = (url) => /(?:^|\/)@vite\/client$/.test(decodeURIComponent(String(url || "").split("?")[0]));
+    const viteClientStubPlugin = !hmrEnabled
+        ? {
+              name: "cwsp-vite-client-stub",
+              enforce: "pre",
+              transform(code, id) {
+                  if (!code.includes("extends HTMLElement") || !/ErrorOverlay/.test(code)) return null;
+                  if (!/[\\/]@vite[\\/]client|[\\/]vite[\\/]dist[\\/]client/.test(id) && !id.endsWith("/client")) return null;
+                  return code.replace(
+                      /class\s+ErrorOverlay\s+extends\s+HTMLElement/g,
+                      "class ErrorOverlay extends (globalThis.HTMLElement || class {})"
+                  );
+              },
+              configureServer(devServer) {
+                  const serveStub = (req, res, next) => {
+                      if (!isViteClientRequest(req.url)) return next();
+                      res.statusCode = 200;
+                      res.setHeader("Content-Type", "text/javascript; charset=utf-8");
+                      res.setHeader("Cache-Control", "no-store");
+                      res.end(viteClientStubSource);
+                  };
+                  devServer.middlewares.use(serveStub);
+                  const stack = devServer.middlewares.stack;
+                  const last = stack.pop();
+                  if (last) stack.unshift(last);
+              },
+          }
+        : null;
     /**
      * Optional absolute origin for generated module / HMR URLs (reverse proxy, odd LAN setups).
      * If unset, Vite uses the browser’s current host:port — required when you open dev via
@@ -539,6 +585,7 @@ export const initiate = (NAME = "generic", tsconfig = {}, __dirname = resolve(".
         return Number.isFinite(n) && n > 0 && n < 65536 ? Math.floor(n) : 443;
     })();
     const plugins = [
+        ...(viteClientStubPlugin ? [viteClientStubPlugin] : []),
         mountedFsVitePlugin(workspaceRoot),
         evictStaleKatexDepChunksPlugin(),
         servePwaSrcAsDistPlugin(__dirname),
@@ -739,13 +786,16 @@ export const initiate = (NAME = "generic", tsconfig = {}, __dirname = resolve(".
         open: false,
         host: "0.0.0.0",
         ...(devServerOrigin ? { origin: devServerOrigin } : {}),
-        // WHY: Vite 8 HMR is `/?token=` — SPA rewrite to index.html makes the WS handshake 400.
-        hmr: {
-            path: "/__vite_hmr"
-        },
+        hmr: hmrEnabled ? { path: "/__vite_hmr" } : false,
+        ws: hmrEnabled ? undefined : false,
         allowedHosts: true,
         appType: 'spa',
-        https,
+        https: {
+            ...https,
+            /* WHY: Vite 8 HTTPS is always node:http2 (ALPN h2). Chrome then opens
+             * HMR as WebSocket-over-h2; `ws` cannot parse those frames. */
+            ALPNProtocols: ["http/1.1"],
+        },
         proxy: {
             // Proxy Phosphor icons to avoid CORS issues
             '/assets/icons/phosphor': {
@@ -802,6 +852,7 @@ export const initiate = (NAME = "generic", tsconfig = {}, __dirname = resolve(".
                 const pathname = url.split('?')[0] || '';
                 const isViteHmr =
                     String(req.headers?.upgrade || "").toLowerCase() === "websocket" ||
+                    Boolean(req.headers["sec-websocket-key"]) ||
                     pathname === "/__vite_hmr" ||
                     pathname.startsWith("/@vite") ||
                     /(?:^|[?&])token=/.test(url);

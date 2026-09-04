@@ -1,0 +1,1 @@
+../../CWSP-document/scripts/force-https1.mjs

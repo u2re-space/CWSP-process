@@ -1,0 +1,1 @@
+../../CWSP-document/shared/vite-client-stub.js

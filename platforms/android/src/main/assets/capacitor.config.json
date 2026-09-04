@@ -9,6 +9,10 @@
     "SystemBars": {
       "style": "DARK",
       "insetsHandling": "disable"
+    },
+    "Keyboard": {
+      "resize": "none",
+      "resizeOnFullScreen": true
     }
   },
   "server": {

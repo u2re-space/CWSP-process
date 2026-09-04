@@ -2,7 +2,7 @@ const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../chunks/launcher-bri
 import { t as __vitePreload } from "../assets/index-C9QTqpCS.js";
 import { n as createViewConstructor, t as sendViewProtocolMessage } from "../chunks/UniformViewTransport.js";
 import { $ as unbakeScreenColors, St as preloadStyle, Tt as removeAdopted, Z as scheduleBakeScreenColors, gt as loadAsAdopted } from "./core.js";
-import { X as property, Y as defineElement, Z as H, lt as bindWith, ut as handleStyleChange, yt as addEvent, z as initGlobalClipboard } from "./core4.js";
+import { X as property, Y as defineElement, Z as H, bt as addEvent, lt as bindWith, ut as handleStyleChange, z as initGlobalClipboard } from "./core4.js";
 import { g as getDir } from "./core5.js";
 import { d as propRef, f as ref, i as affected, u as observe } from "./object.js";
 import { b as toExplorerStoragePath, y as resolveEntryIcon } from "../com/app.js";
