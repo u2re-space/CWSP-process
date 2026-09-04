@@ -1,4 +1,4 @@
-import { c as inferCwspSkuFromLocation, l as isCwspNativeHost, n as SKU_HUB_PATHS } from "./boot-history-base.js";
+import { c as inferCwspSkuFromLocation, l as isCwspNativeHost, n as SKU_HUB_PATHS } from "../chunks/ecosystem-skus.js";
 //#region src/frontend/boot/history-base.ts
 var KNOWN_PATH_MOUNTS = [
 	"cwsp",

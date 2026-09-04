@@ -1,9 +1,108 @@
-import { Q as ensureStyleSheet, Sr as preloadStyle, bn as dynamicTheme, mr as ref, xr as loadInlineStyle } from "../com/app.js";
-import { Dt as getTransitionDirection, F as hubSettingsSectionPath, Ft as saveSettings, G as ViewRegistry, M as canonicalHubSettingsSection, Nt as loadSettings, Ot as withViewTransition, St as syncBrowserChromeTheme, U as scheduleViewModulePrefetch, _t as isEnabledView, bt as applyTheme, ht as serviceChannels, xt as resyncThemeAfterAdoptedViewSheet, z as resolveEffectiveHubSettingsSection } from "../shells/boot-index.js";
-import { g as shouldHandoffViewToSibling, m as publicHrefForView } from "../shells/boot-history-base.js";
+import { St as preloadStyle, vt as loadInlineStyle } from "../fest/core.js";
+import { k as dynamicTheme } from "../fest/core4.js";
+import { f as ref } from "../fest/object.js";
+import { l as serviceChannels, n as ViewRegistry, p as isEnabledView } from "../fest/uniform2.js";
+import { a as loadSettings, s as saveSettings } from "../vendor/jsox.js";
+import { g as shouldHandoffViewToSibling, m as publicHrefForView } from "./ecosystem-skus.js";
+import "../fest/icon.js";
+import { n as ensureStyleSheet } from "../fest/icon3.js";
+import { i as syncBrowserChromeTheme, n as applyTheme, r as resyncThemeAfterAdoptedViewSheet } from "./Theme.js";
+import { a as hubSettingsSectionPath, l as resolveEffectiveHubSettingsSection, n as canonicalHubSettingsSection, p as scheduleViewModulePrefetch } from "./settings-shell-profile.js";
 import { a as stripHistoryBase, i as pathForSkuHostView, n as initBootShellWindowActivity, o as withHistoryBase, r as ensureHistoryBaseDataset } from "../shells/preference.js";
-import { o as resolveOverlayMountPoint } from "../shells/environment-environment-overlay.js";
 import { t as showToast } from "./toast.js";
+//#region src/shared/routing/core/view-transitions.ts
+/**
+* Canonical view order used to determine navigation direction.
+* Earlier index = "back", later index = "forward".
+*/
+var VIEW_ORDER = [
+	"home",
+	"viewer",
+	"editor",
+	"explorer",
+	"workcenter",
+	"history",
+	"settings",
+	"print"
+];
+/** `true` when `document.startViewTransition` is available (Chrome 111+). */
+var supportsViewTransitions = () => typeof document !== "undefined" && "startViewTransition" in document;
+/**
+* WHY: Neutralino / WebNative WebViews have flaky View Transition teardown —
+* a stuck `::view-transition` layer makes the whole shell unclickable.
+* Prefer an instant DOM swap there.
+*/
+function shouldSkipViewTransitions() {
+	try {
+		const g = globalThis;
+		if (g.__CWS_NEUTRALINO_BOOT__ || g.__CWS_WEBNATIVE_BOOT__) return true;
+		if (g.NL_OS || g.Neutralino) return true;
+		if (typeof document !== "undefined" && document.documentElement?.dataset?.cwspDisableVt === "1") return true;
+	} catch {}
+	return false;
+}
+/**
+* Compute navigation direction based on the ordered view list.
+*
+* Unknown view IDs fall back to `"fade"` (no slide animation).
+*/
+function getTransitionDirection(from, to) {
+	const fi = VIEW_ORDER.indexOf(from);
+	const ti = VIEW_ORDER.indexOf(to);
+	if (fi === -1 || ti === -1 || fi === ti) return "fade";
+	return fi < ti ? "forward" : "backward";
+}
+/**
+* Wrap a DOM mutation in a View Transition, with a transparent fallback.
+*
+* Before starting the transition, `data-vt-direction` is set on `:root` so
+* CSS `::view-transition-old/new(active-view)` can select the right keyframe
+* animation via inherited CSS custom properties.
+*
+* If a transition is already running, the browser will abort the previous one
+* and start the new one — this is intentional and handled gracefully.
+*/
+async function withViewTransition(update, options = {}) {
+	const finishOnce = () => {
+		try {
+			options.onTransitionFinished?.();
+		} catch (error) {
+			console.warn("[view-transition] onTransitionFinished error:", error);
+		}
+	};
+	let finishedCalled = false;
+	const guardedFinish = () => {
+		if (finishedCalled) return;
+		finishedCalled = true;
+		finishOnce();
+	};
+	if (!supportsViewTransitions() || shouldSkipViewTransitions()) {
+		await update();
+		requestAnimationFrame(() => requestAnimationFrame(guardedFinish));
+		return;
+	}
+	const { direction = "fade", types } = options;
+	document.documentElement.dataset.vtDirection = direction;
+	const doc = document;
+	const transition = types?.length ? doc.startViewTransition({
+		update,
+		types
+	}) : doc.startViewTransition(update);
+	transition.finished.then(guardedFinish).catch(guardedFinish);
+	globalThis.setTimeout?.(() => {
+		try {
+			transition.skipTransition();
+		} catch {}
+		guardedFinish();
+	}, 900);
+	try {
+		await (transition.updateCallbackDone ?? transition.finished);
+	} catch {} finally {
+		delete document.documentElement.dataset.vtDirection;
+	}
+	transition.finished.catch(() => {});
+}
+//#endregion
 //#region src/frontend/boot/shell-elements.ts
 var ShellHost = class extends HTMLElement {
 	mountShellLayout(layout) {
@@ -17,6 +116,69 @@ function ensureShellElementDefined(id) {
 	const tag = `cw-shell-${id}`;
 	if (!customElements.get(tag)) customElements.define(tag, ShellHost);
 	return tag;
+}
+//#endregion
+//#region src/frontend/boot/shell-slots.ts
+/**
+* Light-DOM `slot` assignments for `cw-shell-*` hosts. Layouts project these into shadow `<slot>` nodes.
+*
+* - `content`: default (unnamed) slot — routed views and most UI.
+* - `underlying`: behind content (wallpaper, canvas, speed dial / home when shell hosts them).
+* - `overlay`: above content (toasts, dialogs, menus, tooltips — assign in consuming code).
+*
+* NOTE: Content script shell omits the underlying layer. **Window frames** (`wf-frame`) are not shells:
+* imperative or slotted overlay UI must mount under the parent `cw-shell-*` `[data-shell-overlays]` layer
+* (use {@link resolveOverlayMountPoint} / {@link resolveShellOverlaysMount}).
+*/
+var SHELL_SLOT = {
+	underlying: "underlying",
+	overlay: "overlay",
+	/** Default slot: use empty string / omit `slot` on the element. */
+	content: ""
+};
+/**
+* Comma-separated selector for {@link Element.closest} — matches `cw-shell-*` tags from shell registration.
+* Keep aligned with `ShellId` values registered via {@link ensureShellElementDefined}.
+*/
+var SHELL_HOST_SELECTOR = [
+	"cw-shell-base",
+	"cw-shell-window",
+	"cw-shell-tabbed",
+	"cw-shell-minimal",
+	"cw-shell-environment",
+	"env-shell-container",
+	"cw-shell-content",
+	"cw-shell-immersive",
+	"cw-shell-faint"
+].join(",");
+/**
+* Nearest shell's shadow `[data-shell-overlays]` for stacking UI above routed views.
+* Walks past `.wf-frame` and other non-shell ancestors to the enclosing shell host (`cw-shell-*` or `env-shell-container`).
+*/
+function resolveShellOverlaysMount(from) {
+	if (!(from instanceof Element) || typeof from.closest !== "function") return null;
+	const host = from.closest(SHELL_HOST_SELECTOR);
+	if (!host) return null;
+	const fromApi = host.overlayMount;
+	if (fromApi instanceof HTMLElement) return fromApi;
+	const fromShadow = host.shadowRoot?.querySelector?.("[data-shell-overlays]") ?? null;
+	if (fromShadow instanceof HTMLElement) return fromShadow;
+	const fromLight = host.querySelector?.("[data-shell-overlays]") ?? null;
+	return fromLight instanceof HTMLElement ? fromLight : null;
+}
+/**
+* Prefer shell overlay layer (from `anchor`'s enclosing shell), then `[data-app-layer="overlay"]`,
+* then `.basic-app`, then `document.body`.
+*/
+function resolveOverlayMountPoint(anchor) {
+	if (typeof document === "undefined") return;
+	const shellOverlays = anchor ? resolveShellOverlaysMount(anchor) : null;
+	if (shellOverlays) return shellOverlays;
+	const appLayer = document.querySelector("[data-app-layer=\"overlay\"]");
+	if (appLayer) return appLayer;
+	const basicApp = document.querySelector(".basic-app");
+	if (basicApp) return basicApp;
+	return document.body;
 }
 //#endregion
 //#region src/frontend/boot/shells.ts
@@ -106,16 +268,15 @@ var ShellBase = class {
 				return false;
 			}
 		})();
-		if (this.id !== "immersive" && this.id !== "content") {
-			if (parentIsShellGrid) this.rootElement.style.minBlockSize = "0";
-			else {
-				this.rootElement.style.position = "absolute";
-				this.rootElement.style.inset = "0";
-				this.rootElement.style.inlineSize = "100%";
-				this.rootElement.style.blockSize = "100%";
-				this.rootElement.style.minBlockSize = "100%";
-			}
-		} else this.rootElement.style.minBlockSize = "";
+		if (this.id !== "immersive" && this.id !== "content") if (parentIsShellGrid) this.rootElement.style.minBlockSize = "0";
+		else {
+			this.rootElement.style.position = "absolute";
+			this.rootElement.style.inset = "0";
+			this.rootElement.style.inlineSize = "100%";
+			this.rootElement.style.blockSize = "100%";
+			this.rootElement.style.minBlockSize = "100%";
+		}
+		else this.rootElement.style.minBlockSize = "";
 		this.rootElement.style.pointerEvents = this.id === "content" ? "none" : "auto";
 		this.contentContainer = shellLayout.querySelector("[data-shell-content]") || shellLayout;
 		this.toolbarContainer = shellLayout.querySelector("[data-shell-toolbar]");
@@ -680,14 +841,13 @@ var ShellBase = class {
 		this.setTheme(this.createShellTheme(mode));
 		try {
 			const current = await loadSettings();
-			const saved = await saveSettings({
+			applyTheme(await saveSettings({
 				...current,
 				appearance: {
 					...current.appearance || {},
 					theme: mode
 				}
-			});
-			applyTheme(saved);
+			}));
 		} catch (error) {
 			console.warn(`[${this.id}] Failed to save theme mode:`, error);
 		}
@@ -770,4 +930,4 @@ var ShellBase = class {
 	}
 };
 //#endregion
-export { ShellBase as t };
+export { resolveShellOverlaysMount as i, SHELL_SLOT as n, resolveOverlayMountPoint as r, ShellBase as t };

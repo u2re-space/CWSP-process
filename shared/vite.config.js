@@ -4,9 +4,7 @@ import { join, resolve } from "node:path";
 import {
     assetFileNames as distAssetFileNames,
     chunkFileNames as distChunkFileNames,
-    manualChunks as distManualChunks,
     relocateWorkerBundleAssetsPlugin,
-    rolldownCodeSplittingGroups,
     rewriteVitePreloadPlugin,
 } from "./vite-chunk-placement.mjs";
 
@@ -478,6 +476,8 @@ export const initiate = (NAME = "generic", tsconfig = {}, __dirname = resolve(".
             { find: /^@fest-lib\/lure\/provide$/, replacement: resolve(workspaceRoot, "modules/projects/lur.e/src/utils/opfs/provide.ts") },
             { find: /^@fest-lib\/lure\/idb-fs$/, replacement: resolve(workspaceRoot, "modules/projects/lur.e/src/utils/opfs/IdbFs.ts") },
             { find: /^@fest-lib\/lure\/remote-fs$/, replacement: resolve(workspaceRoot, "modules/projects/lur.e/src/utils/opfs/remote-fs.ts") },
+            { find: /^@fest-lib\/fl-ui\/markdown\/highlight$/, replacement: resolve(workspaceRoot, "modules/projects/fl.ui/src/ui/markdown/highlight.ts") },
+            { find: /^@fest-lib\/fl-ui\/markdown\/render$/, replacement: resolve(workspaceRoot, "modules/projects/fl.ui/src/ui/markdown/render.ts") },
             /* Rolldown: bare tsconfig alias loses `?inline` imports on this key (viewer-view Markdown typography). */
             { find: /^markdown-view-typography(.*)$/, replacement: `${markdownTypographyScss}$1` },
             ...importFromTSConfig(tsconfig, __dirname),
@@ -698,7 +698,6 @@ export const initiate = (NAME = "generic", tsconfig = {}, __dirname = resolve(".
             },
             chunkFileNames: distChunkFileNames,
             assetFileNames: distAssetFileNames(NAME),
-            manualChunks: distManualChunks,
         }
     };
 
@@ -894,14 +893,11 @@ export const initiate = (NAME = "generic", tsconfig = {}, __dirname = resolve(".
                 if (isIgnorableRollupWarning(warning)) return;
                 defaultHandler(warning);
             },
-            // NOTE: Vite 8 uses Rolldown for production builds. Mirror output naming here so
-            // chunk placement rules (`views/`, `shells/`, `com/`, `core/`, `chunks/`, etc.)
-            // are applied consistently instead of collapsing scripts into the dist root.
+            // WHY: Rolldown 1.2 native `advancedChunks.name` rejects any name/test
+            // callback that is not a string (RegExp test / manualChunks / batchName
+            // array). Default splitting until groups are string-only and callback-free.
             output: {
                 ...rollupOptions.output,
-                codeSplitting: {
-                    groups: rolldownCodeSplittingGroups,
-                },
             },
         },
         terserOptions,

@@ -1,4 +1,4 @@
-const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
+import { t as __vitePreload } from "../assets/index-C9QTqpCS.js";
 //#region src/shared/other/config/settings/crx-control-session.ts
 /** chrome.storage.local key — never sessionStorage (must survive browser restart). */
 var CRX_CONTROL_SESSION_KEY = "cwsp-control-session-v1";
@@ -150,7 +150,7 @@ var pairCrxControl = async (opts) => {
 		ok: false,
 		error: "No session yet — Accept the pair on the phone, or check the device code"
 	};
-	if (!expiresAt || expiresAt < Date.now()) expiresAt = Date.now() + 31536e7;
+	if (!expiresAt || expiresAt < Date.now()) expiresAt = Date.now() + 10 * 365 * 24 * 60 * 6e4;
 	try {
 		const verify = await fetch(`${controlHost}/service/config`, {
 			method: "GET",

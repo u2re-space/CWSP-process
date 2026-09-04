@@ -1,9 +1,14 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./sw-handling.js","../com/app.js","./rolldown-runtime.js","../views/viewer.js","../shells/boot-index.js","../fest/core.js","../shells/boot-history-base.js","../com/service.js","../fest/veela.js","./log-sanitizer.js","./ViewTransferRouting.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./sw-handling.js","../assets/index-C9QTqpCS.js","../fest/core4.js","./rolldown-runtime.js","../fest/core.js","../fest/core2.js","../fest/object.js","../fest/core5.js","../fest/uniform.js","../vendor/jsox.js","./open-policy.js","./ecosystem-skus.js","./SettingsTypes.js","./process-ingress.js","./airpad-cwsp-client-parity.js","./multi-value-list.js","./cws-bridge.js","../fest/core3.js","../vendor/@capacitor_core.js","./UniformInterop2.js","./names.js","./remote-connection-runtime.js","./UnifiedMessaging.js","./UniformInterop.js","./process-api-result.js","./ShareTargetGateway.js","./UnifiedMessaging2.js","./sku-ingress.js","./log-sanitizer.js","./ViewTransferRouting.js"])))=>i.map(i=>d[i]);
 import { r as __exportAll } from "./rolldown-runtime.js";
-const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
-import { a as flushHeldIngressToWorkCenter, o as holdIngressFiles } from "../views/viewer.js";
-import { $n as peekProcessIngressSettings, Or as classifyOpenKindFromPayload, ct as consumeCachedShareTargetPayload, dt as safeCacheOpen, ft as safeCachePut, mn as unwrapSwInteropMessage, nr as resolveProcessIngressKind, nt as unifiedMessaging, ot as readProcessApiResultText, st as buildShareDataFromCachedPayload, ut as safeCacheMatch } from "../shells/boot-index.js";
-import { c as inferCwspSkuFromLocation } from "../shells/boot-history-base.js";
+import { t as __vitePreload } from "../assets/index-C9QTqpCS.js";
+import { c as inferCwspSkuFromLocation } from "./ecosystem-skus.js";
+import { a as classifyOpenKindFromPayload } from "./open-policy.js";
+import { c as peekProcessIngressSettings, d as resolveProcessIngressKind } from "./process-ingress.js";
+import { n as unwrapSwInteropMessage, t as readProcessApiResultText } from "./process-api-result.js";
+import "./UniformInterop2.js";
+import { a as safeCacheOpen, i as safeCacheMatch, n as consumeCachedShareTargetPayload, o as safeCachePut, t as buildShareDataFromCachedPayload } from "./ShareTargetGateway.js";
+import { o as unifiedMessaging } from "./UnifiedMessaging2.js";
+import { a as holdIngressFiles, i as flushHeldIngressToWorkCenter } from "./sku-ingress.js";
 import { t as postWorkCenterCommand } from "./workcenter-command-wire.js";
 ({
 	process: "/?shared=1",
@@ -19,8 +24,7 @@ var PENDING_CACHE = "rs-process-pending-v1";
 var PENDING_CACHE_URL = "/process/pending.json";
 var loadPending = async () => {
 	try {
-		const cache = await safeCacheOpen(PENDING_CACHE);
-		const response = await safeCacheMatch(cache, PENDING_CACHE_URL);
+		const response = await safeCacheMatch(await safeCacheOpen(PENDING_CACHE), PENDING_CACHE_URL);
 		if (!response) return [];
 		const json = await response.json();
 		return Array.isArray(json?.operations) ? json.operations : [];
@@ -150,7 +154,7 @@ var deliverShareTargetInput = async (data) => {
 		const { ingestSharePayload } = await __vitePreload(async () => {
 			const { ingestSharePayload } = await import("./sw-handling.js");
 			return { ingestSharePayload };
-		}, __vite__mapDeps([0,1,2,3,4,5,6,7,8,9,10]), import.meta.url);
+		}, __vite__mapDeps([0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29]), import.meta.url);
 		return await ingestSharePayload({
 			...payload,
 			files,
@@ -170,15 +174,15 @@ var deliverShareTargetInput = async (data) => {
 	let settings = peekProcessIngressSettings();
 	if (!settings) try {
 		const { loadSettings } = await __vitePreload(async () => {
-			const { loadSettings } = await import("../shells/boot-index.js").then((n) => n.kt);
+			const { loadSettings } = await import("../vendor/jsox.js").then((n) => n.t);
 			return { loadSettings };
-		}, __vite__mapDeps([4,2,1,5,6,7,8]), import.meta.url);
+		}, __vite__mapDeps([9,3,1,2,4,5,6,7,8,10,11,12,13,14,15,16,17,18,19,20,21]), import.meta.url);
 		settings = await loadSettings().catch(() => null);
 		if (settings) {
 			const { rememberProcessIngressSettings } = await __vitePreload(async () => {
-				const { rememberProcessIngressSettings } = await import("../shells/boot-index.js").then((n) => n.er);
+				const { rememberProcessIngressSettings } = await import("./process-ingress.js").then((n) => n.l);
 				return { rememberProcessIngressSettings };
-			}, __vite__mapDeps([4,2,1,5,6,7,8]), import.meta.url);
+			}, __vite__mapDeps([13,3,1,10,11]), import.meta.url);
 			rememberProcessIngressSettings(settings);
 		}
 	} catch {}
@@ -186,7 +190,7 @@ var deliverShareTargetInput = async (data) => {
 		const { processShareTargetData } = await __vitePreload(async () => {
 			const { processShareTargetData } = await import("./sw-handling.js");
 			return { processShareTargetData };
-		}, __vite__mapDeps([0,1,2,3,4,5,6,7,8,9,10]), import.meta.url);
+		}, __vite__mapDeps([0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29]), import.meta.url);
 		return await processShareTargetData({
 			...payload,
 			files,
@@ -287,7 +291,7 @@ var bindSwPageBridge = () => {
 	const replayShareCache = () => {
 		consumeCachedShareTargetPayload({ clear: false }).then((cached) => {
 			if (!cached) return;
-			if (Date.now() - Number(cached.meta?.timestamp || Date.now()) > 3e5) return;
+			if (Date.now() - Number(cached.meta?.timestamp || Date.now()) > 300 * 1e3) return;
 			const hasFiles = Array.isArray(cached.files) && cached.files.length > 0;
 			const meta = cached.meta || {};
 			if (!hasFiles && !meta.text && !meta.url && !meta.title) return;

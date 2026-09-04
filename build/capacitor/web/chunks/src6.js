@@ -1,6173 +1,2966 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./launcher-bridge.js","../shells/boot-index.js","./rolldown-runtime.js","../shells/boot-history-base.js","../com/app.js","../fest/core.js","../com/service.js","../fest/veela.js"])))=>i.map(i=>d[i]);
-import { $n as getCorrectOrientation, Ar as __vitePreload, B as getWallpaperStoragePointer, Cn as pointerAnchorRef, Fn as elementPointerMap, Gn as registerModal, Hn as vector2Ref, Jn as M, Kn as navigate, M as toggleQuickSettingsFlyout, N as toggleCalendarFlyout, Nt as listVirtualRootEntriesFromRouter, Pt as resolveFsBackend, Sr as preloadStyle, U as setAppWallpaperFromBlob, Vn as H, Xn as DOMMixin, Zn as ensureVirtualKeyboardOverlay, br as loadAsAdopted, cn as handleIncomingEntries, cr as affected, dr as numberRef, er as orientationNumberMap, fr as observe, g as app_menu_default, ir as isInFocus, nr as MOCElement, pr as propRef, tr as updateVP, tt as openUnifiedContextMenu, u as installLauncherBackStack } from "../com/app.js";
-import { b as HomeChannelAction } from "../views/viewer.js";
-import { n as speed_dial_default, t as home_host_apply_default } from "../fest/veela.js";
-import { $ as resolveSpeedDialItemHref, A as isSpeedDialVirtualPath, B as parseSpeedDialItemFromJSON, C as getDefaultTileShape, Ct as normalizeOrient, D as gridLayoutState, E as getSpeedDialMirrorPath, Et as visualLayout, F as normalizeExternalWebHref, G as persistSpeedDialIconBlob, H as parseSpeedDialItemFromURL, I as normalizeItemIconBitmapScale, J as persistWallpaper, K as persistSpeedDialItems, L as normalizeOpenLinkTarget, M as looksLikeSpeedDialShortcutJson, N as markSpeedDialUserEditBeforeHydrate, O as isExternalWebHref, P as mirrorSpeedDialItems, Q as resolveSpeedDialIconUrl, R as openInDetachedBrowserWindow, S as findSpeedDialItem, St as markOccupiedSpan, T as getSpeedDialMeta, Tt as pointToLogicalCell, U as parseSpeedDialItemFromVirtualPath, V as parseSpeedDialItemFromSmartText, W as parseSpeedDialViewFromHref, X as removeSpeedDialItem, Y as refreshSpeedDialMirror, Z as resolveItemOpenLinkTarget, _ as defaultOpenLinkTargetForHref, _t as syncPlateGlyphInk, a as addSpeedDialItem, at as tileIconFetchSize, b as ensureSpeedDialMeta, bt as logicalToVisualCell, c as applySpeedDialSnapshot, ct as wasSpeedDialUserEdited, d as captureSpeedDialSnapshot, dt as createTileUiIconElement, et as setItemSpan, f as cloneSpeedDialItemPacked, ft as defaultIconScaleForDisplay, g as createWidgetSpeedDialItem, gt as normalizeTileShape, h as createSpeedDialItemFromClipboard, ht as normalizeIconDisplay, i as addClonedSpeedDialItem, it as stripCoreRailTilesFromGrid, k as isMirrorMode, l as buildSpeedDialViewPathHref, lt as ICON_DISPLAY_OPTIONS, m as createEmptySpeedDialItem, mt as isTileShapeValue, n as NAVIGATION_SHORTCUTS, nt as speedDialItems, o as applyIconScaleToPaintedNodes, ot as upsertSpeedDialItem, p as copySpeedDialItemToClipboard, pt as inferIconDisplay, q as persistSpeedDialMeta, r as SPEED_DIAL_MUTATION_EVENT, rt as speedDialMeta, s as applyItemIconScaleToElement, st as wallpaperState, t as ICON_BITMAP_SCALE_OPTIONS, tt as setSpeedDialMirrorPath, u as canUseNativeOpenUri, ut as TILE_SHAPE_OPTIONS, v as defaultWidgetSpan, vt as syncShapelessIconShadow, w as getItemSpan, wt as normalizeSpan, x as findNextFreeCellInSnapshot, xt as logicalToVisualSpan, y as emitSpeedDialMutation, yt as findNearestFreeRect, z as openInNewBrowserTab } from "./launcher-state.js";
-//#region ../../modules/views/home-view/src/ts/tiles-lock.ts
-var TILES_LOCKED_KEY = "cw::workspace::speed-dial::tiles-locked";
-/** Dispatched on `window` after {@link setTilesLocked}. */
-var TILES_LOCKED_EVENT = "cwsp-sd-tiles-lock";
-var isNativeCapacitorOrCoarse$1 = () => {
-	try {
-		const c = globalThis.Capacitor;
-		if (typeof c?.isNativePlatform === "function" && c.isNativePlatform()) return true;
-	} catch {}
-	return typeof matchMedia === "function" && matchMedia("(pointer: coarse)").matches;
-};
-/** WHY: phones default pinned so workspace/app-menu swipes win; mouse desktops stay editable. */
-var defaultTilesLocked = () => isNativeCapacitorOrCoarse$1();
-var isTilesLocked = () => {
-	try {
-		const v = localStorage.getItem(TILES_LOCKED_KEY);
-		if (v == null || !String(v).trim()) return defaultTilesLocked();
-		return v === "1" || v === "true" || v === "locked" || v === "pin";
-	} catch {
-		return defaultTilesLocked();
-	}
-};
-var applyTilesLockedAttr = (root) => {
-	(root || (typeof document !== "undefined" ? document.querySelector(".speed-dial-root") : null))?.toggleAttribute("data-tiles-locked", isTilesLocked());
-};
-var setTilesLocked = (locked) => {
-	try {
-		localStorage.setItem(TILES_LOCKED_KEY, locked ? "1" : "0");
-	} catch {}
-	applyTilesLockedAttr();
-	try {
-		window.dispatchEvent(new CustomEvent(TILES_LOCKED_EVENT, { detail: { locked } }));
-	} catch {}
-};
-//#endregion
-//#region ../../modules/views/home-view/src/ts/pointer-interaction.ts
-var DRAG_THRESHOLD_PX = 6;
-var SETTLE_DURATION_MS = 240;
-var SETTLE_EASING = "cubic-bezier(0.22, 0.8, 0.3, 1)";
-var DROP_GHOST_CLASS = "sd-drop-ghost";
-var centerOf = (rect) => [(rect.left + rect.right) / 2, (rect.top + rect.bottom) / 2];
-var translate = (x, y) => `translate3d(${x}px, ${y}px, 0)`;
-var getGridContentPoint = (grid, clientPoint) => {
-	const rect = grid.getBoundingClientRect();
-	const styles = getComputedStyle(grid);
-	const paddingLeft = parseFloat(styles.paddingLeft) || 0;
-	const paddingRight = parseFloat(styles.paddingRight) || 0;
-	const paddingTop = parseFloat(styles.paddingTop) || 0;
-	const paddingBottom = parseFloat(styles.paddingBottom) || 0;
-	const width = Math.max(1, rect.width - paddingLeft - paddingRight);
-	const height = Math.max(1, rect.height - paddingTop - paddingBottom);
-	return {
-		point: [clientPoint[0] - rect.left - paddingLeft, clientPoint[1] - rect.top - paddingTop],
-		size: [width, height]
-	};
-};
-var setInteractionState = (nodes, state, coordinate) => {
-	for (const node of nodes) {
-		node.dataset.interactionState = state;
-		node.dataset.gridCoordinateState = coordinate;
-	}
-};
-var resetTransforms = (nodes) => {
-	for (const node of nodes) {
-		node.style.removeProperty("transform");
-		node.style.setProperty("--drag-x", "0px");
-		node.style.setProperty("--drag-y", "0px");
-		node.style.removeProperty("--sd-grab-ox");
-		node.style.removeProperty("--sd-grab-oy");
-		node.removeAttribute("data-dragging");
-	}
-};
-var clearDragOffsets = (nodes) => {
-	for (const node of nodes) {
-		node.style.setProperty("--drag-x", "0px");
-		node.style.setProperty("--drag-y", "0px");
-	}
-};
-var animateNodeToCell = async (node, fromRect, toRect) => {
-	const [fromX, fromY] = centerOf(fromRect);
-	const [toX, toY] = centerOf(toRect);
-	const offsetX = fromX - toX;
-	const offsetY = fromY - toY;
-	const reducedMotion = globalThis.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
-	node.style.transition = "none";
-	node.style.transform = translate(offsetX, offsetY);
-	if (reducedMotion || typeof node.animate !== "function" || Math.abs(offsetX) < .5 && Math.abs(offsetY) < .5) {
-		node.style.removeProperty("transform");
-		node.style.removeProperty("transition");
-		return;
-	}
-	const animation = node.animate([{ transform: translate(offsetX, offsetY) }, { transform: translate(0, 0) }], {
-		duration: SETTLE_DURATION_MS,
-		easing: SETTLE_EASING,
-		fill: "forwards"
-	});
-	try {
-		await animation.finished;
-	} catch {} finally {
-		animation.cancel();
-		node.style.removeProperty("transform");
-		node.style.removeProperty("transition");
-	}
-};
-var readCell = (cell) => [Math.floor(Number(cell?.[0]) || 0), Math.floor(Number(cell?.[1]) || 0)];
-var occupiedCells = (items, exceptId, getSpan) => {
-	const occupied = /* @__PURE__ */ new Set();
-	for (const entry of items) {
-		if (entry.id === exceptId) continue;
-		markOccupiedSpan(occupied, readCell(entry.cell), normalizeSpan(getSpan?.(entry.id)));
-	}
-	return occupied;
-};
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../vendor/marked2.js","./rolldown-runtime.js","../com/app2.js","../assets/index-CU5eF_0S.js","./ecosystem-skus.js","../vendor/marked-katex-extension.js","../vendor/marked.js","../vendor/katex.js","./BootLoader.js","../fest/core.js","../fest/core2.js","../fest/object.js","../fest/core3.js","../fest/uniform2.js","../fest/uniform.js","./names.js","./UnifiedMessaging.js","./UniformInterop.js","./UniformInterop2.js","../views/inbound-timing.js","../views/ingress-validation.js","./ShareTargetGateway.js","./UnifiedMessaging2.js","./airpad-cwsp-client-parity.js","./multi-value-list.js","./cws-bridge.js","../vendor/@capacitor_core.js","./remote-connection-runtime.js","./packet-wire-hash.js","../fest/core4.js","../fest/core5.js","./ecosystem-skus2.js","./cws-bridge2.js","../vendor/@capacitor_core2.js","../shells/preference.js","../fest/veela4.js","../vendor/culori.js","../vendor/jsox.js","./open-policy.js","./SettingsTypes.js","./process-ingress.js","./StateStorage.js","../fest/object2.js","./Clipboard.js","./Runtime.js","./clipboard-device.js","./capacitor-settings-permissions.js","./capacitor-permissions.js"])))=>i.map(i=>d[i]);
+import { c as inferCwspSkuFromLocation, g as shouldHandoffViewToSibling, p as publicHrefForSku, v as stashSkuHandoff, y as takeSkuHandoff } from "./ecosystem-skus.js";
+import { t as __vitePreload } from "../assets/index-CU5eF_0S.js";
+import { n as createViewConstructor, t as sendViewProtocolMessage } from "./UniformViewTransport.js";
+import { $ as unbakeScreenColors, Ft as cssLayerOrder, Pt as cssLayerBlock, Rt as normalizeCssForLayer, Tt as removeAdopted, Z as scheduleBakeScreenColors, gt as loadAsAdopted, ir as VIEWER_CSS_LAYER_ORDER } from "../fest/core.js";
+import { $ as H, S as parseDataUrl, a as indexDirectoryFiles, b as isBase64Like, c as observeFileSystemHandle, d as pickMarkdownFile, f as pickSidecarDirectoryFiles, g as saveMarkdownBlob, h as resolveFileUnderDirectory, i as findEntryRelPath, l as originalRelFromRef, m as relPathCandidates, o as isMarkdownRelativeRef, p as provideBoundRelative, s as mountPickedDirectory, u as pickAssetDirectory, x as normalizeDataAsset, y as decodeBase64ToBytes } from "../fest/core4.js";
+import { A as isVirtualFsPath, F as normalizePath, I as openDirectory, M as matchMappedRoot, g as getDir, z as provide } from "../fest/core5.js";
+import { f as ref, i as affected } from "../fest/object.js";
+import { c as ingressStampWasSuperseded, n as ViewRegistry, u as requestOpenView } from "../fest/uniform2.js";
+import { a as loadSettings } from "../vendor/jsox.js";
+import { _ as resolveOpenPolicy, h as resolveHostOpenPolicy, p as rememberOpenPolicyFromSettings, r as classifyOpenKind, s as looksLikePreviewableBinary } from "./open-policy.js";
+import { a as ViewerChannelAction, t as ExplorerChannelAction } from "./channel-actions.js";
+import "../fest/icon.js";
+import { a as reinitializeRegistry, n as ensureStyleSheet } from "../fest/icon3.js";
+import { i as validateReadableFileForIngress, n as textIngressLooksCorrupt, t as pickAuthoritativeTransferFiles } from "../views/ingress-validation.js";
+import { a as purify, n as configureMarkdownRendering } from "../vendor/dompurify.js";
+import { t as createViewState } from "./types.js";
+import { c as isAndroidLocalShareUri, n as dataUrlToFile } from "./sku-ingress.js";
+import { t as highlightCodeTree } from "../com/app8.js";
+//#region ../../modules/views/viewer-view/src/ts/Toolbar.ts
 /**
-* Bind one launcher tile to a pointer-driven drag lifecycle.
-* The caller owns persistence and cell rendering; this controller only owns
-* pointer capture, target selection, animation, and interaction state.
+* Single source for markdown viewer toolbar chrome (standalone + shadow/slot modes).
+* FIND:file-markdown
 */
-var bindPointerInteraction = (node, options) => {
-	let pointerId = null;
-	let pointerDownAt = null;
-	let grabOffset = [0, 0];
-	let lastPointerClient = null;
-	let dragging = false;
-	let suppressClickUntil = 0;
-	let animationRun = 0;
-	const relatedNodes = () => {
-		const id = node.dataset.id;
-		const extra = [];
-		if (id) {
-			options.root.querySelectorAll("[data-speed-dial-item][data-layer=\"labels\"]").forEach((el) => {
-				if (el.dataset.id === id && !el.closest(".speed-dial-grid--turn-ghost")) extra.push(el);
-			});
-			options.root.querySelectorAll(".ui-ws-item-icon-under").forEach((el) => {
-				if (el.dataset.id === id && !el.closest(".speed-dial-grid--turn-ghost")) extra.push(el);
-			});
-		}
-		return [node, ...extra];
-	};
-	const liveCell = () => {
-		return readCell(options.items.find((entry) => entry.id === options.item.id)?.cell ?? options.item.cell);
-	};
-	const itemSpan = () => normalizeSpan(options.getSpan?.(options.item.id) || [1, 1]);
-	const nodes = () => relatedNodes();
-	const iconGrid = () => {
-		const live = options.root.querySelector(".speed-dial-grid[data-grid-layer='icons']:not(.speed-dial-grid--turn-ghost)");
-		const closest = node.closest(".speed-dial-grid");
-		if (closest && !closest.classList.contains("speed-dial-grid--turn-ghost")) return closest;
-		return live;
-	};
-	const liveLogicalLayout = (grid) => {
-		const cols = Number(grid.dataset.gridColumns);
-		const rows = Number(grid.dataset.gridRows);
-		if (cols >= 1 && rows >= 1) return [Math.floor(cols), Math.floor(rows)];
-		return options.getLayout();
-	};
-	const getDropCell = (_clientPoint) => {
-		const grid = iconGrid();
-		if (!grid) return liveCell();
-		const layout = liveLogicalLayout(grid);
-		const orient = options.getOrient();
-		const span = itemSpan();
-		const [spanX, spanY] = logicalToVisualSpan(span, orient);
-		const wide = spanX > 1 || spanY > 1;
-		const rect = node.getBoundingClientRect();
-		const { point, size } = getGridContentPoint(grid, wide ? [rect.left, rect.top] : centerOf(rect));
-		return findNearestFreeRect(pointToLogicalCell(point, size, layout, orient, wide ? "floor" : "round"), span, occupiedCells(options.items, options.item.id, options.getSpan), layout);
-	};
-	const paintDropGhost = (cell) => {
-		const grid = iconGrid();
-		if (!grid) return;
-		let ghost = grid.querySelector(`:scope > .${DROP_GHOST_CLASS}`);
-		if (!ghost) {
-			ghost = document.createElement("div");
-			ghost.className = DROP_GHOST_CLASS;
-			ghost.setAttribute("aria-hidden", "true");
-			grid.append(ghost);
-		}
-		const layout = liveLogicalLayout(grid);
-		const orient = options.getOrient();
-		const [vx, vy] = logicalToVisualCell(cell, layout, orient);
-		const [sx, sy] = logicalToVisualSpan(itemSpan(), orient);
-		ghost.style.gridColumn = `${vx + 1} / span ${sx}`;
-		ghost.style.gridRow = `${vy + 1} / span ${sy}`;
-		ghost.hidden = false;
-	};
-	const clearDropGhost = () => {
-		iconGrid()?.querySelector(`:scope > .${DROP_GHOST_CLASS}`)?.remove();
-	};
-	const clearPointer = () => {
-		pointerId = null;
-		pointerDownAt = null;
-		grabOffset = [0, 0];
-		lastPointerClient = null;
-	};
-	const onPointerDown = (event) => {
-		if (isTilesLocked()) return;
-		if (pointerId !== null || event.button !== 0) return;
-		pointerId = event.pointerId;
-		lastPointerClient = null;
-		pointerDownAt = [event.clientX, event.clientY];
-		options.item.cell = liveCell();
-		const rect = node.getBoundingClientRect();
-		grabOffset = [event.clientX - rect.left, event.clientY - rect.top];
-		node.style.setProperty("--sd-grab-ox", `${grabOffset[0]}px`);
-		node.style.setProperty("--sd-grab-oy", `${grabOffset[1]}px`);
-		node.setPointerCapture?.(event.pointerId);
-	};
-	const onPointerMove = (event) => {
-		if (pointerId !== event.pointerId || !pointerDownAt) return;
-		const dx = event.clientX - pointerDownAt[0];
-		const dy = event.clientY - pointerDownAt[1];
-		if (!dragging && Math.hypot(dx, dy) < DRAG_THRESHOLD_PX) return;
-		if (!dragging) {
-			dragging = true;
-			suppressClickUntil = performance.now() + SETTLE_DURATION_MS + 80;
-			for (const entry of nodes()) entry.dataset.dragging = "";
-			setInteractionState(nodes(), "onGrab", "source");
-			node.dispatchEvent(new CustomEvent("m-dragstart", { bubbles: true }));
-		}
-		event.preventDefault();
-		lastPointerClient = [event.clientX, event.clientY];
-		const activeNodes = nodes();
-		for (const entry of activeNodes) {
-			entry.style.setProperty("--drag-x", `${dx}px`);
-			entry.style.setProperty("--drag-y", `${dy}px`);
-		}
-		setInteractionState(activeNodes, "onMoving", "intermediate");
-		const hoverCell = getDropCell(lastPointerClient);
-		paintDropGhost(hoverCell);
-		node.dispatchEvent(new CustomEvent("m-dragging", {
-			bubbles: true,
-			detail: {
-				dx,
-				dy,
-				cell: [...hoverCell]
-			}
-		}));
-	};
-	const finishDrag = async (event) => {
-		if (pointerId !== event.pointerId || !pointerDownAt) return;
-		const wasDragging = dragging;
-		dragging = false;
-		node.releasePointerCapture?.(event.pointerId);
-		const dropPoint = lastPointerClient ?? [event.clientX, event.clientY];
-		const targetCell = wasDragging ? getDropCell(dropPoint) : liveCell();
-		clearPointer();
-		if (!wasDragging) return;
-		event.preventDefault();
-		const currentNodes = nodes();
-		const fromRects = new Map(currentNodes.map((entry) => [entry, entry.getBoundingClientRect()]));
-		clearDropGhost();
-		const run = ++animationRun;
-		setInteractionState(currentNodes, "onRelax", "destination");
-		options.onCommitCell(targetCell);
-		clearDragOffsets(currentNodes);
-		node.offsetWidth;
-		const animations = currentNodes.map((entry) => animateNodeToCell(entry, fromRects.get(entry) || entry.getBoundingClientRect(), entry.getBoundingClientRect()));
-		await Promise.all(animations);
-		if (run !== animationRun) return;
-		resetTransforms(currentNodes);
-		setInteractionState(currentNodes, "onPlace", "destination");
-		options.onSettled?.(targetCell);
-		node.dispatchEvent(new CustomEvent("m-dragsettled", {
-			bubbles: true,
-			detail: {
-				cell: [...targetCell],
-				interactionState: "onPlace",
-				coordinateState: "destination"
-			}
-		}));
-		window.setTimeout(() => {
-			if (run !== animationRun) return;
-			setInteractionState(nodes(), "onHover", "source");
-		}, SETTLE_DURATION_MS);
-	};
-	const onPointerUp = (event) => {
-		finishDrag(event);
-	};
-	const onPointerCancel = (event) => {
-		if (pointerId !== event.pointerId) return;
-		animationRun += 1;
-		dragging = false;
-		node.releasePointerCapture?.(event.pointerId);
-		resetTransforms(nodes());
-		setInteractionState(nodes(), "onHover", "source");
-		clearDropGhost();
-		clearPointer();
-	};
-	const onClick = (event) => {
-		if (performance.now() < suppressClickUntil) {
-			event.preventDefault();
-			event.stopPropagation();
-		}
-	};
-	node.addEventListener("pointerdown", onPointerDown);
-	node.addEventListener("pointermove", onPointerMove);
-	node.addEventListener("pointerup", onPointerUp);
-	node.addEventListener("pointercancel", onPointerCancel);
-	node.addEventListener("click", onClick, true);
-	return () => {
-		animationRun += 1;
-		node.removeEventListener("pointerdown", onPointerDown);
-		node.removeEventListener("pointermove", onPointerMove);
-		node.removeEventListener("pointerup", onPointerUp);
-		node.removeEventListener("pointercancel", onPointerCancel);
-		node.removeEventListener("click", onClick, true);
-		resetTransforms(nodes());
-		clearPointer();
-	};
-};
+function createViewerPathBar() {
+	return H`
+        <div
+            class="view-viewer__pathbar"
+            data-viewer-pathbar
+            role="navigation"
+            aria-label="Document path"
+        >
+            <div class="view-viewer__pathbar-left" role="group" aria-label="History">
+                <button class="view-viewer__btn" data-action="go-back" type="button" title="Back" disabled>
+                    <ui-icon class="view-viewer__toolbar-icon" icon="arrow-left" icon-style="duotone" size="20" aria-hidden="true"></ui-icon>
+                    <span>Back</span>
+                </button>
+                <button class="view-viewer__btn" data-action="refresh-path" type="button" title="Reload this document">
+                    <ui-icon class="view-viewer__toolbar-icon" icon="arrow-clockwise" icon-style="duotone" size="20" aria-hidden="true"></ui-icon>
+                    <span>Refresh</span>
+                </button>
+            </div>
+            <form class="view-viewer__pathbar-center" data-viewer-path-form>
+                <input
+                    class="view-viewer__path-input"
+                    data-viewer-path
+                    name="address"
+                    type="text"
+                    autocomplete="off"
+                    spellcheck="false"
+                    placeholder="Path or URL…"
+                    aria-label="Document path or URL"
+                />
+            </form>
+            <div class="view-viewer__pathbar-right" role="group" aria-label="Open">
+                <button class="view-viewer__btn" data-action="go-path" type="button" title="Load path or URL">
+                    <ui-icon class="view-viewer__toolbar-icon" icon="arrow-right" icon-style="duotone" size="20" aria-hidden="true"></ui-icon>
+                    <span>Go</span>
+                </button>
+                <button class="view-viewer__btn" data-action="open" type="button" title="Open file">
+                    <ui-icon class="view-viewer__toolbar-icon" icon="folder-open" icon-style="duotone" size="20" aria-hidden="true"></ui-icon>
+                    <span>Open</span>
+                </button>
+                <button class="view-viewer__btn" data-action="bind-assets" type="button" title="Bind folder for images and other relative assets">
+                    <ui-icon class="view-viewer__toolbar-icon" icon="folder" icon-style="duotone" size="20" aria-hidden="true"></ui-icon>
+                    <span>Assets</span>
+                </button>
+            </div>
+        </div>
+    `;
+}
+function createViewerToolbar() {
+	return H`
+        <div
+            class="view-viewer__toolbar"
+            data-viewer-toolbar
+            role="toolbar"
+            aria-label="Markdown document actions"
+        >
+            <div class="view-viewer__toolbar-left" role="group" aria-label="Document">
+                <button class="view-viewer__btn" data-action="toggle-raw" type="button" title="Toggle raw/rendered view">
+                    <ui-icon class="view-viewer__toolbar-icon" icon="code" icon-style="duotone" size="20" aria-hidden="true"></ui-icon>
+                    <span>Raw</span>
+                </button>
+                <button class="view-viewer__btn" data-action="copy" type="button" title="Copy raw content">
+                    <ui-icon class="view-viewer__toolbar-icon" icon="copy" icon-style="duotone" size="20" aria-hidden="true"></ui-icon>
+                    <span>Copy</span>
+                </button>
+                <button class="view-viewer__btn" data-action="paste" type="button" title="Paste from clipboard (mobile-friendly)" aria-label="Paste from clipboard">
+                    <ui-icon class="view-viewer__toolbar-icon" icon="clipboard-text" icon-style="duotone" size="20" aria-hidden="true"></ui-icon>
+                    <span>Paste</span>
+                </button>
+                <button class="view-viewer__btn" data-action="download" type="button" title="Download as markdown">
+                    <ui-icon class="view-viewer__toolbar-icon" icon="download" icon-style="duotone" size="20" aria-hidden="true"></ui-icon>
+                    <span>Download</span>
+                </button>
+            </div>
+            <div class="view-viewer__toolbar-center" role="presentation">
+                <span class="view-viewer__toolbar-title" data-viewer-toolbar-title></span>
+            </div>
+            <div class="view-viewer__toolbar-right" role="group" aria-label="Output and workspace">
+                <button class="view-viewer__btn" data-action="attach" type="button" title="Attach to Work Center">
+                    <ui-icon class="view-viewer__toolbar-icon" icon="paperclip" icon-style="duotone" size="20" aria-hidden="true"></ui-icon>
+                    <span>Attach</span>
+                </button>
+                <button class="view-viewer__btn" data-action="open-style-settings" type="button" title="Markdown styling, modules, plugins">
+                    <ui-icon class="view-viewer__toolbar-icon" icon="paint-roller" icon-style="duotone" size="20" aria-hidden="true"></ui-icon>
+                    <span>Style</span>
+                </button>
+                <button class="view-viewer__btn" data-action="copy-rendered" type="button" title="Copy rendered text">
+                    <ui-icon class="view-viewer__toolbar-icon" icon="text-t" icon-style="duotone" size="20" aria-hidden="true"></ui-icon>
+                    <span>Copy text</span>
+                </button>
+                <button class="view-viewer__btn" data-action="export-docx" type="button" title="Export as DOCX">
+                    <ui-icon class="view-viewer__toolbar-icon" icon="file-doc" icon-style="duotone" size="20" aria-hidden="true"></ui-icon>
+                    <span>DOCX</span>
+                </button>
+                <button class="view-viewer__btn" data-action="print" type="button" title="Print content">
+                    <ui-icon class="view-viewer__toolbar-icon" icon="printer" icon-style="duotone" size="20" aria-hidden="true"></ui-icon>
+                    <span>Print</span>
+                </button>
+            </div>
+        </div>
+    `;
+}
+/** Path row + action row. Explorer-like address chrome lives on the first row. */
+function createViewerChrome() {
+	const chrome = H`<div class="view-viewer__chrome" data-viewer-chrome></div>`;
+	chrome.append(createViewerPathBar(), createViewerToolbar());
+	return chrome;
+}
 //#endregion
-//#region ../../modules/views/home-view/src/ts/toast.ts
+//#region ../../modules/views/viewer-view/src/theme.ts
+/** Effective scheme after resolving `system` (no prefers → dark). */
+function resolveViewerColorSchemePreference(mode) {
+	if (mode === "light" || mode === "dark") return mode;
+	if (typeof globalThis.matchMedia === "function" && globalThis.matchMedia("(prefers-color-scheme: light)").matches) return "light";
+	return "dark";
+}
+function coerceViewerColorScheme(raw) {
+	if (raw === "light" || raw === "dark" || raw === "system") return raw;
+	if (typeof raw === "string") {
+		const t = raw.trim().toLowerCase();
+		if (t === "light" || t === "dark" || t === "system") return t;
+	}
+}
+function normalizeViewerSetColorSchemePayload(payload) {
+	if (payload === void 0 || payload === null) return void 0;
+	if (typeof payload === "string") return coerceViewerColorScheme(payload.trim());
+	if (typeof payload === "object") {
+		const o = payload;
+		return coerceViewerColorScheme(o.colorScheme ?? o.scheme ?? o.theme);
+	}
+}
+function resolveViewerOptionsColorScheme(opts) {
+	if (!opts) return void 0;
+	if (opts.colorScheme) return opts.colorScheme;
+	return coerceViewerColorScheme(opts.params?.colorScheme ?? opts.params?.theme);
+}
+//#endregion
+//#region ../../modules/views/viewer-view/src/index.scss?inline
+var src_default$1 = "@layer tokens, base, layout, components, utilities, theme, overrides, print;@function --hsv(--src-color <color>) returns <color>{result:hsl(from var(--src-color,black) h calc(calc((calc(l / 100) - calc(calc(l / 100) * (1 - calc(s / 100) / 2))) / clamp(.0001, min(calc(calc(l / 100) * (1 - calc(s / 100) / 2)), calc(1 - calc(calc(l / 100) * (1 - calc(s / 100) / 2)))), 1)) * 100) calc(calc(calc(l / 100) * (1 - calc(s / 100) / 2)) * 100)/alpha)}@property --color-primary{syntax:\"<color>\";inherits:true;initial-value:#5a9ec8}@property --base-color{syntax:\"<color>\";inherits:true;initial-value:#5a9ec8}@property --wallpaper-underlying-color{syntax:\"<color>\";inherits:true;initial-value:#16161a}@property --wallpaper-contrast-color{syntax:\"<color>\";inherits:true;initial-value:#f7f7f8}@property --color-secondary{syntax:\"<color>\";inherits:true;initial-value:#6b8cff}@property --color-tertiary{syntax:\"<color>\";inherits:true;initial-value:#8aa0ff}@property --color-error{syntax:\"<color>\";inherits:true;initial-value:#ef4444}@property --color-success{syntax:\"<color>\";inherits:true;initial-value:#4caf50}@property --color-warning{syntax:\"<color>\";inherits:true;initial-value:#ff9800}@property --color-info{syntax:\"<color>\";inherits:true;initial-value:#2196f3}@function --u2-color-mod(--base-color <color>, --index <number> : 550) returns <color>{--i:clamp(0,var(--index),1000);--pivot:550;--white-distance:clamp(0,calc((var(--pivot) - var(--i)) / var(--pivot)),1);--black-distance:clamp(0,calc((var(--i) - var(--pivot)) / (1000 - var(--pivot))),1);--to-white:pow(var(--white-distance),1.15);--to-black:pow(var(--black-distance),1.08);--center-left:clamp(0,calc(var(--i) / var(--pivot)),1);--center-right:clamp(0,calc((1000 - var(--i)) / (1000 - var(--pivot))),1);--chroma-shape:sqrt(min(var(--center-left),var(--center-right)));--chroma-scale:calc(0.08 + 0.92 * var(--chroma-shape));result:oklch(from var(--base-color) calc(l + (.985 - l) * var(--to-white) + (.16 - l) * var(--to-black)) calc(c * var(--chroma-scale)) h)}@layer tokens{:host,:root,:scope{--color-primary:#5a9ec8;color-scheme:light dark;--base-color:var(--color-primary);--base-color-neutralized:color-mix(in oklab,var(--base-color) 60%,gray);--wallpaper-underlying-color:--u2-color-mod(var(--base-color-neutralized),940);--wallpaper-contrast-color:--u2-color-mod(var(--base-color-neutralized),70);--wf-md-primary:var(--color-primary);--wf-md-seed:var(--base-color);--color-on-primary:--u2-color-mod(var(--base-color),40);--color-secondary:--u2-color-mod(var(--base-color),420);--color-on-secondary:--u2-color-mod(var(--base-color),40);--color-tertiary:--u2-color-mod(var(--base-color),400);--color-on-tertiary:--u2-color-mod(var(--base-color),40);--color-error:#ef4444;--color-on-error:--u2-color-mod(var(--color-error),40);--color-success:#4caf50;--color-warning:#ff9800;--color-info:#2196f3;--color-background:--u2-color-mod(var(--base-color),60);--color-on-background:--u2-color-mod(var(--base-color),900);--color-surface:--u2-color-mod(var(--base-color),60);--color-on-surface:--u2-color-mod(var(--base-color),900);--color-surface-variant:--u2-color-mod(var(--base-color),160);--color-on-surface-variant:--u2-color-mod(var(--base-color),700);--color-outline:--u2-color-mod(var(--base-color),300);--color-outline-variant:--u2-color-mod(var(--base-color),400);--color-surface-container-lowest:--u2-color-mod(var(--base-color),40);--color-surface-container-low:--u2-color-mod(var(--base-color),30);--color-surface-container:--u2-color-mod(var(--base-color),20);--color-surface-container-high:--u2-color-mod(var(--base-color),5);--color-surface-container-highest:--u2-color-mod(var(--base-color),2);--color-primary-container:--u2-color-mod(var(--base-color),160);--color-on-primary-container:--u2-color-mod(var(--base-color),900);--color-border:color-mix(in oklab,var(--color-outline-variant) 75%,transparent);--color-bg:var(--color-background);--color-text:var(--color-on-background);--color-fg:var(--color-on-surface);--on-surface-color:var(--color-on-surface);--surface-color:var(--color-surface);--fl-surface:var(--color-surface);--fl-on-surface:var(--color-on-surface);--fl-primary:var(--color-primary);--fl-on-primary:var(--color-on-primary);--fl-secondary:var(--color-secondary);--fl-on-secondary:var(--color-on-secondary);--fl-shadow-xl:var(--shadow-xl);--on-surface-variant:var(--color-on-surface-variant);--wf-md-surface:var(--color-surface);--wf-md-on-surface:var(--color-on-surface);--wf-md-on-surface-variant:var(--color-on-surface-variant);--wf-md-surf-container:var(--color-surface-container);--wf-md-surf-container-low:var(--color-surface-container-low);--wf-md-surf-container-high:var(--color-surface-container-high);--wf-md-outline-variant:var(--color-outline-variant);--md3-primary-container:var(--color-primary-container);--md-primary-container:var(--color-primary-container);--space-2xs:0.125rem;--space-xs:0.25rem;--space-sm:0.5rem;--space-md:0.75rem;--space-lg:1rem;--space-xl:1.25rem;--space-2xl:1.5rem;--padding-xs:var(--space-xs);--padding-sm:var(--space-sm);--padding-md:var(--space-md);--padding-lg:var(--space-lg);--padding-xl:var(--space-xl);--padding-2xl:var(--space-2xl);--padding-3xl:2rem;--padding-4xl:2.5rem;--padding-5xl:3rem;--padding-6xl:4rem;--padding-7xl:5rem;--padding-8xl:6rem;--padding-9xl:8rem;--gap-xs:var(--space-xs);--gap-sm:var(--space-sm);--gap-md:var(--space-md);--gap-lg:var(--space-lg);--gap-xl:var(--space-xl);--gap-2xl:var(--space-2xl);--fl-ui-gap:var(--space-md);--radius-none:0;--radius-xs:0.25rem;--radius-sm:0.25rem;--radius-default:0.25rem;--radius-md:0.5rem;--radius-lg:0.75rem;--radius-xl:1rem;--radius-2xl:1.75rem;--radius-3xl:2rem;--radius-full:9999px;--fl-ui-radius:var(--radius-md);--border-radius:var(--radius-md);--shape-extra-small:var(--radius-xs);--shape-small:var(--radius-md);--shape-medium:var(--radius-lg);--shape-large:var(--radius-xl);--shape-extra-large:var(--radius-2xl);--shape-full:var(--radius-full);--elev-0:none;--elev-1:0 1px 1px rgba(0,0,0,0.06),0 1px 3px rgba(0,0,0,0.1);--elev-2:0 2px 6px rgba(0,0,0,0.12),0 8px 24px rgba(0,0,0,0.08);--elev-3:0 6px 16px rgba(0,0,0,0.14),0 18px 48px rgba(0,0,0,0.1);--shadow-xs:0 1px 2px rgba(0,0,0,0.05);--shadow-sm:0 1px 3px rgba(0,0,0,0.1);--shadow-md:0 4px 6px rgba(0,0,0,0.1);--shadow-lg:0 10px 15px rgba(0,0,0,0.1);--shadow-xl:0 20px 25px rgba(0,0,0,0.1);--shadow-2xl:0 25px 50px rgba(0,0,0,0.1);--shadow-inset:inset 0 2px 4px rgba(0,0,0,0.06);--shadow-inset-strong:inset 0 4px 8px rgba(0,0,0,0.12);--shadow-none:0 0 #0000;--text-xs:0.8rem;--text-sm:0.9rem;--text-base:1rem;--text-lg:1.1rem;--text-xl:1.25rem;--text-2xl:1.6rem;--text-3xl:2rem;--font-xs:var(--text-xs);--font-sm:var(--text-sm);--font-base:var(--text-base);--font-md:var(--text-base);--font-lg:var(--text-lg);--font-xl:var(--text-xl);--font-2xl:var(--text-2xl);--ui-icon-size:1.25rem;--ui-icon-padding:0px;--ui-icon-tile-padding:0.45rem;--ui-window-icon-size:0.95rem;--ui-explorer-icon-size:1.5rem;--ui-explorer-icon-track:2rem;--ui-explorer-action-icon-size:1.15rem;--ui-explorer-row-height:3.25rem;--icon-size-sm:var(--ui-icon-size);--icon-size-md:var(--ui-icon-size);--icon-size-lg:var(--ui-explorer-icon-size);--font-size-xs:0.75rem;--font-size-sm:0.875rem;--font-size-base:1rem;--font-size-lg:1.125rem;--font-size-xl:1.25rem;--font-weight-normal:400;--font-weight-medium:500;--font-weight-semibold:600;--font-weight-bold:700;--font-family:\"Roboto\",ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif;--font-family-base:var(--font-family);--font-family-mono:\"Roboto Mono\",\"SF Mono\",Monaco,Inconsolata,\"Fira Code\",monospace;--font-sans:var(--font-family);--font-mono:var(--font-family-mono);--leading-tight:1.2;--leading-normal:1.5;--leading-relaxed:1.8;--line-height:var(--leading-normal);--ease-emphasized:cubic-bezier(0.2,0,0,1);--ease-expressive:cubic-bezier(0.34,1.25,0.64,1);--duration-fast:140ms;--duration-normal:220ms;--duration-slow:360ms;--transition-fast:var(--duration-fast) var(--ease-emphasized);--transition-normal:var(--duration-normal) var(--ease-emphasized);--transition-slow:var(--duration-slow) var(--ease-emphasized);--motion-fast:var(--transition-fast);--motion-normal:var(--transition-normal);--motion-slow:var(--transition-slow);--ease-out:cubic-bezier(0,0,0.2,1);--ease-in:cubic-bezier(0.4,0,1,1);--ease-in-out:cubic-bezier(0.4,0,0.2,1);--focus-ring:0 0 0 3px color-mix(in oklab,var(--color-primary) 35%,transparent);--z-base:0;--z-dropdown:100;--z-sticky:200;--z-fixed:300;--z-modal-backdrop:400;--z-modal:500;--z-popover:600;--z-tooltip:700;--z-toast:800;--z-max:9999;--view-bg:var(--color-container);--view-fg:var(--color-on-surface);--view-border:var(--color-outline-variant);--view-input-bg:light-dark(--u2-color-mod(var(--base-color,var(--color-primary)),40),var(--color-surface-container-high));--view-files-bg:var(--color-surface-container-low);--view-file-bg:var(--color-surface-container-lowest,var(--color-surface-container-low));--view-results-bg:var(--color-surface-container-low);--view-result-bg:var(--color-surface-container-lowest,var(--color-surface-container-low));--color-surface-elevated:var(--color-surface-container);--color-surface-hover:var(--color-surface-container-low);--color-surface-active:var(--color-surface-container-high);--color-on-surface-muted:var(--color-on-surface-variant);--color-background-alt:var(--color-surface-variant);--color-primary-hover:light-dark(--u2-color-mod(var(--base-color,var(--color-primary)),620),--u2-color-mod(var(--base-color,var(--color-primary)),480));--color-primary-active:light-dark(--u2-color-mod(var(--base-color,var(--color-primary)),700),--u2-color-mod(var(--base-color,var(--color-primary)),400));--color-accent:var(--color-secondary);--color-accent-hover:light-dark(--u2-color-mod(var(--base-color,var(--color-primary)),500),--u2-color-mod(var(--base-color,var(--color-primary)),600));--color-on-accent:var(--color-on-secondary);--color-border-hover:var(--color-outline-variant);--color-border-strong:var(--color-outline);--color-border-focus:var(--color-primary);--color-text:var(--color-on-surface);--color-text-secondary:var(--color-on-surface-variant);--color-text-muted:color-mix(in oklab,var(--color-on-surface) 50%,var(--color-surface));--color-text-disabled:color-mix(in oklab,var(--color-on-surface) 38%,var(--color-surface));--color-text-inverse:var(--color-on-primary);--color-link:var(--color-primary);--color-link-hover:var(--color-primary-hover);--color-success-light:--u2-color-mod(var(--color-success),280);--color-success-dark:--u2-color-mod(var(--color-success),720);--color-warning-light:--u2-color-mod(var(--color-warning),280);--color-warning-dark:--u2-color-mod(var(--color-warning),720);--color-error-light:--u2-color-mod(var(--color-error),280);--color-error-dark:--u2-color-mod(var(--color-error),720);--color-info-light:--u2-color-mod(var(--color-info),280);--color-info-dark:--u2-color-mod(var(--color-info),720);--color-bg:var(--color-surface,var(--color-surface));--color-bg-alt:var(--color-surface-variant,var(--color-surface-variant));--color-fg:var(--color-on-surface,var(--color-on-surface));--color-fg-muted:var(--color-on-surface-variant,var(--color-on-surface-variant));--touch-min:3rem;--btn-height-sm:2rem;--btn-height-md:var(--touch-min);--btn-height-lg:3.5rem;--btn-padding-x-sm:var(--space-md);--btn-padding-x-md:var(--space-lg);--btn-padding-x-lg:1.5rem;--btn-radius:var(--radius-md);--btn-font-weight:var(--font-weight-medium);--input-height-sm:2rem;--input-height-md:var(--touch-min);--input-height-lg:3.5rem;--state-opacity-hover:0.08;--state-opacity-press:0.12;--state-opacity-focus:0.12;--state-opacity-disabled:0.38;--state-opacity-drag:0.16;--input-padding-x:var(--space-md);--input-radius:var(--radius-md);--input-border-color:var(--color-border,var(--color-border));--input-focus-ring-color:var(--color-primary);--input-focus-ring-width:2px;--card-padding:var(--space-lg);--card-radius:var(--radius-lg);--card-shadow:var(--shadow-sm);--card-border-color:var(--color-border,var(--color-border));--modal-backdrop-bg:light-dark(rgb(0 0 0/0.5),rgb(0 0 0/0.7));--modal-bg:var(--color-surface,var(--color-surface));--modal-radius:var(--radius-xl);--modal-shadow:var(--shadow-xl);--modal-padding:1.5rem;--toast-font-family:var(--font-family,system-ui,-apple-system,BlinkMacSystemFont,\"Segoe UI\",Roboto,sans-serif);--toast-font-size:var(--font-size-base,1rem);--toast-font-weight:var(--font-weight-medium,500);--toast-letter-spacing:0.01em;--toast-line-height:1.4;--toast-white-space:nowrap;--toast-pointer-events:auto;--toast-user-select:none;--toast-cursor:default;--toast-opacity:0;--toast-transform:translateY(100%) scale(0.9);--toast-transition:opacity 160ms ease-out,transform 160ms cubic-bezier(0.16,1,0.3,1),background-color 100ms ease;--toast-text:var(--color-on-surface,var(--color-on-surface,light-dark(#ffffff,#000000)));--toast-bg:color-mix(in oklab,var(--color-surface-elevated,var(--color-surface-container-high,var(--color-surface,light-dark(#fafbfc,#1e293b)))) 90%,var(--color-on-surface,var(--color-on-surface,light-dark(#000000,#ffffff))));--toast-radius:var(--radius-lg);--toast-shadow:var(--shadow-lg);--toast-padding:var(--space-lg);--sidebar-width:280px;--sidebar-collapsed-width:64px;--nav-height:56px;--nav-height-compact:48px;--status-height:24px;--status-bg:var(--color-surface-elevated,var(--color-surface-container-high));--status-font-size:var(--text-xs);--shell-bg:var(--sv-surface-2,var(--color-surface));--shell-fg:var(--sv-on-surface,var(--color-on-surface));--shell-nav-bg:var(--sv-surface-2,var(--color-surface-container-high));--shell-nav-fg:var(--sv-on-surface,var(--color-on-surface));--shell-nav-border:var(--sv-outline-variant,var(--color-outline-variant));--shell-btn-hover:var(--sv-surface-2,var(--color-surface-container));--shell-btn-active-bg:color-mix(in oklab,var(--color-primary) 18%,var(--sv-surface-2,var(--color-surface)));--shell-btn-active-fg:var(--sv-on-surface,var(--color-on-surface));--shell-status-bg:var(--sv-surface-1,var(--color-surface-container-low));--shell-status-fg:var(--sv-on-surface,var(--color-on-surface));--faint-nav-bg:var(--color-surface-container-high);--faint-nav-border:var(--color-outline-variant);--faint-sidebar-bg:var(--color-surface-container-high);--env-status-fg:light-dark(#1c1c1e,#f5f5f7);--env-status-fg-muted:color-mix(in oklab,var(--env-status-fg) 78%,transparent);--env-launcher-fg:var(--wallpaper-contrast-color);--env-launcher-fg-shadow:color-mix(in oklab,var(--wallpaper-underlying-color) 88%,transparent);--env-launcher-fg-glow:color-mix(in oklab,var(--wallpaper-underlying-color) 48%,transparent);--error-color:var(--color-error,#f87171);--sv-bg:var(--sv-surface-2,var(--color-surface-container-low,light-dark(#eef1f6,#0f1318)));--sv-fg:var(--sv-on-surface,var(--color-on-surface,light-dark(#12151a,#e8edf2)));--sv-muted:var(--sv-on-surface-variant,var(--color-on-surface-variant,light-dark(#5c6570,#a8b0bc)));--sv-outline:var(--sv-outline-variant,var(--color-outline-variant,light-dark(#c5cdd8,#3d4755)));--sv-surface-1:var(--color-surface-container-low,light-dark(#ffffff,#171c24));--sv-surface-2:var(--color-surface-container,light-dark(#f4f6fa,#1c232d));--sv-primary:var(--base-color,var(--color-primary,#5a9ec8));--sv-danger:var(--color-error,#d32f2f);--vh-bg:var(--color-surface,light-dark(#eef1f6,#0f1318));--vh-fg:var(--color-on-surface,light-dark(#12151a,#e8edf2));--vh-muted:var(--color-on-surface-variant,light-dark(#5c6570,#a8b0bc));--vh-primary:var(--color-primary,#007acc);--vh-danger:var(--color-error,#d32f2f);--vh-on-primary:var(--color-on-primary,#ffffff);--vh-item-bg:var(--color-surface-container-low,light-dark(#e0e5ee,#0a0d12));--view-fg-muted:color-mix(in oklab,var(--color-on-surface,#ccc) 72%,transparent);--view-hover-bg:color-mix(in oklab,var(--color-primary,#3794ff) 12%,transparent);--view-selected-bg:color-mix(in oklab,var(--color-primary,#3794ff) 18%,transparent);--view-selected-border:var(--color-primary,#3794ff)}@supports (color:color-mix(in lch,red,blue)){:host,:root,:scope{--view-border:color-mix(in oklab,var(--color-outline-variant,#888) 45%,transparent)}}@media (prefers-color-scheme:dark){:host:not([data-theme=light]):not([data-theme=dark]),:root:not([data-theme=light]):not([data-theme=dark]){color-scheme:dark;--base-color:var(--color-primary);--base-color-neutralized:color-mix(in oklab,var(--base-color) 60%,gray);--wallpaper-underlying-color:--u2-color-mod(var(--base-color-neutralized),940);--wallpaper-contrast-color:--u2-color-mod(var(--base-color-neutralized),70);--wf-md-primary:var(--color-primary);--wf-md-seed:var(--base-color);--color-on-primary:--u2-color-mod(var(--base-color),920);--color-secondary:--u2-color-mod(var(--base-color),680);--color-on-secondary:--u2-color-mod(var(--base-color),920);--color-tertiary:--u2-color-mod(var(--base-color),700);--color-on-tertiary:--u2-color-mod(var(--base-color),920);--color-error:#f87171;--color-on-error:--u2-color-mod(var(--color-error),920);--color-success:#66bb6a;--color-warning:#ffa726;--color-info:#42a5f5;--color-background:--u2-color-mod(var(--base-color),940);--color-on-background:--u2-color-mod(var(--base-color),100);--color-surface:--u2-color-mod(var(--base-color),940);--color-on-surface:--u2-color-mod(var(--base-color),100);--color-surface-variant:--u2-color-mod(var(--base-color),840);--color-on-surface-variant:--u2-color-mod(var(--base-color),280);--color-outline:--u2-color-mod(var(--base-color),720);--color-outline-variant:--u2-color-mod(var(--base-color),640);--color-surface-container-lowest:--u2-color-mod(var(--base-color),920);--color-surface-container-low:--u2-color-mod(var(--base-color),940);--color-surface-container:--u2-color-mod(var(--base-color),960);--color-surface-container-high:--u2-color-mod(var(--base-color),980);--color-surface-container-highest:--u2-color-mod(var(--base-color),1000);--color-primary-container:--u2-color-mod(var(--base-color),820);--color-on-primary-container:--u2-color-mod(var(--base-color),100);--color-border:color-mix(in oklab,var(--color-outline-variant) 70%,transparent);--color-bg:var(--color-background);--color-text:var(--color-on-background);--color-fg:var(--color-on-surface);--on-surface-color:var(--color-on-surface);--surface-color:var(--color-surface);--fl-surface:var(--color-surface);--fl-on-surface:var(--color-on-surface);--fl-primary:var(--color-primary);--fl-on-primary:var(--color-on-primary);--fl-secondary:var(--color-secondary);--fl-on-secondary:var(--color-on-secondary);--fl-shadow-xl:var(--shadow-xl);--on-surface-variant:var(--color-on-surface-variant);--wf-md-surface:var(--color-surface);--wf-md-on-surface:var(--color-on-surface);--wf-md-on-surface-variant:var(--color-on-surface-variant);--wf-md-surf-container:var(--color-surface-container);--wf-md-surf-container-low:var(--color-surface-container-low);--wf-md-surf-container-high:var(--color-surface-container-high);--wf-md-outline-variant:var(--color-outline-variant);--md3-primary-container:var(--color-primary-container);--md-primary-container:var(--color-primary-container)}}:host[data-theme=light],:root[data-theme=light],[data-theme=light]{color-scheme:light only;--base-color:var(--color-primary);--base-color-neutralized:color-mix(in oklab,var(--base-color) 60%,gray);--wallpaper-underlying-color:--u2-color-mod(var(--base-color-neutralized),940);--wallpaper-contrast-color:--u2-color-mod(var(--base-color-neutralized),70);--wf-md-primary:var(--color-primary);--wf-md-seed:var(--base-color);--color-on-primary:--u2-color-mod(var(--base-color),40);--color-secondary:--u2-color-mod(var(--base-color),420);--color-on-secondary:--u2-color-mod(var(--base-color),40);--color-tertiary:--u2-color-mod(var(--base-color),400);--color-on-tertiary:--u2-color-mod(var(--base-color),40);--color-error:#ef4444;--color-on-error:--u2-color-mod(var(--color-error),40);--color-success:#4caf50;--color-warning:#ff9800;--color-info:#2196f3;--color-background:--u2-color-mod(var(--base-color),60);--color-on-background:--u2-color-mod(var(--base-color),900);--color-surface:--u2-color-mod(var(--base-color),60);--color-on-surface:--u2-color-mod(var(--base-color),900);--color-surface-variant:--u2-color-mod(var(--base-color),160);--color-on-surface-variant:--u2-color-mod(var(--base-color),700);--color-outline:--u2-color-mod(var(--base-color),300);--color-outline-variant:--u2-color-mod(var(--base-color),400);--color-surface-container-lowest:--u2-color-mod(var(--base-color),40);--color-surface-container-low:--u2-color-mod(var(--base-color),30);--color-surface-container:--u2-color-mod(var(--base-color),20);--color-surface-container-high:--u2-color-mod(var(--base-color),5);--color-surface-container-highest:--u2-color-mod(var(--base-color),2);--color-primary-container:--u2-color-mod(var(--base-color),160);--color-on-primary-container:--u2-color-mod(var(--base-color),900);--color-border:color-mix(in oklab,var(--color-outline-variant) 75%,transparent);--color-bg:var(--color-background);--color-text:var(--color-on-background);--color-fg:var(--color-on-surface);--on-surface-color:var(--color-on-surface);--surface-color:var(--color-surface);--fl-surface:var(--color-surface);--fl-on-surface:var(--color-on-surface);--fl-primary:var(--color-primary);--fl-on-primary:var(--color-on-primary);--fl-secondary:var(--color-secondary);--fl-on-secondary:var(--color-on-secondary);--fl-shadow-xl:var(--shadow-xl);--on-surface-variant:var(--color-on-surface-variant);--wf-md-surface:var(--color-surface);--wf-md-on-surface:var(--color-on-surface);--wf-md-on-surface-variant:var(--color-on-surface-variant);--wf-md-surf-container:var(--color-surface-container);--wf-md-surf-container-low:var(--color-surface-container-low);--wf-md-surf-container-high:var(--color-surface-container-high);--wf-md-outline-variant:var(--color-outline-variant);--md3-primary-container:var(--color-primary-container);--md-primary-container:var(--color-primary-container)}:host[data-theme=dark],:root[data-theme=dark],[data-theme=dark]{color-scheme:dark only;--base-color:var(--color-primary);--base-color-neutralized:color-mix(in oklab,var(--base-color) 60%,gray);--wallpaper-underlying-color:--u2-color-mod(var(--base-color-neutralized),940);--wallpaper-contrast-color:--u2-color-mod(var(--base-color-neutralized),70);--wf-md-primary:var(--color-primary);--wf-md-seed:var(--base-color);--color-on-primary:--u2-color-mod(var(--base-color),920);--color-secondary:--u2-color-mod(var(--base-color),680);--color-on-secondary:--u2-color-mod(var(--base-color),920);--color-tertiary:--u2-color-mod(var(--base-color),700);--color-on-tertiary:--u2-color-mod(var(--base-color),920);--color-error:#f87171;--color-on-error:--u2-color-mod(var(--color-error),920);--color-success:#66bb6a;--color-warning:#ffa726;--color-info:#42a5f5;--color-background:--u2-color-mod(var(--base-color),940);--color-on-background:--u2-color-mod(var(--base-color),100);--color-surface:--u2-color-mod(var(--base-color),940);--color-on-surface:--u2-color-mod(var(--base-color),100);--color-surface-variant:--u2-color-mod(var(--base-color),840);--color-on-surface-variant:--u2-color-mod(var(--base-color),280);--color-outline:--u2-color-mod(var(--base-color),720);--color-outline-variant:--u2-color-mod(var(--base-color),640);--color-surface-container-lowest:--u2-color-mod(var(--base-color),920);--color-surface-container-low:--u2-color-mod(var(--base-color),940);--color-surface-container:--u2-color-mod(var(--base-color),960);--color-surface-container-high:--u2-color-mod(var(--base-color),980);--color-surface-container-highest:--u2-color-mod(var(--base-color),1000);--color-primary-container:--u2-color-mod(var(--base-color),820);--color-on-primary-container:--u2-color-mod(var(--base-color),100);--color-border:color-mix(in oklab,var(--color-outline-variant) 70%,transparent);--color-bg:var(--color-background);--color-text:var(--color-on-background);--color-fg:var(--color-on-surface);--on-surface-color:var(--color-on-surface);--surface-color:var(--color-surface);--fl-surface:var(--color-surface);--fl-on-surface:var(--color-on-surface);--fl-primary:var(--color-primary);--fl-on-primary:var(--color-on-primary);--fl-secondary:var(--color-secondary);--fl-on-secondary:var(--color-on-secondary);--fl-shadow-xl:var(--shadow-xl);--on-surface-variant:var(--color-on-surface-variant);--wf-md-surface:var(--color-surface);--wf-md-on-surface:var(--color-on-surface);--wf-md-on-surface-variant:var(--color-on-surface-variant);--wf-md-surf-container:var(--color-surface-container);--wf-md-surf-container-low:var(--color-surface-container-low);--wf-md-surf-container-high:var(--color-surface-container-high);--wf-md-outline-variant:var(--color-outline-variant);--md3-primary-container:var(--color-primary-container);--md-primary-container:var(--color-primary-container)}:root[data-scheme=auto]:not([data-theme=light]):not([data-theme=dark]),:root[data-scheme=system]:not([data-theme=light]):not([data-theme=dark]){color-scheme:light dark}@media (prefers-reduced-motion:reduce){:root{--transition-fast:0ms;--transition-normal:0ms;--transition-slow:0ms;--motion-fast:0ms;--motion-normal:0ms;--motion-slow:0ms;--duration-fast:0ms;--duration-normal:0ms;--duration-slow:0ms}}@media (prefers-contrast:high){:root{--color-border:var(--color-border,var(--color-outline));--color-border-hover:color-mix(in oklab,var(--color-border,var(--color-outline)) 80%,var(--color-on-surface,var(--color-on-surface)));--color-text-secondary:var(--color-on-surface,var(--color-on-surface));--color-text-muted:var(--color-on-surface-variant,var(--color-on-surface-variant))}}@media print{:root{--view-padding:0;--view-content-max-width:100%;--view-bg:white;--view-fg:black;--view-heading-color:black;--view-link-color:black}:root:has([data-view=viewer]){--view-code-bg:#f5f5f5;--view-code-fg:black;--view-blockquote-bg:#f5f5f5}}}@layer components{ui-icon{--icon-color:currentColor;--icon-size:1rem;--icon-padding:0.125rem;aspect-ratio:1;color:var(--icon-color);display:inline-grid;margin-inline-end:.125rem;place-content:center;place-items:center;vertical-align:middle}ui-icon:last-child{margin-inline-end:0}}@property --client-x{initial-value:0;syntax:\"<number>\";inherits:true}@property --client-y{initial-value:0;syntax:\"<number>\";inherits:true}@property --page-x{initial-value:0;syntax:\"<number>\";inherits:true}@property --page-y{initial-value:0;syntax:\"<number>\";inherits:true}@property --sp-x{initial-value:0px;syntax:\"<length-percentage>\";inherits:true}@property --sp-y{initial-value:0px;syntax:\"<length-percentage>\";inherits:true}@property --ds-x{initial-value:0px;syntax:\"<length-percentage>\";inherits:true}@property --ds-y{initial-value:0px;syntax:\"<length-percentage>\";inherits:true}@property --rx{initial-value:0px;syntax:\"<length-percentage>\";inherits:true}@property --ry{initial-value:0px;syntax:\"<length-percentage>\";inherits:true}@property --rs-x{initial-value:0px;syntax:\"<length-percentage>\";inherits:true}@property --rs-y{initial-value:0px;syntax:\"<length-percentage>\";inherits:true}@property --limit-shift-x{initial-value:100%;syntax:\"<length-percentage>\";inherits:true}@property --limit-shift-y{initial-value:100%;syntax:\"<length-percentage>\";inherits:true}@property --limit-drag-x{initial-value:100%;syntax:\"<length-percentage>\";inherits:true}@property --limit-drag-y{initial-value:100%;syntax:\"<length-percentage>\";inherits:true}@property --bound-inline-size{initial-value:100%;syntax:\"<length-percentage>\";inherits:true}@property --bound-block-size{initial-value:100%;syntax:\"<length-percentage>\";inherits:true}@property --inline-size{initial-value:100%;syntax:\"<length-percentage>\";inherits:true}@property --block-size{initial-value:100%;syntax:\"<length-percentage>\";inherits:true}@property --initial-inline-size{initial-value:100%;syntax:\"<length-percentage>\";inherits:true}@property --initial-block-size{initial-value:100%;syntax:\"<length-percentage>\";inherits:true}@property --scroll-coef{syntax:\"<number>\";initial-value:1;inherits:true}@property --scroll-size{syntax:\"<number>\";initial-value:0;inherits:true}@property --content-size{syntax:\"<number>\";initial-value:0;inherits:true}@property --max-size{syntax:\"<length-percentage>\";initial-value:0px;inherits:true}@layer base{@keyframes l{0%{opacity:0;transform:translateY(10%)}to{opacity:1;transform:translateY(0)}}@media screen{*,:after,:before{box-sizing:border-box;dynamic-range-limit:no-limit}:where(html){-webkit-text-size-adjust:100%;font-optical-sizing:auto;font-size-adjust:from-font;tab-size:4;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;background:none;background-color:initial;border:0 transparent;dynamic-range-limit:no-limit;font-family:var(--font-sans);font-size:16px;line-height:1.5;outline:0 none transparent;text-rendering:optimizeLegibility}:where(body){background:var(--color-bg);block-size:fit-content;color:var(--color-text);inset:0;line-height:var(--line-height);margin:0;min-block-size:min(var(--lv-height,100lvb),100cqb);padding:0;-webkit-font-smoothing:antialiased;background:none;background-color:initial;border:0 transparent;dynamic-range-limit:no-limit;outline:0 none transparent;text-rendering:optimizeLegibility}:where(ul,ol){list-style:none;margin:0;padding:0}:where(blockquote,q){quotes:none}:where(blockquote,q):after,:where(blockquote,q):before{content:\"\";content:none}:where(article,main,aside,section,header,footer,nav){border:0 transparent;box-shadow:0 none transparent;outline:0 none transparent}:where(table){border:1px solid var(--color-border);border-collapse:collapse;border-radius:var(--border-radius);border-spacing:0;display:block;inline-size:max-content;margin-block:1rem;max-inline-size:100%;overflow-x:auto}:where(table) :where(th,td){border-block-end:1px solid var(--color-border);padding:.5rem 1rem;text-align:start}:where(table) :where(th){background-color:var(--color-table);color:var(--color-text);font-weight:700}:where(table) :where(tr:last-child td){border-block-end:none}:where(table) :where(tr:nth-child(2n)){background-color:var(--color-bg-secondary)}:focus-visible{border-radius:var(--radius-sm);box-shadow:0 0 0 3px color-mix(in oklab,var(--color-primary,#5a7fff) 35%,transparent);outline:none}:focus:not(:focus-visible){outline:none}:where(button,input,optgroup,select,textarea){border:0 transparent;box-shadow:0 none transparent;color:inherit;font:inherit;letter-spacing:inherit;line-height:1.15;margin:0;outline:none;outline:0 none transparent}:where(button){appearance:none;background:transparent;border:none;cursor:pointer;gap:.25rem;min-block-size:fit-content;min-inline-size:fit-content;padding-block:.5rem;padding-inline:1rem;pointer-events:auto;text-transform:none;user-select:none}:where(button):has(>ui-icon:only-child){aspect-ratio:1/1;place-content:center;place-items:center}:where(button):disabled{cursor:not-allowed;pointer-events:none}:where(select){text-transform:none}:where(button,[type=button],[type=reset],[type=submit]){-webkit-appearance:button;cursor:pointer}:where(button,[type=button],[type=reset],[type=submit])::-moz-focus-inner{border-style:none;padding:0}:where(fieldset,dialog){border:none;margin:0;padding:0}:where(legend){padding:0}:where(progress){vertical-align:initial}:where(textarea){overflow:auto;resize:vertical}:where([type=search]){-webkit-appearance:textfield;outline-offset:-2px}:where([type=search])::-webkit-search-decoration{-webkit-appearance:none}:where([type=range]){-webkit-appearance:none}:where(details>summary),:where(summary){cursor:pointer}:where(mark){background-color:initial;color:inherit}:where(sub,sup){font-size:75%;line-height:0;position:relative;vertical-align:initial}:where(sup){top:-.5em}:where(sub){bottom:-.25em}:where(a){color:var(--color-link,inherit);cursor:pointer;pointer-events:auto;text-decoration:inherit;text-underline-offset:.2em;transition:color var(--transition-fast)}:where(a):hover{color:var(--color-primary-hover)}:where(img,canvas,svg,video,iframe,picture){block-size:auto;border:0 transparent;box-shadow:0 none transparent;dynamic-range-limit:no-limit;max-inline-size:100%;outline:0 none transparent}:where(img,video,canvas,svg,picture){block-size:auto;display:block;max-inline-size:100%}:where(img,video){object-fit:contain;object-position:center}:where(picture){display:contents}:where(iframe){block-size:auto;max-inline-size:100%}:where(em,i){font-style:normal}:where(strong,b){font-weight:400}:where(code,kbd,samp,pre){font-family:var(--font-family-mono,\"SF Mono\",\"Monaco\",\"Inconsolata\",\"Roboto Mono\",monospace);font-size:1em}:where(code,pre){font-family:var(--font-mono);font-size:.875em}:where(code,samp,kbd){background-color:var(--bgColor-muted);border-radius:.3em;font-family:var(--font-family-mono,\"SF Mono\",\"Monaco\",\"Roboto Mono\",monospace);font-size:85%;padding:.2em .4em}:where(code){background:var(--color-bg-alt);border-radius:var(--radius-sm);padding:.125em .25em}:where(pre){background:var(--color-bg-alt);border-radius:var(--radius-md);overflow-x:auto;padding:var(--space-md)}:where(pre) :where(code){background:transparent;border-radius:0;padding:0}:where(input,textarea,select,button,option){accent-color:var(--color-link,currentColor);border:0 transparent;box-shadow:0 none transparent;font-variant-emoji:text;outline:0 none transparent}:where(span){font-variant-emoji:text}:where(hr){border:none;border-block-start:1px solid var(--color-border);margin-block:var(--space-lg)}::-webkit-scrollbar{block-size:8px;inline-size:8px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--color-outline-variant,#d1d5db);border-radius:4px}::-webkit-scrollbar-thumb:hover{background:var(--color-outline,#9ca3af)}*{scrollbar-color:var(--color-outline-variant,#d1d5db) transparent;scrollbar-width:thin}:where(input,textarea,select){background-color:var(--color-bg-alt);border:0 solid var(--color-border);border-radius:var(--border-radius);color:var(--color-fg);font-size:var(--font-size-base);inline-size:100%;padding:.5rem}:where(input,textarea,select):focus{border-color:var(--color-primary);outline:none}:where(input,textarea,select)::placeholder{color:var(--color-text-secondary);opacity:.7}:where(input,textarea,select):disabled{background-color:var(--color-bg-secondary);cursor:not-allowed;opacity:.5}:where(input):-webkit-autofill:first-line,:where(input):autofill:first-line{font-size:1em;text-size-adjust:100%}:where(input):-internal-autofill-previewed{letter-spacing:calc(1em / 10)!important}:where(input):is([type=radio],[type=checkbox]){accent-color:var(--color-primary);aspect-ratio:1/1;block-size:1rem;inline-size:1rem}:where(label){font-weight:600;margin-block-end:.25rem;pointer-events:none;user-select:none}:where(h1,h2,h3,h4,h5,h6){font-weight:600;line-height:1.2;margin-block:.5em;text-wrap:balance}:where(h1){font-size:2rem}:where(h2){font-size:1.5rem}:where(h3){font-size:1.25rem}:where(h4){font-size:1.125rem}:where(h5){font-size:1rem}:where(h6){font-size:.875rem}:where(p){margin-block:1em;text-wrap:pretty}:where(article,.content) :is(ol,ul){margin-block:var(--space-md);padding-inline-start:var(--space-lg)}:where(article,.content) ul{list-style:disc}:where(article,.content) ol{list-style:decimal}:where(blockquote){border-inline-start:.25rem solid var(--color-secondary);color:var(--color-text-secondary);font-style:italic;margin-inline:1rem;padding-inline:1rem}:where(body,main,aside,pre,code,textarea,[data-scrollable],.scrollable){scrollbar-color:var(--color-scrollbar,currentColor) transparent;scrollbar-width:thin}:where(body,main,aside,pre,code,textarea,[data-scrollable],.scrollable)::-webkit-scrollbar{block-size:var(--scrollbar-size,8px);inline-size:var(--scrollbar-size,8px)}:where(body,main,aside,pre,code,textarea,[data-scrollable],.scrollable)::-webkit-scrollbar-track{background:transparent}:where(body,main,aside,pre,code,textarea,[data-scrollable],.scrollable)::-webkit-scrollbar-thumb{background-color:var(--color-scrollbar,currentColor);border-radius:var(--border-radius,4px)}:where(body,main,aside,pre,code,textarea,[data-scrollable],.scrollable)::-webkit-scrollbar-thumb:hover{background:var(--color-outline,#9ca3af)}:where(link,head,script,style,meta),[hidden]{display:none!important}:where(link,head,script,style,meta){pointer-events:none!important}[aria-hidden=true]{opacity:0;pointer-events:none;visibility:collapse}[data-dragging]{cursor:grabbing;will-change:transform}:where(a,button,[role=button]){-webkit-tap-highlight-color:transparent}}@media screen and (prefers-reduced-motion:reduce){*,:after,:before{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}}}@layer layout{@media screen{:where(footer,header,main){margin-inline:auto;padding:0}:where(header){text-align:center}:where(nav){align-items:center;display:flex;flex-wrap:wrap;justify-content:space-between;margin-block-end:0}:where(nav) ul{display:flex;gap:1rem;list-style:none;margin:0;padding:0}:where(nav) ul li{position:relative}:where(nav) a{color:var(--color-link);font-weight:700;text-decoration:none}:where(section){display:flex;flex-wrap:wrap;gap:1rem;justify-content:var(--justify-important,center)}:where(section) :where(aside){border:1px solid var(--color-bg-secondary);border-radius:var(--border-radius);box-shadow:var(--box-shadow);flex:1 1 var(--width-card);inline-size:var(--width-card);padding:1.25rem}}}@layer components{@media screen{:where(dialog){background:var(--color-bg);border:1px solid var(--color-border);border-radius:var(--border-radius);box-shadow:var(--box-shadow);color:var(--color-text);margin:auto;max-block-size:85vh;max-inline-size:min(90vw,600px);padding:1rem}:where(dialog)::backdrop{background-color:rgba(0,0,0,.5)}:where(dialog)[open]{animation:l .25s ease-out}:where(button,input[type=submit],input[type=button]){align-items:center;background-color:var(--color-link);border:0 solid transparent;border-radius:var(--border-radius);cursor:pointer;display:inline-flex;font-weight:600;justify-content:center;padding:.5rem 1rem;transition:filter .2s ease,transform .1s ease}:where(button,input[type=submit],input[type=button]):disabled{background-color:var(--color-secondary);cursor:not-allowed;filter:none;opacity:.6}:where(canvas):is([is=ui-canvas]){background-color:initial!important;border:0 transparent!important;box-sizing:border-box!important;inset:0;inset-block-end:auto;margin:0;max-block-size:max(100%,min(100cqb,100lvb))!important;max-inline-size:max(100%,min(100cqi,100lvi))!important;min-block-size:0;min-inline-size:0;object-fit:cover;object-position:center;outline:0 none transparent!important;padding:0;pointer-events:none;position:fixed;z-index:0}}}@layer overrides{@media screen{[data-scheme=system],[data-theme=system]{color-scheme:light dark}[data-scheme=dark],[data-theme=dark]{color-scheme:dark only}[data-scheme=dark] *,[data-theme=dark] *{color-scheme:dark}[data-scheme=light],[data-theme=light]{color-scheme:light only}[data-scheme=light] *,[data-theme=light] *{color-scheme:light}[data-scheme=auto]:not([data-theme=light]):not([data-theme=dark]),[data-scheme=system]:not([data-theme=light]):not([data-theme=dark]),[data-theme=auto],[data-theme=system]{color-scheme:light dark}}}@layer layout{@media screen{:where(body)>:where(#app,#container,#root,.root){background-color:initial;border:0 transparent;outline:0 none transparent}:host,:root,:scope,:where(body){pointer-events:auto;transition-behavior:allow-discrete;interpolate-size:allow-keywords;content-visibility:auto;--keyboard-inset-bottom:calc(max(env(keyboard-inset-bottom, 0px), 0px) / max(var(--zoom, 1), 0.125));--keyboard-inset-height:calc(max(env(keyboard-inset-height, 0px), 0px) / max(var(--zoom, 1), 0.125))}:host,:root,:scope{--scale:1;--translate-x:0px;--translate-y:0px}:host,:host :where(*),:root,:root :where(*),:scope,:scope :where(*){--scale:1;--translate-x:0px;--translate-y:0px}:root,:where(html){background-color:initial;block-size:var(--lv-height,100lvb);border:0 transparent;contain:none;container-name:html root;container-type:size;display:flex;flex-direction:column;inline-size:stretch;inset:0;inset-block-end:auto;line-height:normal;margin:0;max-block-size:min(100%,min(100cqb,var(--lv-height,100lvb)))!important;max-inline-size:min(100%,min(100cqi,100dvi))!important;min-block-size:min(100cqb,var(--lv-height,100lvb));min-inline-size:min(100cqi,100dvi);outline:0 none transparent;overflow:visible;padding:0;place-content:start;place-items:start;place-self:start;position:fixed;transform:none;translate:none}:where(body){background-color:initial;block-size:stretch;border:0 transparent;contain:strict;container-name:body;container-type:size;display:inline-flex;font-size:var(--text-base,.9rem);inline-size:stretch;inset:auto;margin:0;max-block-size:min(100%,min(100cqb,var(--lv-height,100lvb)));max-inline-size:min(100%,min(100cqi,100dvi));min-block-size:0;min-inline-size:0;outline:0 none transparent;overflow:visible;padding:0;place-content:start;place-items:start;place-self:start;pointer-events:auto;position:relative;transform:none;translate:none}:where(body)>:where(#app,#container,#root,.root){block-size:stretch;inline-size:stretch;max-block-size:min(100%,min(100cqb,var(--lv-height,100lvb)));max-inline-size:min(100%,min(100cqi,100dvi));min-block-size:0;min-inline-size:0}:where(body)>:where(*){max-block-size:min(100%,min(100cqb,var(--lv-height,100lvb)));max-inline-size:min(100%,min(100cqi,100dvi))}}}@layer base{[data-hidden]:not([data-hidden=false]):not([data-opacity-animation]),[data-hidden]:not([data-hidden=false]):not([data-opacity-animation]) *{opacity:0;visibility:collapse}:host([data-hidden]:not([data-hidden=false]:not([data-opacity-animation]))),:host([data-hidden]:not([data-hidden=false]:not([data-opacity-animation]))) *,:host([data-hidden]:not([data-hidden=false]:not([data-opacity-animation]))) ::slotted(*){opacity:0;visibility:collapse}:host([data-hidden]:not([data-hidden=false])),:host([data-hidden]:not([data-hidden=false])) *,:host([data-hidden]:not([data-hidden=false])) ::slotted(*){user-select:none!important}[data-hidden]:not([data-hidden=false]),[data-hidden]:not([data-hidden=false]) *{user-select:none!important}[data-hidden]:not([data-hidden=false]):not([data-opacity-animation]),[data-hidden]:not([data-hidden=false]):not([data-opacity-animation]) *{content-visibility:auto!important;display:none!important;pointer-events:none!important;touch-action:none!important}:host([data-hidden]:not([data-hidden=false]:not([data-opacity-animation]))),:host([data-hidden]:not([data-hidden=false]:not([data-opacity-animation]))) *,:host([data-hidden]:not([data-hidden=false]:not([data-opacity-animation]))) ::slotted(*){content-visibility:auto!important;display:none!important;pointer-events:none!important;touch-action:none!important}:host([data-hidden]:not([data-hidden=false])),:host([data-hidden]:not([data-hidden=false])) *,:host([data-hidden]:not([data-hidden=false])) ::slotted(*){pointer-events:none!important;touch-action:none!important}[data-hidden]:not([data-hidden=false]),[data-hidden]:not([data-hidden=false]) *{pointer-events:none!important;touch-action:none!important}[data-hidden]:not([data-hidden=false]):not([data-opacity-animation]),[data-hidden]:not([data-hidden=false]):not([data-opacity-animation]) *{display:none!important;opacity:0;pointer-events:none!important;touch-action:none!important;visibility:collapse}}@layer base{:host([data-hidden]:not([data-hidden=false]:not([data-opacity-animation]))),:host([data-hidden]:not([data-hidden=false]:not([data-opacity-animation]))) *,:host([data-hidden]:not([data-hidden=false]:not([data-opacity-animation]))) ::slotted(*){display:none!important;opacity:0;pointer-events:none!important;touch-action:none!important;visibility:collapse}:host([data-hidden]:not([data-hidden=false])),:host([data-hidden]:not([data-hidden=false])) *,:host([data-hidden]:not([data-hidden=false])) ::slotted(*){pointer-events:none!important;touch-action:none!important;user-select:none!important}[data-hidden]:not([data-hidden=false]),[data-hidden]:not([data-hidden=false]) *{pointer-events:none!important;touch-action:none!important;user-select:none!important}}@layer utilities{.m-0{margin:0}.mb-0{margin-block:0}.mi-0{margin-inline:0}.p-0{padding:0}.pb-0{padding-block:0}.pi-0{padding-inline:0}.gap-0{gap:0}.inset-0{inset:0}.m-xs{margin:.25rem}.mb-xs{margin-block:.25rem}.mi-xs{margin-inline:.25rem}.p-xs{padding:.25rem}.pb-xs{padding-block:.25rem}.pi-xs{padding-inline:.25rem}.gap-xs{gap:.25rem}.inset-xs{inset:.25rem}.m-sm{margin:.5rem}.mb-sm{margin-block:.5rem}.mi-sm{margin-inline:.5rem}.p-sm{padding:.5rem}.pb-sm{padding-block:.5rem}.pi-sm{padding-inline:.5rem}.gap-sm{gap:.5rem}.inset-sm{inset:.5rem}.m-md{margin:.75rem}.mb-md{margin-block:.75rem}.mi-md{margin-inline:.75rem}.p-md{padding:.75rem}.pb-md{padding-block:.75rem}.pi-md{padding-inline:.75rem}.gap-md{gap:.75rem}.inset-md{inset:.75rem}.m-lg{margin:1rem}.mb-lg{margin-block:1rem}.mi-lg{margin-inline:1rem}.p-lg{padding:1rem}.pb-lg{padding-block:1rem}.pi-lg{padding-inline:1rem}.gap-lg{gap:1rem}.inset-lg{inset:1rem}.m-xl{margin:1.25rem}.mb-xl{margin-block:1.25rem}.mi-xl{margin-inline:1.25rem}.p-xl{padding:1.25rem}.pb-xl{padding-block:1.25rem}.pi-xl{padding-inline:1.25rem}.gap-xl{gap:1.25rem}.inset-xl{inset:1.25rem}.m-2xl{margin:1.5rem}.mb-2xl{margin-block:1.5rem}.mi-2xl{margin-inline:1.5rem}.p-2xl{padding:1.5rem}.pb-2xl{padding-block:1.5rem}.pi-2xl{padding-inline:1.5rem}.gap-2xl{gap:1.5rem}.inset-2xl{inset:1.5rem}.m-3xl{margin:2rem}.mb-3xl{margin-block:2rem}.mi-3xl{margin-inline:2rem}.p-3xl{padding:2rem}.pb-3xl{padding-block:2rem}.pi-3xl{padding-inline:2rem}.gap-3xl{gap:2rem}.inset-3xl{inset:2rem}.text-xs{font-size:.75rem}.text-sm,.text-xs{font-weight:400;letter-spacing:0;line-height:1.5}.text-sm{font-size:.875rem}.text-base{font-size:1rem}.text-base,.text-lg{font-weight:400;letter-spacing:0;line-height:1.5}.text-lg{font-size:1.125rem}.text-xl{font-size:1.25rem}.text-2xl,.text-xl{font-weight:400;letter-spacing:0;line-height:1.5}.text-2xl{font-size:1.5rem}.font-thin{font-weight:100}.font-light{font-weight:300}.font-normal{font-weight:400}.font-medium{font-weight:500}.font-semibold{font-weight:600}.font-bold{font-weight:700}.text-start{text-align:start}.text-center{text-align:center}.text-end{text-align:end}.text-primary{color:#1e293b,#f1f5f9}.text-secondary{color:#64748b,#94a3b8}.text-muted{color:#94a3b8,#64748b}.text-disabled{color:#cbd5e1,#475569}.block,.vu-block{display:block}.inline,.vu-inline{display:inline}.inline-block{display:inline-block}.flex,.vu-flex{display:flex}.inline-flex{display:inline-flex}.grid,.vu-grid{display:grid}.hidden,.vu-hidden{display:none}.flex-row{flex-direction:row}.flex-col{flex-direction:column}.flex-wrap{flex-wrap:wrap}.flex-nowrap{flex-wrap:nowrap}.items-start{align-items:flex-start}.items-center{align-items:center}.items-end{align-items:flex-end}.items-stretch{align-items:stretch}.justify-start{justify-content:flex-start}.justify-center{justify-content:center}.justify-end{justify-content:flex-end}.justify-between{justify-content:space-between}.justify-around{justify-content:space-around}.grid-cols-1{grid-template-columns:repeat(1,minmax(0,1fr))}.grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}.grid-cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}.grid-cols-4{grid-template-columns:repeat(4,minmax(0,1fr))}.block-size-auto,.h-auto{block-size:auto}.block-size-full,.h-full{block-size:100%}.h-screen{block-size:100vh}.inline-size-auto,.w-auto{inline-size:auto}.inline-size-full,.w-full{inline-size:100%}.w-screen{inline-size:100vw}.min-block-size-0,.min-h-0{min-block-size:0}.min-inline-size-0,.min-w-0{min-inline-size:0}.max-block-size-full,.max-h-full{max-block-size:100%}.max-inline-size-full,.max-w-full{max-inline-size:100%}.static{position:static}.relative{position:relative}.absolute{position:absolute}.fixed{position:fixed}.sticky{position:sticky}.bg-surface{background-color:#fafbfc,#0f1419}.bg-surface-container{background-color:#f1f5f9,#1e293b}.bg-surface-container-high{background-color:#e2e8f0,#334155}.bg-primary{background-color:#4e8fad,#8ec4d4}.bg-secondary{background-color:#6b7280,#94a3b8}.border{border:1px solid #475569}.border-2{border:2px solid #475569}.border-primary{border:1px solid #8ec4d4}.border-secondary{border:1px solid #94a3b8}.rounded-none{border-radius:0}.rounded-sm{border-radius:.25rem}.rounded-md{border-radius:.375rem}.rounded-lg{border-radius:.5rem}.rounded-full{border-radius:9999px}.shadow-xs{box-shadow:0 1px 2px 0 rgba(0,0,0,.05)}.shadow-sm{box-shadow:0 1px 3px 0 rgba(0,0,0,.1)}.shadow-md{box-shadow:0 4px 6px -1px rgba(0,0,0,.1)}.shadow-lg{box-shadow:0 10px 15px -3px rgba(0,0,0,.1)}.shadow-xl{box-shadow:0 20px 25px -5px rgba(0,0,0,.1)}.cursor-pointer{cursor:pointer}.cursor-default{cursor:default}.cursor-not-allowed{cursor:not-allowed}.select-none{user-select:none}.select-text{user-select:text}.select-all{user-select:all}.visible{visibility:visible}.invisible{visibility:hidden}.collapse,.vs-collapsed{visibility:collapse}.opacity-0{opacity:0}.opacity-25{opacity:.25}.opacity-50{opacity:.5}.opacity-75{opacity:.75}.opacity-100{opacity:1}@container (max-width: 320px){.hidden\\@xs{display:none}}@container (max-width: 640px){.hidden\\@sm{display:none}}@container (max-width: 768px){.hidden\\@md{display:none}}@container (max-width: 1024px){.hidden\\@lg{display:none}}@container (min-width: 320px){.block\\@xs{display:block}}@container (min-width: 640px){.block\\@sm{display:block}}@container (min-width: 768px){.block\\@md{display:block}}@container (min-width: 1024px){.block\\@lg{display:block}}@container (max-width: 320px){.text-sm\\@xs{font-size:.875rem;font-weight:400;letter-spacing:0;line-height:1.5}}@container (min-width: 640px){.text-base\\@sm{font-size:1rem;font-weight:400;letter-spacing:0;line-height:1.5}}.icon-xs{--icon-size:0.75rem}.icon-sm{--icon-size:0.875rem}.icon-md{--icon-size:1rem}.icon-lg{--icon-size:1.25rem}.icon-xl{--icon-size:1.5rem}.center-absolute{left:50%;position:absolute;top:50%;transform:translate(-50%,-50%)}.center-flex{align-items:center;display:flex;flex-direction:row;flex-wrap:nowrap;justify-content:center}.interactive{cursor:pointer;touch-action:manipulation;user-select:none;-webkit-tap-highlight-color:transparent}.interactive:focus-visible{outline:2px solid #1e40af;outline-offset:2px}.interactive:disabled,.interactive[aria-disabled=true]{cursor:not-allowed;opacity:.6;pointer-events:none}.focus-ring:focus-visible{outline:2px solid #1e40af;outline-offset:2px}.truncate{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.truncate-2{-webkit-line-clamp:2}.truncate-2,.truncate-3{display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden}.truncate-3{-webkit-line-clamp:3}.aspect-square{aspect-ratio:1}.aspect-video{aspect-ratio:16/9}.margin-block-0{margin-block:0}.margin-block-sm{margin-block:var(--space-sm)}.margin-block-md{margin-block:var(--space-md)}.margin-block-lg{margin-block:var(--space-lg)}.margin-inline-0{margin-inline:0}.margin-inline-sm{margin-inline:var(--space-sm)}.margin-inline-md{margin-inline:var(--space-md)}.margin-inline-lg{margin-inline:var(--space-lg)}.margin-inline-auto{margin-inline:auto}.padding-block-0{padding-block:0}.padding-block-sm{padding-block:var(--space-sm)}.padding-block-md{padding-block:var(--space-md)}.padding-block-lg{padding-block:var(--space-lg)}.padding-inline-0{padding-inline:0}.padding-inline-sm{padding-inline:var(--space-sm)}.padding-inline-md{padding-inline:var(--space-md)}.padding-inline-lg{padding-inline:var(--space-lg)}.pointer-events-none{pointer-events:none}.pointer-events-auto{pointer-events:auto}.line-clamp-1{-webkit-line-clamp:1}.line-clamp-1,.line-clamp-2{display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden}.line-clamp-2{-webkit-line-clamp:2}.line-clamp-3{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}.vs-active{--state-active:1}.vs-disabled{opacity:.5;pointer-events:none}.vs-loading{cursor:wait}.vs-error{color:var(--color-error,#dc3545)}.vs-success{color:var(--color-success,#28a745)}.vs-hidden{display:none!important}.container,.vl-container{inline-size:100%;margin-inline:auto;max-inline-size:var(--container-max,1200px)}.vl-container{padding-inline:var(--space-md)}.container{padding-inline:var(--space-lg)}.vl-grid{display:grid;gap:var(--gap-md)}.vl-stack{display:flex;flex-direction:column;gap:var(--gap-md)}.vl-cluster{flex-wrap:wrap;gap:var(--gap-sm)}.vl-center,.vl-cluster{align-items:center;display:flex}.vl-center{justify-content:center}.vu-sr-only{block-size:1px;inline-size:1px;margin:-1px;overflow:hidden;padding:0;position:absolute;clip:rect(0,0,0,0);border:0;white-space:nowrap}.vc-surface{background-color:var(--color-surface);color:var(--color-on-surface)}.vc-surface-variant{background-color:var(--color-surface-variant);color:var(--color-on-surface-variant)}.vc-primary{background-color:var(--color-primary);color:var(--color-on-primary)}.vc-secondary{background-color:var(--color-secondary);color:var(--color-on-secondary)}.vc-elevated{box-shadow:var(--elev-1)}.vc-elevated-2{box-shadow:var(--elev-2)}.vc-elevated-3{box-shadow:var(--elev-3)}.vc-rounded{border-radius:var(--radius-md)}.vc-rounded-sm{border-radius:var(--radius-sm)}.vc-rounded-lg{border-radius:var(--radius-lg)}.vc-rounded-full{border-radius:var(--radius-full,9999px)}.card{background:var(--color-bg);border:1px solid var(--color-border);border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);padding:var(--space-lg)}.stack>*+*{margin-block-start:var(--space-md)}.stack-sm>*+*{margin-block-start:var(--space-sm)}.stack-lg>*+*{margin-block-start:var(--space-lg)}@media print{.print-hidden{display:none!important}.print-visible{display:block!important}.print-break-before{page-break-before:always}.print-break-after{page-break-after:always}.print-break-inside-avoid{page-break-inside:avoid}}@media (prefers-reduced-motion:reduce){.transition-fast,.transition-normal,.transition-slow{transition:none}*{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}@media (prefers-contrast:high){.text-primary{color:var(--color-on-surface)}.text-disabled,.text-muted,.text-secondary{color:var(--color-on-surface-variant)}.border{border-width:2px}.border-top{border-top-width:2px}.border-bottom{border-bottom-width:2px}.border-left{border-left-width:2px}.border-right{border-right-width:2px}}}@property --value{syntax:\"<number>\";initial-value:0;inherits:true}@property --relate{syntax:\"<number>\";initial-value:0;inherits:true}@property --drag-x{syntax:\"<number>\";initial-value:0;inherits:false}@property --drag-y{syntax:\"<number>\";initial-value:0;inherits:false}@property --order{syntax:\"<integer>\";initial-value:1;inherits:true}@property --content-inline-size{syntax:\"<length-percentage>\";initial-value:100%;inherits:true}@property --content-block-size{syntax:\"<length-percentage>\";initial-value:100%;inherits:true}@property --icon-size{syntax:\"<length-percentage>\";initial-value:16px;inherits:true}@property --icon-color{syntax:\"<color>\";initial-value:rgba(0,0,0,0);inherits:true}@property --icon-padding{syntax:\"<length-percentage>\";initial-value:0px;inherits:true}@property --icon-image{syntax:\"<image>\";initial-value:linear-gradient(rgba(0,0,0,0),rgba(0,0,0,0));inherits:true}@layer utilities{.grid-rows>::slotted(*){display:grid;grid-auto-flow:column}.grid-rows>::slotted(*){place-content:center;place-items:center}.grid-rows>::slotted(*){--order:sibling-index();grid-column:1/-1;grid-row:var(--order,1)/calc(var(--order, 1) + 1);grid-template-columns:subgrid;grid-template-rows:minmax(0,max-content)}:host(.grid-rows) ::slotted(::slotted(*)){display:grid;grid-auto-flow:column}:host(.grid-rows) ::slotted(::slotted(*)){place-content:center;place-items:center}:host(.grid-rows) ::slotted(::slotted(*)){--order:sibling-index();grid-column:1/-1;grid-row:var(--order,1)/calc(var(--order, 1) + 1);grid-template-columns:subgrid;grid-template-rows:minmax(0,max-content)}.grid-rows>*{display:grid;grid-auto-flow:column;place-content:center;place-items:center;--order:sibling-index();grid-column:1/-1;grid-row:var(--order,1)/calc(var(--order, 1) + 1);grid-template-columns:subgrid;grid-template-rows:minmax(0,max-content)}:host(.grid-rows) ::slotted(*){display:grid;grid-auto-flow:column}:host(.grid-rows) ::slotted(*){place-content:center;place-items:center}:host(.grid-rows) ::slotted(*){--order:sibling-index();grid-column:1/-1;grid-row:var(--order,1)/calc(var(--order, 1) + 1);grid-template-columns:subgrid;grid-template-rows:minmax(0,max-content)}.grid-rows{--display:inline-grid;--flow:column;--items:center;--content:center;block-size:auto;box-sizing:border-box;display:var(--display,inline-block);flex-direction:var(--flow,row);inline-size:auto;place-content:var(--content,center);place-items:var(--items,center);--i-size:auto;--b-size:auto;aspect-ratio:var(--ar,auto);block-size:var(--b-size,100%);grid-auto-rows:minmax(0,max-content);grid-template-columns:minmax(0,max-content) minmax(0,1fr) minmax(0,max-content);inline-size:var(--i-size,100%);list-style-position:inside;list-style-type:none;margin:0;padding:0}:host(.grid-rows){--display:inline-grid;--flow:column;--items:center;--content:center;box-sizing:border-box;display:var(--display,inline-block);flex-direction:var(--flow,row);place-content:var(--content,center);place-items:var(--items,center)}:host(.grid-rows){block-size:auto;inline-size:auto;--i-size:auto;--b-size:auto;aspect-ratio:var(--ar,auto);block-size:var(--b-size,100%);inline-size:var(--i-size,100%)}:host(.grid-rows){grid-auto-rows:minmax(0,max-content);grid-template-columns:minmax(0,max-content) minmax(0,1fr) minmax(0,max-content);list-style-position:inside;list-style-type:none;margin:0;padding:0}.grid-columns>::slotted(*){display:grid;grid-auto-flow:row}.grid-columns>::slotted(*){place-content:center;place-items:center}.grid-columns>::slotted(*){--order:sibling-index();grid-column:var(--order,1)/calc(var(--order, 1) + 1);grid-row:1/-1;grid-template-columns:minmax(0,1fr);grid-template-rows:subgrid}:host(.grid-columns) ::slotted(::slotted(*)){display:grid;grid-auto-flow:row}:host(.grid-columns) ::slotted(::slotted(*)){place-content:center;place-items:center}:host(.grid-columns) ::slotted(::slotted(*)){--order:sibling-index();grid-column:var(--order,1)/calc(var(--order, 1) + 1);grid-row:1/-1;grid-template-columns:minmax(0,1fr);grid-template-rows:subgrid}.grid-columns>*{display:grid;grid-auto-flow:row;place-content:center;place-items:center;--order:sibling-index();grid-column:var(--order,1)/calc(var(--order, 1) + 1);grid-row:1/-1;grid-template-columns:minmax(0,1fr);grid-template-rows:subgrid}:host(.grid-columns) ::slotted(*){display:grid;grid-auto-flow:row}:host(.grid-columns) ::slotted(*){place-content:center;place-items:center}:host(.grid-columns) ::slotted(*){--order:sibling-index();grid-column:var(--order,1)/calc(var(--order, 1) + 1);grid-row:1/-1;grid-template-columns:minmax(0,1fr);grid-template-rows:subgrid}.grid-columns{--display:inline-grid;--flow:row;--items:center;--content:center;block-size:auto;box-sizing:border-box;display:var(--display,inline-block);flex-direction:var(--flow,row);inline-size:auto;place-content:var(--content,center);place-items:var(--items,center);--i-size:auto;--b-size:auto;aspect-ratio:var(--ar,auto);block-size:var(--b-size,100%);grid-auto-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr);inline-size:var(--i-size,100%);list-style-position:inside;list-style-type:none;margin:0;padding:0}:host(.grid-columns){--display:inline-grid;--flow:row;--items:center;--content:center;box-sizing:border-box;display:var(--display,inline-block);flex-direction:var(--flow,row);place-content:var(--content,center);place-items:var(--items,center)}:host(.grid-columns){block-size:auto;inline-size:auto;--i-size:auto;--b-size:auto;aspect-ratio:var(--ar,auto);block-size:var(--b-size,100%);inline-size:var(--i-size,100%)}:host(.grid-columns){grid-auto-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr);list-style-position:inside;list-style-type:none;margin:0;padding:0}.flex-columns>::slotted(*){--order:sibling-index();flex:1 1 max-content;order:var(--order,auto)}.flex-columns>::slotted(*){place-content:center;place-items:center}:host(.flex-columns) ::slotted(::slotted(*)){--order:sibling-index();flex:1 1 max-content;order:var(--order,auto)}:host(.flex-columns) ::slotted(::slotted(*)){place-content:center;place-items:center}.flex-columns>*{--order:sibling-index();flex:1 1 max-content;order:var(--order,auto);place-content:center;place-items:center}:host(.flex-columns) ::slotted(*){--order:sibling-index();flex:1 1 max-content;order:var(--order,auto)}:host(.flex-columns) ::slotted(*){place-content:center;place-items:center}.flex-columns{--display:inline-flex;--flow:column;--items:center;--content:center;block-size:max-content;box-sizing:border-box;display:var(--display,inline-block);flex-direction:var(--flow,row);inline-size:max-content;place-content:var(--content,center);place-items:var(--items,center);--i-size:max-content;--b-size:max-content;aspect-ratio:var(--ar,auto);block-size:var(--b-size,100%);inline-size:var(--i-size,100%)}:host(.flex-columns){--display:inline-flex;--flow:column;--items:center;--content:center;box-sizing:border-box;display:var(--display,inline-block);flex-direction:var(--flow,row);place-content:var(--content,center);place-items:var(--items,center)}:host(.flex-columns){block-size:max-content;inline-size:max-content;--i-size:max-content;--b-size:max-content;aspect-ratio:var(--ar,auto);block-size:var(--b-size,100%);inline-size:var(--i-size,100%)}.grid-layered>::slotted(*){grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr)}.grid-layered>::slotted(*)>*{grid-column:1/-1;grid-row:1/-1}:host(.grid-layered) ::slotted(::slotted(*)){grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr)}:host(.grid-layered) ::slotted(::slotted(*))>*{grid-column:1/-1;grid-row:1/-1}.grid-layered>*{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr)}.grid-layered>*>*{grid-column:1/-1;grid-row:1/-1}:host(.grid-layered) ::slotted(*){grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr)}:host(.grid-layered) ::slotted(*)>*{grid-column:1/-1;grid-row:1/-1}.grid-layered{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr)}.grid-layered>*{grid-column:1/-1;grid-row:1/-1}.grid-layered{--display:inline-grid;--flow:column;--items:center;--content:center;block-size:max-content;box-sizing:border-box;display:var(--display,inline-block);flex-direction:var(--flow,row);inline-size:max-content;place-content:var(--content,center);place-items:var(--items,center);--i-size:max-content;--b-size:max-content;aspect-ratio:var(--ar,auto);block-size:var(--b-size,100%);inline-size:var(--i-size,100%)}:host(.grid-layered){grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr)}:host(.grid-layered)>*{grid-column:1/-1;grid-row:1/-1}:host(.grid-layered){--display:inline-grid;--flow:column;--items:center;--content:center;box-sizing:border-box;display:var(--display,inline-block);flex-direction:var(--flow,row);place-content:var(--content,center);place-items:var(--items,center)}:host(.grid-layered){block-size:max-content;inline-size:max-content;--i-size:max-content;--b-size:max-content;aspect-ratio:var(--ar,auto);block-size:var(--b-size,100%);inline-size:var(--i-size,100%)}.grid-rows-3c>::slotted(*){grid-template-columns:minmax(0,max-content) minmax(0,1fr) minmax(0,max-content)}:host(.grid-rows-3c) ::slotted(::slotted(*)){grid-template-columns:minmax(0,max-content) minmax(0,1fr) minmax(0,max-content)}.grid-rows-3c>*{grid-template-columns:minmax(0,max-content) minmax(0,1fr) minmax(0,max-content)}:host(.grid-rows-3c) ::slotted(*){grid-template-columns:minmax(0,max-content) minmax(0,1fr) minmax(0,max-content)}.grid-rows-3c{grid-template-columns:minmax(0,max-content) minmax(0,1fr) minmax(0,max-content)}:host(.grid-rows-3c){grid-template-columns:minmax(0,max-content) minmax(0,1fr) minmax(0,max-content)}.grid-rows-3c>::slotted(:last-child){grid-column:var(--order,1)/3 span}:host(.grid-rows-3c) ::slotted(::slotted(:last-child)){grid-column:var(--order,1)/3 span}.grid-rows-3c>:last-child{grid-column:var(--order,1)/3 span}:host(.grid-rows-3c) ::slotted(:last-child){grid-column:var(--order,1)/3 span}.grid-rows-3c{--order:sibling-index();block-size:auto;grid-column:var(--order,1)/var(--order,1) span;inline-size:auto;--i-size:auto;--b-size:auto;aspect-ratio:var(--ar,auto);block-size:var(--b-size,100%);inline-size:var(--i-size,100%)}:host(.grid-rows-3c){--order:sibling-index()}:host(.grid-rows-3c){grid-column:var(--order,1)/var(--order,1) span}:host(.grid-rows-3c){block-size:auto;inline-size:auto;--i-size:auto;--b-size:auto;aspect-ratio:var(--ar,auto);block-size:var(--b-size,100%);inline-size:var(--i-size,100%)}.stretch-inline{inline-size:100%;inline-size:stretch}:host(.stretch-inline){inline-size:100%;inline-size:stretch}.stretch-block{block-size:100%;block-size:stretch}:host(.stretch-block){block-size:100%;block-size:stretch}.content-inline-size{padding-inline:max(100% - (100% - var(--content-inline-size,100%) * .5),0px)}:host(.content-inline-size){padding-inline:max(100% - (100% - var(--content-inline-size,100%) * .5),0px)}.content-block-size{padding-block:max(100% - (100% - var(--content-block-size,100%) * .5),0px)}:host(.content-block-size){padding-block:max(100% - (100% - var(--content-block-size,100%) * .5),0px)}.ux-anchor{inset-block-start:max(var(--client-y,0px),0px);inset-inline-start:max(var(--client-x,0px),0px);--translate-x:round(nearest,min(0px,calc(100cqi - (100% + var(--client-x, 0px)))),calc(1px / var(--pixel-ratio, 1)))!important;--translate-y:round(nearest,min(0px,calc(100cqb - (100% + var(--client-y, 0px)))),calc(1px / var(--pixel-ratio, 1)))!important}@supports (position-anchor:--example){.ux-anchor{inline-size:anchor-size(var(--anchor-group) self-inline);inset-block-start:anchor(var(--anchor-group) end);inset-inline-start:anchor(var(--anchor-group) start);position-anchor:var(--anchor-group)}}:host(.ux-anchor){inset-block-start:max(var(--client-y,0px),0px);inset-inline-start:max(var(--client-x,0px),0px)}:host(.ux-anchor){--translate-x:round(nearest,min(0px,calc(100cqi - (100% + var(--client-x, 0px)))),calc(1px / var(--pixel-ratio, 1)))!important;--translate-y:round(nearest,min(0px,calc(100cqb - (100% + var(--client-y, 0px)))),calc(1px / var(--pixel-ratio, 1)))!important}@supports (position-anchor:--example){:host(.ux-anchor){inline-size:anchor-size(var(--anchor-group) self-inline);inset-block-start:anchor(var(--anchor-group) end);inset-inline-start:anchor(var(--anchor-group) start);position-anchor:var(--anchor-group)}}.ux-anchor{--shift-x:var(--client-x,0px);--shift-y:var(--client-y,0px);--translate-x:round(nearest,min(0px,calc(100cqi - (100% + var(--shift-x, 0px)))),calc(1px / var(--pixel-ratio, 1)))!important;--translate-y:round(nearest,min(0px,calc(100cqb - (100% + var(--shift-y, 0px)))),calc(1px / var(--pixel-ratio, 1)))!important;direction:ltr;inset-block-end:auto;inset-block-start:max(var(--shift-y),var(--status-bar-padding,0px));inset-inline-end:auto;inset-inline-start:max(var(--shift-x),0px);transform:none;translate:0 0 0;writing-mode:horizontal-tb}:host(.ux-anchor){--shift-x:var(--client-x,0px);--shift-y:var(--client-y,0px);--translate-x:round(nearest,min(0px,calc(100cqi - (100% + var(--shift-x, 0px)))),calc(1px / var(--pixel-ratio, 1)))!important;--translate-y:round(nearest,min(0px,calc(100cqb - (100% + var(--shift-y, 0px)))),calc(1px / var(--pixel-ratio, 1)))!important;direction:ltr;inset-block-end:auto;inset-block-start:max(var(--shift-y),var(--status-bar-padding,0px));inset-inline-end:auto;inset-inline-start:max(var(--shift-x),0px);transform:none;translate:0 0 0;writing-mode:horizontal-tb}.layered-wrap{background-color:initial;block-size:max-content;display:inline-grid;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr);inline-size:max-content;overflow:visible;z-index:calc(var(--z-index, 0) + 1)}.layered-wrap>*{grid-column:1/-1;grid-row:1/-1}:host(.layered-wrap){background-color:initial;block-size:max-content;display:inline-grid;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr);inline-size:max-content;overflow:visible;z-index:calc(var(--z-index, 0) + 1)}:host(.layered-wrap)>*{grid-column:1/-1;grid-row:1/-1}}@layer theme{@keyframes m{0%{transform:rotate(0deg)}to{transform:rotate(1turn)}}@keyframes n{0%{opacity:0}to{opacity:1}}@keyframes o{0%{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}@keyframes p{0%{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}@keyframes q{0%{background-position:-200% 0}to{background-position:200% 0}}}@function --wavy-step(--step <number>){--angle:calc((var(--step, 0) * 2) * 1rad * pi);--variant:calc(cos(var(--clip-freq, 8) * var(--angle, 0deg)) * 0.5 + 0.5);--adjust:calc(var(--variant, 0) * var(--clip-amplitude, 0));--x:calc(50% + (cos(var(--angle, 0deg)) * (0.5 - var(--adjust, 0))) * var(--icon-size, 100%));--y:calc(50% + (sin(var(--angle, 0deg)) * (0.5 - var(--adjust, 0))) * var(--icon-size, 100%));result:var(--x) var(--y)}@layer components{.shaped{aspect-ratio:1/1!important;border-radius:var(--border-radius,1.5rem);contain:strict;display:flex;overflow:hidden;padding:1.25rem;place-content:center;place-items:center;pointer-events:auto;transition:--background-tone-shift .2s ease-in-out,--icon-color .2s ease-in-out;transition-behavior:allow-discrete;user-select:none;z-index:1}.shaped,.shaped :is(span,ui-icon){block-size:fit-content;inline-size:stretch}.shaped ui-icon{aspect-ratio:1/1!important}[data-dragging]{z-index:calc(100 + var(--z-index, 0))!important}:not(.shaped) .shaped[data-shape],:not(.shaped)>[data-shape],:not(:has(.shaped))[data-shape]{aspect-ratio:1/1!important;contain:strict;overflow:hidden;pointer-events:auto;touch-action:none}:not(.shaped) .shaped[data-shape=square],:not(.shaped)>[data-shape=square],:not(:has(.shaped))[data-shape=square]{--border-radius:var(--radius-md);--clip-path:none}:not(.shaped) .shaped[data-shape=squircle],:not(.shaped)>[data-shape=squircle],:not(:has(.shaped))[data-shape=squircle]{--border-radius:28%;--clip-path:none}:not(.shaped) .shaped[data-shape=circle],:not(.shaped)>[data-shape=circle],:not(:has(.shaped))[data-shape=circle]{--border-radius:50%;--clip-path:none}:not(.shaped) .shaped[data-shape=rounded],:not(.shaped)>[data-shape=rounded],:not(:has(.shaped))[data-shape=rounded]{--border-radius:var(--radius-xl);--clip-path:none}:not(.shaped) .shaped[data-shape=blob],:not(.shaped)>[data-shape=blob],:not(:has(.shaped))[data-shape=blob]{--border-radius:60% 40% 30% 70%/60% 30% 70% 40%;--clip-path:none}:not(.shaped) .shaped[data-shape=hexagon],:not(.shaped)>[data-shape=hexagon],:not(:has(.shaped))[data-shape=hexagon]{--border-radius:0;--clip-path:polygon(round 0.375rem,50% 0%,93.3% 25%,93.3% 75%,50% 100%,6.7% 75%,6.7% 25%)}:not(.shaped) .shaped[data-shape=diamond],:not(.shaped)>[data-shape=diamond],:not(:has(.shaped))[data-shape=diamond]{--border-radius:0;--clip-path:polygon(round 0.5rem,50% 0%,100% 50%,50% 100%,0% 50%)}:not(.shaped) .shaped[data-shape=star],:not(.shaped)>[data-shape=star],:not(:has(.shaped))[data-shape=star]{--border-radius:0;--clip-path:polygon(round 0.25rem,50% 0%,61% 35%,98% 38%,68% 59%,79% 95%,50% 75%,21% 95%,32% 59%,2% 38%,39% 35%)}:not(.shaped) .shaped[data-shape=badge],:not(.shaped)>[data-shape=badge],:not(:has(.shaped))[data-shape=badge]{--border-radius:0;--clip-path:polygon(round 0.375rem,0% 0%,100% 0%,100% 70%,50% 100%,0% 70%)}:not(.shaped) .shaped[data-shape=heart],:not(.shaped)>[data-shape=heart],:not(:has(.shaped))[data-shape=heart]{--border-radius:0;--clip-path:polygon(round 0.25rem,50% 100%,10% 65%,0% 45%,0% 30%,5% 15%,18% 3%,35% 0%,50% 12%,65% 0%,82% 3%,95% 15%,100% 30%,100% 45%,90% 65%)}:not(.shaped) .shaped[data-shape=clover],:not(.shaped)>[data-shape=clover],:not(:has(.shaped))[data-shape=clover]{--border-radius:0;--clip-path:polygon(round 0.375rem,50% 0%,60% 30%,70% 30%,100% 50%,70% 70%,60% 70%,50% 100%,40% 70%,30% 70%,0% 50%,30% 30%,40% 30%)}:not(.shaped) .shaped[data-shape=flower],:not(.shaped)>[data-shape=flower],:not(:has(.shaped))[data-shape=flower]{--border-radius:0;--clip-path:polygon(round 0.25rem,50% 0%,58% 25%,85% 15%,68% 40%,100% 50%,68% 60%,85% 85%,58% 75%,50% 100%,42% 75%,15% 85%,32% 60%,0% 50%,32% 40%,15% 15%,42% 25%)}:not(.shaped) .shaped[data-shape=triangle],:not(.shaped)>[data-shape=triangle],:not(:has(.shaped))[data-shape=triangle]{--border-radius:0;--clip-path:polygon(round 0.5rem,50% 0%,100% 87%,0% 87%)}:not(.shaped) .shaped[data-shape=pentagon],:not(.shaped)>[data-shape=pentagon],:not(:has(.shaped))[data-shape=pentagon]{--border-radius:0;--clip-path:polygon(round 0.375rem,50% 0%,97.5% 35%,79.5% 95%,20.5% 95%,2.5% 35%)}:not(.shaped) .shaped[data-shape=octagon],:not(.shaped)>[data-shape=octagon],:not(:has(.shaped))[data-shape=octagon]{--border-radius:0;--clip-path:polygon(round 0.25rem,30% 0%,70% 0%,100% 30%,100% 70%,70% 100%,30% 100%,0% 70%,0% 30%)}:not(.shaped) .shaped[data-shape=cross],:not(.shaped)>[data-shape=cross],:not(:has(.shaped))[data-shape=cross]{--border-radius:0;--clip-path:polygon(round 0.375rem,35% 0%,65% 0%,65% 35%,100% 35%,100% 65%,65% 65%,65% 100%,35% 100%,35% 65%,0% 65%,0% 35%,35% 35%)}:not(.shaped) .shaped[data-shape=arrow],:not(.shaped)>[data-shape=arrow],:not(:has(.shaped))[data-shape=arrow]{--border-radius:0;--clip-path:polygon(round 0.375rem,0% 20%,60% 20%,60% 0%,100% 50%,60% 100%,60% 80%,0% 80%)}:not(.shaped) .shaped[data-shape=egg],:not(.shaped)>[data-shape=egg],:not(:has(.shaped))[data-shape=egg]{--border-radius:50% 50% 50% 50%/60% 60% 40% 40%;--clip-path:none}:not(.shaped) .shaped[data-shape=tear],:not(.shaped)>[data-shape=tear],:not(:has(.shaped))[data-shape=tear]{--border-radius:50cqmin 50cqmin 5rem 50cqmin;--clip-path:none;border-end-end-radius:5rem;border-end-start-radius:50cqmin;border-start-end-radius:50cqmin;border-start-start-radius:50cqmin}:not(.shaped) .shaped[data-shape=wavy],:not(.shaped)>[data-shape=wavy],:not(:has(.shaped))[data-shape=wavy]{--border-radius:calc(var(--icon-size, 100%) * 0.5)}.code-highlight-overlay{box-sizing:border-box;color:light-dark(#1f2328,#e6edf3);color-scheme:inherit;display:block;margin:0;overflow:hidden;padding:0;padding-inline-start:var(--code-gutter,0);pointer-events:none;user-select:none;-webkit-text-fill-color:currentColor;opacity:1;tab-size:4;visibility:visible;white-space:pre;z-index:1}.code-highlight-overlay,.code-highlight-overlay__gutter,.code-highlight-overlay__paint,.code-highlight-overlay__paint *{font-family:inherit;font-feature-settings:\"liga\" 0,\"clig\" 0,\"calt\" 0,\"dlig\" 0;font-kerning:none;font-size:inherit;font-stretch:inherit;font-style:inherit;font-synthesis:none;font-variant:inherit;font-variant-ligatures:none;font-variation-settings:inherit;font-weight:inherit;letter-spacing:inherit;line-height:var(--code-line-height,inherit);tab-size:inherit;text-rendering:inherit;word-spacing:inherit;-webkit-text-fill-color:currentColor}.code-highlight-overlay__gutter{box-sizing:border-box;color:light-dark(#656d76,#8b949e);inline-size:var(--code-gutter,0);inset-block-start:0;inset-inline-start:0;overflow:hidden;padding-inline-end:.5rem;pointer-events:none;position:absolute;text-align:end;user-select:none;white-space:pre}.code-highlight-overlay__paint{margin:0;min-inline-size:0;overflow:visible;padding:0;white-space:pre}.code-highlight-host:has(>.code-highlight-overlay),pre:has(>.code-highlight-overlay){position:relative}.code-highlight-host>.code-highlight-source,.code-highlight-source:has(+.code-highlight-overlay),pre:has(>.code-highlight-overlay)>code{caret-color:light-dark(#1f2328,#e6edf3);display:block;font-feature-settings:\"liga\" 0,\"clig\" 0,\"calt\" 0,\"dlig\" 0;font-kerning:none;font-variant-ligatures:none;line-height:var(--code-line-height,normal);padding-inline-start:var(--code-gutter,0)}.code-highlight-host>.code-highlight-source.code-highlight-painted,.code-highlight-source.code-highlight-painted:has(+.code-highlight-overlay),pre:has(>.code-highlight-painted+.code-highlight-overlay)>code.code-highlight-painted{color:transparent;-webkit-text-fill-color:transparent}.code-highlight-source::selection,pre:has(>.code-highlight-overlay)>code::selection{background-color:color-mix(in oklab,#79c0ff 32%,transparent);color:transparent;-webkit-text-fill-color:transparent}pre[data-language]:not([data-language=\"\"]){position:relative}pre[data-language]:not([data-language=\"\"]):after{background:color-mix(in oklab,var(--md-bg-code,var(--view-code-bg,Canvas)) 70%,transparent);border-radius:var(--radius-xs,4px);color:light-dark(#656d76,#8b949e);content:attr(data-language);font-family:var(--md-font-sans,var(--font-family,sans-serif));font-size:.7em;inset-block-start:.35rem;inset-inline-end:.5rem;letter-spacing:.02em;line-height:1.2;padding:.1em .45em;pointer-events:none;position:absolute;text-transform:lowercase;z-index:2}.code-highlight-overlay :is(.hljs-comment,.hljs-quote){color:light-dark(#656d76,#8b949e)}.code-highlight-overlay :is(.hljs-built_in,.hljs-keyword,.hljs-literal,.hljs-selector-tag){color:light-dark(#0550ae,#79c0ff)}.code-highlight-overlay :is(.hljs-addition,.hljs-attr,.hljs-string){color:light-dark(#0a3069,#a5d6ff)}.code-highlight-overlay :is(.hljs-number,.hljs-template-variable,.hljs-type,.hljs-variable){color:light-dark(#116329,#3fb950)}.code-highlight-overlay .hljs-name,.code-highlight-overlay .hljs-section,.code-highlight-overlay .hljs-title,.code-highlight-overlay .hljs-title.function_{color:light-dark(#0550ae,#79c0ff)}.code-highlight-overlay :is(.hljs-attribute,.hljs-property,.hljs-selector-class,.hljs-selector-id){color:light-dark(#116329,#7ee787)}.code-highlight-overlay :is(.hljs-doctag,.hljs-meta,.hljs-operator,.hljs-punctuation,.hljs-tag){color:light-dark(#656d76,#c9d1d9)}.code-highlight-overlay .hljs-deletion{color:light-dark(#cf222e,#ffa198)}.code-highlight-overlay :is(.hljs-emphasis,.hljs-strong){color:inherit}}@layer components{}@layer overrides{::highlight(code-selection){background-color:color-mix(in oklab,#79c0ff 32%,transparent);color:inherit}}@scope (markdown-view,\n    md-view,\n    .markdown-view,\n    cw-view-viewer,\n    .cw-view-viewer-shell,\n    .view-viewer,\n    :host(markdown-view),\n    :host(md-view),\n    :host(.markdown-view),\n    :host(cw-view-viewer)\n){@layer tokens{.cw-view-viewer-shell,.view-viewer,:host,:scope{--view-layout:\"flex\";--view-content-max-width:800px;--view-padding:clamp(1rem,3cqw,1.75rem);--view-font-size-base:1rem;--view-line-height-base:1.6;--view-prose-font-size:var(--text-base);--view-prose-line-height:1.75;--view-prose-heading-margin:var(--space-6);--view-toolbar-btn-pad-block:0.4rem;--view-toolbar-btn-pad-inline:0.65rem;--view-code-font-size:0.9em}:host([data-theme=light]),:host-context([data-theme=light]),:host-context(html[data-theme=light]){color-scheme:light only;--view-bg:var(--color-surface,--u2-color-mod(var(--base-color-neutralized,var(--base-color,#5a7fff)),60));--view-fg:var(--color-on-surface,--u2-color-mod(var(--base-color-neutralized,var(--base-color,#5a7fff)),900));--view-code-bg:--u2-color-mod(var(--base-color-neutralized,var(--base-color,#5a7fff)),120)}:host([data-theme=dark]),:host-context([data-theme=dark]),:host-context(html[data-theme=dark]){color-scheme:dark only;--view-bg:var(--color-surface,--u2-color-mod(var(--base-color-neutralized,var(--base-color,#5a7fff)),940));--view-fg:var(--color-on-surface,--u2-color-mod(var(--base-color-neutralized,var(--base-color,#5a7fff)),100));--view-code-bg:--u2-color-mod(var(--base-color-neutralized,var(--base-color,#5a7fff)),900)}}@layer base{.cw-view-viewer-shell{--viewer-shell-container-type:inline-size;--viewer-shell-contain:layout style paint;--viewer-shell-inline-size:100%;--viewer-shell-block-size:100%;block-size:var(--viewer-shell-block-size,100%);contain:var(--viewer-shell-contain,layout style paint);contain-intrinsic-size:auto 1000px;container-type:var(--viewer-shell-container-type,inline-size);inline-size:var(--viewer-shell-inline-size,100%);isolation:isolate;max-block-size:none;max-inline-size:none}.cw-view-viewer-shell,.view-viewer{box-sizing:border-box;display:flex;flex-direction:column;min-block-size:max(100%,100cqb);min-inline-size:0}.view-viewer{background-color:var(--view-bg);block-size:max-content;color:var(--view-fg);inline-size:100%;max-block-size:stretch;overflow:hidden}@supports (color:contrast-color(red)){.view-viewer{color:contrast-color(var(--view-bg))}}.cw-view-viewer-shell:has(.cw-view-viewer__slot-default) .view-viewer,.cw-view-viewer-shell:not([data-raw]) .view-viewer,.cw-view-viewer-shell[data-raw]:not(:has(.cw-view-viewer__slot-default)) .view-viewer{flex:1 1 auto;min-block-size:0;min-inline-size:0}.cw-view-viewer-shell:has(.cw-view-viewer__slot-default) .view-viewer__content{block-size:100%;display:flex;flex:1 1 auto;flex-direction:column;min-block-size:0;min-inline-size:0;overflow:hidden}.cw-view-viewer-shell:has(.cw-view-viewer__slot-default):not([data-raw]) .cw-view-viewer__slot-raw,.cw-view-viewer-shell:has(.cw-view-viewer__slot-default)[data-raw] .cw-view-viewer__slot-default{display:none!important}.cw-view-viewer-shell:has(.cw-view-viewer__slot-default):not([data-raw]) .cw-view-viewer__slot-default{block-size:100%;box-sizing:border-box;flex:1 1 auto;inline-size:100%;min-block-size:0;min-inline-size:0;overflow-block:auto;overflow-inline:hidden;overscroll-behavior:contain}.cw-view-viewer-shell:has(.cw-view-viewer__slot-default):not([data-raw]) .cw-view-viewer__slot-default>slot{block-size:100%;display:block;inline-size:100%;min-block-size:0;min-inline-size:0}.cw-view-viewer-shell:has(.cw-view-viewer__slot-default):not([data-raw]) .cw-view-viewer__slot-default>slot::slotted([data-render-target]){block-size:100%;display:block;inline-size:100%;max-block-size:none;min-block-size:0;min-inline-size:0;overflow-block:auto;overflow-inline:hidden;overscroll-behavior:contain}.cw-view-viewer-shell:has(.cw-view-viewer__slot-default)[data-raw] .cw-view-viewer__slot-raw{block-size:100%;box-sizing:border-box;flex:1 1 auto;inline-size:100%;min-block-size:0;min-inline-size:0;overflow-block:auto;overflow-inline:hidden;overscroll-behavior:contain}.cw-view-viewer-shell:not(:has(.cw-view-viewer__slot-default))[data-raw] .cw-view-viewer__prose{display:none!important}.cw-view-viewer-shell:not(:has(.cw-view-viewer__slot-default)):not([data-raw]) .cw-view-viewer__prose{block-size:100%;box-sizing:border-box;flex:1 1 auto;inline-size:100%;min-block-size:0;min-inline-size:0;overflow-block:auto;overflow-inline:hidden;overscroll-behavior:contain}.cw-view-viewer-shell:not(:has(.cw-view-viewer__slot-default))[data-raw] .view-viewer__content{block-size:100%;flex:1 1 auto;inline-size:100%;min-block-size:0;min-inline-size:0}}@layer components{.view-viewer>cw-markdown-toolbar-frame{box-sizing:border-box;display:block;flex:0 0 auto;inline-size:100%;min-block-size:0;min-inline-size:0}.view-viewer__toolbar{--view-toolbar-icon-size:1.25rem;--view-toolbar-ph-icon-size:var(--view-toolbar-icon-size);--view-picon-fill:var(--color-on-surface,var(--view-fg));--view-picon-fill-hover:var(--color-primary,var(--color-on-surface,var(--view-fg)));--view-picon-fill-active:color-mix(in oklab,var(--color-on-surface,var(--view-fg)) 82%,var(--color-primary,#007acc) 18%);--view-picon-fill-disabled:color-mix(in oklab,var(--color-on-surface,var(--view-fg)) 40%,transparent);--view-toolbar-row-pad-block:0.2rem;--view-toolbar-row-pad-inline:0.2rem;--view-toolbar-gap:0.125rem;align-items:center;background:var(--view-toolbar-bg,var(--color-surface-container-high));border-block-end:none;box-shadow:0 10px 28px -22px color-mix(in oklab,var(--view-fg) 16%,transparent);display:grid;flex-shrink:0;gap:var(--view-toolbar-gap);grid-template-columns:max-content minmax(0,1fr) max-content;min-block-size:2rem;overflow-block:hidden;overflow-inline:auto;padding:.2rem .75rem;position:relative;scrollbar-color:transparent transparent;scrollbar-width:none;-webkit-overflow-scrolling:touch;box-sizing:border-box;contain:layout style paint;container-type:inline-size;inline-size:100%;max-inline-size:100%;min-inline-size:0;white-space:nowrap}.view-viewer__toolbar button.view-viewer__btn>ui-icon.view-viewer__toolbar-icon{box-sizing:border-box;order:-1;vertical-align:middle;--icon-size:var(--view-toolbar-ph-icon-size,1.25rem);--icon-padding:0;--icon-color:var(--view-picon-fill);aspect-ratio:1/1;block-size:1rem;inline-size:1rem;min-block-size:max-content;min-inline-size:max-content;pointer-events:none;transition:color var(--motion-fast,.12s ease)}.view-viewer__toolbar:before{content:\"\";inset:0;pointer-events:none;position:absolute}.view-viewer__toolbar>*{position:relative;z-index:1}.view-viewer__toolbar::-webkit-scrollbar{display:none}@container (max-inline-size: 1024px){.view-viewer__toolbar{min-block-size:2.125rem;padding:.15rem}}@container (max-inline-size: 768px){.view-viewer__toolbar{min-block-size:2.25rem;padding:.15rem}}.view-viewer__chrome{display:flex;flex:0 0 auto;flex-direction:column;inline-size:100%;min-inline-size:0}.view-viewer__pathbar{--view-picon-fill:var(--color-on-surface,var(--view-fg));--view-picon-fill-hover:var(--color-primary,var(--color-on-surface,var(--view-fg)));--view-picon-fill-active:color-mix(in oklab,var(--color-on-surface,var(--view-fg)) 82%,var(--color-primary,#007acc) 18%);--view-picon-fill-disabled:color-mix(in oklab,var(--color-on-surface,var(--view-fg)) 40%,transparent);align-items:center;background:var(--view-toolbar-bg,var(--color-surface-container-high));border-block-end:1px solid color-mix(in oklab,var(--color-on-surface,var(--view-fg)) 10%,transparent);box-sizing:border-box;display:grid;gap:.25rem;grid-template-columns:max-content minmax(0,1fr) max-content;inline-size:100%;min-block-size:2.125rem;min-inline-size:0;padding:.2rem .5rem}.view-viewer__pathbar button.view-viewer__btn>ui-icon.view-viewer__toolbar-icon{order:-1;--icon-size:1.25rem;--icon-padding:0;--icon-color:var(--color-on-surface,var(--view-fg));pointer-events:none}.view-viewer__pathbar-left,.view-viewer__pathbar-right{align-items:center;display:flex;flex-wrap:nowrap;gap:.15rem}.view-viewer__pathbar-center{display:flex;inline-size:100%;margin:0;min-inline-size:0}.view-viewer__path-input{background:var(--color-surface,var(--view-bg));border:1px solid color-mix(in oklab,var(--color-on-surface,var(--view-fg)) 16%,transparent);border-radius:.4rem;color:var(--color-on-surface,var(--view-fg));font:inherit;font-size:var(--text-sm,.8125rem);inline-size:100%;min-block-size:1.75rem;min-inline-size:0;padding:.25rem .55rem}.view-viewer__path-input:focus{outline:2px solid color-mix(in oklab,var(--color-primary,#007acc) 45%,transparent);outline-offset:1px}.view-viewer__toolbar-center{align-items:center;display:flex;flex:1 1 auto;justify-content:center;min-block-size:0;min-inline-size:0;padding-inline:.35rem;pointer-events:none}.view-viewer__toolbar-title{color:color-mix(in oklab,var(--color-on-surface,var(--view-fg)) 88%,transparent);display:block;font-size:var(--text-sm,.8125rem);font-weight:var(--font-weight-medium,500);letter-spacing:.02em;line-height:1.25;max-inline-size:100%;overflow:hidden;text-align:center;text-overflow:ellipsis;white-space:nowrap}.view-viewer__toolbar-title:empty{display:none}.view-viewer__toolbar-left,.view-viewer__toolbar-right{align-items:center;display:flex;flex-basis:max-content;flex-grow:0;flex-shrink:0;flex-wrap:nowrap;gap:.15rem;inline-size:max-content;max-inline-size:100%;min-inline-size:0;overflow:hidden;padding:.1rem 0}.view-viewer__toolbar-left{justify-content:flex-start}.view-viewer__toolbar-right{justify-content:flex-end}.view-viewer__btn{align-content:safe center;align-items:safe center;appearance:none;background:var(--color-surface,transparent);border:none;border-radius:var(--view-toolbar-btn-radius,.625rem);color:var(--color-on-surface,var(--view-fg));cursor:pointer;display:inline-flex;font-family:inherit;font-size:var(--text-xs,.75rem);font-weight:var(--font-weight-medium,500);gap:.3rem;justify-content:safe center;justify-items:safe center;letter-spacing:.01em;line-height:1.2;min-block-size:max-content;padding-block:var(--view-toolbar-btn-pad-block,.375rem);padding-inline:var(--view-toolbar-btn-pad-inline,.5625rem);white-space:nowrap;-webkit-tap-highlight-color:transparent;box-sizing:border-box;contain:none;container-type:normal;flex-grow:0;overflow:visible;transition:background-color var(--motion-fast,.12s ease),color var(--motion-fast,.12s ease),box-shadow var(--motion-fast,.12s ease)}.view-viewer__btn,.view-viewer__btn span{flex-basis:max-content;flex-shrink:0;inline-size:max-content;min-inline-size:max-content}.view-viewer__btn span{display:inline-block;flex-grow:1;font-size:.625rem;font-weight:400;letter-spacing:.03em;line-height:1.15;max-inline-size:none;opacity:.88;overflow:hidden;text-overflow:ellipsis;text-transform:uppercase}.view-viewer__btn:hover{background:var(--color-surface-container-high,var(--view-btn-hover-bg))}.view-viewer__btn:hover span{opacity:1}.view-viewer__btn:hover>ui-icon.view-viewer__toolbar-icon{--icon-color:var(--view-picon-fill-hover)}.view-viewer__btn:active{background:color-mix(in oklab,var(--color-surface-container-high,var(--view-btn-hover-bg)) 92%,var(--color-on-surface,currentColor) 8%)}.view-viewer__btn:active>ui-icon.view-viewer__toolbar-icon{--icon-color:var(--view-picon-fill-active)}.view-viewer__btn:disabled>ui-icon.view-viewer__toolbar-icon{--icon-color:var(--view-picon-fill-disabled);opacity:.55}.view-viewer__btn:focus-visible{box-shadow:var(--focus-ring,0 0 0 2px var(--color-primary,#007acc));outline:none}@container (max-inline-size: 1024px){.view-viewer__btn{gap:.2rem;min-block-size:1.75rem;padding-block:max(.3rem,var(--view-toolbar-btn-pad-block,.375rem));padding-inline:max(.45rem,var(--view-toolbar-btn-pad-inline,.5625rem))}}@container (max-inline-size: 768px){.view-viewer__btn{gap:0;min-block-size:1.875rem;min-inline-size:1.875rem;padding-block:var(--view-toolbar-btn-pad-block,.4rem);padding-inline:var(--view-toolbar-btn-pad-block,.4rem)}.view-viewer__btn span{display:none}}.view-viewer__md-loading{align-items:center;color:var(--view-fg);display:flex;font-size:.9rem;gap:.75rem;opacity:.9;padding:1.25rem 1rem}.view-viewer__md-loading:before{animation:m .75s linear infinite;block-size:1.25rem;border:2px solid var(--view-border);border-block-start-color:var(--view-link-color);border-radius:50%;content:\"\";flex-shrink:0;inline-size:1.25rem}.view-viewer__content{background-color:var(--view-bg);block-size:stretch;box-sizing:border-box;color:contrast-color(var(--view-bg));display:flex;flex-direction:column;flex-grow:1;inline-size:100%;min-inline-size:0;padding:0}.view-viewer__content.dragover{background-color:rgba(0,122,204,.05);color:contrast-color(rgba(0,122,204,.05));outline:2px dashed rgba(0,122,204,.3);outline-offset:-8px}.cw-view-viewer-shell:not(:has(.cw-view-viewer__slot-default)) .view-viewer__content{flex:1 1 auto;min-block-size:0;overflow-block:auto;overflow-inline:hidden;overscroll-behavior:contain}.cw-view-viewer-shell.dragover{background-color:rgba(0,122,204,.05);color:contrast-color(rgba(0,122,204,.05));outline:2px dashed rgba(0,122,204,.3);outline-offset:-8px}.cw-view-viewer-shell :is([data-render-target],[data-render-target] *),cw-view-viewer :is([data-render-target],[data-render-target] *){pointer-events:auto;user-select:text;-webkit-user-select:text;-webkit-touch-callout:default}.cw-view-viewer-shell .view-viewer__content>[data-render-target],cw-view-viewer [data-render-target]{align-self:stretch;block-size:auto;box-sizing:border-box;display:flex;flex:1 1 auto;flex-direction:column;max-block-size:none;min-block-size:0;min-inline-size:0;overflow-block:auto;overflow-inline:hidden;overscroll-behavior:contain}.cw-view-viewer-shell .markdown-viewer-raw,.cw-view-viewer-shell pre[data-raw-target]{background-color:var(--view-bg);border:none;color:var(--view-fg);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.8125rem;line-height:1.5;margin:0;padding:var(--view-padding);white-space:pre-wrap;word-break:break-word}@supports (color:contrast-color(red)){.cw-view-viewer-shell .markdown-viewer-raw,.cw-view-viewer-shell pre[data-raw-target]{color:contrast-color(var(--view-bg))}}.cw-view-viewer-shell :is(.cw-view-viewer__prose.markdown-body,[data-render-target].markdown-body){background-color:var(--view-bg);color:var(--view-fg);padding:var(--view-padding)}@supports (color:contrast-color(red)){.cw-view-viewer-shell :is(.cw-view-viewer__prose.markdown-body,[data-render-target].markdown-body){color:contrast-color(var(--view-bg))}}cw-view-viewer :is([data-render-target].cw-view-viewer__prose,[data-render-target].markdown-body){background-color:var(--view-bg);color:var(--view-fg);padding:var(--view-padding)}@supports (color:contrast-color(red)){cw-view-viewer :is([data-render-target].cw-view-viewer__prose,[data-render-target].markdown-body){color:contrast-color(var(--view-bg))}}.cw-view-viewer-shell .markdown-body h1,cw-view-viewer .markdown-body h1{color:var(--view-fg);font-size:clamp(1.5rem,4.5cqw,2.125rem);font-weight:600;letter-spacing:-.02em;line-height:1.2;margin-block:0 .75em}}@layer utilities{@keyframes m{to{transform:rotate(1turn)}}@media print{.cw-view-viewer-shell,.view-viewer{block-size:max-content!important;display:block!important;inline-size:100%!important;max-block-size:none!important;max-inline-size:100%!important;min-block-size:0!important;overflow:visible!important}.view-viewer{background:transparent!important;color:#000!important}.view-viewer__toolbar{display:none!important}.view-viewer__content{padding:0!important}.cw-view-viewer__prose,.view-viewer__content{block-size:max-content!important;display:block!important;inline-size:100%!important;max-block-size:none!important;max-inline-size:100%!important;min-block-size:0!important;overflow:visible!important}.cw-view-viewer__prose{contain:none!important}.cw-view-viewer__slot-default,.cw-view-viewer__slot-raw,.markdown-body,.markdown-viewer-content,.result-content,[data-render-target]{block-size:max-content!important;display:block!important;inline-size:100%!important;max-block-size:none!important;max-inline-size:100%!important;min-block-size:0!important;overflow:visible!important}.markdown-body,.markdown-viewer-content,.result-content,[data-render-target]{background:transparent!important;box-shadow:none!important;color:#000!important;opacity:1!important;visibility:visible!important}}}@layer layout{:where([data-cw-view-host=true]){block-size:100%;display:block;inline-size:100%;min-block-size:0;min-inline-size:0}}@layer components{.cw-view-viewer-shell{display:flex;flex-direction:column;max-block-size:none;min-block-size:max(100%,100cqb)}.cw-view-viewer-shell,.view-viewer{block-size:100%;inline-size:100%;min-inline-size:0}.view-viewer{background:var(--view-bg,var(--color-surface,light-dark(#f4f6fa,#060d17)));color:var(--view-fg,var(--color-on-surface,light-dark(#1a1a1a,#e5e7eb)));display:grid;flex:1 1 0%;grid-template-rows:[toolbar-row] max-content [content-row] minmax(0,1fr);min-block-size:0}@supports (color:contrast-color(red)) and (color:light-dark(red,red)){.view-viewer{color:contrast-color(var(--view-bg,var(--color-surface,light-dark(#f4f6fa,#060d17))))}}.view-viewer__toolbar{align-items:center;background:var(--view-toolbar-bg,light-dark(color-mix(in oklab,var(--color-surface-container,#e2e8f0) 88%,transparent),color-mix(in oklab,var(--color-surface-container,#0f1a2b) 88%,transparent)));border-block-end:none;box-shadow:0 12px 32px -20px color-mix(in oklab,#000 45%,transparent);box-sizing:border-box;color:contrast-color(var(--view-toolbar-bg,light-dark(color-mix(in oklab,var(--color-surface-container,#e2e8f0) 88%,transparent),color-mix(in oklab,var(--color-surface-container,#0f1a2b) 88%,transparent))));display:flex;gap:.5rem;grid-row:toolbar-row;justify-content:space-between;min-inline-size:100%;padding:.45rem .65rem}}.view-viewer__toolbar-left,.view-viewer__toolbar-right{align-items:center;display:inline-flex;gap:.4rem;min-inline-size:0}.view-viewer__toolbar-center{align-items:center;display:flex;flex:1 1 auto;justify-content:center;min-inline-size:0;padding-inline:.35rem;pointer-events:none}.view-viewer__toolbar-title{color:color-mix(in oklab,var(--color-on-surface,light-dark(#334155,#e5e7eb)) 88%,transparent);display:block;font-size:.8125rem;font-weight:500;line-height:1.25;max-inline-size:100%;overflow:hidden;text-align:center;text-overflow:ellipsis;white-space:nowrap}.view-viewer__toolbar-title:empty{display:none}.view-viewer__toolbar-group{align-items:center;display:inline-flex;gap:.25rem;min-inline-size:0}.view-viewer__btn{align-items:center;background:color-mix(in oklab,var(--color-on-surface,light-dark(#334155,#e5e7eb)) 6%,transparent);border:none;border-radius:var(--view-toolbar-btn-radius,.625rem);color:color-mix(in oklab,var(--color-on-surface,light-dark(#334155,#e5e7eb)) 82%,transparent);cursor:pointer;display:inline-flex;font:inherit;font-size:.78rem;gap:.35rem;line-height:1;padding-block:var(--view-toolbar-btn-pad-block,.4375rem);padding-inline:var(--view-toolbar-btn-pad-inline,.6875rem);transition:background-color var(--motion-fast,.14s ease),color var(--motion-fast,.14s ease);white-space:nowrap}.view-viewer__btn:hover{background:color-mix(in oklab,var(--color-on-surface,light-dark(#334155,#e5e7eb)) 11%,transparent);color:var(--color-on-surface,light-dark(#0f172a,#f8fafc))}.view-viewer__toolbar-icon{block-size:1rem;inline-size:1rem}.view-viewer__content{grid-row:content-row;inline-size:100%;min-block-size:0;min-inline-size:0;overflow:auto;padding:0;position:relative}@layer components{.viewer-loading-indicator{align-items:center;backdrop-filter:blur(8px);background-color:oklch(from var(--surface-container-high) l c h/.9);border-radius:var(--radius-md);color:contrast-color(oklch(from var(--surface-container-high) l c h/.9));display:flex;gap:var(--gap-sm);inset-block-start:var(--padding-md);inset-inline-end:var(--padding-md);opacity:0;padding:var(--padding-xs) var(--padding-sm);pointer-events:none;position:absolute;transform:translateY(-4px);transition:opacity var(--transition-fast),transform var(--transition-fast);z-index:4}.viewer-loading-indicator[data-state=loading]{opacity:1;pointer-events:auto;transform:translateY(0)}.viewer-loading-indicator .loading-spinner{animation:m .8s linear infinite;block-size:1rem;border:2px solid oklch(from var(--primary) l c h/.2);border-block-start-color:var(--primary);border-radius:var(--radius-full);inline-size:1rem}.viewer-loading-indicator .loading-text{color:var(--on-surface-variant);font:var(--type-label-small,inherit)}.viewer-section{position:relative}.viewer-section[data-loading-state=loading]:before{animation:q 1.5s ease-in-out infinite;background:linear-gradient(90deg,transparent 0,oklch(from var(--primary) l c h/.05) 50%,transparent 100%);background-size:200% 100%;border-radius:inherit;content:\"\";inset:0;pointer-events:none;position:absolute;z-index:1}.viewer-section[data-loading-state=loaded] .viewer-tab-content-body{animation:n .3s ease-out}.viewer-section[data-loading-state=error]:after{background-color:oklch(from var(--error) l c h/.1);border-radius:var(--radius-md);color:var(--error);content:attr(data-error);font:var(--type-label-medium,inherit);inset-block-end:var(--padding-md);inset-inline:var(--padding-md);padding:var(--padding-sm) var(--padding-md);position:absolute;text-align:center;z-index:4}@supports (color:contrast-color(red)) and (color:lab(from red l 1 1%/calc(alpha + 0.1))){.viewer-section[data-loading-state=error]:after{color:contrast-color(oklch(from var(--error) l c h/.1))}}[data-type=bonuses],[data-type=contacts],[data-type=services],[data-type=tasks]{align-items:start;column-fill:balance;contain:strict;content-visibility:auto;display:grid;grid-auto-flow:row;grid-auto-rows:minmax(0,max-content);grid-template-columns:repeat(auto-fill,minmax(260px,1fr));inline-size:stretch;max-inline-size:stretch;overflow-y:auto;perspective:1000;transform:translateZ(0)}:is([data-type=bonuses],[data-type=contacts],[data-type=services],[data-type=tasks])>*{animation:p .25s ease-out backwards}:is([data-type=bonuses],[data-type=contacts],[data-type=services],[data-type=tasks])>:first-child{animation-delay:30ms}:is([data-type=bonuses],[data-type=contacts],[data-type=services],[data-type=tasks])>:nth-child(2){animation-delay:60ms}:is([data-type=bonuses],[data-type=contacts],[data-type=services],[data-type=tasks])>:nth-child(3){animation-delay:90ms}:is([data-type=bonuses],[data-type=contacts],[data-type=services],[data-type=tasks])>:nth-child(4){animation-delay:.12s}:is([data-type=bonuses],[data-type=contacts],[data-type=services],[data-type=tasks])>:nth-child(5){animation-delay:.15s}:is([data-type=bonuses],[data-type=contacts],[data-type=services],[data-type=tasks])>:nth-child(6){animation-delay:.18s}:is([data-type=bonuses],[data-type=contacts],[data-type=services],[data-type=tasks])>:nth-child(7){animation-delay:.21s}:is([data-type=bonuses],[data-type=contacts],[data-type=services],[data-type=tasks])>:nth-child(8){animation-delay:.24s}:is([data-type=bonuses],[data-type=contacts],[data-type=services],[data-type=tasks])>:nth-child(9){animation-delay:.27s}:is([data-type=bonuses],[data-type=contacts],[data-type=services],[data-type=tasks])>:nth-child(10){animation-delay:.3s}:is([data-type=bonuses],[data-type=contacts],[data-type=services],[data-type=tasks])>:nth-child(11){animation-delay:.33s}:is([data-type=bonuses],[data-type=contacts],[data-type=services],[data-type=tasks])>:nth-child(12){animation-delay:.36s}section{background-color:initial}ui-file-manager{backdrop-filter:blur(1rem);background-color:oklch(from --c2-surface(.15,var(--current,currentColor)) l c h/.9);color:var(--on-surface,currentColor)}@supports (color:contrast-color(red)) and (color:lab(from red l 1 1%/calc(alpha + 0.1))){ui-file-manager{color:contrast-color(oklch(from --c2-surface(.15,var(--current,currentColor)) l c h/.9))}}ui-tabbed-box{block-size:stretch;gap:0;grid-column:1/-1;grid-row:1/-1;inline-size:stretch}@container (max-inline-size: 1024px){ui-tabbed-box{grid-column:1/-1;order:3}}ui-tabbed-box[data-loading=loading] .viewer-tab-content{opacity:.7;pointer-events:none}ui-tabbed-box .viewer-tab-content{align-content:start;backdrop-filter:blur(1rem);background-color:color-mix(in oklch,var(--color-surface-container,var(--surface-container-color,var(--color-surface,transparent))) calc(100% * var(--surface-opacity-subtle)),transparent);background-color:oklch(from --c2-surface(.15,var(--current,currentColor)) l c h/.9);block-size:stretch;border:var(--padding-sm) solid var(--border-color,transparent);border-radius:0;box-shadow:var(--shadow-1,none);box-shadow:none;box-sizing:border-box;color:contrast-color(oklch(from --c2-surface(.15,var(--current,currentColor)) l c h/.9));contain:strict;content-visibility:auto;display:flex;flex-direction:column;gap:var(--gap-xs);inline-size:stretch;max-block-size:none;max-inline-size:stretch;min-block-size:0;min-inline-size:0;overflow-wrap:break-word;overflow-x:hidden;overflow-y:auto;perspective:1000;pointer-events:auto;scrollbar-gutter:auto;text-overflow:ellipsis;touch-action:manipulation;transform:translateZ(0);transition:opacity var(--transition-normal)}ui-tabbed-box .viewer-tab-content:empty:after{color:var(--on-surface-variant);content:\"No items to display\";display:flex;font:var(--type-label-large,inherit);min-block-size:120px;opacity:.6;place-content:center;place-items:center}ui-tabbed-box .viewer-tab-content .viewer-tab-content-header{background-color:initial;border-radius:var(--radius-sm);color:color-mix(in oklch,var(--on-surface,currentColor) var(--surface-opacity-muted,8%),transparent);font:var(--type-title-large,inherit);padding:var(--padding-xs);pointer-events:none;text-align:center}ui-tabbed-box .viewer-tab-content .viewer-tab-content-body{block-size:max-content;box-shadow:none;content-visibility:auto;display:flex;flex-direction:column;gap:var(--gap-xs);inline-size:stretch;max-block-size:none;max-inline-size:stretch;min-block-size:0;min-inline-size:0;perspective:1000;pointer-events:none;transform:translateZ(0)}ui-tabbed-box .viewer-tab-content .viewer-tab-content-body>*{animation:p .2s ease-out backwards}ui-tabbed-box .viewer-tab-content .viewer-tab-content-body>:first-child{animation-delay:40ms}ui-tabbed-box .viewer-tab-content .viewer-tab-content-body>:nth-child(2){animation-delay:80ms}ui-tabbed-box .viewer-tab-content .viewer-tab-content-body>:nth-child(3){animation-delay:.12s}ui-tabbed-box .viewer-tab-content .viewer-tab-content-body>:nth-child(4){animation-delay:.16s}ui-tabbed-box .viewer-tab-content .viewer-tab-content-body>:nth-child(5){animation-delay:.2s}ui-tabbed-box .viewer-tab-content .viewer-tab-content-body>:nth-child(6){animation-delay:.24s}ui-tabbed-box .viewer-tab-content .viewer-tab-content-body>:nth-child(7){animation-delay:.28s}ui-tabbed-box .viewer-tab-content .viewer-tab-content-body>:nth-child(8){animation-delay:.32s}ui-tabbed-box .viewer-tab-content .viewer-tab-content-body[data-load-state=loading]:empty{display:grid;min-block-size:80px;place-content:center}ui-tabbed-box .viewer-tab-content .viewer-tab-content-body[data-load-state=loading]:empty:after{animation:m .8s linear infinite;block-size:32px;border:2px solid oklch(from var(--primary) l c h/.2);border-block-start-color:var(--primary);border-radius:var(--radius-full);content:\"\";inline-size:32px}ui-tabbed-box .viewer-tab-content :is(.viewer-tab-content-body[data-load-state=empty]:empty,.viewer-tab-content-body[data-load-state=loaded]:empty){display:grid;min-block-size:80px;place-content:center}ui-tabbed-box .viewer-tab-content .viewer-tab-content-body[data-load-state=empty]:empty:after,ui-tabbed-box .viewer-tab-content .viewer-tab-content-body[data-load-state=loaded]:empty:after{animation:n .3s ease-out;color:var(--on-surface-variant);content:\"No items to display\";font:var(--type-label-medium,inherit);opacity:.6}ui-tabbed-box .viewer-tab-content .viewer-tab-content-body[data-load-state=pending]:empty{display:grid;min-block-size:40px;opacity:.4;place-content:center}.subgroup{animation:p .25s ease-out backwards;text-align:center}.subgroup,.subgroup .subgroup-items{display:flex;flex-direction:column;gap:var(--gap-xs);pointer-events:none}.subgroup .subgroup-items{padding:var(--padding-xs)}.subgroup .subgroup-items>*{animation:p .2s ease-out backwards}.subgroup .subgroup-items>:first-child{animation-delay:25ms}.subgroup .subgroup-items>:nth-child(2){animation-delay:50ms}.subgroup .subgroup-items>:nth-child(3){animation-delay:75ms}.subgroup .subgroup-items>:nth-child(4){animation-delay:.1s}.subgroup .subgroup-items>:nth-child(5){animation-delay:125ms}.subgroup .subgroup-items>:nth-child(6){animation-delay:.15s}.subgroup .subgroup-items>:nth-child(7){animation-delay:175ms}.subgroup .subgroup-items>:nth-child(8){animation-delay:.2s}.subgroup .subgroup-items>:nth-child(9){animation-delay:225ms}.subgroup .subgroup-items>:nth-child(10){animation-delay:.25s}.subgroup .subgroup-items>:nth-child(11){animation-delay:275ms}.subgroup .subgroup-items>:nth-child(12){animation-delay:.3s}.subgroup .subgroup-items:empty{display:none}.subgroup .subgroup-header{backdrop-filter:blur(2px);background-color:color-mix(in oklch,var(--color-surface,var(--surface-color,var(--color-surface,transparent))) calc(100% * 0),transparent);border-radius:var(--radius-sm);color:color-mix(in oklch,var(--on-surface,currentColor) var(--text-tint-primary,92%),transparent);color:var(--on-surface,currentColor);font:var(--type-title-small,inherit);font-weight:var(--font-weight-semibold,600);inline-size:fit-content;inset-block-start:0;justify-self:center;padding:var(--padding-xs);pointer-events:none;position:sticky;text-align:center;z-index:3}@supports (color:lab(from red l 1 1%/calc(alpha + 0.1))){.subgroup .subgroup-header{background-color:oklch(from var(--surface-color) l c h/.6)}}@supports (color:contrast-color(red)) and (color:lab(from red l 1 1%/calc(alpha + 0.1))){.subgroup .subgroup-header{color:contrast-color(oklch(from var(--surface-color) l c h/.6))}}.subgroup[data-collapsed=true] .subgroup-items{content-visibility:hidden;display:none}.viewer-section,.viewer-tab-content,.viewer-tab-content-body{scroll-behavior:smooth}@media (prefers-reduced-motion:reduce){.viewer-section,.viewer-tab-content,.viewer-tab-content-body{scroll-behavior:auto}.viewer-section *,.viewer-section :after,.viewer-section :before,.viewer-tab-content *,.viewer-tab-content :after,.viewer-tab-content :before,.viewer-tab-content-body *,.viewer-tab-content-body :after,.viewer-tab-content-body :before{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}.viewer-tab-content-body>*{contain-intrinsic-size:auto 80px;content-visibility:auto}}@view-transition{navigation:auto}@layer theme{[data-shell-content]>[data-view]:not([hidden]){view-transition-name:active-view}[data-shell] nav[role=navigation]{contain:layout;view-transition-name:shell-nav}:host,:scope{--vt-duration:260ms;--vt-easing:cubic-bezier(0.4,0,0.2,1);--vt-old-anim:vt-fade-out;--vt-new-anim:vt-fade-in}:host([data-vt-direction=forward]),:scope[data-vt-direction=forward]{--vt-old-anim:vt-slide-out-left;--vt-new-anim:vt-slide-in-right}:host([data-vt-direction=backward]),:scope[data-vt-direction=backward]{--vt-old-anim:vt-slide-out-right;--vt-new-anim:vt-slide-in-left}::view-transition-old(active-view){animation:var(--vt-old-anim) var(--vt-duration) var(--vt-easing) both}::view-transition-new(active-view){animation:var(--vt-new-anim) var(--vt-duration) var(--vt-easing) both}::view-transition-new(shell-nav),::view-transition-old(shell-nav){animation:none;mix-blend-mode:normal}@media (prefers-reduced-motion:reduce){::view-transition-new(active-view),::view-transition-old(active-view){animation-duration:.001ms!important}}}@layer tokens{:host,:scope{--view-nav-height-base:56px;--view-nav-height:48px;--view-sidebar-width:240px;--view-sidebar-collapsed:64px;--view-status-height:24px;--view-toolbar-height:40px;--view-tab-height:36px;--view-content-gutter:1rem;--view-max-width:100%;--view-content-max-width:960px;--view-padding:var(--space-4);--view-padding-x:var(--space-6);--view-padding-y:var(--space-4);--view-accent:var(--color-primary);--view-accent-hover:var(--color-primary-hover);--view-bg:var(--color-surface);--view-bg-secondary:var(--color-surface-elevated);--view-border:var(--color-border);--view-border-color:var(--color-border);--view-divider-color:var(--color-border);--view-fg:var(--color-on-surface);--view-fg-muted:var(--color-on-surface-muted);--view-hover-bg:var(--color-surface-hover);--view-nav-bg:var(--color-surface-elevated);--view-nav-border:var(--color-outline-variant);--view-nav-fg:var(--color-on-surface);--view-selected-bg:var(--color-surface-active);--view-selected-border:var(--color-border-focus);--view-sidebar-bg:var(--color-surface);--view-sidebar-fg:var(--color-on-surface);--view-status-bg:var(--color-surface-elevated);--view-status-fg:var(--color-text-secondary);--view-transition:var(--transition-normal) var(--ease-in-out)}:host,:scope{background-color:var(--view-bg,var(--color-background,Canvas))}:host([data-shell=minimal]),:host-context([data-shell=minimal]){--view-sidebar-position:\"right\";--view-toolbar-alignment:\"end\";--view-content-max-width:800px;--view-padding-x:var(--space-6)}:host([data-shell=faint]),:host-context([data-shell=faint]){--view-tab-active:true;--view-content-max-width:720px;--view-padding-x:var(--space-8)}:host([data-shell=base]),:host([data-shell=immersive]),:host-context([data-shell=base]),:host-context([data-shell=immersive]){--view-content-max-width:800px;--view-padding-x:var(--space-6)}@media (prefers-contrast:more){:host,:scope{--view-fg:light-dark(#000,#fff);--view-nav-border:light-dark(#000,#fff)}}@media (prefers-reduced-motion:reduce){:host,:scope{--transition-fast:0s;--transition-normal:0s;--transition-slow:0s}}@media (max-width:768px){:host,:scope{--view-padding:var(--space-3);--view-padding-x:var(--space-4);--view-padding-y:var(--space-3)}:host([data-shell=faint]),:host-context([data-shell=faint]){--view-sidebar-width:0}:host([data-shell=minimal]),:host-context([data-shell=minimal]){--view-nav-height:52px}}@media (max-width:480px){:host,:scope{--view-padding:var(--space-2);--view-padding-x:var(--space-3)}}@media print{:host,:scope{--view-bg:white;--view-fg:black;--view-nav-height:0;--view-sidebar-width:0;--view-status-height:0;margin:0;padding:0}}}@layer layout{[data-shell-content]>[hidden],[data-shell-content][data-current-view=airpad]>[data-view]:not([data-view=airpad]),[data-shell-content][data-current-view=editor]>[data-view]:not([data-view=editor]),[data-shell-content][data-current-view=explorer]>[data-view]:not([data-view=explorer]),[data-shell-content][data-current-view=history]>[data-view]:not([data-view=history]),[data-shell-content][data-current-view=home]>[data-view]:not([data-view=home]),[data-shell-content][data-current-view=print]>[data-view]:not([data-view=print]),[data-shell-content][data-current-view=settings]>[data-view]:not([data-view=settings]),[data-shell-content][data-current-view=viewer]>[data-view]:not([data-view=viewer]),[data-shell-content][data-current-view=workcenter]>[data-view]:not([data-view=workcenter]),[data-shell-content][data-current-view]>:not([data-view]):not(.app-shell__loading):not([data-shell-loading]):not(slot){display:none!important}}@layer components{.custom-instructions-editor,.custom-instructions-panel{display:grid;gap:var(--gap-md);inline-size:stretch;max-inline-size:stretch;text-align:start}:is(.custom-instructions-editor,.custom-instructions-panel) .cip-select-row{display:grid;gap:var(--gap-xs)}:is(.custom-instructions-editor,.custom-instructions-panel) .cip-select-row .cip-select{inline-size:stretch}:is(.custom-instructions-editor,.custom-instructions-panel) .cip-list{display:grid;gap:var(--gap-sm)}:is(.custom-instructions-editor,.custom-instructions-panel) .cip-empty{border-radius:var(--radius-md);color:color-mix(in oklch,var(--on-surface,currentColor) var(--text-tint-muted,60%),transparent);font-size:var(--font-sm);padding:var(--padding-lg);text-align:center}:is(.custom-instructions-editor,.custom-instructions-panel) .cip-item{border-radius:var(--radius-md);padding:var(--padding-md)}:is(.custom-instructions-editor,.custom-instructions-panel) .cip-item.is-active{border:1px solid var(--primary-opacity-default)}:is(.custom-instructions-editor,.custom-instructions-panel) .cip-item .cip-item-header{align-items:center;display:flex;gap:var(--gap-md);justify-content:space-between}:is(.custom-instructions-editor,.custom-instructions-panel) .cip-item .cip-item-label{flex:1;font-size:var(--font-sm);font-weight:var(--font-weight-medium);min-inline-size:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}:is(.custom-instructions-editor,.custom-instructions-panel) .cip-item .cip-item-actions{align-items:center;display:flex;flex-shrink:0;gap:var(--gap-xs)}:is(.custom-instructions-editor,.custom-instructions-panel) .cip-item .cip-badge{background-color:var(--primary-opacity-default);border-radius:var(--radius-full);color:var(--on-primary,currentColor);font-size:var(--font-xs);font-weight:var(--font-weight-medium);letter-spacing:.03em;padding:var(--padding-xs) var(--padding-sm);text-transform:uppercase}:is(.custom-instructions-editor,.custom-instructions-panel) .cip-item .cip-item-preview{border-radius:var(--radius-sm);color:color-mix(in oklch,var(--on-surface,currentColor) var(--text-tint-secondary,74%),transparent);font-size:var(--font-xs);line-height:1.5;margin-block-start:var(--gap-sm);padding:var(--padding-sm);white-space:pre-wrap;word-break:break-word}:is(.custom-instructions-editor,.custom-instructions-panel) .cip-item .cip-edit-form{display:grid;gap:var(--gap-sm);margin-block-start:var(--gap-md)}:is(.custom-instructions-editor,.custom-instructions-panel) .cip-add-form{border:1px dashed var(--outline-opacity-default);border-radius:var(--radius-md);display:grid;gap:var(--gap-sm);padding:var(--padding-md)}:is(.custom-instructions-editor,.custom-instructions-panel) .cip-form-actions{display:flex;gap:var(--gap-xs);justify-content:flex-end}:is(.custom-instructions-editor,.custom-instructions-panel) .cip-toolbar{border-radius:var(--radius-md);display:flex;gap:var(--gap-sm);justify-content:center;padding:var(--padding-sm)}.custom-instructions-editor .cip-input,.custom-instructions-editor .cip-textarea,.custom-instructions-panel .cip-input,.custom-instructions-panel .cip-textarea{font-family:inherit;inline-size:stretch}:is(.custom-instructions-editor,.custom-instructions-panel) .cip-textarea{min-block-size:4rem;resize:vertical}:is(.custom-instructions-editor,.custom-instructions-panel) .ci-row{display:flex;flex-direction:row;gap:var(--space-sm,4px);place-content:center;align-content:stretch;justify-content:space-between;place-items:center;align-items:start}:is(.custom-instructions-editor,.custom-instructions-panel) .ci-header{block-size:max-content;display:grid;flex-basis:min-content;flex-grow:1;flex-shrink:1;gap:var(--spacing-xs,4px);inline-size:fit-content;max-inline-size:max-content;min-inline-size:min-content}:is(.custom-instructions-editor,.custom-instructions-panel) .ci-header h4{color:var(--color-on-surface);font-size:var(--text-sm,13px);font-weight:var(--font-weight-semibold,600);margin:0}:is(.custom-instructions-editor,.custom-instructions-panel) .ci-header .ci-desc{color:var(--color-on-surface-variant);font-size:var(--text-xs,11px);line-height:1.5;margin:0;opacity:.8}:is(.custom-instructions-editor,.custom-instructions-panel) .ci-active-select{flex-basis:min-content;flex-grow:0;flex-shrink:1;inline-size:fit-content;max-inline-size:stretch;min-inline-size:min-content}:is(.custom-instructions-editor,.custom-instructions-panel) .ci-active-select label{display:grid;font-size:var(--text-xs,12px);gap:var(--spacing-xs,6px);inline-size:fit-content}:is(.custom-instructions-editor,.custom-instructions-panel) .ci-active-select label span{color:var(--color-on-surface-variant);opacity:.9}:is(.custom-instructions-editor,.custom-instructions-panel) .ci-active-select select{flex-basis:fit-content;flex-grow:1;flex-shrink:1;inline-size:calc-size(max-content,clamp(8rem,size,100%));max-inline-size:stretch;min-inline-size:fit-content}:is(.custom-instructions-editor,.custom-instructions-panel) .ci-list{display:grid;gap:var(--spacing-sm,8px)}:is(.custom-instructions-editor,.custom-instructions-panel) .ci-list .ci-empty{background:var(--color-surface-container);border-radius:var(--radius-md,10px);color:var(--color-on-surface-variant);font-size:var(--text-xs,12px);opacity:.7;padding:var(--spacing-md,16px);text-align:center}:is(.custom-instructions-editor,.custom-instructions-panel) .ci-item{background:var(--color-surface-container);border:1px solid transparent;border-radius:var(--radius-md,10px);padding:var(--spacing-sm,10px)}:is(.custom-instructions-editor,.custom-instructions-panel) .ci-item.active{background:color-mix(in oklab,var(--color-primary) 8%,var(--color-surface-container));border-color:color-mix(in oklab,var(--color-primary) 25%,transparent)}:is(.custom-instructions-editor,.custom-instructions-panel) .ci-item .ci-item-header{align-items:center;display:flex;gap:var(--spacing-xs,8px);justify-content:space-between}:is(.custom-instructions-editor,.custom-instructions-panel) .ci-item .ci-item-label{color:var(--color-on-surface);flex:1;font-size:var(--text-xs,12px);font-weight:var(--font-weight-medium,500);min-inline-size:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}:is(.custom-instructions-editor,.custom-instructions-panel) .ci-item .ci-item-actions{align-items:center;display:flex;flex-shrink:0;gap:var(--spacing-xs,4px)}:is(.custom-instructions-editor,.custom-instructions-panel) .ci-item .ci-badge{background:var(--color-surface-container-highest);border-radius:var(--radius-sm,6px);color:var(--color-on-surface-variant);font-size:var(--text-xs,10px);font-weight:var(--font-weight-medium,500);letter-spacing:.03em;padding:2px 8px;text-transform:uppercase}:is(.custom-instructions-editor,.custom-instructions-panel) .ci-item .ci-badge.active{background:color-mix(in oklab,var(--color-primary) 20%,transparent);color:var(--color-primary)}:is(.custom-instructions-editor,.custom-instructions-panel) .ci-item .ci-item-preview{background:var(--color-surface-container-highest);border-radius:var(--radius-sm,8px);color:var(--color-on-surface-variant);font-size:var(--text-xs,11px);line-height:1.5;margin-block-start:var(--spacing-xs,8px);padding:var(--spacing-xs,8px);white-space:pre-wrap;word-break:break-word}:is(.custom-instructions-editor,.custom-instructions-panel) .ci-item .ci-edit-form{display:grid;gap:var(--spacing-xs,8px);margin-block-start:var(--spacing-sm,10px)}.custom-instructions-editor .ci-input,.custom-instructions-editor .ci-textarea,.custom-instructions-panel .ci-input,.custom-instructions-panel .ci-textarea{--view-control-padding-y:var(--spacing-xs,8px);--view-control-padding-x:var(--spacing-sm,10px);--view-control-radius:var(--radius-sm,8px);--view-control-font-size:var(--text-xs,12px);--view-control-bg:var(--color-surface-container-highest);--view-control-hover-bg:var(--color-surface-container-high);--view-control-focus-bg:var(--color-surface-container-high);--view-control-border-color:var(--color-outline-variant);--view-control-focus-border-color:var(--color-primary)}:is(.custom-instructions-editor,.custom-instructions-panel) .ci-textarea{line-height:1.5;min-block-size:60px;resize:vertical}.custom-instructions-editor .ci-add-actions,.custom-instructions-editor .ci-edit-actions,.custom-instructions-panel .ci-add-actions,.custom-instructions-panel .ci-edit-actions{display:flex;gap:var(--spacing-xs,6px);justify-content:flex-end}:is(.custom-instructions-editor,.custom-instructions-panel) .ci-add-form{background:color-mix(in oklab,var(--color-surface-container-high) 50%,transparent);border:1px dashed var(--color-outline-variant);border-radius:var(--radius-md,10px);display:grid;gap:var(--spacing-xs,8px);padding:var(--spacing-sm,12px)}:is(.custom-instructions-editor,.custom-instructions-panel) .ci-actions{display:flex;flex-wrap:wrap;gap:var(--spacing-xs,8px);place-content:center;place-items:center}.custom-instructions-editor .btn.small,.custom-instructions-editor .btn.tiny,.custom-instructions-panel .btn.small,.custom-instructions-panel .btn.tiny{background:transparent;border:1px solid var(--color-outline-variant);color:var(--color-on-surface);cursor:pointer;transition:all var(--motion-fast)}.custom-instructions-editor .btn.small:hover,.custom-instructions-editor .btn.tiny:hover,.custom-instructions-panel .btn.small:hover,.custom-instructions-panel .btn.tiny:hover{background:color-mix(in oklab,var(--color-on-surface) 5%,transparent)}:is(.custom-instructions-editor,.custom-instructions-panel) .btn.tiny{border-radius:var(--radius-sm,6px);font-size:var(--text-xs,10px);padding:4px 8px}:is(.custom-instructions-editor,.custom-instructions-panel) .btn.tiny.danger{border-color:var(--color-error,#c62828);color:var(--color-error,#c62828)}:is(.custom-instructions-editor,.custom-instructions-panel) .btn.tiny.danger:hover{background:color-mix(in oklab,var(--color-error,#c62828) 15%,transparent)}:is(.custom-instructions-editor,.custom-instructions-panel) .btn.small{border-radius:var(--radius-sm,8px);font-size:var(--text-xs,11px);padding:6px 12px}.custom-instructions-editor .form-select,.custom-instructions-editor__select,.custom-instructions-panel .form-select,.custom-instructions-panel__select{appearance:auto;cursor:pointer}.custom-instructions-editor .form-checkbox,.custom-instructions-editor__checkbox,.custom-instructions-panel .form-checkbox,.custom-instructions-panel__checkbox{align-items:center;cursor:pointer;display:flex;gap:.625rem}.custom-instructions-editor .form-checkbox input[type=checkbox],.custom-instructions-editor__checkbox input[type=checkbox],.custom-instructions-panel .form-checkbox input[type=checkbox],.custom-instructions-panel__checkbox input[type=checkbox]{accent-color:var(--color-primary);block-size:18px;border-radius:var(--radius-xs,4px);cursor:pointer;inline-size:18px}.custom-instructions-editor .form-checkbox span,.custom-instructions-editor__checkbox span,.custom-instructions-panel .form-checkbox span,.custom-instructions-panel__checkbox span{font-size:var(--text-sm,.875rem)}.view-error,.view-loading{align-items:center;display:flex;flex-direction:column;gap:1rem;justify-content:center;padding:2rem;text-align:center}.view-loading{color:var(--view-fg);opacity:.6}.view-loading__spinner{animation:m .8s linear infinite;block-size:32px;border:3px solid rgba(128,128,128,.2);border-block-start-color:var(--color-primary,#007acc);border-radius:50%;inline-size:32px}.view-error__icon{font-size:3rem}.view-error__title{color:#d32f2f;font-size:1.25rem;font-weight:600;margin:0}.view-error__message{color:var(--view-fg);margin:0;opacity:.7}.view-error__retry{background-color:var(--color-primary,#007acc);border:none;border-radius:6px;color:#ffffff;cursor:pointer;font-size:.875rem;font-weight:500;padding:.5rem 1rem}@supports (color:contrast-color(red)){.view-error__retry{color:contrast-color(var(--color-primary,#007acc))}}.view-error__retry:hover{filter:brightness(1.1)}}@layer base{@keyframes spin{to{transform:rotate(1turn)}}@keyframes o{0%{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}}@layer layout{.toolbar{align-items:center;background:var(--color-surface-container-high);block-size:max-content;box-shadow:var(--elev-1);contain:strict;display:flex;inline-size:stretch;justify-content:space-between;max-inline-size:none;min-block-size:4rem;min-inline-size:fit-content;overflow:hidden auto;padding:var(--space-md) var(--space-xl);position:relative;scrollbar-color:transparent;scrollbar-width:none;-webkit-overflow-scrolling:touch;grid-row:toolbar-row}.toolbar:before{content:\"\";inset:0;pointer-events:none;position:absolute}.toolbar>*{position:relative;z-index:1}.toolbar::-webkit-scrollbar{display:none}.toolbar :is(.left,.right){align-items:center;display:flex;gap:var(--space-md)}.toolbar :is(.left,.right) .toolbar-btn{align-items:center;background:var(--color-surface);block-size:max-content;border-radius:var(--radius-md);color:var(--color-on-surface);cursor:pointer;display:inline-flex;font-size:var(--text-sm);font-weight:var(--font-weight-medium);gap:var(--space-xs);inline-size:max-content;min-block-size:36px;min-inline-size:calc-size(fit-content,max(size,25px) + .5rem + var(--icon-size,1rem));padding:var(--space-xs) var(--space-md);transition:all var(--motion-fast);white-space:nowrap}.toolbar :is(.left,.right) .toolbar-btn:hover{background:var(--color-surface-container-high);box-shadow:var(--elev-1);transform:translateY(-1px)}.toolbar :is(.left,.right) .toolbar-btn:active{box-shadow:none;transform:translateY(0)}.toolbar :is(.left,.right) .toolbar-btn:focus-visible{box-shadow:var(--focus-ring);outline:none}.toolbar :is(.left,.right) .toolbar-btn.toolbar-btn-icon{padding:var(--space-xs)}.toolbar :is(.left,.right) .toolbar-btn.toolbar-btn-icon ui-icon{transition:color var(--motion-fast)}.toolbar :is(.left,.right) .toolbar-btn.toolbar-btn-icon:hover ui-icon{color:var(--color-primary)}@container (max-inline-size: 1024px){.toolbar :is(.left,.right) .toolbar-btn.toolbar-btn-icon .toolbar-btn-text{display:none}}.toolbar :is(.left,.right) .toolbar-btn.primary{background:var(--color-primary);color:var(--color-on-primary)}.toolbar :is(.left,.right) .toolbar-btn.primary:hover{background:color-mix(in oklab,var(--color-primary) 85%,black)}.toolbar :is(.left,.right) .toolbar-btn.loading{opacity:.7;pointer-events:none}.toolbar :is(.left,.right) .toolbar-btn.loading:after{animation:m 1s linear infinite;block-size:14px;border:2px solid transparent;border-block-start:2px solid currentColor;border-radius:50%;content:\"\";inline-size:14px;margin-inline-start:var(--space-xs)}@container (max-inline-size: 1024px){.toolbar :is(.left,.right){gap:var(--space-sm)}.toolbar :is(.left,.right) .toolbar-btn{font-size:var(--text-xs);min-block-size:32px;min-inline-size:calc-size(fit-content,max(size,32px) + .5rem + var(--icon-size,1rem));padding:0}}@container (max-inline-size: 768px){.toolbar :is(.left,.right){gap:var(--space-xs)}.toolbar :is(.left,.right) .toolbar-btn{min-block-size:28px;min-inline-size:calc-size(fit-content,max(size,28px) + .5rem + var(--icon-size,1rem));padding:2px var(--space-xs)}.toolbar :is(.left,.right) .toolbar-btn-icon{padding:4px}}@container (max-inline-size: 480px){.toolbar :is(.left,.right){gap:2px}}@container (max-inline-size: 1024px){.toolbar{min-block-size:3.5rem;padding:var(--space-sm) var(--space-lg)}}@container (max-inline-size: 768px){.toolbar{min-block-size:3rem;padding:var(--space-xs) var(--space-md)}}@container (max-inline-size: 480px){.toolbar{flex-direction:column;min-block-size:2.75rem;padding:var(--space-xs)}}.content{background-color:initial;block-size:stretch;box-shadow:var(--elev-1);contain:strict;flex:1;grid-row:content-row;overflow:auto;padding:0;position:relative;scrollbar-color:var(--color-outline-variant) transparent;scrollbar-width:thin;transition:all var(--motion-normal)}.content:before{border-radius:inherit;content:\"\";inset:0;pointer-events:none;position:absolute}.content>*{position:relative;z-index:1}.content:focus-within,.content:hover{box-shadow:var(--elev-2)}.content::-webkit-scrollbar{block-size:6px;inline-size:6px}.content::-webkit-scrollbar-track{background:transparent}.content::-webkit-scrollbar-thumb{background:var(--color-outline-variant);border-radius:3px}.content::-webkit-scrollbar-thumb:hover{background:var(--color-outline)}.content:has(>.view-settings){display:flex;flex-direction:column;min-block-size:0;overflow:hidden}.content>.view-settings{align-self:stretch;flex:1 1 auto;margin:0;min-block-size:0;padding:0}.content,.view-settings,.workcenter-view{animation:o .4s ease-out;block-size:stretch}.status{align-items:center;background:var(--color-surface-container-low);color:var(--color-on-surface-variant);display:flex;font-size:var(--text-xs);font-weight:var(--font-weight-medium);gap:var(--space-sm);inline-size:stretch;max-inline-size:stretch;min-block-size:20px;padding:var(--space-sm) var(--space-xl)}.status:before{content:\"ℹ️\";font-size:var(--text-sm);opacity:.7}:is(.status.error,.status.success,.status.warning) ui-icon{margin-inline-end:var(--space-xs)}.status.success{background:color-mix(in oklab,var(--color-success) 10%,var(--color-surface-container-low));color:var(--color-success)}.status.warning{background:color-mix(in oklab,var(--color-warning) 10%,var(--color-surface-container-low));color:var(--color-warning)}.status.error{background:color-mix(in oklab,var(--color-error) 10%,var(--color-surface-container-low));color:var(--color-error)}@container (max-inline-size: 1024px){.status{padding:var(--space-xs) var(--space-lg)}}@container (max-inline-size: 768px){.status{font-size:11px;padding:var(--space-xs) var(--space-md)}}@container (max-inline-size: 480px){.status{gap:var(--space-xs);padding:var(--space-xs)}}.file-input{display:none}@media (max-width:768px){.status{font-size:11px;padding:var(--space-xs) var(--space-md)}}}@layer components{.markdown-editor{block-size:100%;display:grid;gap:var(--space-xl);grid-template-columns:1fr 300px}.editor-section{display:flex;flex-direction:column;gap:var(--space-md)}.preview-section{background:var(--color-surface-container);border-radius:var(--radius-lg);box-shadow:var(--elev-1);overflow:auto;padding:var(--space-lg)}.history-view{display:flex;flex-direction:column;gap:var(--space-lg);max-block-size:none;overflow:auto}.history-header{align-items:center;background:var(--color-surface-container);border-radius:var(--radius-xl);box-shadow:var(--elev-1);display:flex;justify-content:space-between;margin-block-end:0;padding:var(--space-lg)}.history-header h3{color:var(--color-on-surface);font-size:var(--text-2xl);font-weight:var(--font-weight-bold);margin:0}.history-header .history-actions{align-items:center;display:flex;gap:var(--space-sm)}.history-header .history-actions .btn{background:var(--color-surface-container);color:var(--color-on-surface);cursor:pointer;font-size:var(--text-sm);font-weight:var(--font-weight-medium);padding:var(--space-sm) var(--space-lg)}.history-header .history-actions .btn:hover{background:var(--color-surface-container-high)}.history-stats{background:var(--color-surface-container);border-radius:var(--radius-xl);box-shadow:var(--elev-1);padding:var(--space-lg)}.stats-grid{display:grid;gap:var(--space-md);grid-template-columns:repeat(auto-fit,minmax(120px,1fr))}.stats-grid .stat-item{align-items:center;background:var(--color-surface-container-low);border-radius:var(--radius-lg);display:flex;flex-direction:column;gap:var(--space-xs);padding:var(--space-md)}.stats-grid .stat-item .stat-value{color:var(--color-on-surface);font-size:var(--text-2xl);font-weight:var(--font-weight-bold)}.stats-grid .stat-item .stat-value.success{color:var(--color-primary)}.stats-grid .stat-item .stat-value.error{color:var(--color-error,#d32f2f)}.stats-grid .stat-item .stat-label{color:var(--color-on-surface-variant);font-size:var(--text-sm);text-align:center}.history-list{display:flex;flex-direction:column;gap:var(--space-sm)}.history-item{align-items:center;background:var(--color-surface-container);border-radius:var(--radius-xl);box-shadow:var(--elev-0);cursor:pointer;display:flex;gap:var(--space-md);padding:var(--space-lg)}.history-item:hover{background:var(--color-surface-container-high);box-shadow:var(--elev-1)}.history-item .meta{align-items:center;display:flex;font-size:12px;gap:10px;opacity:.9}.history-item .actions{display:flex;gap:8px;justify-content:flex-end}.tag{align-items:center;background:var(--color-surface-container-high);block-size:22px;border-radius:var(--radius-full);display:inline-flex;font-weight:700;padding:0 8px}.tag.ok{background:color-mix(in oklab,var(--color-success) 18%,transparent)}.tag.fail{background:color-mix(in oklab,var(--color-error) 18%,transparent)}.empty{opacity:.8;padding:12px}.markdown-editor-container,.markdown-viewer-container{block-size:100%;box-sizing:border-box;display:flex;flex-direction:column;gap:var(--space-lg);max-block-size:none}.markdown-editor-container>*,.markdown-viewer-container>*{box-sizing:border-box}.editor-header,.viewer-header{align-items:center;background:var(--color-surface-container);display:flex;justify-content:space-between;padding:var(--space-md)}.editor-header h3,.viewer-header h3{color:var(--color-on-surface);font-size:var(--text-xl);font-weight:var(--font-weight-semibold);margin:0}.viewer-header{margin-block-end:var(--space-lg)}.editor-actions,.viewer-actions{display:flex;gap:var(--space-sm)}.editor-layout{display:grid;flex:1;gap:var(--space-lg);grid-template-columns:1fr 1fr;min-block-size:0}.editor-panel,.preview-panel{background:var(--color-surface-container);display:flex;flex-direction:column;overflow:hidden}.editor-toolbar{background:var(--color-surface-container-high);display:flex;gap:var(--space-md);padding:var(--space-md)}.toolbar-group{display:flex;gap:var(--space-xs)}.markdown-textarea{background:transparent;border:none;color:var(--color-on-surface);flex:1;font-family:var(--font-family-mono);font-size:var(--text-base);line-height:var(--leading-relaxed);min-block-size:400px;outline:none;padding:var(--space-lg);resize:none}.markdown-textarea::placeholder{color:var(--color-on-surface-variant);opacity:.7}.editor-footer{align-items:center;background:var(--color-surface-container-low);display:flex;justify-content:space-between;padding:var(--space-md)}.editor-stats{color:var(--color-on-surface-variant);display:flex;font-size:var(--text-sm);gap:var(--space-lg)}.editor-stats span{font-weight:var(--font-weight-medium)}.editor-mode{border-radius:var(--radius-lg);display:flex;gap:var(--space-xs);overflow:hidden}.editor-mode .btn{border:none;border-radius:0;margin:0}.editor-mode .btn.active{background:var(--color-primary);color:var(--color-on-primary)}.preview-panel .preview-header{background:var(--color-surface-container-high);padding:var(--space-md)}.preview-panel .preview-header h4{color:var(--color-on-surface);font-size:var(--text-lg);font-weight:var(--font-weight-semibold);margin:0}.preview-panel .preview-content{background:var(--color-surface);flex:1;overflow:auto;padding:var(--space-lg)}.viewer-content{background:var(--color-surface-container);border-radius:var(--radius-xl);flex:1;overflow:auto;padding:var(--space-lg)}.modal-overlay{align-items:center;backdrop-filter:blur(8px);background:color-mix(in oklab,black 60%,transparent);display:flex;inset:0;justify-content:center;padding:var(--space-lg);position:fixed;z-index:5}.modal-content{background:var(--color-surface-container-low);border-radius:var(--radius-2xl);box-shadow:var(--elev-3);inline-size:100%;max-block-size:85vh;max-inline-size:700px;overflow:auto;padding:var(--space-2xl)}.card-header,.modal-header{align-items:center;display:flex;justify-content:space-between;margin-block-end:var(--space-lg);padding-block-end:var(--space-md)}.card-title,.modal-title{color:var(--color-on-surface);font-size:var(--text-xl);font-weight:var(--font-weight-semibold);letter-spacing:.01em;margin:0}.modal-title{font-size:var(--text-2xl)}.modal-body{margin-block-end:var(--space-xl)}.card-actions,.modal-actions{background:transparent;border:0 transparent;display:flex;flex-wrap:nowrap;gap:var(--space-md);justify-content:flex-end;outline:0 none transparent}.card{background:var(--color-surface-container);border-radius:var(--radius-xl);box-shadow:var(--elev-1);padding:var(--space-xl);transition:all var(--motion-normal)}.card-content{flex:1}.card-actions{gap:var(--space-sm);margin-block-start:var(--space-lg);padding-block-start:var(--space-md)}.form-group{display:flex;flex-direction:column;gap:var(--space-sm)}.form-label{color:var(--color-on-surface);font-size:var(--text-sm);font-weight:var(--font-weight-medium);margin-block-end:var(--space-xs)}.form-field{position:relative}.form-field.error{--form-field-state-color:var(--color-error)}.form-field.success{--form-field-state-color:var(--color-success)}.form-field.error .form-input,.form-field.error .form-select,.form-field.error .form-textarea,.form-field.success .form-input,.form-field.success .form-select,.form-field.success .form-textarea{background:color-mix(in oklab,var(--form-field-state-color) 5%,var(--color-surface-container-high))}.form-field.error .form-input:focus,.form-field.error .form-select:focus,.form-field.error .form-textarea:focus,.form-field.success .form-input:focus,.form-field.success .form-select:focus,.form-field.success .form-textarea:focus{box-shadow:0 0 0 3px color-mix(in oklab,var(--form-field-state-color) 35%,transparent)}.ci-input,.ci-select,.ci-textarea,.cip-input,.cip-select,.cip-textarea,.form-input,.form-select,.form-textarea,select{--_view-control-padding-y:var(--view-control-padding-y,var(--space-md));--_view-control-padding-x:var(--view-control-padding-x,var(--space-lg));--_view-control-radius:var(--view-control-radius,var(--radius-lg));--_view-control-font-size:var(--view-control-font-size,var(--text-base));--_view-control-bg:var(--view-control-bg,var(--color-surface-container-high));--_view-control-hover-bg:var(--view-control-hover-bg,var(--color-surface-container-highest));--_view-control-focus-bg:var(--view-control-focus-bg,var(--color-surface-container));--_view-control-border-color:var(--view-control-border-color,transparent);--_view-control-focus-border-color:var(--view-control-focus-border-color,transparent);accent-color:var(--color-primary);background:var(--_view-control-bg);border:1px solid var(--_view-control-border-color);border-radius:var(--_view-control-radius);box-shadow:var(--elev-0);color:var(--color-on-surface);font-family:var(--font-family);font-size:var(--_view-control-font-size);font-weight:var(--font-weight-medium);inline-size:100%;outline:none;padding:var(--_view-control-padding-y) var(--_view-control-padding-x)}.ci-input:hover,.ci-select:hover,.ci-textarea:hover,.cip-input:hover,.cip-select:hover,.cip-textarea:hover,.form-input:hover,.form-select:hover,.form-textarea:hover,select:hover{background:var(--_view-control-hover-bg);box-shadow:var(--elev-1)}.ci-input:focus,.ci-select:focus,.ci-textarea:focus,.cip-input:focus,.cip-select:focus,.cip-textarea:focus,.form-input:focus,.form-select:focus,.form-textarea:focus,select:focus{background:var(--_view-control-focus-bg);border-color:var(--_view-control-focus-border-color);box-shadow:var(--focus-ring)}.ci-input::placeholder,.ci-select::placeholder,.ci-textarea::placeholder,.cip-input::placeholder,.cip-select::placeholder,.cip-textarea::placeholder,.form-input::placeholder,.form-select::placeholder,.form-textarea::placeholder,select::placeholder{color:var(--color-on-surface-variant);opacity:.7}.ci-input:disabled,.ci-select:disabled,.ci-textarea:disabled,.cip-input:disabled,.cip-select:disabled,.cip-textarea:disabled,.form-input:disabled,.form-select:disabled,.form-textarea:disabled,select:disabled{background:var(--color-surface-container-low);cursor:not-allowed;opacity:.5}.btn,button:not(.toolbar-btn){align-content:safe center;align-items:safe center;background:var(--color-surface-container-high);border:1px solid transparent;border-radius:var(--radius-lg);box-shadow:var(--elev-0);color:var(--color-on-surface);cursor:pointer;display:inline-flex;flex-basis:max-content;flex-grow:1;flex-shrink:0;font-family:var(--font-family);font-size:var(--text-sm);font-weight:var(--font-weight-medium);gap:var(--space-xs);inline-size:max-content;justify-content:safe center;justify-items:safe center;line-height:1.2;max-inline-size:none;min-inline-size:max-content;position:relative;transition:all var(--motion-fast)}.btn:hover,button:not(.toolbar-btn):hover{background:var(--color-surface-container-highest);box-shadow:var(--elev-1)}.btn:focus-visible,button:not(.toolbar-btn):focus-visible{box-shadow:var(--focus-ring);outline:none}.btn:disabled,button:not(.toolbar-btn):disabled{cursor:not-allowed;opacity:.5}.form-textarea{font-family:var(--font-family-mono);line-height:var(--leading-relaxed);min-block-size:120px;resize:vertical}.form-textarea.monospace{font-family:var(--font-family-mono);font-size:var(--text-sm)}.ci-select,.cip-select,.form-select,select{appearance:base-select!important;block-size:max-content;cursor:pointer;display:inline-grid;flex-direction:row;flex-wrap:nowrap;grid-template-columns:[content] minmax(max-content,1fr) [icon] minmax(1.5rem,max-content);grid-template-rows:minmax(0,max-content);inline-size:max-content;overflow:hidden;padding-inline:var(--space-sm);padding-inline-start:var(--space-md);place-content:center;place-items:center;justify-items:start;min-inline-size:fit-content;text-align:start;text-wrap:nowrap;word-break:keep-all}.ci-select::-ms-expand,.cip-select::-ms-expand,.form-select::-ms-expand,select::-ms-expand{display:none}.ci-select option,.cip-select option,.form-select option,select option{background:var(--color-surface);color:var(--color-on-surface)}.ci-select::picker-icon,.cip-select::picker-icon,.form-select::picker-icon,select::picker-icon{aspect-ratio:1/1;background-color:var(--color-on-surface,currentColor);block-size:1.5em;box-sizing:border-box;color:contrast-color(var(--color-on-surface,inherit));content:\"\";display:inline-flex;grid-column:icon;inline-size:1.5em;mask-image:url(\"data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3E%3C/svg%3E\");mask-position:center center;mask-repeat:no-repeat;mask-size:1.5em 1.5em;overflow:hidden;place-content:center;place-items:center;text-align:center}.form-checkbox,.form-radio{align-items:center;color:var(--color-on-surface);cursor:pointer;display:flex;font-size:var(--text-base);font-weight:var(--font-weight-medium);gap:.625rem}.form-checkbox span,.form-radio span{font-size:var(--text-sm,.875rem)}.form-checkbox input[type=checkbox],.form-checkbox input[type=radio],.form-radio input[type=checkbox],.form-radio input[type=radio]{accent-color:var(--color-primary);appearance:none;aspect-ratio:1;background:var(--color-surface-container-highest);block-size:20px;border:none;box-shadow:var(--elev-0);cursor:pointer;inline-size:20px;min-block-size:unset;position:relative;transition:all var(--motion-fast)}.form-checkbox input[type=checkbox]:focus,.form-checkbox input[type=radio]:focus,.form-radio input[type=checkbox]:focus,.form-radio input[type=radio]:focus{box-shadow:var(--focus-ring);outline:none}.form-checkbox input[type=checkbox]:disabled,.form-checkbox input[type=radio]:disabled,.form-radio input[type=checkbox]:disabled,.form-radio input[type=radio]:disabled{cursor:not-allowed;opacity:.5}.form-checkbox input[type=checkbox]{border-radius:var(--radius-sm)}.form-checkbox input[type=checkbox]:checked{background:var(--color-primary);box-shadow:var(--elev-1)}.form-checkbox input[type=checkbox]:checked:after{color:var(--color-on-primary);content:\"✓\";font-size:12px;font-weight:700;inset-block-start:50%;inset-inline-start:50%;position:absolute;transform:translate(-50%,-50%)}.form-radio input[type=radio]{border-radius:50%}.form-radio input[type=radio]:checked{background:var(--color-primary);box-shadow:var(--elev-1)}.form-radio input[type=radio]:checked:after{background:var(--color-on-primary);block-size:8px;border-radius:50%;content:\"\";inline-size:8px;inset-block-start:50%;inset-inline-start:50%;position:absolute;transform:translate(-50%,-50%)}.form-error,.form-hint,.form-success{font-size:var(--text-sm);font-weight:var(--font-weight-medium);margin-block-start:var(--space-xs)}.form-error,.form-success{align-items:center;display:flex;gap:var(--space-xs)}.form-error{color:var(--color-error)}.form-error:before{content:\"⚠\";font-size:var(--text-base)}.form-success{color:var(--color-success)}.form-success:before{content:\"✓\";font-size:var(--text-base)}.form-hint{color:var(--color-on-surface-variant);opacity:.8}@media (max-width:1024px){.editor-layout{grid-template-columns:1fr;grid-template-rows:1fr 1fr}.editor-toolbar{flex-wrap:wrap}.toolbar-group{flex:1;justify-content:center;min-inline-size:120px}.markdown-editor{grid-template-rows:1fr auto}.markdown-editor,.settings-group{grid-template-columns:1fr}.editor-panel,.preview-panel{max-block-size:50vh}}@media (max-width:768px){.editor-footer{align-items:stretch;flex-direction:column;gap:var(--space-md)}.editor-stats{flex-wrap:wrap}.editor-mode,.editor-stats{justify-content:center}.toolbar-group{align-items:stretch;flex-direction:column}.toolbar-group .btn{justify-content:center}.modal-content{margin:var(--space-sm);padding:var(--space-lg)}.editor-header,.viewer-header{align-items:flex-start;flex-direction:column;gap:var(--space-md)}.editor-actions,.viewer-actions{inline-size:100%;justify-content:stretch}.form-input,.form-select,.form-textarea{font-size:var(--text-sm);padding:var(--space-md)}.form-textarea{min-block-size:100px}.form-checkbox,.form-radio{font-size:var(--text-sm)}}@media (max-width:480px){.editor-toolbar{padding:var(--space-sm)}.markdown-textarea{font-size:var(--text-sm)}.history-item,.markdown-textarea,.viewer-content{padding:var(--space-md)}.history-item{align-items:flex-start;flex-direction:column;gap:var(--space-sm)}.card{padding:var(--space-lg)}.modal-content{margin:var(--space-xs);padding:var(--space-md)}.markdown-editor-container,.markdown-viewer-container{gap:var(--space-md);padding:var(--space-sm)}}}@layer utilities{.grid{display:grid;gap:var(--space-lg)}.grid-cols-1{grid-template-columns:repeat(1,minmax(0,1fr))}.grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}.grid-cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}.grid-cols-4{grid-template-columns:repeat(4,minmax(0,1fr))}.grid-auto-fit{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}.grid-auto-fill{grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}.flex{display:flex}.flex-col{flex-direction:column}.flex-row{flex-direction:row}.flex-wrap{flex-wrap:wrap}.items-center{align-items:center}.items-start{align-items:flex-start}.items-end{align-items:flex-end}.justify-center{justify-content:center}.justify-between{justify-content:space-between}.justify-end{justify-content:flex-end}.gap-sm{gap:var(--space-sm)}.gap-md{gap:var(--space-md)}.gap-lg{gap:var(--space-lg)}.gap-xl{gap:var(--space-xl)}.p-sm{padding:var(--space-sm)}.p-md{padding:var(--space-md)}.p-lg{padding:var(--space-lg)}.p-xl{padding:var(--space-xl)}.m-sm{margin:var(--space-sm)}.m-md{margin:var(--space-md)}.m-lg{margin:var(--space-lg)}.m-xl{margin:var(--space-xl)}.mb-sm{margin-block-end:var(--space-sm)}.mb-md{margin-block-end:var(--space-md)}.mb-lg{margin-block-end:var(--space-lg)}.mb-xl{margin-block-end:var(--space-xl)}.mt-sm{margin-block-start:var(--space-sm)}.mt-md{margin-block-start:var(--space-md)}.mt-lg{margin-block-start:var(--space-lg)}.mt-xl{margin-block-start:var(--space-xl)}@media (max-width:1024px){.grid-cols-3,.grid-cols-4{grid-template-columns:repeat(2,minmax(0,1fr))}}@media (max-width:768px){.grid-cols-2,.grid-cols-3,.grid-cols-4{grid-template-columns:1fr}}}@layer overrides{[data-app-layer=canvas],[data-app-layer=orient],[data-app-layer=overlay]{block-size:max(100%,100lvb);inline-size:max(100%,100lvi);inset:0;inset-block-end:auto;position:fixed}@media (max-width:768px){.toolbar{block-size:auto;min-block-size:3rem;padding:var(--space-sm)}.toolbar :is(.left,.right){flex-wrap:nowrap;gap:var(--space-xs);justify-content:flex-start;min-inline-size:0}.toolbar :is(.left,.right) .btn{flex-shrink:0;font-size:var(--text-sm);inline-size:max-content;min-block-size:2.5rem;min-inline-size:calc-size(fit-content,max(size,2.5rem) + .5rem + var(--icon-size,1rem));padding:var(--space-xs) var(--space-sm)}}@media (max-width:768px) and (max-width:480px){.toolbar{padding:var(--space-xs)}.toolbar :is(.left,.right){align-items:center}.toolbar :is(.left,.right) .btn{font-size:var(--text-xs);padding:var(--space-xs)}.toolbar :is(.left,.right) .toolbar-btn-icon{min-inline-size:calc-size(fit-content,max(size,2.5rem) + .5rem + var(--icon-size,1rem));padding:var(--space-xs)}.toolbar .left .btn:not([title*=Rich]):after,.toolbar .right .btn:not([title*=Voice]):after{background:var(--color-surface-container-high);border-radius:var(--radius-sm);color:var(--color-on-surface);content:attr(title);font-size:var(--text-xs);inset-block-start:-2.5rem;inset-inline-start:50%;max-inline-size:150px;opacity:0;padding:var(--space-xs);pointer-events:none;position:absolute;transform:translateX(-50%);transition:opacity var(--motion-fast);white-space:nowrap;z-index:5;word-wrap:break-word;text-align:center}.toolbar .left .btn:focus:after,.toolbar .left .btn:hover:after,.toolbar .right .btn:focus:after,.toolbar .right .btn:hover:after{opacity:1}}}@layer print{@media print{[data-app-layer=canvas],[data-app-layer=orient],[data-app-layer=overlay],[data-window-dock],[data-window-status],cw-app-dock,cw-status-bar{background-color:initial!important;display:none!important;opacity:0!important;pointer-events:none!important;visibility:hidden!important}[data-app-layer=shell]{background:transparent!important;background-color:initial!important;block-size:auto!important;contain:none!important;display:contents!important;height:auto!important;inset:auto!important;max-block-size:none!important;min-block-size:0!important;overflow:visible!important;position:static!important}:host,:is(html,body):has([data-shell=base]),:is(html,body):has([data-shell=immersive]),:is(html,body):has([data-shell=minimal]),:is(html,body):has(cw-shell-minimal){background:#fff!important;block-size:auto!important;color:#000!important;contain:none!important;container-type:normal!important;content-visibility:visible!important;display:block!important;height:auto!important;inset:auto!important;max-block-size:none!important;max-height:none!important;min-block-size:0!important;min-height:0!important;overflow:visible!important;position:static!important}:is(html,body):has([data-shell=base]) #app,:is(html,body):has([data-shell=immersive]) #app,:is(html,body):has([data-shell=immersive]) [data-app-layer-root],:is(html,body):has([data-shell=minimal]) #app,:is(html,body):has([data-shell=minimal]) [data-app-layer-root],:is(html,body):has(cw-shell-immersive) #app,:is(html,body):has(cw-shell-immersive) [data-app-layer-root],:is(html,body):has(cw-shell-minimal) #app,:is(html,body):has(cw-shell-minimal) [data-app-layer-root],cw-shell-immersive,cw-shell-minimal{block-size:auto!important;contain:none!important;container-type:normal!important;content-visibility:visible!important;display:contents!important;height:auto!important;inset:auto!important;max-block-size:none!important;max-height:none!important;min-block-size:0!important;overflow:visible!important;position:static!important}cw-shell-immersive,cw-shell-minimal{display:block!important}.cw-view-viewer-shell,.cw-view-viewer__prose,.markdown-body,.markdown-viewer-content,.result-content,.view-viewer,.view-viewer__content,[data-cw-view-host=true][data-view-id=viewer],[data-cw-viewer-prose],[data-render-target],[data-viewer-content],markdown-viewer,md-view{block-size:max-content!important;box-shadow:none!important;break-after:auto!important;break-before:auto!important;contain:none!important;container-type:normal!important;content-visibility:visible!important;display:block!important;inline-size:100%!important;inset:auto!important;max-block-size:none!important;max-inline-size:100%!important;min-block-size:0!important;opacity:1!important;overflow:visible!important;position:static!important;visibility:visible!important}.view-viewer__chrome,.view-viewer__pathbar,.view-viewer__toolbar,[data-viewer-pathbar],[data-viewer-toolbar]{display:none!important}.view-explorer,.view-explorer__content,ui-file-manager{block-size:auto!important;block-size:100%!important;contain:none!important;max-block-size:none!important;overflow:visible!important}}}@layer components{.view-viewer__toolbar{--view-toolbar-icon-size:1.125rem;--view-toolbar-ph-icon-size:var(--view-toolbar-icon-size);--view-picon-fill:var(--color-on-surface,var(--view-fg));--view-picon-fill-hover:var(--color-primary,var(--color-on-surface,var(--view-fg)));--view-picon-fill-active:color-mix(in oklab,var(--color-on-surface,var(--view-fg)) 80%,var(--color-primary,#007acc) 20%);--view-picon-fill-disabled:color-mix(in oklab,var(--color-on-surface,var(--view-fg)) 40%,transparent);align-items:center;align-self:stretch;box-sizing:border-box;display:flex;flex-direction:row;flex-shrink:0;flex-wrap:nowrap;gap:var(--view-toolbar-gap,.5rem);inline-size:100%;justify-content:flex-start;max-inline-size:100%;min-block-size:2.5rem;min-inline-size:0;overflow-block:hidden;overflow-inline:auto;overscroll-behavior-inline:contain;padding-block:var(--view-toolbar-pad-block);padding-inline:var(--view-toolbar-pad-inline);position:relative;scrollbar-color:color-mix(in oklab,var(--view-fg) 18%,transparent) transparent;scrollbar-width:thin;z-index:2;-webkit-overflow-scrolling:touch;background:var(--view-toolbar-bg,var(--color-surface-container-high,var(--view-toolbar-surface)));border-block-end:none;box-shadow:var(--view-toolbar-shadow);container-type:inline-size;isolation:isolate;touch-action:pan-x}.view-viewer__toolbar .view-viewer__btn>ui-icon.view-viewer__toolbar-icon,.view-viewer__toolbar button.view-viewer__btn>ui-icon.view-viewer__toolbar-icon{box-sizing:border-box;flex:0 0 auto;order:-1;--icon-size:var(--view-toolbar-ph-icon-size,1.125rem);--icon-padding:0;--icon-color:var(--view-picon-fill);aspect-ratio:1;block-size:var(--view-toolbar-icon-size);inline-size:var(--view-toolbar-icon-size);pointer-events:none;transition:color var(--motion-fast,.12s ease)}.view-viewer__toolbar>*{position:relative;z-index:1}.view-viewer__toolbar::-webkit-scrollbar{block-size:4px}.view-viewer__toolbar::-webkit-scrollbar-thumb{background:color-mix(in oklab,var(--view-fg) 22%,transparent);border-radius:4px}@container (max-inline-size: 520px){.view-viewer__toolbar{--view-toolbar-pad-inline:0.4rem;min-block-size:2.375rem}}.view-viewer__toolbar-center{align-self:stretch;flex:1 1 0%;min-block-size:0;min-inline-size:0;pointer-events:none}.view-viewer__toolbar-left,.view-viewer__toolbar-right{align-items:center;box-sizing:border-box;display:flex;flex:0 0 auto;flex-direction:row;flex-wrap:nowrap;gap:var(--view-toolbar-gap,.5rem)}.view-viewer__toolbar-group{align-items:center;display:flex;flex:0 0 auto;flex-direction:row;flex-wrap:nowrap;gap:var(--view-toolbar-group-gap,.125rem)}.view-viewer__toolbar-left .view-viewer__toolbar-group+.view-viewer__toolbar-group,.view-viewer__toolbar-right .view-viewer__toolbar-group+.view-viewer__toolbar-group{margin-inline-start:0;padding-inline-start:calc(var(--view-toolbar-gap, .5rem) + .15rem)}.view-viewer__toolbar-left{justify-content:flex-start}.view-viewer__toolbar-right{justify-content:flex-end;margin-inline-start:0;padding-inline-start:calc(var(--view-toolbar-gap, .5rem) + .25rem)}button.view-viewer__btn{align-items:center;appearance:none;background:transparent;border:none;border-radius:var(--view-toolbar-btn-radius,.625rem);color:var(--color-on-surface,var(--view-fg));cursor:pointer;display:inline-flex;flex-direction:row;font-family:inherit;font-size:var(--text-xs,.75rem);font-weight:var(--font-weight-medium,500);gap:.375rem;justify-content:center;letter-spacing:.01em;line-height:1.2;min-block-size:2.125rem;padding-block:var(--view-toolbar-btn-pad-block,.4375rem);padding-inline:var(--view-toolbar-btn-pad-inline,.6875rem);white-space:nowrap;-webkit-tap-highlight-color:transparent;box-sizing:border-box;contain:none;container-type:normal;flex:0 0 auto;transition:background-color var(--motion-fast,.14s ease),color var(--motion-fast,.14s ease),box-shadow var(--motion-fast,.14s ease)}button.view-viewer__btn span{flex-shrink:0;font-size:.6875rem;font-weight:500;letter-spacing:.04em;line-height:1.2;opacity:.78;text-transform:uppercase}button.view-viewer__btn:hover{background:color-mix(in oklab,var(--color-on-surface,var(--view-fg)) 9%,transparent)}button.view-viewer__btn:hover span{opacity:.95}button.view-viewer__btn:hover>ui-icon.view-viewer__toolbar-icon{--icon-color:var(--view-picon-fill-hover)}button.view-viewer__btn:active{background:color-mix(in oklab,var(--color-on-surface,var(--view-fg)) 13%,transparent)}button.view-viewer__btn:active>ui-icon.view-viewer__toolbar-icon{--icon-color:var(--view-picon-fill-active)}button.view-viewer__btn:disabled>ui-icon.view-viewer__toolbar-icon{--icon-color:var(--view-picon-fill-disabled);opacity:.55}button.view-viewer__btn:focus-visible{box-shadow:var(--focus-ring,0 0 0 2px color-mix(in oklab,var(--color-primary,#007acc) 45%,transparent));outline:none}button.view-viewer__btn[aria-pressed=true]{background:color-mix(in oklab,var(--color-primary,#007acc) 16%,transparent)}@container (max-inline-size: 720px){button.view-viewer__btn{gap:.25rem;min-block-size:2.25rem;padding-block:.375rem;padding-inline:.5625rem}}@container (max-inline-size: 560px){button.view-viewer__btn{border-radius:var(--view-toolbar-btn-radius,.75rem);gap:0;min-block-size:2.5rem;min-inline-size:2.5rem;padding-block:.45rem;padding-inline:.45rem;position:relative}button.view-viewer__btn span{block-size:1px;inline-size:1px;margin:-1px;overflow:hidden;padding:0;position:absolute;clip:rect(0,0,0,0);border:0;white-space:nowrap}}.view-viewer__md-loading{align-items:center;color:var(--view-fg);display:flex;font-size:.9rem;gap:.75rem;opacity:.9;padding:1.25rem 1rem}.view-viewer__md-loading:before{animation:m .75s linear infinite;block-size:1.25rem;border:2px solid var(--view-border);border-block-start-color:var(--view-link-color);border-radius:50%;content:\"\";flex-shrink:0;inline-size:1.25rem}.view-viewer__content{box-sizing:border-box;display:flex;flex-direction:column;grid-row:content-row;inline-size:100%;min-inline-size:0;padding:0}.view-viewer__content.dragover{background-color:rgba(0,122,204,.05);color:var(--on-surface,currentColor);color:contrast-color(rgba(0,122,204,.05));outline:2px dashed rgba(0,122,204,.3);outline-offset:-8px}.cw-view-viewer-shell:not(:has(.cw-view-viewer__slot-default)) .view-viewer__content{flex:1 1 auto;min-block-size:0;overflow-block:auto;overflow-inline:hidden;overscroll-behavior:contain}.cw-view-viewer-shell.dragover{background-color:rgba(0,122,204,.05);color:var(--on-surface,currentColor);color:contrast-color(rgba(0,122,204,.05));outline:2px dashed rgba(0,122,204,.3);outline-offset:-8px}.cw-view-viewer-shell :is([data-render-target],[data-render-target] *),cw-view-viewer :is([data-render-target],[data-render-target] *){pointer-events:auto;user-select:text;-webkit-user-select:text;-webkit-touch-callout:default}.cw-view-viewer-shell .view-viewer__content>[data-render-target],cw-view-viewer [data-render-target]{align-self:stretch;block-size:auto;box-sizing:border-box;display:flex;flex:1 1 auto;flex-direction:column;max-block-size:none;min-block-size:0;min-inline-size:0;overflow-block:auto;overflow-inline:hidden;overscroll-behavior:contain}.cw-view-viewer-shell [data-render-target] .view-viewer__md-root,cw-view-viewer [data-render-target] .view-viewer__md-root{flex:1 1 auto;min-block-size:0;min-inline-size:0;--md-fg-default:var(--view-fg,CanvasText);--md-code-block-fg:var(--view-code-fg,var(--view-fg,CanvasText));--md-code-block-bg:var(--view-code-bg,var(--color-surface-container,Canvas));--md-bg-code:var(--view-code-bg,var(--color-surface-container,Canvas))}.view-viewer__outline{background:color-mix(in oklab,var(--view-bg) 92%,var(--view-toolbar-surface) 8%);border-block-end:1px solid var(--view-border);flex:0 0 auto;font-size:var(--text-xs,.75rem);inset-block-start:0;line-height:1.35;margin:0;max-block-size:min(33vh,14rem);overflow:auto;overscroll-behavior:contain;padding:.5rem .75rem .65rem;position:sticky;z-index:1}.view-viewer__outline[hidden]{display:none!important}.view-viewer__outline-empty{font-style:italic;opacity:.75;padding:.15rem 0}.view-viewer__outline-list{display:flex;flex-direction:column;gap:.2rem;list-style:none;margin:0;padding:0}.view-viewer__outline-item{margin:0;padding:0}.view-viewer__outline-item a{border-radius:var(--radius-sm,4px);color:var(--view-link-color);display:block;margin-inline:-.35rem;padding:.2rem .35rem;text-decoration:none}.view-viewer__outline-item a:hover{background:color-mix(in oklab,var(--view-btn-hover-bg) 80%,transparent);color:var(--view-link-hover)}.view-viewer__outline--h1{font-weight:650}.view-viewer__outline--h2{padding-inline-start:.35rem}.view-viewer__outline--h3{opacity:.95;padding-inline-start:.7rem}.view-viewer__outline--h4{opacity:.9;padding-inline-start:1.05rem}.view-viewer__outline--h5,.view-viewer__outline--h6{opacity:.85;padding-inline-start:1.35rem}}@layer components{.cw-view-viewer-shell,.view-viewer,:host,:scope{--view-layout:\"flex\";--view-content-max-width:800px;--view-padding:var(--space-6);--view-font-size-base:1rem;--view-line-height-base:1.6;--view-prose-font-size:var(--text-base);--view-prose-line-height:1.75;--view-prose-heading-margin:var(--space-6);--base-color-neutralized:color-mix(in oklab,var(--base-color) 60%,gray);--view-bg:var(--color-surface,light-dark(--u2-color-mod(var(--base-color-neutralized),70),--u2-color-mod(var(--base-color-neutralized),960)));--view-fg:var(--color-on-surface,light-dark(--u2-color-mod(var(--base-color-neutralized),900),--u2-color-mod(var(--base-color-neutralized),100)));--view-border:var(--color-border,color-mix(in oklab,var(--view-fg) 12%,transparent));--view-toolbar-bg:color-mix(in oklab,var(--view-fg) 0%,transparent);--view-btn-hover-bg:color-mix(in oklab,var(--view-fg) 8%,transparent);--view-code-bg:light-dark(--u2-color-mod(var(--base-color-neutralized),120),--u2-color-mod(var(--base-color-neutralized),900));--view-code-fg:light-dark(var(--color-text,#1a1a1a),#d8dce6);--view-code-border:var(--color-border,light-dark(rgba(0,0,0,0.1),rgba(255,255,255,0.08)));--view-blockquote-border:var(--color-primary,light-dark(#0d9488,#2dd4bf));--view-blockquote-bg:light-dark(rgba(0,0,0,0.03),rgba(255,255,255,0.04));--view-link-color:var(--color-link,light-dark(#06c,#7eb8ff));--view-link-hover:var(--color-link-hover,light-dark(#005fa3,#a8d0ff));--view-toolbar-pad-block:0.375rem;--view-toolbar-pad-inline:0.625rem;--view-toolbar-gap:0.5rem;--view-toolbar-group-gap:0.125rem;--view-toolbar-divider:color-mix(in oklab,var(--view-border) 35%,transparent);--view-toolbar-btn-radius:0.625rem;--view-toolbar-btn-pad-block:0.4375rem;--view-toolbar-btn-pad-inline:0.6875rem;--view-toolbar-surface:light-dark(color-mix(in oklab,var(--color-surface-container-high,#ececec) 92%,var(--color-surface,#fff) 8%),color-mix(in oklab,var(--color-surface-container-high,#2a2a2a) 88%,var(--color-surface,#121212) 12%));--view-code-font-size:0.9em;--view-toolbar-shadow:light-dark(0 10px 28px -18px color-mix(in oklab,var(--color-on-surface,#1a1a1a) 12%,transparent),0 14px 36px -22px color-mix(in oklab,#000 50%,transparent))}:where(.view-viewer,.cw-view-viewer-shell,cw-view-viewer[data-view=viewer],cw-view-viewer[data-view-id=viewer]){--view-layout:\"flex\";--view-content-max-width:800px;--view-padding:var(--space-6);--view-font-size-base:1rem;--view-line-height-base:1.6;--view-prose-font-size:var(--text-base);--view-prose-line-height:1.75;--view-prose-heading-margin:var(--space-6);--base-color-neutralized:color-mix(in oklab,var(--base-color) 60%,gray);--view-bg:var(--color-surface,light-dark(--u2-color-mod(var(--base-color-neutralized),70),--u2-color-mod(var(--base-color-neutralized),960)));--view-fg:var(--color-on-surface,light-dark(--u2-color-mod(var(--base-color-neutralized),900),--u2-color-mod(var(--base-color-neutralized),100)));--view-border:var(--color-border,color-mix(in oklab,var(--view-fg) 12%,transparent));--view-toolbar-bg:color-mix(in oklab,var(--view-fg) 0%,transparent);--view-btn-hover-bg:color-mix(in oklab,var(--view-fg) 8%,transparent);--view-code-bg:light-dark(--u2-color-mod(var(--base-color-neutralized),120),--u2-color-mod(var(--base-color-neutralized),900));--view-code-fg:light-dark(var(--color-text,#1a1a1a),#d8dce6);--view-code-border:var(--color-border,light-dark(rgba(0,0,0,0.1),rgba(255,255,255,0.08)));--view-blockquote-border:var(--color-primary,light-dark(#0d9488,#2dd4bf));--view-blockquote-bg:light-dark(rgba(0,0,0,0.03),rgba(255,255,255,0.04));--view-link-color:var(--color-link,light-dark(#06c,#7eb8ff));--view-link-hover:var(--color-link-hover,light-dark(#005fa3,#a8d0ff));--view-toolbar-pad-block:0.375rem;--view-toolbar-pad-inline:0.625rem;--view-toolbar-gap:0.5rem;--view-toolbar-group-gap:0.125rem;--view-toolbar-divider:color-mix(in oklab,var(--view-border) 35%,transparent);--view-toolbar-btn-radius:0.625rem;--view-toolbar-btn-pad-block:0.4375rem;--view-toolbar-btn-pad-inline:0.6875rem;--view-toolbar-surface:light-dark(color-mix(in oklab,var(--color-surface-container-high,#ececec) 92%,var(--color-surface,#fff) 8%),color-mix(in oklab,var(--color-surface-container-high,#2a2a2a) 88%,var(--color-surface,#121212) 12%));--view-code-font-size:0.9em;--view-toolbar-shadow:light-dark(0 10px 28px -18px color-mix(in oklab,var(--color-on-surface,#1a1a1a) 12%,transparent),0 14px 36px -22px color-mix(in oklab,#000 50%,transparent));--base-color:var(--color-primary,#5a7fff);--color-on-surface:light-dark(--u2-color-mod(var(--base-color-neutralized),980),--u2-color-mod(var(--base-color-neutralized),20))}@supports (color:color-mix(in lch,red,blue)){:where(.view-viewer,.cw-view-viewer-shell,cw-view-viewer[data-view=viewer],cw-view-viewer[data-view-id=viewer]){--base-color-neutralized:color-mix(in oklab,var(--base-color) 60%,gray)}}.cw-view-viewer-shell[data-theme=light],.view-viewer[data-theme=light],:host([data-theme=light]),:host-context(html[data-theme=light]){color-scheme:light;--base-color:var(--color-primary,#5a7fff);--base-color-neutralized:color-mix(in oklab,var(--base-color) 60%,gray);--color-on-surface:--u2-color-mod(var(--base-color-neutralized),860)}.cw-view-viewer-shell[data-theme=dark],.view-viewer[data-theme=dark],:host([data-theme=dark]),:host-context(html[data-theme=dark]){color-scheme:dark;--base-color:var(--color-primary,#5a7fff);--base-color-neutralized:color-mix(in oklab,var(--base-color) 60%,gray);--color-on-surface:--u2-color-mod(var(--base-color-neutralized),120)}.view-viewer__toolbar{background:var(--viewer-toolbar-row-fill,var(--view-toolbar-bg,var(--view-toolbar-surface)));color:var(--view-fg,var(--color-on-surface));--view-picon-fill:var(--color-on-surface,var(--view-fg));--view-picon-fill-hover:var(--color-primary,var(--view-fg))}.view-viewer[data-theme=light] .view-viewer__toolbar,:host([data-theme=light]) .view-viewer__toolbar,:host-context(html[data-theme=light]) .view-viewer__toolbar{color-scheme:light;--base-color:var(--color-primary,#5a7fff);--base-color-neutralized:color-mix(in oklab,var(--base-color) 60%,gray);background:var(--viewer-toolbar-row-fill,--u2-color-mod(var(--base-color-neutralized),160));--color-on-surface:--u2-color-mod(var(--base-color-neutralized),880);--view-picon-fill:--u2-color-mod(var(--base-color-neutralized),780);--view-picon-fill-hover:var(--color-primary,--u2-color-mod(var(--base-color-neutralized),550));--color-surface-container-high:color-mix(in oklab,--u2-color-mod(var(--base-color-neutralized),900) 10%,transparent)}.view-viewer[data-theme=dark] .view-viewer__toolbar,:host([data-theme=dark]) .view-viewer__toolbar,:host-context(html[data-theme=dark]) .view-viewer__toolbar{color-scheme:dark;--base-color:var(--color-primary,#5a7fff);--base-color-neutralized:color-mix(in oklab,var(--base-color) 60%,gray);background:var(--viewer-toolbar-row-fill,--u2-color-mod(var(--base-color-neutralized),880));--color-on-surface:--u2-color-mod(var(--base-color-neutralized),120);--view-picon-fill:--u2-color-mod(var(--base-color-neutralized),280);--view-picon-fill-hover:--u2-color-mod(var(--base-color-neutralized),420);--color-surface-container-high:color-mix(in oklab,--u2-color-mod(var(--base-color-neutralized),100) 14%,transparent)}.view-viewer__toolbar{--color-surface:transparent}@layer components{:host([data-cw-view-host=true]),:host(cw-view-viewer),cw-view-viewer[data-cw-view-host=true]{display:block;inline-size:100%;max-inline-size:100%}}@layer components{.cw-view-viewer-shell{--viewer-shell-container-type:inline-size;--viewer-shell-contain:layout style paint;--viewer-shell-inline-size:100%;--viewer-shell-block-size:100%;align-self:stretch;block-size:var(--viewer-shell-block-size,100%);contain:var(--viewer-shell-contain,layout style paint);contain-intrinsic-size:auto 1000px;container-type:var(--viewer-shell-container-type,inline-size);inline-size:var(--viewer-shell-inline-size,100%);isolation:isolate;max-block-size:none;max-inline-size:100%;width:100%}.cw-view-viewer-shell,.view-viewer{box-sizing:border-box;display:flex;flex-direction:column;min-block-size:0;min-inline-size:0}.view-viewer{background-color:var(--view-bg);block-size:100%;color:var(--view-fg);inline-size:100%;overflow:hidden}@supports (color:contrast-color(red)){.view-viewer{color:contrast-color(var(--view-bg))}}.cw-view-viewer-shell:has(.cw-view-viewer__slot-default) .view-viewer,.cw-view-viewer-shell:not([data-raw]) .view-viewer,.cw-view-viewer-shell[data-raw]:not(:has(.cw-view-viewer__slot-default)) .view-viewer{flex:1 1 auto;min-block-size:0;min-inline-size:0}.cw-view-viewer-shell:has(.cw-view-viewer__slot-default) .view-viewer__content{block-size:100%;display:flex;flex:1 1 auto;flex-direction:column;inline-size:100%;min-block-size:0;min-inline-size:0;overflow:hidden}.cw-view-viewer-shell:has(.cw-view-viewer__slot-default):not([data-raw]) .cw-view-viewer__slot-raw,.cw-view-viewer-shell:has(.cw-view-viewer__slot-default)[data-raw] .cw-view-viewer__slot-default{display:none!important}.cw-view-viewer-shell:has(.cw-view-viewer__slot-default):not([data-raw]) .cw-view-viewer__slot-default{block-size:100%;box-sizing:border-box;flex:1 1 auto;inline-size:100%;min-block-size:0;min-inline-size:0;overflow-block:auto;overflow-inline:hidden;overscroll-behavior:contain}.cw-view-viewer-shell:has(.cw-view-viewer__slot-default):not([data-raw]) .cw-view-viewer__slot-default>slot{block-size:100%;display:block;inline-size:100%;min-block-size:0;min-inline-size:0}.cw-view-viewer-shell:has(.cw-view-viewer__slot-default):not([data-raw]) .cw-view-viewer__slot-default>slot::slotted([data-render-target]){block-size:100%;display:flex;flex-direction:column;inline-size:100%;max-block-size:none;min-block-size:0;min-inline-size:0;overflow-block:auto;overflow-inline:hidden;overscroll-behavior:contain}.cw-view-viewer-shell:has(.cw-view-viewer__slot-default)[data-raw] .cw-view-viewer__slot-raw{block-size:100%;box-sizing:border-box;flex:1 1 auto;inline-size:100%;min-block-size:0;min-inline-size:0;overflow-block:auto;overflow-inline:hidden;overscroll-behavior:contain}.cw-view-viewer-shell:not(:has(.cw-view-viewer__slot-default))[data-raw] .cw-view-viewer__prose{display:none!important}.cw-view-viewer-shell:not(:has(.cw-view-viewer__slot-default)):not([data-raw]) .cw-view-viewer__prose{block-size:100%;box-sizing:border-box;display:flex;flex:1 1 auto;flex-direction:column;inline-size:100%;min-block-size:0;min-inline-size:0;overflow-block:auto;overflow-inline:hidden;overscroll-behavior:contain}.cw-view-viewer-shell:not(:has(.cw-view-viewer__slot-default))[data-raw] .view-viewer__content{block-size:100%;flex:1 1 auto;inline-size:100%;min-block-size:0;min-inline-size:0}}@layer components{@keyframes m{to{transform:rotate(1turn)}}@media print{@page{margin:12mm}.cw-view-viewer-shell{contain:none!important;container-type:normal!important}.cw-view-viewer-shell,.view-viewer{block-size:auto!important;display:block!important;inline-size:100%!important;max-inline-size:100%!important;min-block-size:0!important;overflow:visible!important}.view-viewer{background:transparent!important;color:#000!important}.view-viewer__outline,.view-viewer__toolbar{display:none!important}.view-viewer__content{padding:0!important}.cw-view-viewer__prose,.view-viewer__content{block-size:auto!important;display:block!important;inline-size:100%!important;max-inline-size:100%!important;min-block-size:0!important;overflow:visible!important}.cw-view-viewer__prose{contain:none!important}.cw-view-viewer__slot-default,.cw-view-viewer__slot-raw,.markdown-body,.markdown-viewer-content,.result-content,[data-render-target]{block-size:auto!important;display:block!important;inline-size:100%!important;max-inline-size:100%!important;min-block-size:0!important;overflow:visible!important}.markdown-body,.markdown-viewer-content,.result-content,[data-render-target]{background:transparent!important;box-shadow:none!important;color:#000!important;opacity:1!important;visibility:visible!important}.markdown-viewer-content,[data-render-target]{break-after:auto!important;break-before:auto!important;break-inside:auto!important;page-break-before:auto!important;page-break-after:auto!important;page-break-inside:auto!important;orphans:3;widows:3}.markdown-viewer-content :is(h1,h2,h3,h4,h5,h6){break-after:avoid-page;page-break-after:avoid;break-inside:avoid;page-break-inside:avoid}.markdown-viewer-content :is(blockquote,figure,img,li,ol,pre,table,ul){break-inside:avoid-page;page-break-inside:avoid}}}}}";
+//#endregion
+//#region ../../modules/views/viewer-view/src/needs-to-API.ts
 /**
-* Lightweight toasts for home-view / SpeedDial (no CWSP-shell core).
-* Shells may listen for `view:toast` on `window` and render FL-UI / status UI.
+* Markdown Viewer View
+*
+* Shell-agnostic markdown viewer component.
+* **Standalone** `render()`: shell in light DOM (legacy editor preview).
+* **`cw-view-viewer` host** (`renderIntoWebComponentHost`): shadow = mount → shell → view-viewer (toolbar +
+*   `__content` wrapping `<slot name="raw">` + default `<slot>`); light DOM = `<pre slot="raw">` + prose `[data-render-target]`.
 */
-function showSuccess(message) {
-	globalThis.dispatchEvent?.(new CustomEvent("view:toast", { detail: {
-		type: "success",
-		message: String(message || "")
-	} }));
-}
-function showError(message) {
-	globalThis.dispatchEvent?.(new CustomEvent("view:toast", { detail: {
-		type: "error",
-		message: String(message || "")
-	} }));
-}
-//#endregion
-//#region ../../modules/views/home-view/src/navigation/app-menu/bookmarks-menu.ts
-/** Local copy — avoid relative `../../explorer/fs-backend` (breaks when this file is hardlinked under home-view). */
-function faviconForHref(href, size = 64) {
-	const raw = String(href || "").trim();
-	if (!raw || !/^https?:\/\//i.test(raw)) return "";
+var isIngressSourceToken = (value) => value === "launch-queue" || value === "share-target" || value === "clipboard" || value === "pending";
+var markedParserPromise = null;
+var VIEWER_OUTLINE_SESSION_KEY = "rs-viewer-outline";
+/** Assigning multi‑MB strings to a <pre> synchronously freezes the tab; defer past this threshold. */
+var VIEWER_RAW_TEXTCONTENT_DEFER_CHARS = 96e3;
+/** Raw panel cap (content still fully in memory via ref; only DOM text is truncated). */
+var VIEWER_RAW_DISPLAY_MAX_CHARS = 12e5;
+/** Clipboard read / paste file construction — avoid reading multi‑MB blobs on the main thread. */
+var VIEWER_CLIPBOARD_READ_TEXT_MAX_BYTES = 2 * 1024 * 1024;
+/** `isBase64Like` / `parseDataUrl` on megabyte strings can stall; plain paste above this skips probe. */
+var VIEWER_INGEST_BASE64_PROBE_MAX = 48e4;
+/** `innerText` on a huge rendered DOM is extremely expensive. */
+var VIEWER_MAX_RENDERED_COPY_CHARS = 6e5;
+var SANITIZE_OPTIONS = {
+	/** KaTeX `output: "mathml"` emits `<math>` + SVG; default DOMPurify HTML-only config strips them → raw LaTeX in the UI. */
+	USE_PROFILES: {
+		html: true,
+		mathMl: true,
+		svg: true
+	},
+	ADD_ATTR: ["data-language", "data-lang"],
+	FORBID_TAGS: [
+		"script",
+		"style",
+		"iframe",
+		"object",
+		"embed",
+		"applet",
+		"link",
+		"meta",
+		"base",
+		"form",
+		"noscript",
+		"template"
+	],
+	FORBID_CONTENTS: [
+		"script",
+		"style",
+		"iframe",
+		"object",
+		"embed",
+		"applet",
+		"noscript",
+		"template"
+	]
+};
+var DEFAULT_MARKDOWN_EXTENSION_FLAGS = "g";
+var viewerIconRuntimeInitialized = false;
+var ensureViewerIconRuntime = () => {
+	if (viewerIconRuntimeInitialized) return;
 	try {
-		const host = new URL(raw).hostname;
-		if (!host) return "";
-		return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(host)}&sz=${size}`;
-	} catch {
-		return "";
-	}
-}
-/** Accept http(s) and other schemes; bare hosts become `https://…`. */
-function normalizeBookmarkHref(raw) {
-	const text = String(raw || "").trim();
-	if (!text) return "";
-	if (/^[a-z][a-z0-9+.-]*:/i.test(text)) return text;
-	return `https://${text}`;
-}
-var registeredBookmarksApi = null;
-var chromeErr = () => {
-	try {
-		const err = globalThis.chrome?.runtime?.lastError;
-		return err ? new Error(String(err.message || err)) : null;
-	} catch {
-		return null;
+		ensureStyleSheet();
+		reinitializeRegistry();
+		viewerIconRuntimeInitialized = true;
+	} catch (error) {
+		console.warn("[Viewer] Failed to initialize icon runtime:", error);
 	}
 };
-var callChrome = (api, method, ...args) => {
-	const fn = api[method];
-	if (typeof fn !== "function") return Promise.reject(/* @__PURE__ */ new Error(`chrome.bookmarks.${String(method)} missing`));
-	try {
-		const result = fn.apply(api, args);
-		if (result != null && typeof result.then === "function") return result;
-	} catch (e) {
-		return Promise.reject(e);
-	}
-	return new Promise((resolve, reject) => {
+var writeClipboardText = (text) => {
+	return navigator?.clipboard?.writeText?.(text) ?? Promise.resolve(void 0);
+};
+var getMarkedParser = async () => {
+	if (markedParserPromise) return markedParserPromise;
+	markedParserPromise = (async () => {
+		const { marked } = await __vitePreload(async () => {
+			const { marked } = await import("../vendor/marked2.js").then((n) => n.n);
+			return { marked };
+		}, __vite__mapDeps([0,1]), import.meta.url);
 		try {
-			fn.apply(api, [...args, (res) => {
-				const err = chromeErr();
-				if (err) reject(err);
-				else resolve(res);
-			}]);
-		} catch (e) {
-			reject(e);
+			configureMarkdownRendering();
+		} catch (error) {
+			console.warn("[ViewerView] markdown configure skipped", error);
 		}
-	});
+		return async (markdown) => {
+			return await marked.parse(markdown ?? "");
+		};
+	})();
+	return markedParserPromise;
 };
-var nodeToEntry = (node) => {
-	const url = typeof node.url === "string" && node.url ? node.url : void 0;
-	return {
-		id: String(node.id),
-		title: String(node.title || node.url || node.id || "Bookmark"),
-		url,
-		folder: !url,
-		parentId: node.parentId
-	};
+/** Warm marked + KaTeX chunk from the app entry; safe no-op if import fails. */
+function warmViewerMarkdownEngine() {
+	getMarkedParser().catch(() => {});
+}
+var STORAGE_KEY = "rs-viewer-state";
+var DEFAULT_CONTENT = `# This is content`;
+var toFetchableMarkdownUrl = (candidate) => {
+	try {
+		const url = new URL(candidate);
+		if (url.hostname.replace(/^www\./i, "").toLowerCase() !== "github.com") return candidate;
+		const md = /\.(?:md|markdown|mdown|mkd|mkdn|mdtxt|mdtext)(?:$|[?#])/i;
+		const blob = url.pathname.match(/^\/([^/]+)\/([^/]+)\/blob\/(.+)$/i);
+		if (blob && md.test(blob[3])) return `https://raw.githubusercontent.com/${blob[1]}/${blob[2]}/${blob[3]}`;
+		const rawPath = url.pathname.match(/^\/([^/]+)\/([^/]+)\/raw\/(.+)$/i);
+		if (rawPath && md.test(rawPath[3])) return `https://raw.githubusercontent.com/${rawPath[1]}/${rawPath[2]}/${rawPath[3]}`;
+		return candidate;
+	} catch {
+		return candidate;
+	}
 };
-/** Build BookmarksMenuApi from `chrome.bookmarks` (CRX extension pages). */
-function createChromeBookmarksMenuApi(raw) {
-	const api = raw || (globalThis.chrome?.bookmarks ?? null);
-	if (!api?.getTree || !api?.getChildren) return null;
-	const resolveIconUrl = (href, size = 128) => {
-		const page = String(href || "").trim();
-		if (!/^https?:\/\//i.test(page)) return "";
-		const s2 = faviconForHref(page, size);
-		if (s2) return s2;
-		try {
-			const chromeRt = globalThis.chrome?.runtime;
-			if (typeof chromeRt?.getURL === "function") {
-				const u = new URL(chromeRt.getURL("/_favicon/"));
-				u.searchParams.set("pageUrl", page);
-				u.searchParams.set("size", String(size));
-				return u.toString();
-			}
-		} catch {}
-		return "";
-	};
-	return {
-		resolveIconUrl,
-		async listChildren(folderId) {
-			if (folderId) return (await callChrome(api, "getChildren", folderId) || []).map(nodeToEntry);
-			const roots = await callChrome(api, "getTree") || [];
-			const out = [];
-			for (const root of roots) for (const child of root.children || []) out.push(nodeToEntry(child));
-			return out;
-		},
-		async search(query) {
-			const q = String(query || "").trim();
-			if (!q) return this.listChildren();
-			if (typeof api.search !== "function") {
-				const all = await this.listChildren();
-				const lower = q.toLowerCase();
-				return all.filter((e) => e.title.toLowerCase().includes(lower) || String(e.url || "").toLowerCase().includes(lower));
-			}
-			return (await callChrome(api, "search", q) || []).map(nodeToEntry);
-		},
-		async open(entry) {
-			if (entry.folder) return;
-			const href = String(entry.url || "").trim();
-			if (!href) return;
+var TAG = "cw-view-viewer";
+var CwViewViewer = createViewConstructor(TAG, (Base) => {
+	return class ViewerView extends Base {
+		id = "viewer";
+		name = "Viewer";
+		icon = "eye";
+		options;
+		shellContext;
+		element = null;
+		/** When mounted under `cw-view-viewer`, slotted raw/prose are light children of this host. */
+		slotProjectingHost = null;
+		contentRef = ref("");
+		/** Single subscription: `affected()` returns a disposer — re-render without dispose stacks callbacks on stale DOM refs. */
+		contentRefSubscriptionDispose = null;
+		renderSeq = 0;
+		/** Bumped on every open (path, drop, pick) so a stale URL fetch cannot restore the loading placeholder. */
+		openEpoch = 0;
+		stateManager = createViewState(STORAGE_KEY);
+		_sheet = null;
+		pasteController = null;
+		documentOpenListener = null;
+		shareIntentListener = null;
+		visibilityOpenListener = null;
+		capacitorOpenPull = Promise.resolve();
+		/** Image/PDF opened before the render slot exists — paint after `render()`. */
+		pendingBinaryPreview = null;
+		/** INVARIANT: markdown `contentRef` must not overwrite an in-place image/PDF. */
+		binaryPreviewActive = false;
+		/** Whole-page drag/drop when the viewer is standalone (captures misses on shell padding). */
+		windowDnDController = null;
+		isViewVisible = false;
+		isPointerInView = false;
+		sourceUrl = null;
+		pathHistory = [];
+		pathHistoryIndex = -1;
+		suppressPathHistory = false;
+		/** Last `mountPickedDirectory` prefix (`/mounts/md-xxx/`) for ASSETS re-resolve. */
+		boundMountRoot = null;
+		boundDirectory = null;
+		/** Share/launch sidecar images keyed by basename and relative name. */
+		sidecarAssets = /* @__PURE__ */ new Map();
+		assetObjectUrls = [];
+		sourceObserver = null;
+		boundFsChangeTimer = 0;
+		customSheet = null;
+		userStyleModules = {
+			screenCss: "",
+			printCss: ""
+		};
+		markdownSettings = {
+			preset: "default",
+			fontFamily: "system",
+			fontSizePx: 16,
+			lineHeight: 1.7,
+			contentMaxWidthPx: 860,
+			printScale: 1,
+			page: {
+				size: "auto",
+				orientation: "portrait",
+				marginMm: 12
+			},
+			modules: {
+				typography: true,
+				lists: true,
+				tables: true,
+				codeBlocks: true,
+				blockquotes: true,
+				media: true,
+				printBreaks: true
+			},
+			plugins: {
+				smartTypography: false,
+				softBreaksAsBr: false,
+				externalLinksNewTab: true
+			},
+			customCss: "",
+			printCss: "",
+			extensions: []
+		};
+		markdownSettingsPromise = null;
+		/** Table of contents for rendered markdown; persisted for the tab session. */
+		outlineVisible = false;
+		/** Document theme lock for `html[data-theme]` (see `index.scss` / `theme.ts`). */
+		viewerColorScheme = "system";
+		documentThemeSnapshot = null;
+		disposeContentRefSubscription() {
 			try {
-				const tabs = globalThis.chrome?.tabs;
-				if (typeof tabs?.create === "function") {
-					await Promise.resolve(tabs.create({ url: href }));
-					return;
-				}
+				this.contentRefSubscriptionDispose?.();
 			} catch {}
-			globalThis.open?.(href, "_blank", "noopener,noreferrer");
-		},
-		async remove(entry) {
-			const id = String(entry?.id || "").trim();
-			if (!id) return false;
+			this.contentRefSubscriptionDispose = null;
+		}
+		/**
+		* Subscribe to reactive content updates for the **current** render targets only.
+		* WHY: Repeated `render()` / host remounts must not leave prior `affected` handlers
+		* calling `renderMarkdown` into detached nodes (stale paints / race with new opens).
+		*/
+		subscribeContentRefToCurrentTargets(renderTarget, rawTarget) {
+			this.disposeContentRefSubscription();
+			const dispose = affected(this.contentRef, () => {
+				if (renderTarget) this.renderMarkdown(this.contentRef.value, renderTarget, rawTarget);
+				this.saveState();
+			});
+			this.contentRefSubscriptionDispose = typeof dispose === "function" ? () => {
+				dispose();
+			} : null;
+		}
+		lifecycle = {
+			onMount: () => this.onMount(),
+			onUnmount: () => this.onUnmount(),
+			onShow: () => this.onShow(),
+			onHide: () => this.onHide(),
+			onRefresh: () => this.onRefresh()
+		};
+		constructor(options = {}) {
+			super();
+			this.options = options;
+			this.shellContext = options.shellContext;
+			this.sourceUrl = this.normalizeSourceUrl(options.source);
+			this.markdownSettingsPromise = this.loadMarkdownSettings();
 			try {
-				if (entry.folder) {
-					if (typeof api.removeTree !== "function") return false;
-					await callChrome(api, "removeTree", id);
-				} else {
-					if (typeof api.remove !== "function") return false;
-					await callChrome(api, "remove", id);
+				this.outlineVisible = globalThis.sessionStorage?.getItem(VIEWER_OUTLINE_SESSION_KEY) === "1";
+			} catch {
+				this.outlineVisible = false;
+			}
+			this.syncViewerColorSchemeFromOptions();
+			const savedState = this.stateManager.load();
+			this.contentRef.value = options.initialContent || savedState?.content || DEFAULT_CONTENT;
+			this.applyRouteParams(options.params);
+			if (!options.initialContent) {
+				const fromParams = (options.params?.content)?.trim?.();
+				if (fromParams) this.contentRef.value = fromParams;
+			}
+		}
+		render = function(options) {
+			ensureViewerIconRuntime();
+			this.slotProjectingHost = null;
+			if (options) {
+				this.options = {
+					...this.options,
+					...options
+				};
+				this.shellContext = options.shellContext || this.shellContext;
+				this.applyRouteParams(options.params);
+			}
+			this.syncViewerColorSchemeFromOptions();
+			this._sheet = loadAsAdopted(src_default$1);
+			this.element = this.createViewerShellElement();
+			const renderTarget = this.element.querySelector("[data-render-target]");
+			const rawTarget = this.element.querySelector("[data-raw-target]");
+			this.setupEventHandlers(rawTarget || void 0);
+			this.syncOutlineToolbarState();
+			this.syncToolbarDocumentTitle();
+			this.flushPendingBinaryPreview();
+			if (!this.binaryPreviewActive && renderTarget) this.renderMarkdown(this.contentRef.value, renderTarget, rawTarget);
+			this.subscribeContentRefToCurrentTargets(renderTarget, rawTarget);
+			this.refreshDocumentTheme();
+			return this.element;
+		};
+		/**
+		* Shell cache path: {@link ShellBase.loadView} may return an already-connected root without calling {@link render}.
+		* Re-merge shell context and route params, then repaint — avoids stale markdown when reopening the viewer.
+		*/
+		shellNavigateHydrate(options, _initialData) {
+			if (!this.element?.isConnected) return;
+			if (options) {
+				this.options = {
+					...this.options,
+					...options
+				};
+				this.shellContext = options.shellContext || this.shellContext;
+				if (options.params !== void 0) this.applyRouteParams(options.params);
+				this.syncViewerColorSchemeFromOptions();
+			}
+			const renderTarget = this.queryViewerSlotted("[data-render-target]");
+			const rawTarget = this.queryViewerSlotted("[data-raw-target]");
+			if (renderTarget) {
+				this.subscribeContentRefToCurrentTargets(renderTarget, rawTarget);
+				this.renderMarkdown(this.contentRef.value, renderTarget, rawTarget);
+			}
+			this.syncOutlineToolbarState();
+			this.syncToolbarDocumentTitle();
+			this.refreshDocumentTheme();
+		}
+		/**
+		* Mount under `<cw-view-viewer>`: chrome in shadow, raw + rendered bodies in light DOM (slotted).
+		*/
+		renderIntoWebComponentHost(host, options) {
+			ensureViewerIconRuntime();
+			if (options) {
+				this.options = {
+					...this.options,
+					...options
+				};
+				this.shellContext = options.shellContext || this.shellContext;
+				this.applyRouteParams(options.params);
+			}
+			this.syncViewerColorSchemeFromOptions();
+			this.slotProjectingHost = host;
+			this._sheet ??= loadAsAdopted(src_default$1);
+			this.element = this.createViewerShellElement();
+			host.replaceChildren(this.element);
+			const pre = host.querySelector("[data-raw-target]");
+			const prose = host.querySelector("[data-render-target]");
+			host.setAttribute("data-view-id", "viewer");
+			host.toggleAttribute("data-cw-view-host", true);
+			this.syncAdoptedSheetsToShadow();
+			const renderTarget = prose;
+			const rawTarget = pre;
+			this.setupEventHandlers(rawTarget || void 0);
+			this.syncOutlineToolbarState();
+			this.syncToolbarDocumentTitle();
+			this.flushPendingBinaryPreview();
+			if (!this.binaryPreviewActive && renderTarget) this.renderMarkdown(this.contentRef.value, renderTarget, rawTarget);
+			this.subscribeContentRefToCurrentTargets(renderTarget, rawTarget);
+			this.refreshDocumentTheme();
+			this.pullCapacitorPendingOpen();
+		}
+		getToolbar() {
+			return null;
+		}
+		/**
+		* Update the displayed content
+		*/
+		setContent(content, filename, source) {
+			if (filename) this.options.filename = filename;
+			if (source !== void 0) {
+				this.sourceUrl = this.normalizeSourceUrl(source);
+				this.options.source = source || void 0;
+			}
+			this.contentRef.value = content;
+			this.syncToolbarDocumentTitle();
+			this.syncOpenedPath(this.sourceUrl);
+			this.repaintMarkdown();
+		}
+		repaintMarkdown() {
+			const renderTarget = this.queryViewerSlotted("[data-render-target]");
+			if (!renderTarget) return;
+			const rawTarget = this.queryViewerSlotted("[data-raw-target]");
+			this.renderMarkdown(this.contentRef.value, renderTarget, rawTarget);
+		}
+		/**
+		* Apply markdown read from transports (file/url/message). Blocks obvious binary/mojibake before mutating reactive content (`contentRef`).
+		*/
+		ingestOpenedMarkdownBody(body, filename, source) {
+			this.binaryPreviewActive = false;
+			this.pendingBinaryPreview = null;
+			if (body.length > 0 && textIngressLooksCorrupt(body)) {
+				this.setContent("> This payload does not look like UTF-8 markdown (binary file or unsupported format).\n>\n> Open a `.md` / `.txt` file, paste as plain text, or attach binaries via Work Center.\n\n", filename, source);
+				return;
+			}
+			this.setContent(body, filename, source ?? void 0);
+		}
+		/**
+		* Get current content
+		*/
+		getContent() {
+			return this.contentRef.value;
+		}
+		/** Imperative theme — persists on view options; drives `html[data-theme]` for viewer CSS. */
+		setViewerColorScheme(mode) {
+			this.viewerColorScheme = mode;
+			this.options.colorScheme = mode;
+			this.refreshDocumentTheme();
+		}
+		refreshDocumentTheme() {
+			if (typeof document === "undefined") return;
+			this.applyViewerDocumentTheme(this.viewerColorScheme);
+			this.bakeViewerScreenColors();
+		}
+		/** WHY: snapshot `color-mix` / token colors for `@media screen`; print keeps the live sheet. */
+		bakeViewerScreenColors() {
+			const shell = this.element;
+			if (shell instanceof HTMLElement) scheduleBakeScreenColors(shell);
+			const prose = this.queryViewerSlotted("[data-render-target]");
+			if (prose instanceof HTMLElement && prose !== shell) scheduleBakeScreenColors(prose);
+		}
+		unbakeViewerScreenColors() {
+			const shell = this.element;
+			if (shell instanceof HTMLElement) unbakeScreenColors(shell);
+			const prose = this.queryViewerSlotted("[data-render-target]");
+			if (prose instanceof HTMLElement && prose !== shell) unbakeScreenColors(prose);
+		}
+		applyViewerDocumentTheme(mode) {
+			const html = document.documentElement;
+			if (mode === "system") return;
+			if (!this.documentThemeSnapshot) this.documentThemeSnapshot = {
+				prevAttr: html.getAttribute("data-theme"),
+				prevInlineCs: html.style.getPropertyValue("color-scheme")
+			};
+			const resolved = resolveViewerColorSchemePreference(mode);
+			html.setAttribute("data-theme", resolved);
+			html.style.setProperty("color-scheme", resolved);
+		}
+		restoreViewerDocumentTheme() {
+			const snap = this.documentThemeSnapshot;
+			this.documentThemeSnapshot = null;
+			if (!snap || typeof document === "undefined") return;
+			const html = document.documentElement;
+			if (snap.prevAttr === null || snap.prevAttr === "") html.removeAttribute("data-theme");
+			else html.setAttribute("data-theme", snap.prevAttr);
+			if (!snap.prevInlineCs.trim()) html.style.removeProperty("color-scheme");
+			else html.style.setProperty("color-scheme", snap.prevInlineCs);
+		}
+		/** Prefer `options.colorScheme` over `params.theme` / `params.colorScheme` (see {@link resolveViewerOptionsColorScheme}). */
+		syncViewerColorSchemeFromOptions() {
+			const s = resolveViewerOptionsColorScheme(this.options);
+			if (s) this.viewerColorScheme = s;
+		}
+		createViewerShellElement() {
+			const chrome = createViewerChrome();
+			const content = H`
+            <div class="view-viewer__content" data-viewer-content>
+                <pre class="markdown-viewer-raw" data-raw-target aria-label="Raw content" hidden></pre>
+                <div class="cw-view-viewer__prose markdown-body markdown-viewer-content result-content" data-render-target data-cw-viewer-prose></div>
+            </div>
+        `;
+			const viewer = H`<div class="view-viewer"></div>`;
+			viewer.append(chrome, content);
+			return H`<div class="cw-view-viewer-shell">${viewer}</div>`;
+		}
+		adoptViewerStylesIntoShadowRoot(shadow) {
+			const sheet = this._sheet;
+			if (!sheet || typeof shadow.adoptedStyleSheets === "undefined") return;
+			if (!shadow.adoptedStyleSheets.includes(sheet)) shadow.adoptedStyleSheets = [...shadow.adoptedStyleSheets, sheet];
+		}
+		syncAdoptedSheetsToShadow() {
+			const shadow = this.slotProjectingHost?.shadowRoot;
+			if (!shadow || typeof shadow.adoptedStyleSheets === "undefined") return;
+			const push = (s) => {
+				if (!s) return;
+				if (!shadow.adoptedStyleSheets.includes(s)) shadow.adoptedStyleSheets = [...shadow.adoptedStyleSheets, s];
+			};
+			push(this._sheet);
+			push(this.customSheet ?? null);
+		}
+		queryViewerSlotted(sel) {
+			const fromHost = this.slotProjectingHost?.querySelector(sel);
+			if (fromHost) return fromHost;
+			return this.element?.querySelector(sel) ?? null;
+		}
+		viewBranchesContain(node) {
+			if (!node) return false;
+			if (this.slotProjectingHost?.contains(node)) return true;
+			return Boolean(this.element?.contains(node));
+		}
+		viewBranchesHover() {
+			return Boolean(this.slotProjectingHost?.matches(":hover")) || Boolean(this.element?.matches(":hover"));
+		}
+		/** Syncs raw/rendered layout: shell + content `data-raw` drives CSS (toolbar + raw vs slotted markdown). */
+		syncViewerRawMode(raw) {
+			const shell = this.element;
+			if (!shell?.classList.contains("cw-view-viewer-shell")) return;
+			shell.toggleAttribute("data-raw", raw);
+			this.slotProjectingHost?.toggleAttribute("data-raw", raw);
+			const content = shell.querySelector("[data-viewer-content]");
+			if (raw) content?.setAttribute("data-raw", "");
+			else content?.removeAttribute("data-raw");
+		}
+		syncOutlineToolbarState() {
+			const btn = (this.element?.querySelector("[data-viewer-toolbar]"))?.querySelector("[data-action=\"toggle-outline\"]");
+			if (btn) btn.setAttribute("aria-pressed", this.outlineVisible ? "true" : "false");
+		}
+		slugifyHeadingId(text, used) {
+			const base = (text || "").trim().toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9\u00c0-\u024f-]+/gi, "-").replace(/^-+|-+$/g, "") || "section";
+			let id = base;
+			let n = 0;
+			while (used.has(id)) {
+				n += 1;
+				id = `${base}-${n}`;
+			}
+			used.add(id);
+			return id;
+		}
+		refreshDocumentOutline(nav, proseRoot) {
+			nav.hidden = !this.outlineVisible;
+			nav.innerHTML = "";
+			if (!this.outlineVisible) return;
+			const headings = Array.from(proseRoot.querySelectorAll("h1,h2,h3,h4,h5,h6"));
+			if (headings.length === 0) {
+				nav.innerHTML = `<div class="view-viewer__outline-empty" role="status">No headings in document</div>`;
+				return;
+			}
+			const used = /* @__PURE__ */ new Set();
+			const list = document.createElement("ul");
+			list.className = "view-viewer__outline-list";
+			for (const h of headings) {
+				let id = (h.id || "").trim();
+				if (!id) {
+					id = this.slugifyHeadingId(h.textContent || "", used);
+					h.id = id;
+				} else used.add(id);
+				const li = document.createElement("li");
+				li.className = `view-viewer__outline-item view-viewer__outline--h${h.tagName.slice(1)}`;
+				const a = document.createElement("a");
+				a.href = `#${id}`;
+				a.textContent = (h.textContent || "").trim() || id;
+				li.appendChild(a);
+				list.appendChild(li);
+			}
+			nav.appendChild(list);
+		}
+		setOutlineVisible(visible) {
+			this.outlineVisible = visible;
+			try {
+				if (visible) globalThis.sessionStorage?.setItem(VIEWER_OUTLINE_SESSION_KEY, "1");
+				else globalThis.sessionStorage?.removeItem(VIEWER_OUTLINE_SESSION_KEY);
+			} catch {}
+			const renderTarget = this.queryViewerSlotted("[data-render-target]");
+			if (renderTarget) {
+				const nav = renderTarget.querySelector(":scope > nav.view-viewer__outline");
+				const root = renderTarget.querySelector(":scope > .view-viewer__md-root");
+				if (nav && root) this.refreshDocumentOutline(nav, root);
+				else if (nav) nav.hidden = !visible;
+			}
+			this.syncOutlineToolbarState();
+		}
+		renderMarkdown(content, renderTarget, rawTarget) {
+			if (!renderTarget || this.binaryPreviewActive) return;
+			const seq = ++this.renderSeq;
+			const looksLikeHtmlDocument = (text) => {
+				const t = (text || "").trimStart().toLowerCase();
+				if (t.startsWith("<!doctype html")) return true;
+				if (t.startsWith("<html")) return true;
+				if (t.startsWith("<head")) return true;
+				if (t.startsWith("<body")) return true;
+				if (t.startsWith("<?xml") && t.includes("<html")) return true;
+				return false;
+			};
+			const endBusy = () => {
+				if (seq !== this.renderSeq) return;
+				renderTarget.removeAttribute("aria-busy");
+				renderTarget.removeAttribute("data-md-state");
+			};
+			if (rawTarget) {
+				const c = content || "";
+				const assignRaw = () => {
+					if (seq !== this.renderSeq) return;
+					if (c.length > VIEWER_RAW_DISPLAY_MAX_CHARS) rawTarget.textContent = `${c.slice(0, VIEWER_RAW_DISPLAY_MAX_CHARS)}\n\n… [truncated — open in editor for full source]`;
+					else rawTarget.textContent = c;
+				};
+				if (c.length > VIEWER_RAW_TEXTCONTENT_DEFER_CHARS) globalThis.setTimeout(assignRaw, 0);
+				else assignRaw();
+			}
+			if (!String(content ?? "").trim()) {
+				if (seq !== this.renderSeq) return;
+				this.syncViewerRawMode(false);
+				renderTarget.hidden = false;
+				if (rawTarget) rawTarget.hidden = true;
+				renderTarget.removeAttribute("aria-busy");
+				renderTarget.setAttribute("data-md-state", "empty");
+				renderTarget.innerHTML = `<div class="view-viewer__md-empty" role="status">Empty document</div>`;
+				this.syncToolbarDocumentTitle();
+				return;
+			}
+			if (this.element?.querySelector(".view-viewer__content") && looksLikeHtmlDocument(content || "")) {
+				this.syncViewerRawMode(true);
+				if (rawTarget) rawTarget.hidden = false;
+				renderTarget.hidden = true;
+				this.syncToolbarDocumentTitle();
+				endBusy();
+				return;
+			}
+			this.syncViewerRawMode(false);
+			renderTarget.hidden = false;
+			if (rawTarget) rawTarget.hidden = true;
+			renderTarget.setAttribute("aria-busy", "true");
+			renderTarget.setAttribute("data-md-state", "preparing");
+			renderTarget.innerHTML = `<div class="view-viewer__md-loading" role="status">Rendering preview…</div>`;
+			queueMicrotask(() => {
+				if (seq !== this.renderSeq) return;
+				try {
+					const handleParsed = (html) => {
+						if (seq !== this.renderSeq) return;
+						const sanitized = purify?.sanitize?.((html || "")?.trim?.() || "", SANITIZE_OPTIONS) || "";
+						renderTarget.replaceChildren();
+						const outlineNav = document.createElement("nav");
+						outlineNav.className = "view-viewer__outline";
+						outlineNav.setAttribute("aria-label", "Document outline");
+						const mdRoot = document.createElement("div");
+						mdRoot.className = "view-viewer__md-root";
+						mdRoot.innerHTML = sanitized;
+						this.captureOriginalRelRefs(mdRoot);
+						renderTarget.append(outlineNav, mdRoot);
+						try {
+							highlightCodeTree(mdRoot);
+						} catch (error) {
+							console.warn("[ViewerView] code highlight skipped", error);
+						}
+						if (this.hasBoundAssets()) this.applyBoundProvideBlobs(mdRoot);
+						this.applyRenderedLinkBehavior(mdRoot);
+						this.watchVirtualSource(this.sourceUrl);
+						this.refreshDocumentOutline(outlineNav, mdRoot);
+						this.syncOutlineToolbarState();
+						this.syncToolbarDocumentTitle(mdRoot);
+						endBusy();
+						console.log("[ViewerView] Markdown rendered successfully");
+					};
+					const handleError = (error) => {
+						if (seq !== this.renderSeq) return;
+						console.error("[ViewerView] Error rendering markdown:", error);
+						renderTarget.innerHTML = `<div style="color: red; padding: 1rem; background: #fee; border: 1px solid #fcc; border-radius: 4px;">Error parsing markdown: ${error?.message}</div>`;
+						endBusy();
+					};
+					const pluginProcessed = this.applyMarkdownPlugins((content || "")?.trim?.() || "");
+					const processedContent = this.applyCustomMarkdownExtensions(pluginProcessed);
+					getMarkedParser().then((parse) => parse(processedContent)).then(handleParsed).catch(handleError);
+				} catch (error) {
+					console.error("[ViewerView] Error rendering markdown:", error);
+					renderTarget.innerHTML = `<div style="color: red; padding: 1rem; background: #fee; border: 1px solid #fcc; border-radius: 4px;">Error parsing markdown: ${error?.message}</div>`;
+					endBusy();
 				}
+			});
+		}
+		normalizeSourceUrl(source) {
+			const raw = (source || "").trim();
+			if (!raw) return null;
+			if (isVirtualFsPath(raw)) return raw.startsWith("/") ? raw : `/${raw}`;
+			try {
+				const url = new URL(raw, globalThis.location.href);
+				if (isVirtualFsPath(url.pathname)) return url.pathname;
+				return url.toString();
+			} catch {
+				return null;
+			}
+		}
+		revokeAssetUrls() {
+			for (const url of this.assetObjectUrls) try {
+				URL.revokeObjectURL(url);
+			} catch {}
+			this.assetObjectUrls = [];
+		}
+		hasBoundAssets() {
+			return Boolean(this.boundMountRoot || this.boundDirectory || this.sidecarAssets.size);
+		}
+		watchVirtualSource(source) {
+			this.sourceObserver?.disconnect?.();
+			this.sourceObserver = null;
+			const attach = (handle) => {
+				if (!handle) return;
+				this.sourceObserver = observeFileSystemHandle(handle, () => this.scheduleBoundFsRewire());
+			};
+			if (this.boundDirectory) {
+				attach(this.boundDirectory);
+				return;
+			}
+			const path = this.normalizeSourceUrl(source);
+			if (!path || !isVirtualFsPath(path)) return;
+			const mapped = matchMappedRoot(getDir(path));
+			if (!mapped || mapped.root === "/" || mapped.root === "/user/" || mapped.root === "/assets/") return;
+			mapped.resolver().then((resolved) => {
+				if (resolved instanceof FileSystemDirectoryHandle) attach(resolved);
+			}).catch(() => {});
+		}
+		scheduleBoundFsRewire() {
+			if (this.boundFsChangeTimer) clearTimeout(this.boundFsChangeTimer);
+			this.boundFsChangeTimer = globalThis.setTimeout(() => {
+				this.boundFsChangeTimer = 0;
+				this.onBoundFsChange();
+			}, 50);
+		}
+		async onBoundFsChange() {
+			if (this.boundDirectory) try {
+				const indexed = await indexDirectoryFiles(this.boundDirectory);
+				this.rememberSidecarFiles(indexed.map((row) => {
+					try {
+						Object.defineProperty(row.file, "webkitRelativePath", { value: row.rel });
+					} catch {}
+					return row.file;
+				}));
+			} catch {}
+			if (!await this.rewireBoundMedia()) this.onRefresh();
+		}
+		applyRouteParams(params) {
+			const bootBag = (() => {
+				try {
+					const bag = globalThis.__CWSP_CRX_MD_BOOT__;
+					if (!bag || typeof bag !== "object") return null;
+					delete globalThis.__CWSP_CRX_MD_BOOT__;
+					return bag;
+				} catch {
+					return null;
+				}
+			})();
+			if (bootBag?.content?.trim()) {
+				this.contentRef.value = bootBag.content;
+				if (bootBag.filename) this.options.filename = bootBag.filename;
+				if (bootBag.src) {
+					this.sourceUrl = this.normalizeSourceUrl(bootBag.src);
+					this.options.source = bootBag.src;
+				}
+			}
+			const handed = takeSkuHandoff("viewer", "document");
+			if (handed?.content?.trim()) {
+				this.contentRef.value = handed.content;
+				if (handed.filename) this.options.filename = handed.filename;
+				if (handed.src) {
+					this.sourceUrl = this.normalizeSourceUrl(handed.src);
+					this.options.source = handed.src;
+				}
+			}
+			if (!params) return;
+			const detachKey = String(params.detachKey || "").trim();
+			if (detachKey) try {
+				const payloadRaw = globalThis?.sessionStorage?.getItem?.(detachKey) || "";
+				if (payloadRaw) {
+					const payload = JSON.parse(payloadRaw);
+					const detachedContent = String(payload?.content || "");
+					if (detachedContent.trim()) this.contentRef.value = detachedContent;
+					if (payload?.filename) this.options.filename = String(payload.filename);
+					const detachedSource = String(payload?.source || "");
+					const isExt = typeof globalThis.location !== "undefined" && globalThis.location.protocol === "chrome-extension:";
+					if (detachedSource.trim() && !(isExt && /^file:/i.test(detachedSource.trim()))) {
+						this.sourceUrl = this.normalizeSourceUrl(detachedSource);
+						this.options.source = detachedSource;
+					}
+				}
+				globalThis?.sessionStorage?.removeItem?.(detachKey);
+			} catch (error) {
+				console.warn("[Viewer] Failed to restore detached payload:", error);
+			}
+			const hashSource = (() => {
+				try {
+					const raw = decodeURIComponent(String(globalThis.location?.hash || "").replace(/^#/, "")).trim();
+					return /^https?:\/\//i.test(raw) ? raw : "";
+				} catch {
+					return "";
+				}
+			})();
+			const sourceParam = params.source || params.src || params.path || params.url || hashSource;
+			if (sourceParam) {
+				const sp = toFetchableMarkdownUrl(String(sourceParam).trim());
+				const looksWeb = /^https?:\/\//i.test(sp) || /^\/\//.test(sp) || /^www\./i.test(sp);
+				const looksMarkdownFile = /\.(?:md|markdown|txt|mdx)(?:$|[?#])/i.test(sp);
+				if (looksWeb && !looksMarkdownFile) {
+					const href = /^https?:\/\//i.test(sp) ? sp : /^\/\//.test(sp) ? `https:${sp}` : `https://${sp.replace(/^\/+/, "")}`;
+					try {
+						const open = this.shellContext?.openView || this.shellContext?.navigate || this.options?.shellContext?.openView || this.options?.shellContext?.navigate;
+						if (typeof open === "function") {
+							Promise.resolve(open("browser", {
+								params: {
+									url: href,
+									href
+								},
+								url: href,
+								href
+							})).catch(() => {});
+							return;
+						}
+					} catch (e) {
+						console.warn("[Viewer] redirect web URL to browser failed", e);
+					}
+				}
+				if (!(typeof globalThis.location !== "undefined" && globalThis.location.protocol === "chrome-extension:" && /^file:/i.test(sp))) {
+					this.sourceUrl = this.normalizeSourceUrl(sp);
+					this.options.source = sp;
+				}
+			}
+			const filenameParam = params.filename || params.name;
+			if (filenameParam) this.options.filename = String(filenameParam);
+			const contentParam = String(params.content || "");
+			if (contentParam.trim()) this.contentRef.value = contentParam;
+			else if (sourceParam) {
+				const src = String(sourceParam).trim();
+				if (isVirtualFsPath(src) || /^\/assets(?:\/|$)/i.test(src)) (async () => {
+					if (/^\/(?:sdcard|saf)(?:\/|$)/i.test(src)) try {
+						const { ensureNativeStorageProvide } = await __vitePreload(async () => {
+							const { ensureNativeStorageProvide } = await import("../com/app2.js").then((n) => n.m);
+							return { ensureNativeStorageProvide };
+						}, __vite__mapDeps([2,1,3,4]), import.meta.url);
+						await ensureNativeStorageProvide();
+					} catch {}
+					let file = await provide(src).catch(() => null);
+					if (!file && /^\/(?:sdcard|saf)(?:\/|$)/i.test(src)) try {
+						const { readNativeStorageFile } = await __vitePreload(async () => {
+							const { readNativeStorageFile } = await import("../com/app2.js").then((n) => n.m);
+							return { readNativeStorageFile };
+						}, __vite__mapDeps([2,1,3,4]), import.meta.url);
+						file = await readNativeStorageFile(src);
+					} catch {
+						file = null;
+					}
+					if (!(file instanceof File)) {
+						if (/^\/assets(?:\/|$)/i.test(src)) this.openMarkdownFromUrl(src, filenameParam ? String(filenameParam) : void 0);
+						return;
+					}
+					await this.ingestOpenedFile(file, {
+						virtualPath: src,
+						filename: filenameParam ? String(filenameParam) : file.name
+					});
+				})();
+				else if (/^https?:\/\//i.test(src) && /\.(?:md|markdown|txt|mdx)(?:$|[?#])/i.test(src)) {
+					const already = String(this.contentRef.value || "").trim();
+					if (!already || already === DEFAULT_CONTENT || already.startsWith("# No content")) this.openMarkdownFromUrl(src, filenameParam ? String(filenameParam) : void 0);
+				}
+			}
+			if (this.element) {
+				this.syncToolbarDocumentTitle();
+				this.syncOpenedPath(this.sourceUrl);
+			}
+		}
+		/** Toolbar center title span stays empty (no document label in chrome). */
+		syncToolbarDocumentTitle(_mdRoot) {
+			const titleEl = this.element?.querySelector("[data-viewer-toolbar-title]");
+			if (!titleEl) return;
+			titleEl.textContent = "";
+			titleEl.removeAttribute("title");
+		}
+		isUnsafeProtocol(value) {
+			return /^(?:javascript|vbscript|data:text\/html)/i.test((value || "").trim());
+		}
+		/**
+		* Markdown/HTML sometimes emits bare base64 (no `data:` scheme). Resolving that against
+		* `chrome-extension://…/viewer.html` produces bogus URLs and net::ERR_FILE_NOT_FOUND.
+		*/
+		normalizeBareBase64Candidate(raw) {
+			const trimmed = (raw || "").trim();
+			if (!trimmed || parseDataUrl(trimmed)) return null;
+			const candidates = [
+				trimmed,
+				trimmed.replace(/[\s>]+$/g, ""),
+				trimmed.replace(/[^A-Za-z0-9+/=_-]/g, "")
+			];
+			for (const c of candidates) {
+				const t = c.trim();
+				if (t.length >= 8 && isBase64Like(t)) return t;
+			}
+			return null;
+		}
+		sniffImageMimeFromBytes(bytes) {
+			const n = bytes.byteLength;
+			if (n >= 8 && bytes[0] === 137 && bytes[1] === 80 && bytes[2] === 78 && bytes[3] === 71) return "image/png";
+			if (n >= 3 && bytes[0] === 255 && bytes[1] === 216 && bytes[2] === 255) return "image/jpeg";
+			if (n >= 6 && bytes[0] === 71 && bytes[1] === 73 && bytes[2] === 70 && bytes[3] === 56) return "image/gif";
+			if (n >= 12 && bytes[0] === 82 && bytes[1] === 73 && bytes[2] === 70 && bytes[3] === 70) return "image/webp";
+			if (n >= 2 && bytes[0] === 66 && bytes[1] === 77) return "image/bmp";
+			const t = new TextDecoder("utf-8", { fatal: false }).decode(bytes.subarray(0, Math.min(400, n))).trimStart();
+			if (t.startsWith("<svg") || t.startsWith("<?xml")) return "image/svg+xml";
+			return "image/png";
+		}
+		/** `undefined` = not bare base64; `null` = looked like base64 but decode failed (do not resolve as path). */
+		coerceBareBase64ToDataUrl(value) {
+			const bare = this.normalizeBareBase64Candidate(value);
+			if (!bare) return void 0;
+			try {
+				const bytes = decodeBase64ToBytes(bare);
+				return `data:${this.sniffImageMimeFromBytes(bytes)};base64,${bare.replace(/\s/g, "")}`;
+			} catch {
+				return null;
+			}
+		}
+		/** Stamp `data-md-rel` from the markdown token; strip fetchable `src` so JXL/SW never hit the PWA origin. */
+		captureOriginalRelRefs(root) {
+			const stamp = (node, attr, strip) => {
+				const raw = (node.getAttribute("data-md-rel") || node.getAttribute(attr) || "").trim();
+				const rel = originalRelFromRef(raw);
+				if (!rel) return;
+				node.setAttribute("data-md-rel", isMarkdownRelativeRef(raw) ? raw : rel);
+				if (!strip) return;
+				node.removeAttribute(attr);
+				if (attr === "src" && "src" in node) try {
+					node.removeAttribute("src");
+				} catch {}
+			};
+			for (const node of root.querySelectorAll("img, source, video, audio, track")) stamp(node, "src", true);
+			for (const node of root.querySelectorAll("a[href]")) {
+				const href = (node.getAttribute("href") || "").trim();
+				const rel = originalRelFromRef(href) || (isMarkdownRelativeRef(href) ? href : "");
+				if (!rel || !this.isLikelyMarkdownUrl(rel)) continue;
+				stamp(node, "href", false);
+				node.setAttribute("href", "#");
+			}
+		}
+		/** Sidecar map / FSA handle first — `provide(/mounts/…)` can miss if OPFS `mappedRoots` is a second module copy. */
+		async resolveBoundAssetFile(rel) {
+			const sidecar = this.lookupSidecarFile(rel, originalRelFromRef(rel));
+			if (sidecar) return sidecar;
+			if (this.boundDirectory) {
+				const fromDir = await resolveFileUnderDirectory(this.boundDirectory, rel).catch(() => null);
+				if (fromDir) return fromDir;
+			}
+			if (!this.boundMountRoot) return null;
+			return provideBoundRelative(this.boundMountRoot, rel, this.sourceUrl);
+		}
+		/** After bind: original relative → File (sidecar / FSA / provide) → blob URL. */
+		async applyBoundProvideBlobs(root) {
+			if (!this.hasBoundAssets()) return 0;
+			this.revokeAssetUrls();
+			let count = 0;
+			for (const node of root.querySelectorAll("[data-md-rel]")) {
+				const rel = (node.getAttribute("data-md-rel") || "").trim();
+				if (!rel) continue;
+				const file = await this.resolveBoundAssetFile(rel);
+				if (!file) continue;
+				const blobUrl = URL.createObjectURL(file);
+				this.assetObjectUrls.push(blobUrl);
+				const virtual = normalizePath(this.sourceUrl && isVirtualFsPath(this.sourceUrl) ? getDir(this.sourceUrl) : this.boundMountRoot, relPathCandidates(rel)[0] || rel);
+				if (node.tagName === "A") {
+					node.setAttribute("href", blobUrl);
+					node.setAttribute("data-md-virtual", virtual);
+				} else {
+					node.setAttribute("src", blobUrl);
+					if ("src" in node) node.src = blobUrl;
+				}
+				count += 1;
+			}
+			return count;
+		}
+		async rewireMarkdownRefs(root) {
+			this.captureOriginalRelRefs(root);
+			if (!this.hasBoundAssets()) return 0;
+			return this.applyBoundProvideBlobs(root);
+		}
+		resolveUrlAgainstSource(rawValue) {
+			const value = (rawValue || "").trim();
+			if (!value) return null;
+			if (value.startsWith("#")) return value;
+			if (this.isUnsafeProtocol(value)) return null;
+			if (/^[a-zA-Z][a-zA-Z\d+\-.]*:/.test(value) || value.startsWith("//")) try {
+				const absolute = new URL(value, globalThis.location.href).toString();
+				if (/^file:/i.test(absolute) && globalThis.location?.protocol === "chrome-extension:") return null;
+				return absolute;
+			} catch {
+				return value;
+			}
+			const dataFromBare = this.coerceBareBase64ToDataUrl(value);
+			if (dataFromBare !== void 0) return dataFromBare;
+			if (!this.sourceUrl) return value;
+			if (isVirtualFsPath(this.sourceUrl)) return normalizePath(getDir(this.sourceUrl), value);
+			try {
+				const base = new URL(this.sourceUrl, globalThis.location.href);
+				if (base.origin === globalThis.location.origin) return value;
+				const absolute = new URL(value, base).toString();
+				if (/^file:/i.test(absolute) && globalThis.location?.protocol === "chrome-extension:") return null;
+				return absolute;
+			} catch {
+				return value;
+			}
+		}
+		isLikelyMarkdownUrl(value) {
+			const raw = (value || "").trim();
+			if (!raw) return false;
+			const noQuery = raw.split("#")[0].split("?")[0];
+			return /\.(?:md|markdown|mdown|mkd|mkdn|mdtxt|mdtext)$/i.test(noQuery);
+		}
+		isLikelyBinaryAssetUrl(value) {
+			const raw = (value || "").trim();
+			if (!raw) return false;
+			const noQuery = raw.split("#")[0].split("?")[0];
+			return /\.(?:png|jpe?g|gif|webp|bmp|svg|ico|pdf|zip|rar|7z|gz|mp4|webm|mp3|wav|ogg|avi|mov)$/i.test(noQuery);
+		}
+		async fetchMarkdownFromUrl(source) {
+			const src = toFetchableMarkdownUrl((source || "").trim());
+			if (!src) return null;
+			if (/^file:/i.test(src)) return null;
+			try {
+				const response = await fetch(src, {
+					credentials: "omit",
+					cache: "no-store"
+				});
+				if (!response.ok) return null;
+				const text = await response.text();
+				const lowered = (text || "").trimStart().toLowerCase();
+				if (lowered.startsWith("<!doctype html") || lowered.startsWith("<html") || lowered.startsWith("<head") || lowered.startsWith("<body")) return null;
+				return text;
+			} catch (error) {
+				console.warn("[ViewerView] Failed to load markdown URL:", error);
+				return null;
+			}
+		}
+		async openMarkdownFromUrl(source, filename) {
+			const epoch = ++this.openEpoch;
+			const renderTarget = this.queryViewerSlotted("[data-render-target]");
+			if (renderTarget) {
+				renderTarget.setAttribute("aria-busy", "true");
+				renderTarget.setAttribute("data-md-state", "fetching");
+				renderTarget.innerHTML = `<div class="view-viewer__md-loading" role="status">Loading document…</div>`;
+			}
+			const stillThisOpen = () => epoch === this.openEpoch;
+			const restoreIfStillFetching = () => {
+				if (!stillThisOpen()) return;
+				this.repaintMarkdown();
+			};
+			const normalizedSource = this.normalizeSourceUrl(source);
+			if (!normalizedSource) {
+				restoreIfStillFetching();
+				return false;
+			}
+			if (isVirtualFsPath(normalizedSource)) {
+				if (/^\/(?:sdcard|saf)(?:\/|$)/i.test(normalizedSource)) try {
+					const { ensureNativeStorageProvide } = await __vitePreload(async () => {
+						const { ensureNativeStorageProvide } = await import("../com/app2.js").then((n) => n.m);
+						return { ensureNativeStorageProvide };
+					}, __vite__mapDeps([2,1,3,4]), import.meta.url);
+					await ensureNativeStorageProvide();
+				} catch {}
+				let file = await provide(normalizedSource).catch(() => null);
+				if (!file && /^\/(?:sdcard|saf)(?:\/|$)/i.test(normalizedSource)) try {
+					const { readNativeStorageFile } = await __vitePreload(async () => {
+						const { readNativeStorageFile } = await import("../com/app2.js").then((n) => n.m);
+						return { readNativeStorageFile };
+					}, __vite__mapDeps([2,1,3,4]), import.meta.url);
+					file = await readNativeStorageFile(normalizedSource);
+				} catch {
+					file = null;
+				}
+				if (!stillThisOpen()) return false;
+				if (!(file instanceof File)) {
+					restoreIfStillFetching();
+					return false;
+				}
+				const ok = await this.ingestOpenedFile(file, {
+					virtualPath: normalizedSource,
+					filename: filename || file.name
+				});
+				if (!stillThisOpen()) return false;
+				if (ok) {
+					this.repaintMarkdown();
+					this.showMessage(filename ? `Opened ${filename}` : "Opened markdown link");
+					return true;
+				}
+				restoreIfStillFetching();
+				return false;
+			}
+			if (/^blob:/i.test(normalizedSource) || /^blob:/i.test(source)) {
+				const ok = await this.openMarkdownBlob(source, filename);
+				if (!stillThisOpen()) return false;
+				if (ok) {
+					this.repaintMarkdown();
+					return true;
+				}
+				restoreIfStillFetching();
+				return false;
+			}
+			const markdown = await this.fetchMarkdownFromUrl(normalizedSource);
+			if (!stillThisOpen()) return false;
+			if (markdown === null) {
+				restoreIfStillFetching();
+				return false;
+			}
+			this.ingestOpenedMarkdownBody(markdown, filename, normalizedSource);
+			this.syncOpenedPath(normalizedSource);
+			this.repaintMarkdown();
+			this.showMessage(filename ? `Opened ${filename}` : "Opened markdown link");
+			return true;
+		}
+		async openMarkdownBlob(blobUrl, relOrName) {
+			try {
+				const text = await (await fetch(blobUrl)).text();
+				if (!text) return false;
+				const name = (relOrName || "").split(/[\\/]/).pop() || "document.md";
+				const virtual = relOrName && this.boundMountRoot ? normalizePath(this.sourceUrl && isVirtualFsPath(this.sourceUrl) ? getDir(this.sourceUrl) : this.boundMountRoot, relOrName) : this.sourceUrl;
+				this.ingestOpenedMarkdownBody(text, name, virtual);
+				this.showMessage(`Opened ${name}`);
 				return true;
 			} catch {
 				return false;
 			}
-		},
-		async update(id, patch) {
-			const key = String(id || "").trim();
-			if (!key || typeof api.update !== "function") return null;
-			const body = {};
-			if (patch.title != null) body.title = String(patch.title || "").trim();
-			if (patch.url != null) {
-				const href = normalizeBookmarkHref(patch.url);
-				if (href) body.url = href;
-			}
-			try {
-				const node = await callChrome(api, "update", key, body);
-				return node ? nodeToEntry(node) : null;
-			} catch {
-				return null;
-			}
-		},
-		async create(parentId, spec) {
-			if (typeof api.create !== "function") return null;
-			const title = String(spec.title || "").trim();
-			if (!title) return null;
-			const body = {
-				parentId: String(parentId || "0"),
-				title
-			};
-			if (spec.url != null) {
-				const href = normalizeBookmarkHref(spec.url);
-				if (!href) return null;
-				body.url = href;
-			}
-			const attempt = async (pid) => {
-				const node = await callChrome(api, "create", {
-					...body,
-					parentId: pid
-				});
-				return node ? nodeToEntry(node) : null;
-			};
-			try {
-				return await attempt(body.parentId);
-			} catch {
-				if (body.parentId === "0") try {
-					return await attempt("1");
-				} catch {
-					return null;
+		}
+		setupEventHandlers(rawElement) {
+			if (!this.element) return;
+			const toolbar = this.element.querySelector("[data-viewer-chrome]") || this.element.querySelector("[data-viewer-toolbar]");
+			const pathForm = this.element.querySelector("[data-viewer-path-form]");
+			const content = this.element.querySelector("[data-viewer-content]");
+			const shell = this.element.classList.contains("cw-view-viewer-shell") ? this.element : null;
+			const renderTarget = this.queryViewerSlotted("[data-render-target]");
+			let showRaw = false;
+			toolbar?.addEventListener("click", (e) => {
+				const button = e.target.closest("[data-action]");
+				if (!button) return;
+				switch (button.dataset.action) {
+					case "go-back":
+						this.goPathHistoryBack();
+						break;
+					case "refresh-path":
+						this.refreshPathFromBar();
+						break;
+					case "go-path":
+						this.goPathFromBar();
+						break;
+					case "open":
+						this.handleOpen();
+						break;
+					case "bind-assets":
+						this.handleBindAssets();
+						break;
+					case "paste":
+						this.handlePasteFromToolbar();
+						break;
+					case "copy":
+						this.handleCopy();
+						break;
+					case "toggle-raw":
+						showRaw = !showRaw;
+						if (renderTarget) renderTarget.hidden = showRaw;
+						if (rawElement) rawElement.hidden = !showRaw;
+						this.syncViewerRawMode(showRaw);
+						break;
+					case "copy-rendered":
+						if (renderTarget) this.handleCopyRendered(renderTarget);
+						break;
+					case "download":
+						this.handleDownload();
+						break;
+					case "export-docx":
+						this.handleExportDocx();
+						break;
+					case "print":
+						if (renderTarget) this.handlePrint(renderTarget);
+						break;
+					case "open-style-settings":
+						this.handleOpenStyleSettings();
+						break;
+					case "toggle-outline":
+						this.setOutlineVisible(!this.outlineVisible);
+						break;
+					case "attach":
+						this.attachCurrentContentToWorkcenter();
+						break;
 				}
-				return null;
-			}
-		}
-	};
-}
-function resolveBookmarksMenuApi() {
-	if (registeredBookmarksApi) return registeredBookmarksApi;
-	return createChromeBookmarksMenuApi();
-}
-var DESKTOP_FAVICON_SIZE = 256;
-/** Bump `_favicon` / S2 query size so desktop tiles are not upscaled from 16–32px assets. */
-function bumpBookmarkIconUrlSize(raw, size = DESKTOP_FAVICON_SIZE) {
-	const url = String(raw || "").trim();
-	if (!url) return "";
-	try {
-		const parsed = new URL(url, globalThis.location?.href);
-		if (parsed.searchParams.has("pageUrl")) {
-			parsed.searchParams.set("size", String(size));
-			return parsed.toString();
-		}
-		if (parsed.hostname.endsWith("google.com") && parsed.pathname.includes("favicon")) {
-			parsed.searchParams.set("sz", String(size));
-			return parsed.toString();
-		}
-	} catch {}
-	return url;
-}
-var unwrapMetaField = (raw) => {
-	if (raw && typeof raw === "object" && "value" in raw) return String(raw.value ?? "").trim();
-	return String(raw ?? "").trim();
-};
-function isSpeedDialBookmarkItem(input) {
-	const entityType = unwrapMetaField(input.entityType).toLowerCase();
-	const bookmarkId = unwrapMetaField(input.bookmarkId);
-	return entityType === "bookmark" || Boolean(bookmarkId);
-}
-/** Resolve bookmark bitmap URL for Speed Dial tiles (always prefer largest available). */
-function resolveSpeedDialBookmarkIconUrl(input) {
-	if (!isSpeedDialBookmarkItem(input)) return "";
-	const stored = unwrapMetaField(input.iconUrl);
-	const href = unwrapMetaField(input.href);
-	if (href && /^https?:\/\//i.test(href)) {
-		const fresh = resolveBookmarkDesktopIconUrl({
-			id: "",
-			title: "",
-			url: href
-		}, resolveBookmarksMenuApi());
-		if (fresh) return fresh;
-	}
-	if (stored) return bumpBookmarkIconUrlSize(stored, DESKTOP_FAVICON_SIZE);
-	if (href && /^https?:\/\//i.test(href)) return faviconForHref(href, DESKTOP_FAVICON_SIZE);
-	return "";
-}
-/** Best favicon URL for Start / desktop — Google S2 first, then Chrome `_favicon`. */
-function resolveBookmarkDesktopIconUrl(entry, api) {
-	const href = String(entry.url || "").trim();
-	if (!href) return "";
-	return faviconForHref(href, DESKTOP_FAVICON_SIZE) || faviconForHref(href, 128) || faviconForHref(href, 64) || api?.resolveIconUrl?.(href, DESKTOP_FAVICON_SIZE) || api?.resolveIconUrl?.(href, 128) || "";
-}
-//#endregion
-//#region ../../modules/views/home-view/src/ts/app-launch.ts
-var STORAGE_KEY = "cwsp-app-launch-spec-v1";
-var cache = null;
-var launchKey = (packageName) => `app:${String(packageName || "").trim()}`;
-function readAll() {
-	if (cache) return cache;
-	try {
-		const raw = localStorage.getItem(STORAGE_KEY);
-		if (!raw) {
-			cache = {};
-			return cache;
-		}
-		const parsed = JSON.parse(raw);
-		cache = parsed && typeof parsed === "object" ? parsed : {};
-	} catch {
-		cache = {};
-	}
-	return cache;
-}
-var sanitizeDataUri = (raw) => {
-	const data = String(raw || "").trim();
-	if (!data) return "";
-	if (/^javascript:/i.test(data)) return "";
-	return data;
-};
-function normalizeLauncherLaunchSpec(raw) {
-	const src = raw && typeof raw === "object" ? raw : {};
-	const extrasIn = src.extras && typeof src.extras === "object" ? src.extras : {};
-	const extras = {};
-	for (const [k, v] of Object.entries(extrasIn)) {
-		const key = String(k || "").trim();
-		if (!key) continue;
-		if (typeof v === "boolean" || typeof v === "number" || typeof v === "string") extras[key] = v;
-	}
-	const flags = Array.isArray(src.flags) ? src.flags.map((f) => String(f || "").trim().toUpperCase()).filter(Boolean) : [];
-	const categories = Array.isArray(src.categories) ? src.categories.map((c) => String(c || "").trim()).filter(Boolean) : [];
-	return {
-		action: String(src.action || "").trim(),
-		data: sanitizeDataUri(String(src.data || "")),
-		mimeType: String(src.mimeType || "").trim(),
-		extras,
-		flags,
-		categories,
-		componentName: String(src.componentName || "").trim()
-	};
-}
-function isLauncherLaunchSpecEmpty(spec) {
-	if (!spec) return true;
-	return !spec.action && !spec.data && !spec.mimeType && !spec.componentName && (!spec.flags || spec.flags.length === 0) && (!spec.categories || spec.categories.length === 0) && (!spec.extras || Object.keys(spec.extras).length === 0);
-}
-function getAppLaunchSpec(packageName) {
-	const key = launchKey(packageName);
-	if (!key || key === "app:") return {};
-	return normalizeLauncherLaunchSpec(readAll()[key]);
-}
-/** Stock MAIN/LAUNCHER when nothing is stored. */
-function resolveAppLaunchSpec(packageName) {
-	return getAppLaunchSpec(packageName);
-}
-//#endregion
-//#region ../../modules/views/home-view/src/ts/view-opener.ts
-var VIEW_OPENER_BOOT = "__CWSP_SPEED_DIAL_VIEW_OPENER_V1__";
-var OVERLAY_MOUNT_BOOT = "__CWSP_HOME_OVERLAY_MOUNT_V1__";
-var bootSlot = (key) => {
-	const g = globalThis;
-	return {
-		get: () => key in g ? g[key] : null,
-		set: (v) => {
-			g[key] = v;
-		}
-	};
-};
-var openerSlot = bootSlot(VIEW_OPENER_BOOT);
-var overlaySlot = bootSlot(OVERLAY_MOUNT_BOOT);
-/** Register how "open-view" shortcuts reach your shell (tabs, router, etc.). */
-function setSpeedDialViewOpener(opener) {
-	openerSlot.set(typeof opener === "function" ? opener : null);
-}
-function getSpeedDialViewOpener() {
-	const fn = openerSlot.get();
-	return typeof fn === "function" ? fn : null;
-}
-function setHomeOverlayMountResolver(fn) {
-	overlaySlot.set(typeof fn === "function" ? fn : null);
-}
-//#endregion
-//#region ../../modules/views/home-view/src/ts/android-icon-ref.ts
-var VARIANT_ALIASES = {
-	default: "default",
-	full: "default",
-	colored: "default",
-	monochrome: "monochrome",
-	mono: "monochrome",
-	material: "monochrome",
-	"material-you": "monochrome",
-	themed: "monochrome",
-	foreground: "foreground",
-	fg: "foreground",
-	"adaptive-fg": "foreground"
-};
-function normalizeAndroidIconVariant(raw) {
-	return VARIANT_ALIASES[String(raw || "default").trim().toLowerCase()] || "default";
-}
-/** Durable resource: `android-icon:com.pkg`, `?v=`, `?pack=`, `?drawable=`. */
-function isAndroidIconRef(raw) {
-	return String(raw || "").trim().toLowerCase().startsWith("android-icon:");
-}
-function formatAndroidIconRef(packageName, variant = "default", pack = "", drawable = "") {
-	const pkg = String(packageName || "").trim();
-	if (!pkg) return "";
-	const v = normalizeAndroidIconVariant(variant);
-	const packPkg = String(pack || "").trim();
-	const draw = String(drawable || "").trim();
-	const params = new URLSearchParams();
-	if (v !== "default") params.set("v", v);
-	if (packPkg) params.set("pack", packPkg);
-	if (draw) params.set("drawable", draw);
-	const q = params.toString();
-	return q ? `android-icon:${pkg}?${q}` : `android-icon:${pkg}`;
-}
-function parseAndroidIconRef(raw) {
-	const input = String(raw || "").trim();
-	if (!isAndroidIconRef(input)) return null;
-	const body = input.slice(13).replace(/^\/\//, "");
-	if (!body) return null;
-	const finish = (pkg, params) => {
-		if (!pkg) return null;
-		const parsed = {
-			packageName: pkg,
-			variant: normalizeAndroidIconVariant(params.get("v") || "default")
-		};
-		const pack = String(params.get("pack") || "").trim();
-		const drawable = String(params.get("drawable") || "").trim();
-		if (pack) parsed.pack = pack;
-		if (drawable) parsed.drawable = drawable;
-		return parsed;
-	};
-	try {
-		const url = new URL(body.includes("://") ? body : `android-icon://${body}`);
-		return finish(String(url.hostname || url.pathname.replace(/^\//, "") || "").trim(), url.searchParams);
-	} catch {
-		const [pkgPart, query = ""] = body.split("?");
-		return finish(String(pkgPart || "").trim(), new URLSearchParams(query));
-	}
-}
-/** Cache key so default / mono / fg / pack / drawable / pixel size don't collide. */
-function androidIconCacheKey(packageName, variant = "default", pack = "", drawable = "", sizePx = 0) {
-	const pkg = String(packageName || "").trim();
-	if (!pkg) return "";
-	const v = normalizeAndroidIconVariant(variant);
-	const packPkg = String(pack || "").trim();
-	const draw = String(drawable || "").trim();
-	let key = v === "default" ? pkg : `${pkg}#${v}`;
-	if (packPkg) key = `${key}#pack:${packPkg}`;
-	if (draw) key = `${key}#d:${draw}`;
-	const sz = Math.round(Number(sizePx) || 0);
-	if (sz > 0) key = `${key}#s${sz}`;
-	return key;
-}
-//#endregion
-//#region ../../modules/views/home-view/src/ts/action-registry.ts
-var registeredLauncherBridge = null;
-/** In-memory cache: Android package → blob: object URL (web-native image). */
-var launcherIconObjectUrlCache = /* @__PURE__ */ new Map();
-var launcherIconInflight = /* @__PURE__ */ new Map();
-async function dataUrlToObjectUrl(dataUrl) {
-	const blob = await (await fetch(dataUrl)).blob();
-	const type = blob.type && blob.type.startsWith("image/") ? blob.type : "image/png";
-	const normalized = blob.type === type ? blob : new Blob([await blob.arrayBuffer()], { type });
-	return URL.createObjectURL(normalized);
-}
-/** Cached blob URL for an Android launcher icon, if already fetched this session. */
-/**
-* Parse `shortcut:pkg::id` (current) or `shortcut:pkg/id` (COMPAT).
-* WHY: Material Files ids are file paths (`/storage/...`); first-slash split is fragile.
-*/
-function parseShortcutCacheKey(cacheKey) {
-	const raw = String(cacheKey || "").trim();
-	if (!raw.startsWith("shortcut:")) return null;
-	const rest = raw.slice(9);
-	const sep = rest.indexOf("::");
-	if (sep > 0) {
-		const packageName = rest.slice(0, sep).trim();
-		const shortcutId = rest.slice(sep + 2).trim();
-		return packageName && shortcutId ? {
-			packageName,
-			shortcutId
-		} : null;
-	}
-	const slash = rest.indexOf("/");
-	if (slash > 0) {
-		const packageName = rest.slice(0, slash).trim();
-		const shortcutId = rest.slice(slash + 1).trim();
-		return packageName && shortcutId ? {
-			packageName,
-			shortcutId
-		} : null;
-	}
-	return null;
-}
-function getCachedLauncherIconObjectUrl(cacheKey, size = 96, variant = "default", pack = "", drawable = "") {
-	const pkg = String(cacheKey || "").trim();
-	if (!pkg) return "";
-	const shortcut = parseShortcutCacheKey(pkg);
-	if (shortcut) return getCachedShortcutIconObjectUrl(shortcut.packageName, shortcut.shortcutId, size);
-	return launcherIconObjectUrlCache.get(androidIconCacheKey(pkg, variant, pack, drawable, size)) || "";
-}
-/** Publisher package + pinned ShortcutInfo id for file / app shortcuts. */
-function getLauncherShortcutRef(item) {
-	const meta = getSpeedDialMeta(item.id);
-	const shortcutId = String(meta?.shortcutId || "").trim();
-	const packageName = String(meta?.packageName || meta?.publisherPackage || "").trim();
-	if (!packageName || !shortcutId) return null;
-	return {
-		packageName,
-		shortcutId
-	};
-}
-function getLauncherAppTileCacheKey(item) {
-	const shortcut = getLauncherShortcutRef(item);
-	if (shortcut) return `shortcut:${shortcut.packageName}::${shortcut.shortcutId}`;
-	const meta = getSpeedDialMeta(item.id);
-	const action = String(meta?.action || item.action || "").trim();
-	if (action === "launch-shortcut" || meta?.entityType === "android-shortcut") return "";
-	if (action !== "launch-app" && meta?.entityType !== "android-app") return "";
-	return String(meta?.iconCacheKey || meta?.packageName || "").trim();
-}
-function isLauncherAppSpeedDialItem(item) {
-	const meta = getSpeedDialMeta(item.id);
-	if (String(meta?.action || item.action || "").trim() === "launch-shortcut" || meta?.entityType === "android-shortcut") return true;
-	return getLauncherAppTileCacheKey(item).length > 0;
-}
-var shortcutIconObjectUrlCache = /* @__PURE__ */ new Map();
-var shortcutIconInflight = /* @__PURE__ */ new Map();
-/** Fetch pinned-shortcut icon (document thumbnail / type icon), not the app icon. */
-async function ensureShortcutIconObjectUrl(pkg, shortcutId, size = 96) {
-	const packageName = String(pkg || "").trim();
-	const id = String(shortcutId || "").trim();
-	if (!packageName || !id) return "";
-	const sz = Math.max(16, Math.min(512, Math.round(Number(size) || 96)));
-	const key = `shortcut:${packageName}/${id}@${sz}`;
-	const cached = shortcutIconObjectUrlCache.get(key);
-	if (cached) return cached;
-	let inflight = shortcutIconInflight.get(key);
-	if (!inflight) {
-		inflight = (async () => {
-			const bridge = await resolveLauncherBridgeForSpeedDial();
-			if (!bridge?.launcherShortcutIcon) return "";
-			let dataUrl = "";
-			try {
-				dataUrl = String(await bridge.launcherShortcutIcon(packageName, id, sz) || "").trim();
-			} catch {
-				return "";
-			}
-			if (!dataUrl) return "";
-			try {
-				const objectUrl = await dataUrlToObjectUrl(dataUrl);
-				shortcutIconObjectUrlCache.set(key, objectUrl);
-				return objectUrl;
-			} catch {
-				return dataUrl;
-			}
-		})().finally(() => {
-			shortcutIconInflight.delete(key);
-		});
-		shortcutIconInflight.set(key, inflight);
-	}
-	return inflight;
-}
-function getCachedShortcutIconObjectUrl(pkg, shortcutId, size = 96) {
-	const packageName = String(pkg || "").trim();
-	const id = String(shortcutId || "").trim();
-	if (!packageName || !id) return "";
-	const sz = Math.max(16, Math.min(512, Math.round(Number(size) || 96)));
-	return shortcutIconObjectUrlCache.get(`shortcut:${packageName}/${id}@${sz}`) || "";
-}
-/** Fetch native icon once, convert data: URL → blob: object URL for WebView. */
-async function ensureLauncherIconObjectUrl(cacheKey, size = 96, variant = "default", pack = "", drawable = "") {
-	const pkg = String(cacheKey || "").trim();
-	if (!pkg) return "";
-	const shortcut = parseShortcutCacheKey(pkg);
-	if (shortcut) return ensureShortcutIconObjectUrl(shortcut.packageName, shortcut.shortcutId, size);
-	const v = normalizeAndroidIconVariant(variant);
-	const packPkg = String(pack || "").trim();
-	const draw = String(drawable || "").trim();
-	const sz = Math.max(16, Math.min(512, Math.round(Number(size) || 96)));
-	const key = androidIconCacheKey(pkg, v, packPkg, draw, sz);
-	const cached = launcherIconObjectUrlCache.get(key);
-	if (cached) return cached;
-	let inflight = launcherIconInflight.get(key);
-	if (!inflight) {
-		inflight = (async () => {
-			const bridge = await resolveLauncherBridgeForSpeedDial();
-			if (!bridge?.launcherIcon) return "";
-			let dataUrl = "";
-			try {
-				dataUrl = await bridge.launcherIcon(pkg, sz, v, packPkg || void 0, draw || void 0);
-			} catch {
-				return "";
-			}
-			if (!dataUrl) return "";
-			try {
-				const objectUrl = await dataUrlToObjectUrl(dataUrl);
-				launcherIconObjectUrlCache.set(key, objectUrl);
-				return objectUrl;
-			} catch {
-				return "";
-			}
-		})();
-		launcherIconInflight.set(key, inflight);
-	}
-	try {
-		return await inflight;
-	} finally {
-		launcherIconInflight.delete(key);
-	}
-}
-/** Resolve durable `android-icon:` ref (or return plain URL as-is). */
-async function resolveIconResourceUrl(raw, size = 96) {
-	const u = String(raw || "").trim();
-	if (!u || u.startsWith("blob:")) return "";
-	const parsed = parseAndroidIconRef(u);
-	if (parsed) return ensureLauncherIconObjectUrl(parsed.packageName, size, parsed.variant, parsed.pack || "", parsed.drawable || "");
-	return u;
-}
-function getCachedIconResourceObjectUrl(raw, size = 96) {
-	const parsed = parseAndroidIconRef(raw);
-	if (!parsed) return "";
-	return getCachedLauncherIconObjectUrl(parsed.packageName, size, parsed.variant, parsed.pack || "", parsed.drawable || "");
-}
-async function resolveLauncherBridgeForSpeedDial() {
-	if (registeredLauncherBridge) return registeredLauncherBridge;
-	try {
-		return await __vitePreload(() => import("./launcher-bridge.js"), __vite__mapDeps([0,1,2,3,4,5,6,7]), import.meta.url);
-	} catch {
-		return null;
-	}
-}
-async function getLauncherBridgeForSpeedDial() {
-	return resolveLauncherBridgeForSpeedDial();
-}
-/** Launch a sibling ecosystem APK by SKU (launcher HOME only). */
-async function launchEcosystemSku(sku) {
-	const { androidPackageForSku, isCwspSku } = await __vitePreload(async () => {
-		const { androidPackageForSku, isCwspSku } = await import("./ecosystem-skus.js");
-		return {
-			androidPackageForSku,
-			isCwspSku
-		};
-	}, [], import.meta.url);
-	if (!isCwspSku(sku)) return false;
-	const pkg = androidPackageForSku(sku);
-	if (!pkg) return false;
-	const bridge = await resolveLauncherBridgeForSpeedDial();
-	if (!bridge?.launcherLaunch) return false;
-	return bridge.launcherLaunch(pkg);
-}
-/** Native launcher APK only — web `u2re.space` opens explorer/document/process in-process. */
-async function tryLaunchSiblingView(view) {
-	try {
-		const { isCwspNativeHost, readCwspSku, siblingSkuForView } = await __vitePreload(async () => {
-			const { isCwspNativeHost, readCwspSku, siblingSkuForView } = await import("./ecosystem-skus.js");
-			return {
-				isCwspNativeHost,
-				readCwspSku,
-				siblingSkuForView
+			});
+			pathForm?.addEventListener("submit", (e) => {
+				e.preventDefault();
+				this.goPathFromBar();
+			});
+			const pathBar = this.element.querySelector("[data-viewer-pathbar]") || this.queryViewerSlotted("[data-viewer-pathbar]");
+			const acceptPathBarFile = (e) => {
+				const types = e.dataTransfer?.types;
+				const listed = types ? Array.from(types) : [];
+				if (listed.length && !listed.some((type) => type.toLowerCase() === "files")) return false;
+				e.preventDefault();
+				e.stopPropagation();
+				if (e.dataTransfer) e.dataTransfer.dropEffect = "copy";
+				return true;
 			};
-		}, [], import.meta.url);
-		if (!isCwspNativeHost()) return false;
-		const sku = readCwspSku();
-		if (sku !== "launcher" && sku !== "explorer") return false;
-		const sibling = siblingSkuForView(view);
-		if (!sibling) return false;
-		return launchEcosystemSku(sibling);
-	} catch {
-		return false;
-	}
-}
-var viewIdForLinkTarget = (target) => {
-	if (target === "document") return "viewer";
-	if (target === "transfer") return "network";
-	return target;
-};
-/** Launch CWSP-document / process / transfer / explorer APK when the tile asks for that SKU. */
-var tryLaunchLinkTargetSku = async (target) => {
-	if (target === "viewer") return false;
-	if (target === "document") return tryLaunchSiblingView("viewer");
-	if (target === "transfer") return tryLaunchSiblingView("network");
-	if (target === "workcenter" || target === "explorer") return tryLaunchSiblingView(target);
-	return false;
-};
-/** Explorer virtual path → CwsStorageHost `/sdcard/` `/saf/`. */
-var nativeStorageVirtualPath = (raw) => {
-	const s = String(raw || "").trim();
-	if (!s) return "";
-	if (/^\/(?:sdcard|saf)(?:\/|$)/i.test(s)) return s;
-	if (/^(?:sdcard|saf)(?:\/|$)/i.test(s)) return `/${s}`;
-	let stripped = s.replace(/^file:\/\/(?:localhost)?/i, "");
-	try {
-		stripped = decodeURIComponent(stripped);
-	} catch {}
-	if (/^\/(?:sdcard|saf)(?:\/|$)/i.test(stripped)) return stripped;
-	const mapped = stripped.replace(/^(?:\/storage\/emulated\/0|\/mnt\/sdcard|storage\/emulated\/0|mnt\/sdcard)(?=\/|$)/i, "/sdcard");
-	return /^\/sdcard(?:\/|$)/i.test(mapped) ? mapped : "";
-};
-var collectItemNativePath = (meta, item, extra = "") => nativeStorageVirtualPath(String(meta?.path || item?.path || extra || meta?.href || item?.href || ""));
-var SKU_ANDROID_PACKAGE = {
-	document: "space.u2re.document",
-	viewer: "space.u2re.document",
-	workcenter: "space.u2re.process",
-	transfer: "space.u2re.transfer",
-	explorer: "space.u2re.explorer"
-};
-var packageForLinkTarget = async (target) => {
-	try {
-		const { androidPackageForSku } = await __vitePreload(async () => {
-			const { androidPackageForSku } = await import("../shells/boot-history-base.js").then((n) => n.o);
-			return { androidPackageForSku };
-		}, __vite__mapDeps([3,2]), import.meta.url);
-		if (target === "document" || target === "viewer") return androidPackageForSku("document") || SKU_ANDROID_PACKAGE.document;
-		if (target === "workcenter") return androidPackageForSku("process") || SKU_ANDROID_PACKAGE.workcenter;
-		if (target === "transfer") return androidPackageForSku("transfer") || SKU_ANDROID_PACKAGE.transfer;
-		if (target === "explorer") return androidPackageForSku("explorer") || SKU_ANDROID_PACKAGE.explorer;
-	} catch {}
-	return SKU_ANDROID_PACKAGE[target] || "";
-};
-/**
-* WHY: `/sdcard/note.md` has no scheme — Cap `openUri` rejects it. FileProvider + SEND/VIEW
-* through `storage:open` is the one hop that reaches Document / Process / the system sheet.
-*/
-var openNativeStorageByLinkTarget = async (path, linkTarget, mimeType) => {
-	const virtual = nativeStorageVirtualPath(path);
-	if (!virtual) return false;
-	try {
-		const { openNativeStorageFile } = await __vitePreload(async () => {
-			const { openNativeStorageFile } = await import("../com/app.js").then((n) => n.ar);
-			return { openNativeStorageFile };
-		}, __vite__mapDeps([4,2]), import.meta.url);
-		const declared = String(mimeType || "").trim();
-		const systemMime = !declared || /^text\/(?:x-)?markdown$/i.test(declared) || /^application\/json$/i.test(declared) || declared.startsWith("text/") && declared !== "text/html" ? "text/plain" : declared;
-		const mime = String(mimeType || "").trim();
-		if (linkTarget === "external-app" || linkTarget === "new-tab" || linkTarget === "native-window") return openNativeStorageFile(virtual, {
-			chooser: true,
-			mimeType: systemMime,
-			title: "Open with"
-		});
-		if (linkTarget === "inline") {
-			if (/\.(md|markdown|txt|pdf|png|jpe?g|gif|webp|svg|html?)$/i.test(virtual)) {
-				const pkg = await packageForLinkTarget("document");
-				if (pkg && await openNativeStorageFile(virtual, {
-					packageName: pkg,
-					chooser: false,
-					mimeType: mime,
-					title: "Open"
-				})) return true;
-			}
-			return openNativeStorageFile(virtual, {
-				chooser: true,
-				mimeType: systemMime,
-				title: "Open with"
+			pathBar?.addEventListener("dragover", (e) => {
+				if (acceptPathBarFile(e)) (shell ?? content)?.classList.add("dragover");
 			});
-		}
-		const pkg = await packageForLinkTarget(linkTarget);
-		if (pkg && await openNativeStorageFile(virtual, {
-			packageName: pkg,
-			chooser: false,
-			mimeType: mime,
-			title: "Open"
-		})) return true;
-		return openNativeStorageFile(virtual, {
-			chooser: true,
-			mimeType: systemMime,
-			title: "Open with"
-		});
-	} catch {
-		return false;
-	}
-};
-/** Apply fetched Android icon to a launcher `ui-icon` via resource + presentation mode. */
-function applyLauncherIconToUiIcon(host, objectUrl, mode = "colored") {
-	const url = String(objectUrl || "").trim();
-	if (!url) return;
-	host.setAttribute("icon-padding", "0");
-	host.style.setProperty("--icon-padding", "0px");
-	host.style.setProperty("--icon-size", "100%");
-	host.toggleAttribute("data-launcher-icon", true);
-	const apply = () => {
-		const icon = host;
-		if (typeof icon.setResourceIcon !== "function") return false;
-		icon.setResourceIcon(url, mode === "auto" ? "auto" : mode);
-		if (mode !== "auto" && typeof icon.setBitmapPresentationMode === "function") icon.setBitmapPresentationMode(mode, true);
-		host.removeAttribute("data-icon-pending");
-		host.toggleAttribute("data-launcher-icon-ready", true);
-		return true;
-	};
-	if (apply()) return;
-	customElements.whenDefined("ui-icon").then(() => {
-		if (!host.isConnected) return;
-		apply();
-	});
-}
-/** Create a launcher `ui-icon` host (`data-launcher-icon`). */
-function createLauncherUiIconElement() {
-	const host = document.createElement("ui-icon");
-	host.className = "ui-ws-item-icon-native";
-	host.dataset.launcherIcon = "1";
-	host.setAttribute("icon-source", "resource");
-	host.setAttribute("icon-padding", "0");
-	host.style.setProperty("--icon-padding", "0px");
-	host.style.setProperty("--icon-size", "100%");
-	host.setAttribute("aria-hidden", "true");
-	host.toggleAttribute("data-icon-pending", true);
-	return host;
-}
-/** Load Android app / pinned-shortcut icon into a SpeedDial tile. */
-async function hydrateLauncherAppTileIcon(el, item) {
-	const shortcut = getLauncherShortcutRef(item);
-	const cacheKey = getLauncherAppTileCacheKey(item);
-	if (!cacheKey) return;
-	const readDisplay = () => String(item.iconDisplay || el.getAttribute("data-icon-display") || "").trim().toLowerCase();
-	const isGlyph = (d) => d === "glyph" || d === "phosphor" || d === "name";
-	if (!shortcut && isGlyph(readDisplay())) return;
-	const meta = getSpeedDialMeta(item.id);
-	const fetchSize = tileIconFetchSize(meta?.iconScale);
-	const explicitUrl = (() => {
-		const u = String(item.iconUrl || "").trim();
-		if (!u || u.startsWith("blob:")) return "";
-		return u;
-	})();
-	const paintOnUiIcon = (url, mode) => {
-		el.querySelectorAll("img.ui-ws-item-icon-img, img[data-launcher-icon], .ui-ws-item-icon-mask").forEach((n) => n.remove());
-		let icon = el.querySelector("ui-icon");
-		if (!icon) {
-			icon = createLauncherUiIconElement();
-			el.prepend(icon);
-		}
-		icon.setAttribute("resource", url);
-		applyLauncherIconToUiIcon(icon, url, mode);
-		if (!isGlyph(readDisplay())) el.setAttribute("data-icon-display", mode);
-	};
-	if (explicitUrl) {
-		const display = readDisplay();
-		const applyResolved = (url) => {
-			if (!url || !shortcut && isGlyph(readDisplay())) return;
-			if (display === "masked" || display === "masked-inverse") {
-				paintOnUiIcon(url, display);
-				return;
-			}
-			paintOnUiIcon(url, "colored");
-		};
-		if (isAndroidIconRef(explicitUrl)) {
-			const cached = getCachedIconResourceObjectUrl(explicitUrl, fetchSize);
-			if (cached) applyResolved(cached);
-			resolveIconResourceUrl(explicitUrl, fetchSize).then(applyResolved);
-			return;
-		}
-		applyResolved(explicitUrl);
-		return;
-	}
-	const objectUrl = shortcut ? await ensureShortcutIconObjectUrl(shortcut.packageName, shortcut.shortcutId, fetchSize) : await ensureLauncherIconObjectUrl(cacheKey, fetchSize);
-	if (!objectUrl || !el.isConnected) {
-		if (shortcut) el.querySelectorAll("ui-icon[data-icon-pending]").forEach((n) => n.removeAttribute("data-icon-pending"));
-		return;
-	}
-	const display = readDisplay();
-	if (!shortcut && isGlyph(display)) return;
-	if (String(item.iconUrl || "").trim() && !String(item.iconUrl).startsWith("blob:")) return;
-	if (display === "masked" || display === "masked-inverse") {
-		paintOnUiIcon(objectUrl, display);
-		return;
-	}
-	paintOnUiIcon(objectUrl, "colored");
-}
-var MARKDOWN_VIEW_MANAGED_WINDOW_KEY = "viewer";
-var MARKDOWN_VIEW_ALIASES = /* @__PURE__ */ new Set([
-	"markdown",
-	"markdown-view",
-	"markdown-viewer",
-	"reader",
-	"env-viewer"
-]);
-/**
-* Strip legacy desktop typos, normalize markdown family → {@link MARKDOWN_VIEW_MANAGED_WINDOW_KEY};
-* leave all other ids unchanged (`explorer`, `settings`, …).
-*/
-var normalizeMarkdownViewWindowId = (raw) => {
-	let id = String(raw ?? "").trim().toLowerCase();
-	id = id.replace(/^#/, "");
-	const todo = /^todo:\s*(.*)$/i.exec(id);
-	if (todo) id = String(todo[1] ?? "").trim().toLowerCase();
-	id = id.replace(/\s+/g, "");
-	if (!id) return "";
-	if (id === MARKDOWN_VIEW_MANAGED_WINDOW_KEY || MARKDOWN_VIEW_ALIASES.has(id)) return MARKDOWN_VIEW_MANAGED_WINDOW_KEY;
-	return id;
-};
-/**
-* Resolve speed-dial / shortcut `meta.view` and desktop `viewId` strings to a canonical `ViewId`.
-* WHY: Persisted rows may store the human label ("Markdown", "Plan") or legacy ids; {@link normalizeMarkdownViewWindowId}
-* only covers the markdown family.
-*/
-function resolveOpenViewTarget(raw) {
-	const t = String(raw ?? "").trim();
-	if (!t) return "";
-	const tLower = t.toLowerCase().replace(/^#/, "");
-	const byShortcut = NAVIGATION_SHORTCUTS.find((s) => String(s.view).toLowerCase() === tLower || String(s.label).trim().toLowerCase() === tLower);
-	if (byShortcut) return String(byShortcut.view);
-	return normalizeMarkdownViewWindowId(t) || t.replace(/^#/, "").trim();
-}
-var actionRegistry = /* @__PURE__ */ new Map();
-var labelsPerAction = /* @__PURE__ */ new Map();
-var iconsPerAction = /* @__PURE__ */ new Map();
-var builtinsInstalled = false;
-/**
-* Prefer content/file/http data over `intent:` that embeds the publisher package.
-* Also unwrap `intent:content://…#Intent;…` / `intent://…#Intent;scheme=https;…`.
-*/
-var preferDataUriOverIntent = (href, meta) => {
-	const candidates = [
-		String(href || "").trim(),
-		String(meta?.href || "").trim(),
-		String(meta?.intentUri || "").trim()
-	].filter(Boolean);
-	for (const c of candidates) if (/^(content:|file:|https?:)/i.test(c)) return c;
-	const intentish = candidates.find((c) => /^intent:/i.test(c)) || "";
-	if (!intentish) return String(href || "").trim();
-	const direct = intentish.match(/^intent:(content:[^#]+)/i) || intentish.match(/^intent:(file:[^#]+)/i) || intentish.match(/^intent:(https?:[^#]+)/i);
-	if (direct?.[1]) return direct[1];
-	const dataParam = intentish.match(/;data=((?:content|file|https?):[^;]+)/i);
-	if (dataParam?.[1]) try {
-		return decodeURIComponent(dataParam[1]);
-	} catch {
-		return dataParam[1];
-	}
-	const schemeMatch = intentish.match(/;scheme=([a-zA-Z][a-zA-Z0-9+.-]*)/i);
-	const pathMatch = intentish.match(/^intent:([^#]*)#/i);
-	if (schemeMatch?.[1] && pathMatch) {
-		const sch = schemeMatch[1].toLowerCase();
-		if (sch === "http" || sch === "https" || sch === "content" || sch === "file") {
-			let rest = String(pathMatch[1] || "");
-			if (rest.startsWith("//")) return `${sch}:${rest}`;
-			if (rest.startsWith("/")) return `${sch}:/${rest}`;
-			if (rest) return `${sch}://${rest}`;
-		}
-	}
-	return String(href || "").trim();
-};
-var guessMimeFromHrefOrLabel = (href, label) => {
-	const name = `${label} ${href}`.toLowerCase();
-	if (/\.txt(\b|$|[?#])/i.test(name) || /\.log(\b|$|[?#])/i.test(name) || /\.csv(\b|$|[?#])/i.test(name)) return "text/plain";
-	if (/\.md(\b|$|[?#])/i.test(name) || /\.markdown(\b|$|[?#])/i.test(name)) return "text/markdown";
-	if (/\.pdf(\b|$|[?#])/i.test(name)) return "application/pdf";
-	if (/\.png(\b|$|[?#])/i.test(name)) return "image/png";
-	if (/\.jpe?g(\b|$|[?#])/i.test(name)) return "image/jpeg";
-	if (/\.gif(\b|$|[?#])/i.test(name)) return "image/gif";
-	if (/\.webp(\b|$|[?#])/i.test(name)) return "image/webp";
-	if (/\.mp4(\b|$|[?#])/i.test(name)) return "video/mp4";
-	if (/\.mp3(\b|$|[?#])/i.test(name)) return "audio/mpeg";
-	if (/\.html?(\b|$|[?#])/i.test(name)) return "text/html";
-	if (/\.json(\b|$|[?#])/i.test(name)) return "application/json";
-	if (/\.zip(\b|$|[?#])/i.test(name)) return "application/zip";
-	return "";
-};
-/**
-* Turn bare view tokens (`settings`, `#workcenter`, `/viewer`) into absolute
-* mono-app URLs (`https://host/settings?shell=environment&native=1&view=settings`).
-* External http(s)/mailto links pass through unchanged.
-*/
-var normalizeSpeedDialOpenHref = (raw) => {
-	const input = String(raw || "").trim();
-	if (!input) return "";
-	if (/^(mailto:|blob:|data:|content:|file:|intent:|package:|android-app:)/i.test(input)) return input;
-	if (/^[a-z][a-z0-9+.-]*:/i.test(input) && !/^https?:/i.test(input)) return input;
-	const asView = (candidate) => {
-		const view = resolveOpenViewTarget(candidate);
-		return view ? buildSpeedDialViewPathHref(view, true, { native: true }) : "";
-	};
-	if (/^https?:\/\//i.test(input)) try {
-		const u = new URL(input);
-		if (typeof location !== "undefined" && u.origin === location.origin) {
-			const mono = asView(u.pathname.replace(/\/+$/, "").split("/").filter(Boolean).pop() || "");
-			if (mono) return mono;
-		}
-		return u.href;
-	} catch {
-		return input;
-	}
-	if (input.startsWith("/")) {
-		const seg = input.replace(/^\//, "").split(/[/?#]/)[0];
-		const mono = asView(seg);
-		if (mono) return mono;
-		try {
-			return new URL(input, location.href).href;
-		} catch {
-			return input;
-		}
-	}
-	const token = input.replace(/^#/, "").split(/[/?#]/)[0].trim();
-	const mono = asView(token);
-	if (mono && !/[.:]/.test(token)) return mono;
-	try {
-		return new URL(input, location.href).href;
-	} catch {
-		return input;
-	}
-};
-var copyTextToClipboard = async (text) => {
-	const t = String(text || "").trim();
-	if (!t.length) throw new Error("empty");
-	if (navigator.clipboard?.writeText) {
-		await navigator.clipboard.writeText(t);
-		return;
-	}
-	const ta = document.createElement("textarea");
-	ta.value = t;
-	ta.style.position = "fixed";
-	ta.style.left = "-9999px";
-	document.body.appendChild(ta);
-	ta.select();
-	document.execCommand("copy");
-	ta.remove();
-};
-var ensureHashNavigation = (view, viewMaker, props) => {
-	if (!view || typeof window === "undefined") return;
-	if (typeof viewMaker === "function") {
-		viewMaker(view, props);
-		return;
-	}
-	const opener = getSpeedDialViewOpener();
-	if (opener) {
-		opener(view, props);
-		return;
-	}
-	const hash = `#${String(view).replace(/^#/, "")}`;
-	if (location.hash !== hash) navigate(hash);
-};
-var installBuiltins = () => {
-	if (builtinsInstalled) return;
-	builtinsInstalled = true;
-	iconsPerAction.set("open-view", "compass");
-	iconsPerAction.set("open-link", "arrow-square-out");
-	iconsPerAction.set("copy-link", "copy");
-	iconsPerAction.set("copy-state-desc", "brackets-curly");
-	labelsPerAction.set("open-view", (d) => `Open ${d?.label || "view"}`);
-	labelsPerAction.set("open-link", (d) => d?.label ? `Open ${d.label}` : "Open link");
-	labelsPerAction.set("copy-link", () => "Copy link");
-	labelsPerAction.set("copy-state-desc", () => "Copy shortcut");
-	actionRegistry.set("open-view", async (context, entityDesc) => {
-		const item = context?.items?.find?.((i) => i?.id === context?.id) || null;
-		const metaMap = context?.meta;
-		const meta = item && metaMap?.get ? metaMap.get(item.id) : null;
-		const linkTarget = context?.openLinkTarget != null ? normalizeOpenLinkTarget(context.openLinkTarget) : meta?.openLinkTarget != null && String(meta.openLinkTarget).trim() ? normalizeOpenLinkTarget(meta.openLinkTarget) : "inline";
-		const nativePath = collectItemNativePath(meta, item || entityDesc);
-		if (nativePath && !nativePath.endsWith("/")) {
-			if (await openNativeStorageByLinkTarget(nativePath, linkTarget, guessMimeFromHrefOrLabel(nativePath, String(meta?.description || item?.label || entityDesc?.label || "")))) return;
-			showError("Allow all-files access, then open again");
-			return;
-		}
-		const rawTarget = meta?.view || entityDesc?.view || entityDesc?.type || "";
-		const targetView = resolveOpenViewTarget(String(rawTarget || ""));
-		if (!targetView) {
-			showError("No view target");
-			return;
-		}
-		if (!nativePath && await tryLaunchSiblingView(targetView)) return;
-		const viewMaker = context?.viewMaker ?? getSpeedDialViewOpener();
-		if (linkTarget === "viewer" || linkTarget === "document" || linkTarget === "explorer" || linkTarget === "workcenter" || linkTarget === "transfer") {
-			if (await tryLaunchLinkTargetSku(linkTarget)) return;
-			ensureHashNavigation(viewIdForLinkTarget(linkTarget), viewMaker, {});
-			return;
-		}
-		if (linkTarget === "native-window") {
-			const href = buildSpeedDialViewPathHref(targetView, true, { native: true });
-			if (!href) {
-				showError("Link is missing");
-				return;
-			}
-			if (!openInDetachedBrowserWindow(href)) showError("Unable to open native window");
-			return;
-		}
-		if (linkTarget === "new-tab") {
-			const href = buildSpeedDialViewPathHref(targetView, true, { native: false });
-			if (!href) {
-				showError("Link is missing");
-				return;
-			}
-			if (!openInNewBrowserTab(href)) showError("Unable to open new tab");
-			return;
-		}
-		ensureHashNavigation(targetView, viewMaker, {});
-	});
-	actionRegistry.set("open-link", async (context) => {
-		const item = context?.items?.find?.((i) => i?.id === context?.id) || null;
-		const metaMap = context?.meta;
-		const meta = item && metaMap?.get ? metaMap.get(item.id) : null;
-		const raw = meta?.href || item?.href || context?.href || resolveSpeedDialItemHref(item);
-		const nativePath = nativeStorageVirtualPath(String(meta?.path || item?.path || raw || ""));
-		const viewFromMeta = resolveOpenViewTarget(String(meta?.view || ""));
-		const externalHref = isExternalWebHref(raw) ? normalizeExternalWebHref(raw) || normalizeSpeedDialOpenHref(String(raw || "")) : "";
-		const view = externalHref ? "" : resolveOpenViewTarget(parseSpeedDialViewFromHref(String(raw || ""))) || viewFromMeta;
-		const linkTarget = context?.openLinkTarget != null ? normalizeOpenLinkTarget(context.openLinkTarget) : resolveItemOpenLinkTarget(meta);
-		const opener = context?.viewMaker ?? getSpeedDialViewOpener();
-		if (nativePath) {
-			if (await openNativeStorageByLinkTarget(nativePath, linkTarget, guessMimeFromHrefOrLabel(nativePath, String(meta?.description || item?.label || "")))) return;
-			showError("Allow all-files access, then open again");
-			return;
-		}
-		if (linkTarget === "inline") {
-			if (externalHref && typeof opener === "function") try {
-				opener("browser", {
-					url: externalHref,
-					href: externalHref
+			pathBar?.addEventListener("drop", (e) => {
+				if (!acceptPathBarFile(e)) return;
+				(shell ?? content)?.classList.remove("dragover");
+				this.handleFileDrop(e);
+			});
+			const dropZone = shell || content;
+			if (dropZone) {
+				dropZone.addEventListener("mouseenter", () => {
+					this.isPointerInView = true;
 				});
-				return;
-			} catch (e) {
-				console.warn("[speed-dial] inline browser open failed", e);
-			}
-			if (view && typeof opener === "function") try {
-				opener(view, {});
-				return;
-			} catch (e) {
-				console.warn("[speed-dial] inline openView failed; falling back to URL", e);
-			}
-			if (externalHref && openInNewBrowserTab(externalHref)) {
-				showError("Inline embed unavailable — opened in a new tab");
-				return;
-			}
-			showError(externalHref ? "Unable to open link inline" : "Link is missing");
-			return;
-		}
-		const openViaNativeUri = async (href, opts) => {
-			const bridge = await resolveLauncherBridgeForSpeedDial();
-			if (!bridge?.launcherOpenUri) return false;
-			const mimeType = String(meta?.mimeType || guessMimeFromHrefOrLabel(href, String(meta?.description || item?.label || ""))).trim();
-			try {
-				return await bridge.launcherOpenUri(href, {
-					chooser: opts.chooser,
-					title: opts.chooser ? "Open with" : void 0,
-					...mimeType ? { mimeType } : {}
+				dropZone.addEventListener("mouseleave", () => {
+					this.isPointerInView = false;
 				});
-			} catch {
-				return false;
-			}
-		};
-		if (linkTarget === "viewer" || linkTarget === "document" || linkTarget === "explorer" || linkTarget === "workcenter" || linkTarget === "transfer") {
-			const src = externalHref || normalizeSpeedDialOpenHref(String(raw || ""));
-			const viewId = viewIdForLinkTarget(linkTarget);
-			if (src) try {
-				const { stashSkuHandoff } = await __vitePreload(async () => {
-					const { stashSkuHandoff } = await import("./ecosystem-skus.js");
-					return { stashSkuHandoff };
-				}, [], import.meta.url);
-				stashSkuHandoff({
-					dest: viewId,
-					src,
-					filename: String(item?.label || "")
+				dropZone.addEventListener("dragover", (e) => {
+					e.preventDefault();
+					if (e.dataTransfer) e.dataTransfer.dropEffect = "copy";
+					(shell ?? content)?.classList.add("dragover");
 				});
-			} catch {}
-			if (await tryLaunchLinkTargetSku(linkTarget)) return;
-			if (typeof opener === "function") try {
-				opener(viewId, {
-					src,
-					url: src,
-					href: src,
-					path: src,
-					filename: String(item?.label || meta?.description || "")
+				dropZone.addEventListener("dragleave", () => {
+					(shell ?? content)?.classList.remove("dragover");
 				});
-				return;
-			} catch (e) {
-				console.warn("[speed-dial] view-sink open failed", e);
-			}
-			ensureHashNavigation(viewId, opener, {
-				src,
-				url: src,
-				href: src,
-				path: src
-			});
-			return;
-		}
-		if (linkTarget === "external-app") {
-			const href = externalHref ? externalHref : view ? buildSpeedDialViewPathHref(view, true, { native: false }) : normalizeSpeedDialOpenHref(String(raw || ""));
-			if (!href) {
-				showError("Link is missing");
-				return;
-			}
-			const openHref = preferDataUriOverIntent(href, meta);
-			if (canUseNativeOpenUri() && await openViaNativeUri(openHref, { chooser: true })) return;
-			if (!openInNewBrowserTab(href)) showError("Unable to open in app");
-			return;
-		}
-		if (linkTarget === "new-tab") {
-			const href = externalHref ? externalHref : view ? buildSpeedDialViewPathHref(view, true, { native: false }) : normalizeSpeedDialOpenHref(String(raw || ""));
-			if (!href) {
-				showError("Link is missing");
-				return;
-			}
-			if (canUseNativeOpenUri() && externalHref && await openViaNativeUri(href, { chooser: false })) return;
-			if (!openInNewBrowserTab(href)) showError("Unable to open new tab");
-			return;
-		}
-		const href = externalHref ? externalHref : view ? buildSpeedDialViewPathHref(view, true, { native: true }) : normalizeSpeedDialOpenHref(String(raw || ""));
-		if (!href) {
-			showError("Link is missing");
-			return;
-		}
-		if (externalHref && await openViaNativeUri(href, { chooser: true })) return;
-		if (!openInDetachedBrowserWindow(href)) showError("Unable to open native window (popup blocked?)");
-	});
-	actionRegistry.set("copy-link", async (context) => {
-		const item = context?.items?.find?.((i) => i?.id === context?.id) || null;
-		const metaMap = context?.meta;
-		const raw = (item && metaMap?.get ? metaMap.get(item.id) : null)?.href || item?.href || context?.href || resolveSpeedDialItemHref(item);
-		const href = normalizeSpeedDialOpenHref(String(raw || ""));
-		if (!href) {
-			showError("Nothing to copy");
-			return;
-		}
-		try {
-			await copyTextToClipboard(String(href));
-			showSuccess("Link copied");
-		} catch (e) {
-			console.warn(e);
-			showError("Failed to copy link");
-		}
-	});
-	actionRegistry.set("copy-state-desc", async (context) => {
-		const item = context?.items?.find?.((i) => i?.id === context?.id) || null;
-		if (!item) {
-			showError("Nothing to copy");
-			return;
-		}
-		try {
-			await copySpeedDialItemToClipboard(item);
-			showSuccess("Shortcut copied");
-		} catch (e) {
-			console.warn(e);
-			showError("Failed to copy shortcut");
-		}
-	});
-	iconsPerAction.set("launch-app", "device-mobile");
-	labelsPerAction.set("launch-app", (d) => `Launch ${d?.label || d?.packageName || "app"}`);
-	actionRegistry.set("launch-app", async (context, entityDesc) => {
-		const item = context?.items?.find?.((i) => i?.id === context?.id) || (entityDesc?.id ? entityDesc : null);
-		const metaMap = context?.meta;
-		const itemId = String(entityDesc?.id || context?.id || item?.id || "").trim();
-		const meta = (itemId && metaMap?.get ? metaMap.get(itemId) : null) || entityDesc?.meta || null;
-		const shortcutId = String(meta?.shortcutId || entityDesc?.shortcutId || "").trim();
-		const pkg = String(meta?.packageName || entityDesc?.packageName || "").trim();
-		if (shortcutId && pkg) {
-			const bridge = await resolveLauncherBridgeForSpeedDial();
-			if (bridge?.launcherStartShortcut) {
-				if (await bridge.launcherStartShortcut(pkg, shortcutId)) return;
-			}
-		}
-		if (!pkg) {
-			showError("App missing");
-			return;
-		}
-		const bridge = await resolveLauncherBridgeForSpeedDial();
-		if (!bridge?.launcherLaunch) {
-			showError("Unable to launch app");
-			return;
-		}
-		const spec = resolveAppLaunchSpec(pkg);
-		const component = spec.componentName || String(meta?.componentName || entityDesc?.componentName || "").trim() || void 0;
-		if (!await bridge.launcherLaunch(pkg, component, isLauncherLaunchSpecEmpty(spec) ? void 0 : spec)) showError("Unable to launch app");
-	});
-	iconsPerAction.set("launch-shortcut", "folder");
-	labelsPerAction.set("launch-shortcut", (d) => `Open ${d?.label || d?.shortcutId || "shortcut"}`);
-	actionRegistry.set("launch-shortcut", async (context, entityDesc) => {
-		const item = context?.items?.find?.((i) => i?.id === context?.id) || (entityDesc?.id ? entityDesc : null);
-		const metaMap = context?.meta;
-		const itemId = String(entityDesc?.id || context?.id || item?.id || "").trim();
-		const meta = (itemId && metaMap?.get ? metaMap.get(itemId) : null) || entityDesc?.meta || null;
-		const pkg = String(meta?.packageName || entityDesc?.packageName || "").trim();
-		const shortcutId = String(meta?.shortcutId || entityDesc?.shortcutId || "").trim();
-		const linkTarget = context?.openLinkTarget != null ? normalizeOpenLinkTarget(context.openLinkTarget) : resolveItemOpenLinkTarget(meta);
-		const nativePath = collectItemNativePath(meta, item || entityDesc);
-		if (nativePath && !nativePath.endsWith("/")) {
-			if (await openNativeStorageByLinkTarget(nativePath, linkTarget, guessMimeFromHrefOrLabel(nativePath, String(meta?.description || item?.label || "")))) return;
-		}
-		if (!pkg || !shortcutId) {
-			showError("Shortcut missing");
-			return;
-		}
-		const bridge = await resolveLauncherBridgeForSpeedDial();
-		if (!bridge?.launcherStartShortcut) {
-			showError("Unable to open shortcut");
-			return;
-		}
-		if (!await bridge.launcherStartShortcut(pkg, shortcutId)) showError("Unable to open shortcut");
-	});
-	iconsPerAction.set("open-path", "folder");
-	labelsPerAction.set("open-path", (d) => `Open ${d?.label || d?.path || "path"}`);
-	actionRegistry.set("open-path", async (context, entityDesc) => {
-		const metaMap = context?.meta;
-		const itemId = String(entityDesc?.id || context?.id || "").trim();
-		const item = context?.items?.find?.((row) => row?.id === itemId) || null;
-		const meta = (itemId && metaMap?.get ? metaMap.get(itemId) : null) || entityDesc?.meta || null;
-		const path = String(entityDesc?.path || meta?.path || item?.path || context?.path || meta?.href || "").trim();
-		if (!path) {
-			showError("Path is missing");
-			return;
-		}
-		const opener = context?.viewMaker || getSpeedDialViewOpener();
-		const linkTarget = context?.openLinkTarget != null ? normalizeOpenLinkTarget(context.openLinkTarget) : resolveItemOpenLinkTarget(meta);
-		const isDirectory = path.endsWith("/") || entityDesc?.kind === "directory" || meta?.kind === "directory";
-		const nativePath = nativeStorageVirtualPath(path);
-		if (nativePath && !isDirectory) {
-			if (await openNativeStorageByLinkTarget(nativePath, linkTarget, guessMimeFromHrefOrLabel(nativePath, String(meta?.description || item?.label || "")))) return;
-			showError("Allow all-files access, then open again");
-			return;
-		}
-		if (isDirectory) {
-			if (linkTarget === "explorer" && await tryLaunchLinkTargetSku("explorer")) return;
-			await opener?.("explorer", {
-				path,
-				initialPath: path
-			});
-			return;
-		}
-		if (/\.(md|markdown|txt)$/i.test(path) || entityDesc?.type && String(entityDesc.type).startsWith("text/")) {
-			await opener?.("viewer", {
-				src: path,
-				path
-			});
-			return;
-		}
-		if (/\.(png|jpe?g|gif|webp|svg|avif|bmp)$/i.test(path)) {
-			await opener?.("viewer", {
-				src: path,
-				path
-			});
-			return;
-		}
-		await opener?.("explorer", {
-			path,
-			initialPath: path
-		});
-	});
-	for (const shortcut of NAVIGATION_SHORTCUTS) {
-		const actionId = `open-view-${shortcut.view}`;
-		if (!iconsPerAction.has(actionId)) iconsPerAction.set(actionId, shortcut.icon);
-		if (!labelsPerAction.has(actionId)) labelsPerAction.set(actionId, () => `Open ${shortcut.label}`);
-		if (!actionRegistry.has(actionId)) actionRegistry.set(actionId, async (context) => {
-			return actionRegistry.get("open-view")?.(context, {
-				label: shortcut.label,
-				type: shortcut.view,
-				view: shortcut.view,
-				DIR: "/"
-			});
-		});
-	}
-	for (const { alias, label } of [{
-		alias: "markdown",
-		label: "Markdown"
-	}, {
-		alias: "reader",
-		label: "Markdown"
-	}]) {
-		const actionId = `open-view-${alias}`;
-		if (actionRegistry.has(actionId)) continue;
-		iconsPerAction.set(actionId, "article");
-		labelsPerAction.set(actionId, () => `Open ${label}`);
-		actionRegistry.set(actionId, async (context) => {
-			return actionRegistry.get("open-view")?.(context, {
-				label,
-				type: MARKDOWN_VIEW_MANAGED_WINDOW_KEY,
-				view: MARKDOWN_VIEW_MANAGED_WINDOW_KEY,
-				DIR: "/"
-			});
-		});
-	}
-};
-function getSpeedDialActionRegistry() {
-	installBuiltins();
-	return actionRegistry;
-}
-function getSpeedDialActionLabels() {
-	installBuiltins();
-	return labelsPerAction;
-}
-function getSpeedDialActionIcons() {
-	installBuiltins();
-	return iconsPerAction;
-}
-//#endregion
-//#region ../../modules/views/home-view/src/ts/icon-resource-picker.ts
-var VARIANT_FALLBACK = [
-	{
-		id: "default",
-		label: "Default"
-	},
-	{
-		id: "monochrome",
-		label: "Material You"
-	},
-	{
-		id: "foreground",
-		label: "Adaptive FG"
-	}
-];
-function resolveTheme(theme) {
-	if (theme === "light" || theme === "dark") return theme;
-	return String(document.documentElement.getAttribute("data-theme") || "").toLowerCase() === "light" ? "light" : "dark";
-}
-function httpPageUrl(raw) {
-	const u = String(raw || "").trim();
-	return /^https?:\/\//i.test(u) ? u : "";
-}
-function googleS2Favicon(pageUrl, size = 128) {
-	try {
-		const host = new URL(pageUrl).hostname;
-		if (!host) return "";
-		return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(host)}&sz=${size}`;
-	} catch {
-		return "";
-	}
-}
-function chromeExtensionFavicon(pageUrl, size = 128) {
-	try {
-		const chromeRt = globalThis.chrome?.runtime;
-		if (typeof chromeRt?.getURL !== "function") return "";
-		const u = new URL(chromeRt.getURL("/_favicon/"));
-		u.searchParams.set("pageUrl", pageUrl);
-		u.searchParams.set("size", String(size));
-		return u.toString();
-	} catch {
-		return "";
-	}
-}
-function resolveFaviconCandidates(pageUrl, api) {
-	const page = httpPageUrl(pageUrl);
-	if (!page) return [];
-	const out = [];
-	const seen = /* @__PURE__ */ new Set();
-	const push = (label, url) => {
-		const u = String(url || "").trim();
-		if (!u || seen.has(u)) return;
-		seen.add(u);
-		out.push({
-			label,
-			url: u
-		});
-	};
-	const fromApi = api?.resolveIconUrl?.(page, 128) || api?.resolveIconUrl?.(page, 64) || "";
-	const s2 = googleS2Favicon(page, 128);
-	if (s2) push("Google S2", s2);
-	const s2sm = googleS2Favicon(page, 64);
-	if (s2sm) push("Google S2 (64)", s2sm);
-	const chromeFav = chromeExtensionFavicon(page, 128);
-	if (chromeFav) push("Chrome favicon", chromeFav);
-	if (fromApi) push("Bookmark favicon", fromApi);
-	return out;
-}
-var PICKER_GRID_COLS = "repeat(auto-fill, minmax(4.75rem, 1fr))";
-var pin = (el, props) => {
-	for (const [name, value] of Object.entries(props)) el.style.setProperty(name, value, "important");
-};
-function pinPickerGrid(grid) {
-	pin(grid, {
-		display: "grid",
-		"grid-template-columns": PICKER_GRID_COLS,
-		gap: "0.5rem 0.4rem",
-		"align-content": "start",
-		"justify-content": "stretch",
-		"min-inline-size": "0",
-		"min-block-size": "0",
-		"inline-size": "100%"
-	});
-}
-function pinPickerCard(btn, img, caption) {
-	pin(btn, {
-		display: "grid",
-		"grid-template-columns": "minmax(0, 1fr)",
-		"grid-template-rows": "auto max-content",
-		"justify-items": "center",
-		"align-content": "start",
-		"align-items": "start",
-		"flex-direction": "column",
-		gap: "0.3rem",
-		margin: "0",
-		padding: "0.2rem 0.08rem 0.15rem",
-		"min-inline-size": "0",
-		"inline-size": "100%",
-		"max-inline-size": "100%",
-		"block-size": "auto",
-		"min-block-size": "0",
-		background: "transparent",
-		border: "0",
-		"border-radius": "0.7rem",
-		"box-shadow": "none",
-		appearance: "none",
-		"-webkit-appearance": "none",
-		position: "static",
-		"z-index": "auto",
-		overflow: "hidden"
-	});
-	pin(img, {
-		display: "block",
-		"grid-row": "1",
-		"inline-size": "3rem",
-		"block-size": "3rem",
-		"max-inline-size": "3rem",
-		"max-block-size": "3rem",
-		"object-fit": "cover",
-		"border-radius": "50%",
-		"flex-shrink": "0"
-	});
-	pin(caption, {
-		display: "block",
-		"grid-row": "2",
-		"inline-size": "100%",
-		"max-inline-size": "100%",
-		overflow: "hidden",
-		"text-overflow": "ellipsis",
-		"white-space": "nowrap",
-		"font-size": "0.62rem",
-		"line-height": "1.2",
-		"text-align": "center",
-		opacity: "0.88"
-	});
-}
-function makeCard(label, title) {
-	const btn = document.createElement("button");
-	btn.type = "button";
-	btn.className = "sd-icon-picker__card";
-	btn.title = title || label;
-	const img = document.createElement("img");
-	img.alt = "";
-	img.decoding = "async";
-	img.draggable = false;
-	img.referrerPolicy = "no-referrer";
-	const caption = document.createElement("span");
-	caption.className = "sd-icon-picker__card-label";
-	caption.textContent = label;
-	btn.append(img, caption);
-	pinPickerCard(btn, img, caption);
-	return {
-		btn,
-		img
-	};
-}
-async function loadVariantCards(bridge, pkg, host, onPick, close) {
-	host.replaceChildren();
-	let variants = VARIANT_FALLBACK.map((v) => ({
-		...v,
-		available: true
-	}));
-	try {
-		const listed = await bridge.launcherIconVariants?.(pkg);
-		if (Array.isArray(listed) && listed.length) variants = listed.map((v) => ({
-			id: normalizeAndroidIconVariant(v.id),
-			label: String(v.label || v.id),
-			available: v.available !== false
-		}));
-	} catch {}
-	for (const v of variants) {
-		if (!v.available && v.id !== "default") continue;
-		const { btn, img } = makeCard(v.label);
-		host.append(btn);
-		ensureLauncherIconObjectUrl(pkg, 96, v.id).then((url) => {
-			if (!url) {
-				btn.disabled = true;
-				btn.title = `${v.label} (unavailable)`;
-				return;
-			}
-			img.src = url;
-		});
-		btn.addEventListener("click", () => {
-			onPick({
-				iconUrl: formatAndroidIconRef(pkg, v.id),
-				packageName: pkg,
-				variant: v.id,
-				label: v.label,
-				source: "android"
-			});
-			close();
-		});
-	}
-}
-async function loadIconPackCards(bridge, targetPkg, host, onPick, close) {
-	host.replaceChildren();
-	host.classList.remove("sd-icon-picker__grid--browse");
-	pinPickerGrid(host);
-	if (!bridge.launcherIconPacks) {
-		host.textContent = "Icon packs unavailable.";
-		return;
-	}
-	let packs = [];
-	try {
-		packs = await bridge.launcherIconPacks();
-	} catch {
-		host.textContent = "Failed to list icon packs.";
-		return;
-	}
-	if (!packs.length) {
-		host.textContent = "No icon packs installed.";
-		return;
-	}
-	const frag = document.createDocumentFragment();
-	for (const pack of packs.slice(0, 64)) {
-		const packPkg = String(pack.packageName || "").trim();
-		if (!packPkg) continue;
-		const label = String(pack.label || packPkg);
-		const wrap = document.createElement("div");
-		wrap.className = "sd-icon-picker__pack-wrap";
-		pin(wrap, {
-			position: "relative",
-			"min-inline-size": "0",
-			"inline-size": "100%"
-		});
-		const { btn, img } = makeCard(label, `${label} — tap to apply, grid to browse`);
-		ensureLauncherIconObjectUrl(targetPkg, 96, "default", packPkg).then((url) => {
-			if (url) {
-				img.src = url;
-				return;
-			}
-			btn.disabled = true;
-			btn.title = `${label} (no cover for this app)`;
-			ensureLauncherIconObjectUrl(packPkg, 72, "default").then((packIcon) => {
-				if (packIcon) img.src = packIcon;
-			});
-		});
-		btn.addEventListener("click", () => {
-			if (btn.disabled) return;
-			onPick({
-				iconUrl: formatAndroidIconRef(targetPkg, "default", packPkg),
-				packageName: targetPkg,
-				variant: "default",
-				pack: packPkg,
-				label,
-				source: "icon-pack"
-			});
-			close();
-		});
-		const browse = document.createElement("button");
-		browse.type = "button";
-		browse.className = "sd-icon-picker__pack-browse";
-		pin(browse, {
-			position: "absolute",
-			"inset-block-start": "0",
-			"inset-inline-end": "0",
-			display: "grid",
-			"place-items": "center",
-			margin: "0",
-			padding: "0",
-			"inline-size": "1.2rem",
-			"block-size": "1.2rem",
-			"min-inline-size": "1.2rem",
-			"min-block-size": "1.2rem",
-			border: "0",
-			"border-radius": "999px"
-		});
-		browse.title = `Browse icons in ${label}`;
-		browse.setAttribute("aria-label", `Browse icons in ${label}`);
-		browse.innerHTML = "<ui-icon icon=\"squares-four\" aria-hidden=\"true\"></ui-icon>";
-		browse.addEventListener("click", (ev) => {
-			ev.preventDefault();
-			ev.stopPropagation();
-			host.dataset.packBrowse = "1";
-			loadPackDrawableBrowse(bridge, targetPkg, packPkg, label, host, onPick, close, () => {
-				delete host.dataset.packBrowse;
-				loadIconPackCards(bridge, targetPkg, host, onPick, close);
-			});
-		});
-		wrap.append(btn, browse);
-		frag.append(wrap);
-	}
-	host.append(frag);
-}
-async function loadPackDrawableBrowse(bridge, targetPkg, packPkg, packLabel, host, onPick, close, onBack) {
-	host.replaceChildren();
-	host.classList.add("sd-icon-picker__grid--browse");
-	host.style.setProperty("display", "grid", "important");
-	host.style.setProperty("grid-template-columns", "minmax(0, 1fr)", "important");
-	host.style.setProperty("grid-template-rows", "auto minmax(0, 1fr)", "important");
-	host.style.setProperty("gap", "0.35rem", "important");
-	const toolbar = document.createElement("div");
-	toolbar.className = "sd-icon-picker__pack-toolbar";
-	const back = document.createElement("button");
-	back.type = "button";
-	back.className = "sd-icon-picker__pack-back";
-	back.textContent = "Packs";
-	back.addEventListener("click", () => onBack());
-	const title = document.createElement("span");
-	title.className = "sd-icon-picker__pack-title";
-	title.textContent = packLabel;
-	const search = document.createElement("input");
-	search.type = "search";
-	search.placeholder = "Filter…";
-	search.autocomplete = "off";
-	search.className = "sd-icon-picker__search";
-	toolbar.append(back, title, search);
-	const grid = document.createElement("div");
-	grid.className = "sd-icon-picker__grid";
-	pinPickerGrid(grid);
-	host.append(toolbar, grid);
-	let timer = 0;
-	const refresh = () => {
-		(async () => {
-			grid.replaceChildren();
-			if (!bridge.launcherIconPackIcons) {
-				grid.textContent = "Pack browse unavailable.";
-				return;
-			}
-			let icons = [];
-			try {
-				icons = await bridge.launcherIconPackIcons(packPkg, String(search.value || ""), 96);
-			} catch {
-				grid.textContent = "Failed to list pack icons.";
-				return;
-			}
-			if (!icons.length) {
-				grid.textContent = "No matching icons.";
-				return;
-			}
-			const frag = document.createDocumentFragment();
-			const resolvePkg = targetPkg || packPkg;
-			for (const icon of icons) {
-				const drawable = String(icon.drawable || "").trim();
-				if (!drawable) continue;
-				const { btn, img } = makeCard(String(icon.label || drawable), `${packLabel}: ${drawable}`);
-				frag.append(btn);
-				ensureLauncherIconObjectUrl(resolvePkg, 72, "default", packPkg, drawable).then((url) => {
-					if (url) img.src = url;
-					else btn.disabled = true;
+				dropZone.addEventListener("drop", (e) => {
+					e.preventDefault();
+					e.stopPropagation();
+					(shell ?? content)?.classList.remove("dragover");
+					this.handleFileDrop(e);
 				});
-				btn.addEventListener("click", () => {
-					if (btn.disabled) return;
-					onPick({
-						iconUrl: formatAndroidIconRef(resolvePkg, "default", packPkg, drawable),
-						packageName: resolvePkg,
-						variant: "default",
-						pack: packPkg,
-						drawable,
-						label: String(icon.label || drawable),
-						source: "icon-pack"
+			}
+			this.bindWindowMarkdownDnD(shell ?? content);
+			this.pasteController?.abort();
+			this.pasteController = new AbortController();
+			document.addEventListener("paste", (e) => {
+				this.handlePaste(e);
+			}, { signal: this.pasteController.signal });
+			renderTarget?.addEventListener("click", (e) => {
+				const link = e.target?.closest?.("a[href]");
+				if (!link) return;
+				const href = (link.getAttribute("href") || "").trim();
+				const rel = (link.getAttribute("data-md-rel") || "").trim();
+				const virtual = (link.getAttribute("data-md-virtual") || "").trim();
+				if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+				if (rel || href.startsWith("blob:")) {
+					e.preventDefault();
+					const path = virtual || (rel && this.boundMountRoot ? normalizePath(this.sourceUrl && isVirtualFsPath(this.sourceUrl) ? getDir(this.sourceUrl) : this.boundMountRoot, rel) : "");
+					(path ? this.openMarkdownFromUrl(path) : this.openMarkdownBlob(href, rel)).then((ok) => {
+						if (!ok) this.showMessage("Failed to open markdown link");
 					});
-					close();
-				});
-			}
-			grid.append(frag);
-		})();
-	};
-	search.addEventListener("input", () => {
-		window.clearTimeout(timer);
-		timer = window.setTimeout(refresh, 160);
-	});
-	refresh();
-}
-async function loadAppBrowse(bridge, query, host, onPick, close) {
-	host.replaceChildren();
-	if (!bridge.launcherList) {
-		host.textContent = "App list unavailable.";
-		return;
-	}
-	let apps = [];
-	try {
-		apps = await bridge.launcherList(query);
-	} catch {
-		host.textContent = "Failed to list apps.";
-		return;
-	}
-	if (!apps.length) {
-		host.textContent = query.trim() ? "No matches." : "No apps.";
-		return;
-	}
-	const frag = document.createDocumentFragment();
-	for (const app of apps.slice(0, 96)) {
-		const pkg = String(app.packageName || "").trim();
-		if (!pkg) continue;
-		const { btn, img } = makeCard(String(app.label || pkg), `${app.label} (${pkg})`);
-		frag.append(btn);
-		ensureLauncherIconObjectUrl(String(app.iconCacheKey || pkg).trim() || pkg, 72, "default").then((url) => {
-			if (url) img.src = url;
-		});
-		btn.addEventListener("click", () => {
-			onPick({
-				iconUrl: formatAndroidIconRef(pkg, "default"),
-				packageName: pkg,
-				variant: "default",
-				label: String(app.label || pkg),
-				source: "android"
-			});
-			close();
-		});
-	}
-	host.append(frag);
-}
-function loadFaviconVariantCards(pageUrl, api, host, onPick, close) {
-	host.replaceChildren();
-	const candidates = resolveFaviconCandidates(pageUrl, api);
-	if (!candidates.length) {
-		host.textContent = "No favicon sources for this URL.";
-		return;
-	}
-	for (const c of candidates) {
-		const { btn, img } = makeCard(c.label, c.url);
-		img.src = c.url;
-		img.addEventListener("error", () => {
-			btn.disabled = true;
-			btn.title = `${c.label} (failed to load)`;
-		});
-		btn.addEventListener("click", () => {
-			onPick({
-				iconUrl: c.url,
-				label: c.label,
-				source: "favicon"
-			});
-			close();
-		});
-		host.append(btn);
-	}
-}
-async function loadBookmarkBrowse(api, query, host, onPick, close) {
-	host.replaceChildren();
-	let entries = [];
-	try {
-		const q = String(query || "").trim();
-		entries = q ? await api.search(q) : await api.listChildren();
-	} catch {
-		host.textContent = "Failed to list bookmarks.";
-		return;
-	}
-	const links = entries.filter((e) => !e.folder && httpPageUrl(e.url));
-	if (!links.length) {
-		host.textContent = query.trim() ? "No matching bookmarks." : "No bookmarks.";
-		return;
-	}
-	const frag = document.createDocumentFragment();
-	for (const entry of links.slice(0, 80)) {
-		const page = httpPageUrl(entry.url);
-		if (!page) continue;
-		const icon = api.resolveIconUrl?.(page, 64) || chromeExtensionFavicon(page, 64) || googleS2Favicon(page, 64);
-		const { btn, img } = makeCard(String(entry.title || page), page);
-		if (icon) img.src = icon;
-		frag.append(btn);
-		btn.addEventListener("click", () => {
-			const preferred = api.resolveIconUrl?.(page, 128) || chromeExtensionFavicon(page, 128) || googleS2Favicon(page, 128) || icon;
-			if (!preferred) return;
-			onPick({
-				iconUrl: preferred,
-				label: String(entry.title || page),
-				source: "bookmark"
-			});
-			close();
-		});
-	}
-	host.append(frag);
-}
-/**
-* Modal picker:
-* - Capacitor: Material You / adaptive + icon packs + installed apps (`android-icon:`)
-* - CRX: favicon variants for a page URL + browse Chrome bookmarks
-*/
-async function openIconResourcePicker(opts) {
-	const bridge = await getLauncherBridgeForSpeedDial();
-	const bookmarksApi = resolveBookmarksMenuApi();
-	const hasAndroid = Boolean(bridge?.launcherIcon);
-	const pageSeed = httpPageUrl(opts.pageUrl) || httpPageUrl(opts.currentUrl) || "";
-	if (!hasAndroid && !(Boolean(bookmarksApi) || Boolean(pageSeed))) {
-		console.warn("[icon-resource-picker] no launcher bridge or bookmarks/favicon source");
-		return;
-	}
-	const theme = resolveTheme(opts.theme);
-	const pkgSeed = String(opts.packageName || "").trim();
-	const showAndroidVariants = hasAndroid && Boolean(pkgSeed);
-	const showIconPacks = hasAndroid && Boolean(pkgSeed) && Boolean(bridge?.launcherIconPacks);
-	const showAndroidBrowse = hasAndroid && Boolean(bridge?.launcherList);
-	const showFaviconVariants = Boolean(pageSeed);
-	const showBookmarkBrowse = Boolean(bookmarksApi);
-	const tabs = [];
-	if (showAndroidVariants) tabs.push({
-		id: "variants",
-		label: "This app"
-	});
-	if (showIconPacks) tabs.push({
-		id: "packs",
-		label: "Packs"
-	});
-	if (showFaviconVariants) tabs.push({
-		id: "favicon",
-		label: "Link"
-	});
-	if (showAndroidBrowse) tabs.push({
-		id: "browse",
-		label: "Apps"
-	});
-	if (showBookmarkBrowse) tabs.push({
-		id: "bookmarks",
-		label: "Bookmarks"
-	});
-	const initialTab = tabs[0]?.id || "browse";
-	const dialog = document.createElement("dialog");
-	dialog.className = "sd-icon-picker";
-	dialog.dataset.theme = theme;
-	dialog.dataset.tab = initialTab;
-	dialog.innerHTML = `
-        <form class="sd-icon-picker__form" data-theme="${theme}" method="dialog">
-            <header class="sd-icon-picker__header">
-                <h2 class="sd-icon-picker__title">Icon</h2>
-                <nav class="sd-icon-picker__tabs" role="tablist" aria-label="Icon source"></nav>
-                <input class="sd-icon-picker__search" data-search type="search" placeholder="Search…" autocomplete="off" hidden />
-            </header>
-            <div class="sd-icon-picker__body">
-                <section class="sd-icon-picker__section" data-section="variants" hidden>
-                    <div class="sd-icon-picker__grid" data-variants></div>
-                </section>
-                <section class="sd-icon-picker__section" data-section="packs" hidden>
-                    <div class="sd-icon-picker__grid" data-packs></div>
-                </section>
-                <section class="sd-icon-picker__section" data-section="favicon" hidden>
-                    <div class="sd-icon-picker__grid" data-favicon></div>
-                </section>
-                <section class="sd-icon-picker__section" data-section="browse" hidden>
-                    <div class="sd-icon-picker__grid" data-browse></div>
-                </section>
-                <section class="sd-icon-picker__section" data-section="bookmarks" hidden>
-                    <div class="sd-icon-picker__grid" data-bookmarks></div>
-                </section>
-            </div>
-            <footer class="sd-icon-picker__footer">
-                <button type="button" data-action="cancel" class="sd-icon-picker__cancel">Cancel</button>
-            </footer>
-        </form>
-    `;
-	pin(dialog, {
-		position: "fixed",
-		inset: "0",
-		top: "0",
-		right: "0",
-		bottom: "0",
-		left: "0",
-		width: "100%",
-		height: "100%",
-		"inline-size": "100%",
-		"block-size": "100%",
-		"max-inline-size": "100%",
-		"max-block-size": "100%",
-		"max-width": "100%",
-		"max-height": "100%",
-		margin: "0",
-		padding: "1rem",
-		display: "grid",
-		"place-items": "center",
-		"place-content": "center",
-		background: "transparent",
-		border: "none",
-		"border-radius": "0",
-		"box-shadow": "none",
-		overflow: "auto"
-	});
-	const formEl = dialog.querySelector(".sd-icon-picker__form");
-	if (formEl) pin(formEl, {
-		display: "flex",
-		"flex-direction": "column",
-		"inline-size": "min(90cqi, 100dvi)",
-		width: "min(90cqi, 100dvi)",
-		"max-inline-size": "100%",
-		"max-block-size": "min(86dvh, 36rem)",
-		margin: "0",
-		padding: "0",
-		"border-radius": "18px",
-		overflow: "hidden",
-		"justify-self": "center",
-		"align-self": "center",
-		background: "color-mix(in oklab, var(--color-surface-container, Canvas) 92%, transparent)"
-	});
-	const tabsEl = dialog.querySelector(".sd-icon-picker__tabs");
-	if (tabsEl) pin(tabsEl, {
-		display: "grid",
-		"grid-auto-flow": "column",
-		"grid-auto-columns": "1fr",
-		gap: "0.28rem",
-		"inline-size": "100%"
-	});
-	const bodyEl = dialog.querySelector(".sd-icon-picker__body");
-	if (bodyEl) pin(bodyEl, {
-		display: "block",
-		padding: "0.65rem 0.85rem 0.45rem",
-		"min-block-size": "0",
-		"max-block-size": "min(26rem, 52dvh)",
-		overflow: "auto",
-		background: "transparent"
-	});
-	const footerEl = dialog.querySelector(".sd-icon-picker__footer");
-	if (footerEl) pin(footerEl, {
-		display: "flex",
-		"justify-content": "flex-end",
-		"align-items": "center",
-		gap: "0.45rem",
-		padding: "0.55rem 0.85rem 0.7rem"
-	});
-	const cancelEl = dialog.querySelector(".sd-icon-picker__cancel");
-	if (cancelEl) pin(cancelEl, {
-		display: "inline-flex",
-		"align-items": "center",
-		"justify-content": "center",
-		flex: "0 0 auto",
-		margin: "0",
-		padding: "0.42rem 0.86rem",
-		"inline-size": "auto",
-		width: "auto",
-		"min-inline-size": "0",
-		"max-inline-size": "none",
-		"border-radius": "0.65rem"
-	});
-	const form = dialog.querySelector("form");
-	const tablist = dialog.querySelector(".sd-icon-picker__tabs");
-	const search = dialog.querySelector("[data-search]");
-	const variantsHost = dialog.querySelector("[data-variants]");
-	const packsHost = dialog.querySelector("[data-packs]");
-	const faviconHost = dialog.querySelector("[data-favicon]");
-	const browseHost = dialog.querySelector("[data-browse]");
-	const bookmarksHost = dialog.querySelector("[data-bookmarks]");
-	let closed = false;
-	const close = () => {
-		if (closed) return;
-		closed = true;
-		try {
-			if (dialog.open) dialog.close();
-		} catch {}
-		dialog.remove();
-	};
-	const onPick = (pick) => {
-		opts.onPick(pick);
-	};
-	form.addEventListener("click", (ev) => {
-		if (ev.target?.closest?.("[data-action]")?.getAttribute("data-action") === "cancel") {
-			ev.preventDefault();
-			close();
-		}
-	});
-	dialog.addEventListener("cancel", (ev) => {
-		ev.preventDefault();
-		close();
-	});
-	dialog.addEventListener("click", (ev) => {
-		if (ev.target === dialog) close();
-	});
-	const setTab = (id) => {
-		dialog.dataset.tab = id;
-		dialog.querySelectorAll("[data-section]").forEach((section) => {
-			section.hidden = section.dataset.section !== id;
-		});
-		tablist?.querySelectorAll("[data-tab]").forEach((btn) => {
-			const on = btn.dataset.tab === id;
-			btn.toggleAttribute("data-active", on);
-			btn.setAttribute("aria-selected", on ? "true" : "false");
-			btn.tabIndex = on ? 0 : -1;
-		});
-		const wantsSearch = id === "browse" || id === "bookmarks";
-		if (search) {
-			search.hidden = !wantsSearch;
-			search.placeholder = id === "bookmarks" ? "Search bookmarks…" : "Search apps…";
-			if (wantsSearch) search.value = "";
-		}
-		if (id === "packs" && packsHost?.dataset.packBrowse === "1" && bridge && pkgSeed) {
-			delete packsHost.dataset.packBrowse;
-			loadIconPackCards(bridge, pkgSeed, packsHost, onPick, close);
-		}
-	};
-	if (tablist) {
-		const frag = document.createDocumentFragment();
-		for (const tab of tabs) {
-			const btn = document.createElement("button");
-			btn.type = "button";
-			btn.className = "sd-icon-picker__tab";
-			btn.dataset.tab = tab.id;
-			btn.setAttribute("role", "tab");
-			btn.textContent = tab.label;
-			pin(btn, {
-				display: "inline-flex",
-				flex: "1 1 0",
-				"align-items": "center",
-				"justify-content": "center",
-				margin: "0",
-				padding: "0.38rem 0.4rem",
-				border: "0",
-				"border-radius": "999px",
-				"inline-size": "100%",
-				"min-inline-size": "0",
-				"block-size": "auto"
-			});
-			btn.addEventListener("click", (ev) => {
-				ev.preventDefault();
-				setTab(tab.id);
-			});
-			frag.append(btn);
-		}
-		tablist.append(frag);
-		tablist.hidden = tabs.length <= 1;
-	}
-	if (showAndroidVariants && bridge && variantsHost) loadVariantCards(bridge, pkgSeed, variantsHost, onPick, close);
-	if (showIconPacks && bridge && packsHost && pkgSeed) loadIconPackCards(bridge, pkgSeed, packsHost, onPick, close);
-	if (showFaviconVariants && faviconHost) loadFaviconVariantCards(pageSeed, bookmarksApi, faviconHost, onPick, close);
-	let appTimer = 0;
-	const refreshApps = () => {
-		if (!browseHost || !bridge) return;
-		loadAppBrowse(bridge, String(search?.value || ""), browseHost, onPick, close);
-	};
-	let bmTimer = 0;
-	const refreshBookmarks = () => {
-		if (!bookmarksHost || !bookmarksApi) return;
-		loadBookmarkBrowse(bookmarksApi, String(search?.value || ""), bookmarksHost, onPick, close);
-	};
-	search?.addEventListener("input", () => {
-		const tab = dialog.dataset.tab;
-		if (tab === "browse") {
-			window.clearTimeout(appTimer);
-			appTimer = window.setTimeout(refreshApps, 180);
-			return;
-		}
-		if (tab === "bookmarks") {
-			window.clearTimeout(bmTimer);
-			bmTimer = window.setTimeout(refreshBookmarks, 180);
-		}
-	});
-	if (showAndroidBrowse) refreshApps();
-	if (showBookmarkBrowse && bookmarksApi) refreshBookmarks();
-	tablist?.addEventListener("click", (ev) => {
-		const id = ev.target?.closest?.("[data-tab]")?.getAttribute("data-tab");
-		if (id === "browse") refreshApps();
-		if (id === "bookmarks") refreshBookmarks();
-	});
-	setTab(initialTab);
-	document.body.append(dialog);
-	dialog.querySelectorAll(".sd-icon-picker__grid").forEach(pinPickerGrid);
-	try {
-		dialog.showModal();
-	} catch {
-		dialog.setAttribute("open", "");
-	}
-}
-/** Icon-only button that opens {@link openIconResourcePicker} and fills an input. */
-function attachIconResourcePickButton(field, input, opts) {
-	let row = field.querySelector(".sd-icon-resource-row");
-	if (!row) {
-		row = document.createElement("div");
-		row.className = "sd-icon-resource-row";
-		input.replaceWith(row);
-		row.append(input);
-	}
-	row.style.setProperty("display", "grid", "important");
-	row.style.setProperty("grid-template-columns", "minmax(0,1fr) 2.5rem 2.5rem", "important");
-	row.style.setProperty("align-items", "stretch", "important");
-	row.style.setProperty("gap", "0.45rem", "important");
-	row.style.setProperty("min-inline-size", "0", "important");
-	row.style.setProperty("inline-size", "100%", "important");
-	let btn = row.querySelector("[data-action='pick-icon']");
-	if (!btn) {
-		btn = document.createElement("button");
-		btn.type = "button";
-		btn.className = "btn secondary sd-icon-resource-pick";
-		btn.setAttribute("data-action", "pick-icon");
-		btn.title = "Pick alternative icon";
-		btn.setAttribute("aria-label", "Pick alternative icon");
-		btn.innerHTML = "<ui-icon icon=\"squares-four\" icon-style=\"duotone\" aria-hidden=\"true\"></ui-icon>";
-		row.append(btn);
-	}
-	let photoBtn = row.querySelector("[data-action='pick-photo']");
-	if (!photoBtn) {
-		photoBtn = document.createElement("button");
-		photoBtn.type = "button";
-		photoBtn.className = "btn secondary sd-icon-resource-pick";
-		photoBtn.setAttribute("data-action", "pick-photo");
-		photoBtn.title = "Use photo / avatar";
-		photoBtn.setAttribute("aria-label", "Use photo or avatar");
-		photoBtn.innerHTML = "<ui-icon icon=\"user-circle\" icon-style=\"duotone\" aria-hidden=\"true\"></ui-icon>";
-		row.append(photoBtn);
-	}
-	if (input.parentElement !== row) row.insertBefore(input, btn);
-	if (btn.parentElement === row && photoBtn.parentElement === row) {
-		row.append(btn, photoBtn);
-		row.insertBefore(input, btn);
-	}
-	const stylePickBtn = (el) => {
-		el.style.setProperty("display", "inline-flex", "important");
-		el.style.setProperty("align-items", "center", "important");
-		el.style.setProperty("justify-content", "center", "important");
-		el.style.setProperty("inline-size", "2.5rem", "important");
-		el.style.setProperty("min-inline-size", "2.5rem", "important");
-		el.style.setProperty("max-inline-size", "2.5rem", "important");
-		el.style.setProperty("min-block-size", "2.5rem", "important");
-		el.style.setProperty("padding", "0", "important");
-		el.style.setProperty("margin", "0", "important");
-	};
-	stylePickBtn(btn);
-	stylePickBtn(photoBtn);
-	btn.addEventListener("click", (ev) => {
-		ev.preventDefault();
-		ev.stopPropagation();
-		openIconResourcePicker({
-			packageName: typeof opts.packageName === "function" ? opts.packageName() : String(opts.packageName || "").trim(),
-			pageUrl: typeof opts.pageUrl === "function" ? opts.pageUrl() : String(opts.pageUrl || "").trim(),
-			currentUrl: input.value,
-			theme: opts.theme,
-			onPick: (pick) => {
-				input.value = pick.iconUrl;
-				input.setAttribute("value", pick.iconUrl);
-				input.dispatchEvent(new Event("input", { bubbles: true }));
-				input.dispatchEvent(new Event("change", { bubbles: true }));
-			}
-		});
-	});
-	photoBtn.addEventListener("click", (ev) => {
-		ev.preventDefault();
-		ev.stopPropagation();
-		const fileInput = document.createElement("input");
-		fileInput.type = "file";
-		fileInput.accept = "image/*";
-		fileInput.style.display = "none";
-		document.body.append(fileInput);
-		fileInput.addEventListener("change", () => {
-			const file = fileInput.files?.[0];
-			fileInput.remove();
-			if (!file) return;
-			const reader = new FileReader();
-			reader.onload = () => {
-				const dataUrl = String(reader.result || "").trim();
-				if (!dataUrl.startsWith("data:image/")) return;
-				input.value = dataUrl;
-				input.setAttribute("value", dataUrl);
-				input.dispatchEvent(new Event("input", { bubbles: true }));
-				input.dispatchEvent(new Event("change", { bubbles: true }));
-				const display = field.closest("form")?.querySelector("select[name=\"iconDisplay\"]");
-				if (display) {
-					display.value = "colored";
-					display.dispatchEvent(new Event("change", { bubbles: true }));
-				}
-			};
-			reader.readAsDataURL(file);
-		}, { once: true });
-		fileInput.click();
-	});
-	return btn;
-}
-//#endregion
-//#region ../../modules/views/home-view/src/ts/ShortcutEditor.ts
-/** WHY: Match context-menu pin — Settings may not have applied data-theme yet. */
-function resolveEditorTheme() {
-	const root = document.documentElement;
-	const pinned = String(root.getAttribute("data-theme") || "").trim().toLowerCase();
-	if (pinned === "light" || pinned === "dark") return pinned;
-	const scheme = String(root.getAttribute("data-scheme") || "").trim().toLowerCase();
-	if (scheme === "light" || scheme === "dark") return scheme;
-	try {
-		const stored = String(localStorage.getItem("rs-appearance-theme") || "").trim().toLowerCase();
-		if (stored === "light" || stored === "dark") return stored;
-	} catch {}
-	return typeof matchMedia === "function" && matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
-}
-function synthesizeViewHref(view, openLinkTarget = "inline") {
-	const id = String(view || "").trim().replace(/^#/, "").replace(/^\/+/, "");
-	if (!id) return "";
-	const target = String(openLinkTarget || "inline").trim().toLowerCase();
-	return `/${id}?shell=environment${target === "native-window" || target === "native" || target === "window" ? "&native=1" : ""}&view=${encodeURIComponent(id)}`;
-}
-/** WHY: Coerce fest refs / odd wrappers into a plain string for form controls. */
-function asDraftText(value, fallback = "") {
-	if (value == null) return fallback;
-	if (typeof value === "object" && value !== null && "value" in value) {
-		const inner = value.value;
-		if (inner == null) return fallback;
-		return String(inner);
-	}
-	return String(value) || fallback;
-}
-function fillTextControl(el, value) {
-	if (!el) return;
-	el.value = value;
-	if (el instanceof HTMLInputElement) el.setAttribute("value", value);
-}
-var isDefaultViewAction = (action) => action === "open-view";
-var isDefaultHrefAction = (action) => action === "open-link";
-var setSelectOptions = (select, options, selectedValue, placeholder) => {
-	if (!select) return;
-	select.innerHTML = "";
-	if (placeholder) {
-		const placeholderOption = document.createElement("option");
-		placeholderOption.value = placeholder.value;
-		placeholderOption.textContent = placeholder.label;
-		placeholderOption.selected = selectedValue === placeholder.value;
-		select.append(placeholderOption);
-	}
-	for (const option of options) {
-		const node = document.createElement("option");
-		node.value = option.value;
-		node.textContent = option.label;
-		node.selected = option.value === selectedValue;
-		select.append(node);
-	}
-	if (selectedValue && !options.some((option) => option.value === selectedValue)) {
-		const fallbackOption = document.createElement("option");
-		fallbackOption.value = selectedValue;
-		fallbackOption.textContent = selectedValue;
-		fallbackOption.selected = true;
-		select.append(fallbackOption);
-	}
-	if (selectedValue) select.value = selectedValue;
-};
-var openShortcutEditor = (options) => {
-	const { mode, initial, actionOptions, viewOptions, onSave, onDelete, isViewAction = isDefaultViewAction, isHrefAction = isDefaultHrefAction, isWidgetAction = (action) => action === "widget", registerForBackNavigation = false } = options;
-	const modal = document.createElement("dialog");
-	modal.className = "speed-dial-editor";
-	const theme = resolveEditorTheme();
-	modal.dataset.theme = theme;
-	modal.innerHTML = `
-        <form class="speed-dial-editor__form" data-theme="${theme}" autocomplete="off">
-            <header class="modal-header">
-                <h2 class="modal-title">${mode === "create" ? "Create shortcut" : "Edit shortcut"}</h2>
-                <p class="modal-description">Configure quick access tiles for frequently used views or links.</p>
-            </header>
-            <div class="modal-fields">
-                <div class="modal-field">
-                    <label for="sd-edit-label">Label</label>
-                    <input id="sd-edit-label" name="label" type="text" minlength="1" required />
-                </div>
-                <div class="modal-field">
-                    <label for="sd-edit-icon-display">Icon display</label>
-                    <select id="sd-edit-icon-display" name="iconDisplay">
-                        ${ICON_DISPLAY_OPTIONS.map((o) => `<option value="${o.value}">${o.label}</option>`).join("")}
-                    </select>
-                </div>
-                <div class="modal-field" data-field="icon-glyph">
-                    <label for="sd-edit-icon">Icon (Phosphor name)</label>
-                    <input id="sd-edit-icon" name="icon" type="text" placeholder="phosphor icon name" />
-                </div>
-                <div class="modal-field" data-field="icon-url">
-                    <label for="sd-edit-icon-url">Icon resource</label>
-                    <div class="sd-icon-resource-row">
-                        <input id="sd-edit-icon-url" name="iconUrl" type="text" inputmode="url" autocomplete="off" placeholder="URL, data:, or android-icon:…" />
-                        <button type="button" class="btn secondary sd-icon-resource-pick" data-action="pick-icon" title="Pick alternative icon" aria-label="Pick alternative icon">
-                            <ui-icon icon="squares-four" icon-style="duotone" aria-hidden="true"></ui-icon>
-                        </button>
-                        <button type="button" class="btn secondary sd-icon-resource-pick" data-action="pick-photo" title="Use photo / avatar" aria-label="Use photo or avatar">
-                            <ui-icon icon="user-circle" icon-style="duotone" aria-hidden="true"></ui-icon>
-                        </button>
-                    </div>
-                </div>
-                <div class="modal-field">
-                    <label for="sd-edit-shape">Shape</label>
-                    <select id="sd-edit-shape" name="shape">
-                        ${TILE_SHAPE_OPTIONS.map((o) => `<option value="${o.value}">${o.label}</option>`).join("")}
-                    </select>
-                </div>
-                <div class="modal-field">
-                    <label for="sd-edit-icon-scale">Icon scale (inside plate)</label>
-                    <select id="sd-edit-icon-scale" name="iconScale">
-                        ${ICON_BITMAP_SCALE_OPTIONS.map((o) => `<option value="${o.value}">${o.label}</option>`).join("")}
-                    </select>
-                </div>
-                <div class="modal-field">
-                    <label for="sd-edit-action">Action</label>
-                    <select id="sd-edit-action" name="action"></select>
-                </div>
-                <div class="modal-field" data-field="view">
-                    <label for="sd-edit-view">View</label>
-                    <select id="sd-edit-view" name="view"></select>
-                </div>
-                <div class="modal-field" data-field="href">
-                    <label for="sd-edit-href">Link</label>
-                    <input id="sd-edit-href" name="href" type="text" inputmode="url" autocomplete="off" placeholder="/sdcard/Download/note.md, /settings, or https://…" />
-                </div>
-                <div class="modal-field" data-field="open-link-target">
-                    <label for="sd-edit-open-target">Open link in</label>
-                    <select id="sd-edit-open-target" name="openLinkTarget">
-                        <option value="inline">Open Inline (iframe window, same tab)</option>
-                        <option value="external-app">Android / system chooser</option>
-                        <option value="viewer">Markdown (in this app)</option>
-                        <option value="document">CWSP-document</option>
-                        <option value="explorer">CWSP-explorer</option>
-                        <option value="workcenter">CWSP-process</option>
-                        <option value="transfer">CWSP-transfer</option>
-                        <option value="native-window">Native window (new browser window)</option>
-                        <option value="new-tab">Open in new tab</option>
-                    </select>
-                </div>
-                <div class="modal-field" data-field="widget-kind">
-                    <label for="sd-edit-widget-kind">Widget</label>
-                    <select id="sd-edit-widget-kind" name="widgetKind">
-                        <option value="clock">Clock</option>
-                        <option value="search">Search</option>
-                        <option value="android">Android</option>
-                    </select>
-                </div>
-                <div class="modal-field" data-field="span">
-                    <label for="sd-edit-span-cols">Size (columns × rows)</label>
-                    <div class="sd-icon-resource-row">
-                        <input id="sd-edit-span-cols" name="spanCols" type="number" min="1" max="8" step="1" />
-                        <input id="sd-edit-span-rows" name="spanRows" type="number" min="1" max="8" step="1" />
-                    </div>
-                </div>
-                <div class="modal-field" data-field="clock-format">
-                    <label for="sd-edit-clock-format">Clock format</label>
-                    <select id="sd-edit-clock-format" name="clockFormat">
-                        <option value="24h">24-hour</option>
-                        <option value="12h">12-hour</option>
-                    </select>
-                </div>
-                <div class="modal-field" data-field="search-url">
-                    <label for="sd-edit-search-url">Search URL (%s = query)</label>
-                    <input id="sd-edit-search-url" name="searchUrl" type="url" placeholder="https://www.google.com/search?q=%s" />
-                </div>
-                <div class="modal-field">
-                    <label for="sd-edit-description">Description</label>
-                    <textarea id="sd-edit-description" name="description" rows="2" placeholder="Optional description"></textarea>
-                </div>
-            </div>
-            <div class="modal-actions" role="group" aria-label="Shortcut actions">
-                ${mode === "edit" ? "<button type=\"button\" data-action=\"delete\" class=\"btn danger\">Delete</button>" : "<span class=\"modal-actions-spacer\" aria-hidden=\"true\"></span>"}
-                <button type="button" data-action="cancel" class="btn secondary">Cancel</button>
-                <button type="submit" class="btn save">Save</button>
-            </div>
-        </form>
-    `;
-	const form = modal.querySelector("form");
-	const actions = form?.querySelector(".modal-actions");
-	if (actions) {
-		actions.style.setProperty("display", "grid", "important");
-		actions.style.setProperty("grid-template-columns", "1fr auto auto", "important");
-		actions.style.setProperty("align-items", "center", "important");
-		actions.style.setProperty("gap", "0.45rem", "important");
-		actions.style.setProperty("flex-wrap", "nowrap", "important");
-	}
-	const fields = form?.querySelector(".modal-fields");
-	const labelInput = form?.querySelector("input[name=\"label\"]");
-	const iconInput = form?.querySelector("input[name=\"icon\"]");
-	const iconDisplaySelect = form?.querySelector("select[name=\"iconDisplay\"]");
-	const iconUrlInput = form?.querySelector("input[name=\"iconUrl\"]");
-	const shapeSelect = form?.querySelector("select[name=\"shape\"]");
-	const iconScaleSelect = form?.querySelector("select[name=\"iconScale\"]");
-	const actionSelect = form?.querySelector("select[name=\"action\"]");
-	const viewSelect = form?.querySelector("select[name=\"view\"]");
-	const hrefInput = form?.querySelector("input[name=\"href\"]");
-	const openLinkTargetSelect = form?.querySelector("select[name=\"openLinkTarget\"]");
-	const descriptionInput = form?.querySelector("textarea[name=\"description\"]");
-	const viewField = form?.querySelector("[data-field=\"view\"]");
-	const hrefField = form?.querySelector("[data-field=\"href\"]");
-	const openLinkTargetField = form?.querySelector("[data-field=\"open-link-target\"]");
-	const iconGlyphField = form?.querySelector("[data-field=\"icon-glyph\"]");
-	const iconUrlField = form?.querySelector("[data-field=\"icon-url\"]");
-	const widgetKindField = form?.querySelector("[data-field=\"widget-kind\"]");
-	const spanField = form?.querySelector("[data-field=\"span\"]");
-	const clockFormatField = form?.querySelector("[data-field=\"clock-format\"]");
-	const searchUrlField = form?.querySelector("[data-field=\"search-url\"]");
-	const widgetKindSelect = form?.querySelector("select[name=\"widgetKind\"]");
-	const spanColsInput = form?.querySelector("input[name=\"spanCols\"]");
-	const spanRowsInput = form?.querySelector("input[name=\"spanRows\"]");
-	const clockFormatSelect = form?.querySelector("select[name=\"clockFormat\"]");
-	const searchUrlInput = form?.querySelector("input[name=\"searchUrl\"]");
-	const packageNameOf = () => String(initial.packageName || "").trim();
-	const pageUrlOf = () => {
-		const fromHref = String(hrefInput?.value || "").trim();
-		if (/^https?:\/\//i.test(fromHref)) return fromHref;
-		const fromInitial = String(initial.href || "").trim();
-		return /^https?:\/\//i.test(fromInitial) ? fromInitial : "";
-	};
-	if (iconUrlField && iconUrlInput) attachIconResourcePickButton(iconUrlField, iconUrlInput, {
-		packageName: packageNameOf,
-		pageUrl: pageUrlOf,
-		theme
-	});
-	const labelValue = asDraftText(initial.label, "New shortcut");
-	const iconValue = asDraftText(initial.icon, "sparkle");
-	const iconUrlValue = asDraftText(initial.iconUrl, "");
-	const hrefValue = asDraftText(initial.href, "");
-	const descriptionValue = asDraftText(initial.description, "");
-	const actionValue = asDraftText(initial.action, "open-view");
-	const viewValue = asDraftText(initial.view, "");
-	const shapeVal = asDraftText(initial.shape, "squircle").toLowerCase();
-	const iconDisplayVal = normalizeIconDisplay(initial.iconDisplay) || "glyph";
-	const iconScaleVal = normalizeItemIconBitmapScale(initial.iconScale);
-	const olt = asDraftText(initial.openLinkTarget, defaultOpenLinkTargetForHref(initial.href)).toLowerCase();
-	const widgetKindVal = asDraftText(initial.widgetKind, "clock").toLowerCase();
-	if (widgetKindSelect) {
-		if (widgetKindVal !== "android") widgetKindSelect.querySelector("option[value=\"android\"]")?.remove();
-		widgetKindSelect.value = widgetKindVal === "search" || widgetKindVal === "android" ? widgetKindVal : "clock";
-	}
-	if (spanColsInput) spanColsInput.value = String(Math.max(1, Math.min(8, Number(initial.spanCols) || 1)));
-	if (spanRowsInput) spanRowsInput.value = String(Math.max(1, Math.min(8, Number(initial.spanRows) || 1)));
-	if (clockFormatSelect) clockFormatSelect.value = String(initial.clockFormat || "24h").toLowerCase() === "12h" ? "12h" : "24h";
-	fillTextControl(searchUrlInput, asDraftText(initial.searchUrl, ""));
-	fillTextControl(labelInput, labelValue);
-	fillTextControl(iconInput, iconValue);
-	fillTextControl(iconUrlInput, iconUrlValue);
-	if (iconDisplaySelect) iconDisplaySelect.value = iconDisplayVal;
-	if (shapeSelect) shapeSelect.value = isTileShapeValue(shapeVal) ? shapeVal : "squircle";
-	if (iconScaleSelect) iconScaleSelect.value = iconScaleVal;
-	if (openLinkTargetSelect) openLinkTargetSelect.value = olt === "native-window" || olt === "native" || olt === "window" ? "native-window" : olt === "new-tab" || olt === "tab" || olt === "browser" || olt === "browser-tab" ? "new-tab" : olt === "external-app" || olt === "app" || olt === "chooser" || olt === "open-with" || olt === "open-in-app" ? "external-app" : olt === "viewer" || olt === "markdown" ? "viewer" : olt === "document" || olt === "cwsp-document" ? "document" : olt === "explorer" || olt === "files" ? "explorer" : olt === "workcenter" || olt === "process" ? "workcenter" : olt === "transfer" || olt === "cwsp" || olt === "network" ? "transfer" : "inline";
-	if (hrefInput) {
-		fillTextControl(hrefInput, hrefValue);
-		const autoHref = synthesizeViewHref(viewValue, openLinkTargetSelect?.value || olt);
-		if (autoHref) hrefInput.placeholder = `Auto: ${autoHref}`;
-	}
-	fillTextControl(descriptionInput, descriptionValue);
-	setSelectOptions(actionSelect, actionOptions, actionValue);
-	setSelectOptions(viewSelect, viewOptions, viewValue, {
-		value: "",
-		label: "Choose view"
-	});
-	const currentOpenTarget = () => String(openLinkTargetSelect?.value || olt || "inline");
-	const syncFieldVisibility = () => {
-		const action = String(actionSelect?.value || "");
-		const widgetOn = isWidgetAction(action);
-		const kind = String(widgetKindSelect?.value || widgetKindVal || "clock");
-		if (viewField) viewField.hidden = !isViewAction(action) || widgetOn;
-		if (hrefField) hrefField.hidden = !isHrefAction(action) || widgetOn;
-		if (openLinkTargetField) openLinkTargetField.hidden = widgetOn || !(action === "open-link" || action === "open-view" || isHrefAction(action));
-		const toggleField = (node, show) => {
-			if (!node) return;
-			if (show) node.removeAttribute("hidden");
-			else node.setAttribute("hidden", "");
-		};
-		toggleField(widgetKindField, widgetOn);
-		toggleField(spanField, widgetOn);
-		toggleField(clockFormatField, widgetOn && kind === "clock");
-		toggleField(searchUrlField, widgetOn && kind === "search");
-		const display = normalizeIconDisplay(iconDisplaySelect?.value) || "glyph";
-		if (iconGlyphField) {
-			if (display === "glyph") iconGlyphField.removeAttribute("hidden");
-			else iconGlyphField.setAttribute("hidden", "");
-		}
-		if (iconUrlField) {
-			if (display === "glyph") iconUrlField.setAttribute("hidden", "");
-			else iconUrlField.removeAttribute("hidden");
-		}
-		if (action === "open-link" && hrefInput && !String(hrefInput.value || "").trim()) {
-			const fromView = synthesizeViewHref(String(viewSelect?.value || viewValue || ""), currentOpenTarget());
-			if (fromView) hrefInput.value = fromView;
-		}
-		const autoHref = synthesizeViewHref(String(viewSelect?.value || viewValue || ""), currentOpenTarget());
-		if (hrefInput && autoHref) hrefInput.placeholder = `Auto: ${autoHref}`;
-	};
-	viewSelect?.addEventListener("change", () => {
-		const autoHref = synthesizeViewHref(String(viewSelect?.value || ""), currentOpenTarget());
-		if (hrefInput && autoHref) hrefInput.placeholder = `Auto: ${autoHref}`;
-	});
-	openLinkTargetSelect?.addEventListener("change", syncFieldVisibility);
-	let closed = false;
-	let unregisterBackNav = null;
-	const closeModal = () => {
-		if (closed) return;
-		closed = true;
-		unregisterBackNav?.();
-		unregisterBackNav = null;
-		try {
-			if (modal.open) modal.close();
-		} catch {}
-		modal.remove();
-	};
-	actionSelect?.addEventListener("change", syncFieldVisibility);
-	widgetKindSelect?.addEventListener("change", syncFieldVisibility);
-	iconDisplaySelect?.addEventListener("change", () => {
-		if (normalizeIconDisplay(iconDisplaySelect.value) === "glyph") {
-			if (normalizeItemIconBitmapScale(iconScaleSelect?.value) === "auto" && iconScaleSelect) iconScaleSelect.value = "compact";
-		}
-		syncFieldVisibility();
-	});
-	syncFieldVisibility();
-	modal.addEventListener("cancel", (event) => {
-		event.preventDefault();
-		closeModal();
-	});
-	modal.addEventListener("click", (event) => {
-		if (event.target === modal) closeModal();
-	});
-	form?.addEventListener("pointerdown", (event) => {
-		event.stopPropagation();
-	}, true);
-	form?.addEventListener("click", (event) => {
-		const target = event.target;
-		const action = target?.closest?.("[data-action]")?.getAttribute?.("data-action") || target?.dataset?.action || "";
-		if (action === "cancel") {
-			event.preventDefault();
-			closeModal();
-			return;
-		}
-		if (action === "delete" && mode === "edit") {
-			event.preventDefault();
-			onDelete?.();
-			closeModal();
-		}
-	});
-	form?.addEventListener("submit", (event) => {
-		event.preventDefault();
-		onSave({
-			label: String(labelInput?.value || "").trim() || "Item",
-			icon: String(iconInput?.value || "").trim() || "sparkle",
-			action: String(actionSelect?.value || "open-view"),
-			view: String(viewSelect?.value || "").trim(),
-			href: String(hrefInput?.value || "").trim(),
-			description: String(descriptionInput?.value || "").trim(),
-			shape: String(shapeSelect?.value || "squircle").toLowerCase(),
-			iconDisplay: normalizeIconDisplay(iconDisplaySelect?.value) || "glyph",
-			iconUrl: String(iconUrlInput?.value || "").trim(),
-			iconScale: normalizeItemIconBitmapScale(iconScaleSelect?.value),
-			widgetKind: String(widgetKindSelect?.value || "clock"),
-			spanCols: Math.max(1, Math.min(8, Number(spanColsInput?.value) || 1)),
-			spanRows: Math.max(1, Math.min(8, Number(spanRowsInput?.value) || 1)),
-			clockFormat: String(clockFormatSelect?.value || "24h"),
-			searchUrl: String(searchUrlInput?.value || "").trim(),
-			openLinkTarget: (() => {
-				const v = String(openLinkTargetSelect?.value || defaultOpenLinkTargetForHref(hrefInput?.value)).toLowerCase();
-				if (v === "native-window" || v === "native" || v === "window") return "native-window";
-				if (v === "new-tab" || v === "tab" || v === "browser") return "new-tab";
-				if (v === "external-app" || v === "app" || v === "chooser" || v === "open-with" || v === "open-in-app") return "external-app";
-				if (v === "viewer" || v === "markdown") return "viewer";
-				if (v === "document" || v === "cwsp-document") return "document";
-				if (v === "explorer" || v === "files") return "explorer";
-				if (v === "workcenter" || v === "process") return "workcenter";
-				if (v === "transfer" || v === "cwsp" || v === "network") return "transfer";
-				return "inline";
-			})()
-		});
-		closeModal();
-	});
-	if (registerForBackNavigation) unregisterBackNav = registerModal(modal, void 0, closeModal);
-	modal.style.setProperty("color-scheme", theme === "light" ? "light only" : "dark only", "important");
-	form?.style.setProperty("color-scheme", theme === "light" ? "light only" : "dark only", "important");
-	form?.style.setProperty("pointer-events", "auto", "important");
-	form?.style.setProperty("contain", "none", "important");
-	form?.style.setProperty("content-visibility", "visible", "important");
-	form?.querySelectorAll("input, select, textarea, button").forEach((node) => {
-		const el = node;
-		el.style.setProperty("pointer-events", "auto", "important");
-		el.style.setProperty("position", "relative", "important");
-		el.style.setProperty("z-index", "1", "important");
-	});
-	document.body.append(modal);
-	try {
-		modal.showModal();
-	} catch {
-		modal.setAttribute("open", "");
-		modal.style.setProperty("position", "fixed", "important");
-		modal.style.setProperty("inset", "0", "important");
-		modal.style.setProperty("z-index", "2147483646", "important");
-	}
-	requestAnimationFrame(() => {
-		if (fields) fields.scrollTop = 0;
-		fillTextControl(labelInput, labelValue);
-		fillTextControl(iconInput, iconValue);
-		fillTextControl(descriptionInput, descriptionValue);
-		if (actionSelect && actionValue) actionSelect.value = actionValue;
-		if (viewSelect && viewValue) viewSelect.value = viewValue;
-		labelInput?.focus({ preventScroll: true });
-	});
-};
-//#endregion
-//#region ../../modules/views/home-view/src/ts/core-rail.ts
-var RAIL_OPEN_KEY$1 = "cw::workspace::speed-dial::core-rail-open";
-/** Views that belong on the rail — not the freeform Speed Dial grid. */
-var CORE_RAIL_VIEWS = [
-	"apps",
-	"explorer",
-	"settings",
-	"viewer"
-];
-var isCoreRailView = (view) => CORE_RAIL_VIEWS.includes(view);
-var getCoreRailEntries = () => {
-	try {
-		if (String(document.documentElement?.dataset?.cwspSku || "") === "launcher") return [
-			{
-				view: "apps",
-				label: "Apps",
-				icon: "squares-four"
-			},
-			{
-				view: "explorer",
-				label: "Explorer",
-				icon: "folder"
-			},
-			{
-				view: "viewer",
-				label: "Documents",
-				icon: "books"
-			},
-			{
-				view: "workcenter",
-				label: "Process",
-				icon: "magic-wand"
-			},
-			{
-				view: "network",
-				label: "Transfer",
-				icon: "drone"
-			},
-			{
-				view: "settings",
-				label: "Settings",
-				icon: "gear-six"
-			}
-		];
-	} catch {}
-	return NAVIGATION_SHORTCUTS.filter((s) => isCoreRailView(String(s.view || ""))).map((s) => ({
-		view: String(s.view),
-		label: String(s.label || s.view),
-		icon: String(s.icon || "sparkle")
-	}));
-};
-var isCoreRailOpen = () => {
-	try {
-		const v = localStorage.getItem(RAIL_OPEN_KEY$1);
-		if (v == null || !String(v).trim()) return false;
-		return v === "1" || v === "true" || v === "open";
-	} catch {
-		return false;
-	}
-};
-var setCoreRailOpen = (open) => {
-	try {
-		localStorage.setItem(RAIL_OPEN_KEY$1, open ? "1" : "0");
-	} catch {}
-};
-/**
-* WHY: Legacy boot used to inject Explorer/Settings/Markdown onto the grid.
-* Move those tiles off the desktop into the rail so the grid stays user shortcuts.
-*/
-var migrateCoreViewShortcutsOffGrid = () => {
-	stripCoreRailTilesFromGrid({ markDirty: true });
-};
-var runCoreView = (view) => {
-	if (view === "apps") {
-		const home = globalThis.__CWSP_LAUNCHER_HOME__;
-		if (typeof home?.openAppMenuPage === "function") {
-			home.openAppMenuPage();
-			return;
-		}
-		if (typeof home?.openAppMenu === "function") {
-			home.openAppMenu();
-			return;
-		}
-	}
-	tryLaunchSiblingView(view).then((launched) => {
-		if (launched) return;
-		runCoreViewInProcess(view);
-	});
-};
-var runCoreViewInProcess = (view) => {
-	const opener = getSpeedDialViewOpener();
-	const registry = getSpeedDialActionRegistry();
-	const action = registry.get(`open-view-${view}`) || registry.get("open-view");
-	try {
-		action?.({
-			id: `rail-${view}`,
-			items: speedDialItems,
-			meta: speedDialMeta,
-			viewMaker: opener
-		}, {
-			view,
-			type: view,
-			label: view
-		});
-	} catch (e) {
-		console.warn("[core-rail] open failed", view, e);
-	}
-};
-/** Mount collapsible right rail into the Speed Dial root. */
-function mountCoreRail(host) {
-	if (!host || host.querySelector(".speed-dial-core-rail")) return () => void 0;
-	migrateCoreViewShortcutsOffGrid();
-	let open = isCoreRailOpen();
-	const rail = document.createElement("aside");
-	rail.className = "speed-dial-core-rail";
-	rail.setAttribute("aria-label", "Native apps");
-	rail.toggleAttribute("data-open", open);
-	const toggle = document.createElement("button");
-	toggle.type = "button";
-	toggle.className = "speed-dial-core-rail__toggle";
-	toggle.title = open ? "Hide apps" : "Show apps";
-	toggle.setAttribute("aria-expanded", open ? "true" : "false");
-	toggle.setAttribute("aria-controls", "speed-dial-core-rail-panel");
-	toggle.innerHTML = "<ui-icon icon=\"caret-left\" icon-style=\"duotone\" aria-hidden=\"true\"></ui-icon>";
-	const panel = document.createElement("div");
-	panel.id = "speed-dial-core-rail-panel";
-	panel.className = "speed-dial-core-rail__panel";
-	panel.setAttribute("role", "toolbar");
-	const paintEntries = () => {
-		panel.replaceChildren();
-		for (const entry of getCoreRailEntries()) {
-			const btn = document.createElement("button");
-			btn.type = "button";
-			btn.className = "speed-dial-core-rail__item";
-			btn.title = entry.label;
-			btn.setAttribute("aria-label", entry.label);
-			btn.dataset.view = entry.view;
-			btn.innerHTML = `<ui-icon icon="${entry.icon}" icon-style="duotone" aria-hidden="true"></ui-icon><span class="speed-dial-core-rail__label">${entry.label}</span>`;
-			btn.addEventListener("click", (ev) => {
-				ev.preventDefault();
-				ev.stopPropagation();
-				runCoreView(entry.view);
-			});
-			panel.append(btn);
-		}
-	};
-	paintEntries();
-	const syncOpen = () => {
-		rail.toggleAttribute("data-open", open);
-		toggle.setAttribute("aria-expanded", open ? "true" : "false");
-		toggle.title = open ? "Hide apps" : "Show apps";
-		const icon = toggle.querySelector("ui-icon");
-		if (icon) icon.setAttribute("icon", open ? "caret-right" : "caret-left");
-		setCoreRailOpen(open);
-	};
-	toggle.addEventListener("click", (ev) => {
-		ev.preventDefault();
-		ev.stopPropagation();
-		open = !open;
-		syncOpen();
-	});
-	syncOpen();
-	rail.append(toggle, panel);
-	host.append(rail);
-	const isRailKeepOpenTarget = (ev) => {
-		const path = typeof ev.composedPath === "function" ? ev.composedPath() : [];
-		for (const n of path) {
-			if (n === rail || n instanceof Node && rail.contains(n)) return true;
-			if (n instanceof Element && n.closest?.("dialog, .cw-context-menu-layer, .env-shell-app-menu, .speed-dial-editor, .sd-icon-picker, .speed-dial-chrome-rail, ui-calendar-flyout, ui-quick-settings")) return true;
-		}
-		return false;
-	};
-	const onDocPointer = (ev) => {
-		if (!open) return;
-		if (ev.button != null && ev.button !== 0) return;
-		if (isRailKeepOpenTarget(ev)) return;
-		open = false;
-		syncOpen();
-	};
-	document.addEventListener("pointerdown", onDocPointer, { capture: true });
-	return () => {
-		document.removeEventListener("pointerdown", onDocPointer, { capture: true });
-		rail.remove();
-	};
-}
-//#endregion
-//#region ../../modules/views/home-view/src/ts/chrome-rail.ts
-var RAIL_OPEN_KEY = "cw::workspace::speed-dial::chrome-rail-open";
-var isChromeRailOpen = () => {
-	try {
-		const v = localStorage.getItem(RAIL_OPEN_KEY);
-		if (v == null || !String(v).trim()) return false;
-		return v === "1" || v === "true" || v === "open";
-	} catch {
-		return false;
-	}
-};
-var setChromeRailOpen = (open) => {
-	try {
-		localStorage.setItem(RAIL_OPEN_KEY, open ? "1" : "0");
-	} catch {}
-};
-var lockEntry = (locked) => locked ? {
-	id: "tiles-lock",
-	label: "Unlock",
-	icon: "push-pin"
-} : {
-	id: "tiles-lock",
-	label: "Pin",
-	icon: "push-pin-slash"
-};
-var railActions = (locked) => [
-	{
-		id: "calendar",
-		label: "Calendar",
-		icon: "calendar-blank",
-		flyout: "calendar"
-	},
-	{
-		id: "quick-settings",
-		label: "Quick",
-		icon: "sliders-horizontal",
-		flyout: "quick-settings"
-	},
-	lockEntry(locked)
-];
-/** Mount collapsible left chrome rail into the Speed Dial root. */
-function mountChromeRail(host) {
-	if (!host || host.querySelector(".speed-dial-chrome-rail")) return () => void 0;
-	let open = isChromeRailOpen();
-	let locked = isTilesLocked();
-	const rail = document.createElement("aside");
-	rail.className = "speed-dial-chrome-rail";
-	rail.setAttribute("aria-label", "Launcher controls");
-	rail.setAttribute("data-chrome-flyout-side", "start");
-	rail.toggleAttribute("data-open", open);
-	const toggle = document.createElement("button");
-	toggle.type = "button";
-	toggle.className = "speed-dial-chrome-rail__toggle";
-	toggle.title = open ? "Hide controls" : "Show controls";
-	toggle.setAttribute("aria-expanded", open ? "true" : "false");
-	toggle.setAttribute("aria-controls", "speed-dial-chrome-rail-panel");
-	toggle.innerHTML = "<ui-icon icon=\"caret-right\" icon-style=\"duotone\" aria-hidden=\"true\"></ui-icon>";
-	const panel = document.createElement("div");
-	panel.id = "speed-dial-chrome-rail-panel";
-	panel.className = "speed-dial-chrome-rail__panel";
-	panel.setAttribute("role", "toolbar");
-	const paintEntries = () => {
-		panel.replaceChildren();
-		for (const entry of railActions(locked)) {
-			const btn = document.createElement("button");
-			btn.type = "button";
-			btn.className = "speed-dial-chrome-rail__item";
-			btn.title = entry.id === "tiles-lock" ? locked ? "Unlock layout — drag tiles" : "Pin layout — tiles stay put" : entry.id === "quick-settings" ? "Quick settings" : entry.label;
-			btn.setAttribute("aria-label", btn.title);
-			btn.dataset.action = entry.id;
-			if (entry.flyout) {
-				btn.setAttribute("data-chrome-flyout-anchor", entry.flyout);
-				btn.setAttribute("data-chrome-flyout-side", "start");
-				btn.setAttribute("aria-haspopup", "dialog");
-			}
-			if (entry.id === "tiles-lock") {
-				btn.setAttribute("aria-pressed", locked ? "true" : "false");
-				btn.toggleAttribute("data-pressed", locked);
-			}
-			btn.innerHTML = `<ui-icon icon="${entry.icon}" icon-style="duotone" aria-hidden="true"></ui-icon><span class="speed-dial-chrome-rail__label">${entry.label}</span>`;
-			btn.addEventListener("click", (ev) => {
-				ev.preventDefault();
-				ev.stopPropagation();
-				if (entry.id === "tiles-lock") {
-					setTilesLocked(!isTilesLocked());
 					return;
 				}
-				if (entry.flyout === "calendar") toggleCalendarFlyout(btn);
-				else if (entry.flyout === "quick-settings") toggleQuickSettingsFlyout(btn);
+				if (!href || href.startsWith("#")) return;
+				const resolved = this.resolveUrlAgainstSource(href);
+				if (!resolved) return;
+				const rawLinkLooksRelative = !/^[a-zA-Z][a-zA-Z\d+\-.]*:/.test(href) && !href.startsWith("//");
+				if (!(this.isLikelyMarkdownUrl(resolved) || rawLinkLooksRelative && !this.isLikelyBinaryAssetUrl(resolved))) return;
+				e.preventDefault();
+				this.openMarkdownFromUrl(resolved).then((ok) => {
+					if (!ok) this.showMessage("Failed to open markdown link");
+				});
 			});
-			panel.append(btn);
 		}
-	};
-	const syncOpen = () => {
-		rail.toggleAttribute("data-open", open);
-		toggle.setAttribute("aria-expanded", open ? "true" : "false");
-		toggle.title = open ? "Hide controls" : "Show controls";
-		const icon = toggle.querySelector("ui-icon");
-		if (icon) icon.setAttribute("icon", open ? "caret-left" : "caret-right");
-		setChromeRailOpen(open);
-	};
-	const syncLock = () => {
-		locked = isTilesLocked();
-		applyTilesLockedAttr(host);
-		paintEntries();
-	};
-	toggle.addEventListener("click", (ev) => {
-		ev.preventDefault();
-		ev.stopPropagation();
-		open = !open;
-		syncOpen();
-	});
-	syncOpen();
-	syncLock();
-	rail.append(toggle, panel);
-	host.append(rail);
-	const isRailKeepOpenTarget = (ev) => {
-		const path = typeof ev.composedPath === "function" ? ev.composedPath() : [];
-		for (const n of path) {
-			if (n === rail || n instanceof Node && rail.contains(n)) return true;
-			if (n instanceof Element && n.closest?.("dialog, .cw-context-menu-layer, .env-shell-app-menu, .speed-dial-editor, .sd-icon-picker, .speed-dial-core-rail, ui-calendar-flyout, ui-quick-settings")) return true;
+		pathInputEl() {
+			return this.queryViewerSlotted("[data-viewer-path]");
 		}
-		return false;
-	};
-	const onDocPointer = (ev) => {
-		if (!open) return;
-		if (ev.button != null && ev.button !== 0) return;
-		if (isRailKeepOpenTarget(ev)) return;
-		open = false;
-		syncOpen();
-	};
-	document.addEventListener("pointerdown", onDocPointer, { capture: true });
-	window.addEventListener(TILES_LOCKED_EVENT, syncLock);
-	return () => {
-		document.removeEventListener("pointerdown", onDocPointer, { capture: true });
-		window.removeEventListener(TILES_LOCKED_EVENT, syncLock);
-		rail.remove();
-	};
-}
-//#endregion
-//#region ../../modules/views/home-view/src/ts/widgets.ts
-var androidBridge = null;
-var hasAndroidWidgetBridge = () => {
-	if (androidBridge) return true;
-	try {
-		const c = globalThis.Capacitor;
-		return typeof c?.isNativePlatform === "function" && c.isNativePlatform();
-	} catch {
-		return false;
-	}
-};
-var VALID_WIDGET_KINDS = /* @__PURE__ */ new Set([
-	"clock",
-	"search",
-	"android"
-]);
-var asWidgetKind = (value) => {
-	const kind = String(value || "").toLowerCase();
-	return VALID_WIDGET_KINDS.has(kind) ? kind : "";
-};
-/** True when the tile is a widget — `item.action` wins over a stale `meta.action`. */
-var isSpeedDialWidgetItem = (item) => {
-	if (!item?.id) return false;
-	const meta = getSpeedDialMeta(item.id);
-	const itemAction = String(item.action || "").toLowerCase();
-	const metaAction = String(meta?.action || "").toLowerCase();
-	if (itemAction === "widget" || metaAction === "widget") return true;
-	const kind = asWidgetKind(meta?.widgetKind);
-	return kind === "search" || kind === "android";
-};
-var getSpeedDialWidgetKind = (item) => {
-	if (!isSpeedDialWidgetItem(item)) return "";
-	return asWidgetKind(getSpeedDialMeta(item.id)?.widgetKind) || "clock";
-};
-/** Properties used to stamp `widgetKind: clock` on every save — drop that on shortcuts. */
-var stripStaleWidgetMetaFromShortcuts = () => {
-	let metaChanged = false;
-	let itemsChanged = false;
-	for (const item of speedDialItems || []) {
-		if (!item?.id) continue;
-		const meta = getSpeedDialMeta(item.id);
-		if (!meta) continue;
-		if (isSpeedDialWidgetItem(item)) {
-			if (String(item.action || "").toLowerCase() !== "widget") {
-				item.action = "widget";
-				itemsChanged = true;
+		pathInputValue() {
+			return String(this.pathInputEl()?.value || "").trim();
+		}
+		syncPathBackButton() {
+			const btn = this.queryViewerSlotted("[data-action=\"go-back\"]");
+			if (btn) btn.disabled = this.pathHistoryIndex <= 0;
+		}
+		syncOpenedPath(source) {
+			const next = String(source || this.sourceUrl || "").trim();
+			const input = this.pathInputEl();
+			if (input && next && input.value !== next) input.value = next;
+			if (this.suppressPathHistory || !next) {
+				this.syncPathBackButton();
+				return;
 			}
-			if (String(meta.action || "").toLowerCase() !== "widget") {
-				meta.action = "widget";
-				metaChanged = true;
+			if (this.pathHistory[this.pathHistoryIndex] === next) {
+				this.syncPathBackButton();
+				return;
 			}
-			if (!asWidgetKind(meta.widgetKind)) {
-				meta.widgetKind = "clock";
-				metaChanged = true;
+			this.pathHistory = this.pathHistory.slice(0, this.pathHistoryIndex + 1);
+			this.pathHistory.push(next);
+			this.pathHistoryIndex = this.pathHistory.length - 1;
+			this.syncPathBackButton();
+		}
+		async goPathFromBar() {
+			const raw = this.pathInputValue();
+			if (!raw) {
+				this.showMessage("Enter a path or URL");
+				return;
 			}
-			continue;
+			const src = toFetchableMarkdownUrl(/^(?:[a-z][a-z\d+\-.]*:|\/)/i.test(raw) ? raw : `https://${raw}`);
+			if (!await this.openMarkdownFromUrl(src)) this.showMessage("Could not open that path or URL");
 		}
-		const stampedKind = asWidgetKind(meta.widgetKind);
-		if (stampedKind) {
-			const [dc, dr] = defaultWidgetSpan(stampedKind);
-			delete meta.widgetKind;
-			metaChanged = true;
-			const cols = Number(meta.spanCols);
-			const rows = Number(meta.spanRows);
-			if (cols === dc && rows === dr) {
-				meta.spanCols = 1;
-				meta.spanRows = 1;
+		async refreshPathFromBar() {
+			const src = this.pathInputValue() || this.sourceUrl;
+			if (src) {
+				if (!await this.openMarkdownFromUrl(src)) this.showMessage("Refresh failed");
+				return;
 			}
+			this.onRefresh();
 		}
-	}
-	if (itemsChanged) persistSpeedDialItems();
-	if (metaChanged) persistSpeedDialMeta();
-	return metaChanged || itemsChanged;
-};
-var getAndroidWidgetId = (item) => {
-	const meta = getSpeedDialMeta(item.id);
-	return Math.max(0, Number(meta?.androidWidgetId) || 0);
-};
-var pad = (n) => String(n).padStart(2, "0");
-var formatWidgetClock = (now = /* @__PURE__ */ new Date(), format = "24h") => {
-	const use12 = String(format || "").toLowerCase() === "12h";
-	let hours = now.getHours();
-	const minutes = pad(now.getMinutes());
-	let suffix = "";
-	if (use12) {
-		suffix = hours >= 12 ? " PM" : " AM";
-		hours = hours % 12 || 12;
-	}
-	return {
-		time: `${use12 ? String(hours) : pad(hours)}:${minutes}${suffix}`,
-		date: now.toLocaleDateString(void 0, {
-			weekday: "short",
-			month: "short",
-			day: "numeric"
-		})
-	};
-};
-var runWidgetSearch = (query, template) => {
-	const q = String(query || "").trim();
-	if (!q) return;
-	const raw = String(template || "").trim();
-	const href = raw ? raw.includes("%s") ? raw.replace("%s", encodeURIComponent(q)) : `${raw}${raw.includes("?") ? "&" : "?"}q=${encodeURIComponent(q)}` : `https://www.google.com/search?q=${encodeURIComponent(q)}`;
-	try {
-		const cap = globalThis.Capacitor;
-		if (typeof cap?.isNativePlatform === "function" && cap.isNativePlatform()) {
-			window.open(href, "_blank");
-			return;
-		}
-	} catch {}
-	window.open(href, "_blank", "noopener,noreferrer");
-};
-var ensureWidgetChrome = (el) => {
-	if (!el.querySelector(".sd-widget-chrome")) {
-		const chrome = document.createElement("div");
-		chrome.className = "sd-widget-chrome";
-		chrome.title = "Move widget";
-		el.append(chrome);
-	}
-	if (!el.querySelector(".sd-widget-resize")) {
-		const handle = document.createElement("button");
-		handle.type = "button";
-		handle.className = "sd-widget-resize";
-		handle.title = "Resize widget";
-		handle.setAttribute("aria-label", "Resize widget");
-		handle.addEventListener("pointerdown", (ev) => ev.stopPropagation());
-		el.append(handle);
-	}
-};
-var widgetNodeCache = () => {
-	const g = globalThis;
-	if (!(g.__CWSP_SD_WIDGET_NODES_V1__ instanceof Map)) g.__CWSP_SD_WIDGET_NODES_V1__ = /* @__PURE__ */ new Map();
-	return g.__CWSP_SD_WIDGET_NODES_V1__;
-};
-var widgetHostCache = () => {
-	const g = globalThis;
-	if (!(g.__CWSP_SD_WIDGET_HOSTS_V1__ instanceof Map)) g.__CWSP_SD_WIDGET_HOSTS_V1__ = /* @__PURE__ */ new Map();
-	return g.__CWSP_SD_WIDGET_HOSTS_V1__;
-};
-var disposeWidgetNode = (id) => {
-	const key = String(id || "").trim();
-	if (!key) return;
-	widgetNodeCache().get(key)?.stop?.();
-	widgetNodeCache().delete(key);
-	widgetHostCache().delete(key);
-};
-/** Reuse a disconnected host only — never steal a node still in a live Mapped grid. */
-var reuseWidgetHost = (id, kind) => {
-	const prev = widgetHostCache().get(id);
-	if (!prev || prev.kind !== kind) return null;
-	if (prev.host.isConnected) return null;
-	return prev.host;
-};
-var rememberWidgetHost = (id, kind, host) => {
-	if (!id || !(host instanceof HTMLElement)) return;
-	widgetHostCache().set(id, {
-		kind,
-		host
-	});
-};
-var createClockWidgetNode = (item) => {
-	const el = document.createElement("div");
-	el.className = "sd-widget sd-widget--clock";
-	el.setAttribute("data-widget", "clock");
-	const time = document.createElement("div");
-	time.className = "sd-widget__time";
-	const date = document.createElement("div");
-	date.className = "sd-widget__date";
-	const paint = () => {
-		const format = String(getSpeedDialMeta(item?.id)?.clockFormat || "24h");
-		const now = formatWidgetClock(/* @__PURE__ */ new Date(), format);
-		time.textContent = now.time;
-		date.textContent = now.date;
-	};
-	paint();
-	const timer = window.setInterval(paint, 1e3);
-	el.append(time, date);
-	const stop = () => clearInterval(timer);
-	el.__cwspClockStop = stop;
-	return el;
-};
-var createSearchWidgetNode = (item) => {
-	const el = document.createElement("form");
-	el.className = "sd-widget sd-widget--search";
-	el.setAttribute("data-widget", "search");
-	const input = document.createElement("input");
-	input.type = "search";
-	input.className = "sd-widget__search";
-	input.placeholder = "Search";
-	input.autocomplete = "off";
-	input.setAttribute("aria-label", "Search");
-	el.addEventListener("submit", (ev) => {
-		ev.preventDefault();
-		ev.stopPropagation();
-		runWidgetSearch(input.value, String(getSpeedDialMeta(item?.id)?.searchUrl || ""));
-	});
-	input.addEventListener("pointerdown", (ev) => ev.stopPropagation());
-	el.append(input);
-	return el;
-};
-var createAndroidWidgetNode = (item) => {
-	const meta = getSpeedDialMeta(item.id);
-	const el = document.createElement("div");
-	el.className = "sd-widget sd-widget--android";
-	el.setAttribute("data-widget", "android");
-	el.setAttribute("data-android-widget", String(getAndroidWidgetId(item) || ""));
-	const preview = String(meta?.iconUrl || meta?.preview || "").trim();
-	if (preview) {
-		const img = document.createElement("img");
-		img.className = "sd-widget__preview";
-		img.alt = "";
-		img.src = preview;
-		el.append(img);
-	}
-	return el;
-};
-var createWidgetNode = (kind, item) => {
-	const id = String(item?.id || "").trim();
-	const cache = widgetNodeCache();
-	if (id) {
-		const prev = cache.get(id);
-		if (prev && prev.kind === kind) return prev.node;
-		prev?.stop?.();
-		cache.delete(id);
-	}
-	const node = kind === "search" ? createSearchWidgetNode(item) : kind === "android" && item ? createAndroidWidgetNode(item) : createClockWidgetNode(item);
-	const stop = node.__cwspClockStop;
-	if (id) cache.set(id, {
-		kind,
-		node,
-		stop
-	});
-	return node;
-};
-var decorateWidgetHost = (host, _kind) => {
-	ensureWidgetChrome(host);
-	host.dataset.widgetChromeBound = "1";
-};
-var bindWidgetResize = (host, item, hooks) => {
-	if (host.dataset.widgetResizeBound === "1") return;
-	const handle = host.querySelector(".sd-widget-resize");
-	if (!handle) return;
-	host.dataset.widgetResizeBound = "1";
-	let pointerId = null;
-	let start = null;
-	const readVisualCellSize = () => {
-		const rect = host.getBoundingClientRect();
-		const cs = getComputedStyle(host);
-		const [sx, sy] = normalizeSpan([Number(host.style.getPropertyValue("--cell-span-x") || cs.getPropertyValue("--cell-span-x")) || 1, Number(host.style.getPropertyValue("--cell-span-y") || cs.getPropertyValue("--cell-span-y")) || 1]);
-		return {
-			cellW: Math.max(16, rect.width / sx),
-			cellH: Math.max(16, rect.height / sy)
-		};
-	};
-	handle.addEventListener("pointerdown", (ev) => {
-		if (ev.button !== 0 || isTilesLocked()) return;
-		ev.preventDefault();
-		ev.stopPropagation();
-		pointerId = ev.pointerId;
-		handle.setPointerCapture?.(ev.pointerId);
-		const meta = getSpeedDialMeta(item.id);
-		const size = readVisualCellSize();
-		start = {
-			x: ev.clientX,
-			y: ev.clientY,
-			span: getItemSpan(item.id),
-			cellW: size.cellW,
-			cellH: size.cellH
-		};
-		host.dataset.resizing = "1";
-		if (meta) {
-			meta.spanCols = start.span[0];
-			meta.spanRows = start.span[1];
-		}
-	});
-	handle.addEventListener("pointermove", (ev) => {
-		if (pointerId !== ev.pointerId || !start) return;
-		ev.preventDefault();
-		ev.stopPropagation();
-		const root = host.closest(".speed-dial-root");
-		const orient = normalizeOrient(root?.dataset.orient || root?.style.getPropertyValue("--orient"));
-		const [visX0, visY0] = logicalToVisualSpan(start.span, orient);
-		const nextVisX = Math.max(1, Math.min(8, visX0 + Math.round((ev.clientX - start.x) / start.cellW)));
-		const nextVisY = Math.max(1, Math.min(8, visY0 + Math.round((ev.clientY - start.y) / start.cellH)));
-		const [cols, rows] = logicalToVisualSpan([nextVisX, nextVisY], orient);
-		const current = getItemSpan(item.id);
-		if (current[0] === cols && current[1] === rows) return;
-		setItemSpan(item.id, [cols, rows]);
-		hooks.refresh();
-	});
-	const endResize = (ev) => {
-		if (pointerId !== ev.pointerId) return;
-		pointerId = null;
-		start = null;
-		delete host.dataset.resizing;
-		handle.releasePointerCapture?.(ev.pointerId);
-		persistSpeedDialMeta();
-		hooks.refresh();
-	};
-	handle.addEventListener("pointerup", endResize);
-	handle.addEventListener("pointercancel", endResize);
-};
-var releaseAndroidWidget = (item) => {
-	const id = getAndroidWidgetId(item);
-	if (!id || !androidBridge?.widgetDelete) return;
-	androidBridge.widgetDelete(id);
-};
-var boxFromElement = (widgetId, el) => {
-	const rect = el.getBoundingClientRect();
-	return {
-		widgetId,
-		x: rect.left,
-		y: rect.top,
-		w: Math.max(8, rect.width),
-		h: Math.max(8, rect.height),
-		dpr: Number(window.devicePixelRatio) || 1
-	};
-};
-var syncAndroidWidgetHosts = (root) => {
-	if (!androidBridge) return;
-	const host = root || document.getElementById("home");
-	if (!host) return;
-	host.querySelectorAll("[data-speed-dial-item][data-widget=\"android\"][data-layer=\"icons\"]").forEach((node) => {
-		const item = (speedDialItems || []).find((it) => it?.id === node.dataset.id);
-		if (!item) return;
-		const widgetId = getAndroidWidgetId(item);
-		if (!widgetId) return;
-		const box = boxFromElement(widgetId, node);
-		androidBridge.widgetAttach(box);
-	});
-};
-var hideAndroidWidgetHosts = () => {
-	androidBridge?.widgetHideAll?.();
-};
-var closeDialog = (dialog) => {
-	try {
-		dialog.close();
-	} catch {}
-	dialog.remove();
-};
-var showProviderPicker = async () => {
-	if (!androidBridge?.widgetList || !androidBridge.widgetBind) return null;
-	let providers = [];
-	try {
-		providers = await androidBridge.widgetList();
-	} catch (e) {
-		console.warn("[widgets] list failed", e);
-		return null;
-	}
-	if (!providers.length) return null;
-	return new Promise((resolve) => {
-		const dialog = document.createElement("dialog");
-		dialog.className = "sd-widget-picker";
-		const title = document.createElement("h3");
-		title.textContent = "Android widgets";
-		const list = document.createElement("div");
-		list.className = "sd-widget-picker__list";
-		const cancel = document.createElement("button");
-		cancel.type = "button";
-		cancel.className = "btn";
-		cancel.textContent = "Cancel";
-		const finish = (value) => {
-			closeDialog(dialog);
-			resolve(value);
-		};
-		cancel.addEventListener("click", () => finish(null));
-		for (const provider of providers) {
-			const btn = document.createElement("button");
-			btn.type = "button";
-			btn.className = "sd-widget-picker__item";
-			const size = `${provider.spanCols}×${provider.spanRows}`;
-			btn.innerHTML = provider.preview ? `<img alt="" src="${provider.preview}" /><span>${provider.label} · ${size}</span>` : `<span>${provider.label} · ${size}</span>`;
-			btn.addEventListener("click", async () => {
-				btn.disabled = true;
-				try {
-					const bound = await androidBridge.widgetBind(provider.provider);
-					finish(bound);
-				} catch (e) {
-					console.warn("[widgets] bind failed", e);
-					finish(null);
-				}
-			});
-			list.append(btn);
-		}
-		dialog.append(title, list, cancel);
-		document.body.append(dialog);
-		try {
-			dialog.showModal();
-		} catch {
-			finish(null);
-		}
-	});
-};
-/** Clock / Search on CRX + web; Android list on Capacitor. */
-var openWidgetPicker = async () => new Promise((resolve) => {
-	const dialog = document.createElement("dialog");
-	dialog.className = "sd-widget-picker";
-	const title = document.createElement("h3");
-	title.textContent = "Add widget";
-	const list = document.createElement("div");
-	list.className = "sd-widget-picker__list";
-	const cancel = document.createElement("button");
-	cancel.type = "button";
-	cancel.className = "btn";
-	cancel.textContent = "Cancel";
-	const finish = (value) => {
-		closeDialog(dialog);
-		resolve(value);
-	};
-	cancel.addEventListener("click", () => finish(null));
-	for (const entry of [{
-		kind: "clock",
-		label: "Clock · 2×1"
-	}, {
-		kind: "search",
-		label: "Search · 2×1"
-	}]) {
-		const btn = document.createElement("button");
-		btn.type = "button";
-		btn.className = "sd-widget-picker__item";
-		btn.textContent = entry.label;
-		btn.addEventListener("click", () => finish({ kind: entry.kind }));
-		list.append(btn);
-	}
-	if (hasAndroidWidgetBridge() && androidBridge?.widgetList) {
-		const btn = document.createElement("button");
-		btn.type = "button";
-		btn.className = "sd-widget-picker__item";
-		btn.textContent = "Android widgets…";
-		btn.addEventListener("click", async () => {
-			closeDialog(dialog);
-			const bound = await showProviderPicker();
-			resolve(bound ? {
-				kind: "android",
-				bound
-			} : null);
-		});
-		list.append(btn);
-	}
-	dialog.append(title, list, cancel);
-	document.body.append(dialog);
-	try {
-		dialog.showModal();
-	} catch {
-		finish(null);
-	}
-});
-//#endregion
-//#region ../../modules/views/home-view/src/ts/workspace-pages.ts
-var WORKSPACES_ROOT = "/user/workspaces/";
-var WORKSPACE_PAGE_EVENT = "cwsp:workspace-page";
-var CATALOG_KEY = "cw::workspace::pages";
-var SIDE_LETTERS = "abcdefghijklmnopqrstuvwxyz";
-var slugPath = (id) => `${WORKSPACES_ROOT}${id}/`;
-var defaultPages = () => [
-	"side-a",
-	"side-b",
-	"side-c"
-].map((id) => ({
-	id,
-	label: `Side ${id.slice(-1).toUpperCase()}`,
-	path: slugPath(id)
-}));
-var emptyCatalog = () => ({
-	activeId: "side-a",
-	pages: defaultPages(),
-	snapshots: {}
-});
-var readCatalog = () => {
-	try {
-		const raw = localStorage.getItem(CATALOG_KEY);
-		if (!raw) return emptyCatalog();
-		const parsed = JSON.parse(raw);
-		if (!parsed || !Array.isArray(parsed.pages) || !parsed.pages.length) return emptyCatalog();
-		return {
-			activeId: String(parsed.activeId || parsed.pages[0].id),
-			pages: parsed.pages.map((p) => ({
-				id: String(p.id || "").trim(),
-				label: String(p.label || p.id),
-				path: String(p.path || slugPath(p.id))
-			})).filter((p) => p.id),
-			snapshots: parsed.snapshots && typeof parsed.snapshots === "object" ? parsed.snapshots : {}
-		};
-	} catch {
-		return emptyCatalog();
-	}
-};
-var slimSnapshot = (snap) => ({ items: (snap?.items || []).map((row) => {
-	const iconUrl = String(row.meta?.iconUrl || "");
-	if (!/^(data:|blob:)/i.test(iconUrl)) return row;
-	const meta = { ...row.meta || {} };
-	if (/^data:/i.test(iconUrl) && row.id) meta.iconUrl = persistSpeedDialIconBlob(String(row.id), iconUrl);
-	else delete meta.iconUrl;
-	return {
-		...row,
-		meta
-	};
-}) });
-var snapshotIds = (snap) => new Set((snap?.items || []).map((row) => String(row?.id || "")).filter(Boolean));
-var writeCatalog = (catalog) => {
-	try {
-		localStorage.setItem(CATALOG_KEY, JSON.stringify(catalog));
-	} catch (e) {
-		console.warn("[workspace-pages] catalog persist failed", e);
-	}
-};
-var emitPageChange = (id) => {
-	try {
-		window.dispatchEvent(new CustomEvent(WORKSPACE_PAGE_EVENT, { detail: {
-			id,
-			pages: listWorkspacePages()
-		} }));
-	} catch {}
-};
-var listWorkspacePages = () => readCatalog().pages;
-var getActiveWorkspaceId = () => readCatalog().activeId || "side-a";
-/** Keep the active page snapshot in sync with add/edit/remove grid mutations. */
-var syncActiveWorkspaceSnapshot = () => {
-	const cat = readCatalog();
-	if (!cat.pages.some((page) => page.id === cat.activeId)) return;
-	cat.snapshots[cat.activeId] = slimSnapshot(captureSpeedDialSnapshot());
-	writeCatalog(cat);
-};
-try {
-	const g = globalThis;
-	if (!g.__CWSP_WORKSPACE_SNAPSHOT_SYNC_BOUND__) {
-		g.__CWSP_WORKSPACE_SNAPSHOT_SYNC_BOUND__ = true;
-		window.addEventListener(SPEED_DIAL_MUTATION_EVENT, syncActiveWorkspaceSnapshot);
-	}
-} catch {}
-var nextSideId = (pages) => {
-	const used = new Set(pages.map((p) => p.id));
-	for (const ch of SIDE_LETTERS) {
-		const id = `side-${ch}`;
-		if (!used.has(id)) return id;
-	}
-	return `side-${Date.now().toString(36)}`;
-};
-/** Best-effort Explorer tree: /user/workspaces/<id>/workspace.json */
-var ensureWorkspaceExplorerDir = async (page) => {
-	try {
-		const backend = resolveFsBackend("/user/");
-		if (!backend?.mkdir || !backend.writable) return;
-		await backend.mkdir("/user/", "workspaces").catch(() => void 0);
-		await backend.mkdir(WORKSPACES_ROOT, page.id).catch(() => void 0);
-		if (backend.writeFile) {
-			const blob = new File([JSON.stringify({
-				id: page.id,
-				label: page.label,
-				path: page.path
-			}, null, 2)], "workspace.json", { type: "application/json" });
-			await backend.writeFile(page.path, blob).catch(() => void 0);
-		}
-	} catch (e) {
-		console.warn("[workspace-pages] explorer dir failed", page.id, e);
-	}
-};
-var addWorkspacePage = (label) => {
-	const cat = readCatalog();
-	const id = nextSideId(cat.pages);
-	const page = {
-		id,
-		label: String(label || `Side ${id.slice(-1).toUpperCase()}`).trim() || id,
-		path: slugPath(id)
-	};
-	cat.pages.push(page);
-	writeCatalog(cat);
-	ensureWorkspaceExplorerDir(page);
-	emitPageChange(cat.activeId);
-	return page;
-};
-var renameWorkspacePage = (id, label) => {
-	const cat = readCatalog();
-	const page = cat.pages.find((p) => p.id === id);
-	if (!page) return;
-	page.label = String(label || page.label).trim() || page.label;
-	writeCatalog(cat);
-	ensureWorkspaceExplorerDir(page);
-	emitPageChange(cat.activeId);
-};
-var removeWorkspacePage = (id) => {
-	const cat = readCatalog();
-	if (cat.pages.length <= 1) return false;
-	const idx = cat.pages.findIndex((p) => p.id === id);
-	if (idx < 0) return false;
-	cat.pages.splice(idx, 1);
-	delete cat.snapshots[id];
-	if (cat.activeId === id) cat.activeId = cat.pages[Math.max(0, idx - 1)].id;
-	writeCatalog(cat);
-	emitPageChange(cat.activeId);
-	return true;
-};
-var prefersReducedMotion = () => {
-	try {
-		return matchMedia("(prefers-reduced-motion: reduce)").matches;
-	} catch {
-		return false;
-	}
-};
-var workspaceTurnTargets = () => {
-	const root = document.querySelector(".speed-dial-root") || document.getElementById("home");
-	if (!root) return [];
-	const grids = [...root.querySelectorAll(".speed-dial-grid")];
-	return grids.length ? grids : [root];
-};
-var clearWorkspaceTurnGhosts = (root) => {
-	const scope = root || (typeof document !== "undefined" ? document : null);
-	if (!scope?.querySelectorAll) return;
-	scope.querySelectorAll(".speed-dial-grid--turn-ghost").forEach((node) => node.remove());
-	scope.querySelectorAll("[data-ws-turning]").forEach((el) => {
-		delete el.dataset.wsTurning;
-		el.querySelectorAll(".speed-dial-grid").forEach((grid) => {
-			grid.style.opacity = "";
-		});
-	});
-};
-/**
-* Clone a shortcut onto another Side without sharing the live id.
-* INVARIANT: inactive pages only receive a packed snapshot row — live meta stays on the active grid.
-*/
-var cloneSpeedDialItemToWorkspace = (item, targetId) => {
-	const cat = readCatalog();
-	if (!item || !cat.pages.some((page) => page.id === targetId)) return false;
-	if (targetId === (cat.activeId || "side-a")) return Boolean(addClonedSpeedDialItem(item));
-	const snap = cat.snapshots[targetId] || { items: [] };
-	const packed = cloneSpeedDialItemPacked(item);
-	packed.cell = findNextFreeCellInSnapshot(snap, packed.cell, [Number(packed.meta?.spanCols) || 1, Number(packed.meta?.spanRows) || 1]);
-	snap.items = [...snap.items || [], packed];
-	cat.snapshots[targetId] = snap;
-	writeCatalog(cat);
-	return true;
-};
-/**
-* Clone outgoing tiles, then return a closer that turns the new page in.
-* WHY: snapshot apply stays synchronous so rapid A→C clicks never persist the wrong page.
-*/
-var beginWorkspacePageTurn = (direction) => {
-	const targets = workspaceTurnTargets();
-	const root = targets[0]?.closest(".speed-dial-root") || targets[0] || null;
-	clearWorkspaceTurnGhosts(root);
-	if (!targets.length || prefersReducedMotion() || typeof targets[0].animate !== "function") return () => void 0;
-	const dir = direction < 0 ? -1 : 1;
-	const outDeg = `${-88 * dir}deg`;
-	const inDeg = `${88 * dir}deg`;
-	const outX = `${-18 * dir}%`;
-	const inX = `${18 * dir}%`;
-	const turnRoot = root || targets[0];
-	turnRoot.dataset.wsTurning = dir > 0 ? "next" : "prev";
-	const ghosts = [];
-	for (const el of targets) {
-		const ghost = el.cloneNode(true);
-		ghost.classList.add("speed-dial-grid--turn-ghost");
-		ghost.dataset.wsGhost = "1";
-		ghost.setAttribute("aria-hidden", "true");
-		el.parentElement?.insertBefore(ghost, el.nextSibling);
-		el.style.opacity = "0";
-		ghosts.push(ghost);
-		ghost.animate([{
-			transform: "translateX(0) rotateY(0deg)",
-			opacity: 1
-		}, {
-			transform: `translateX(${outX}) rotateY(${outDeg})`,
-			opacity: 0
-		}], {
-			duration: 180,
-			easing: "cubic-bezier(.4, 0, .2, 1)",
-			fill: "forwards"
-		});
-	}
-	const finishCleanup = () => {
-		for (const el of targets) el.style.opacity = "";
-		for (const ghost of ghosts) ghost.remove();
-		delete turnRoot.dataset.wsTurning;
-	};
-	return () => {
-		const incoming = targets.map((el) => el.animate([{
-			transform: `translateX(${inX}) rotateY(${inDeg})`,
-			opacity: .2
-		}, {
-			transform: "translateX(0) rotateY(0deg)",
-			opacity: 1
-		}], {
-			duration: 220,
-			easing: "cubic-bezier(.22, 1, .36, 1)",
-			fill: "none"
-		}));
-		const done = Promise.all(incoming.map((anim) => anim.finished.catch(() => void 0)));
-		const watchdog = new Promise((resolve) => {
-			setTimeout(resolve, 500);
-		});
-		Promise.race([done, watchdog]).then(finishCleanup);
-	};
-};
-/**
-* Persist the live Speed Dial into the active page, then load another page.
-* INVARIANT: the in-memory `speedDialItems` array is always the active workspace.
-*/
-var switchWorkspacePage = (id) => {
-	const cat = readCatalog();
-	const next = cat.pages.find((p) => p.id === id);
-	if (!next) return false;
-	const currentId = cat.activeId || cat.pages[0].id;
-	if (currentId === next.id) return true;
-	const fromIdx = Math.max(0, cat.pages.findIndex((p) => p.id === currentId));
-	let turnDir = Math.max(0, cat.pages.findIndex((p) => p.id === next.id)) - fromIdx;
-	if (Math.abs(turnDir) > cat.pages.length / 2) turnDir += turnDir > 0 ? -cat.pages.length : cat.pages.length;
-	cat.snapshots[currentId] = slimSnapshot(captureSpeedDialSnapshot());
-	cat.activeId = next.id;
-	writeCatalog(cat);
-	hideAndroidWidgetHosts();
-	const finishTurn = beginWorkspacePageTurn(turnDir);
-	applySpeedDialSnapshot(cat.snapshots[next.id] || { items: [] });
-	requestAnimationFrame(() => {
-		finishTurn();
-		requestAnimationFrame(() => syncAndroidWidgetHosts());
-	});
-	ensureWorkspaceExplorerDir(next);
-	emitPageChange(next.id);
-	return true;
-};
-var switchWorkspaceByDelta = (delta) => {
-	const cat = readCatalog();
-	if (cat.pages.length < 2) return false;
-	const idx = Math.max(0, cat.pages.findIndex((p) => p.id === cat.activeId));
-	const next = cat.pages[(idx + delta + cat.pages.length) % cat.pages.length];
-	return switchWorkspacePage(next.id);
-};
-/** First boot: treat the current grid as side-a; ensure Explorer folders. */
-var bootWorkspacePages = () => {
-	const cat = readCatalog();
-	const g = globalThis;
-	const live = slimSnapshot(captureSpeedDialSnapshot());
-	const stored = cat.snapshots[cat.activeId];
-	if (!stored) {
-		cat.snapshots[cat.activeId] = live;
-		writeCatalog(cat);
-	} else if (!g.__CWSP_WS_BOOT_APPLIED__) {
-		g.__CWSP_WS_BOOT_APPLIED__ = true;
-		const storedIds = snapshotIds(stored);
-		const liveHasExtra = [...snapshotIds(live)].some((id) => !storedIds.has(id));
-		const liveHasItems = (live.items || []).length > 0;
-		if (wasSpeedDialUserEdited() || liveHasExtra || liveHasItems) {
-			cat.snapshots[cat.activeId] = live;
-			writeCatalog(cat);
-		} else applySpeedDialSnapshot(stored);
-	}
-	for (const page of cat.pages) ensureWorkspaceExplorerDir(page);
-};
-var WORKSPACE_CMD_EVENT = "cwsp:workspace-cmd";
-var handleWorkspaceCommand = (cmd, id, label) => {
-	if (cmd === "add") addWorkspacePage(label);
-	else if (cmd === "prev") switchWorkspaceByDelta(-1);
-	else if (cmd === "next") switchWorkspaceByDelta(1);
-	else if (cmd === "switch" && id) switchWorkspacePage(id);
-	else if (cmd === "rename" && id) renameWorkspacePage(id, String(label || ""));
-	else if (cmd === "remove" && id) removeWorkspacePage(id);
-};
-var bindWorkspacePageHotkeys = () => {
-	const g = globalThis;
-	if (g.__CWSP_WS_HOTKEYS__) return () => void 0;
-	g.__CWSP_WS_HOTKEYS__ = true;
-	const onKey = (ev) => {
-		if (!(ev.ctrlKey || ev.metaKey) || !ev.altKey) return;
-		if (ev.key === "ArrowLeft") {
-			ev.preventDefault();
-			switchWorkspaceByDelta(-1);
-		} else if (ev.key === "ArrowRight") {
-			ev.preventDefault();
-			switchWorkspaceByDelta(1);
-		}
-	};
-	window.addEventListener("keydown", onKey);
-	const onCmd = (ev) => {
-		const detail = ev.detail || {};
-		handleWorkspaceCommand(String(detail.cmd || ""), detail.id, detail.label);
-	};
-	window.addEventListener(WORKSPACE_CMD_EVENT, onCmd);
-	return () => {
-		window.removeEventListener("keydown", onKey);
-		window.removeEventListener(WORKSPACE_CMD_EVENT, onCmd);
-	};
-};
-preloadStyle(app_menu_default);
-/** Matches {@code BootLoader} + launcher design spec. */
-function isLauncherSku() {
-	return document.documentElement.dataset.cwspShellRole === "launcher" || globalThis.__RS_SHELL_ROLE__ === "launcher";
-}
-//#endregion
-//#region ../../modules/views/home-view/src/ts/SpeedDial.ts
-var ctxMenuBound = false;
-/** Document-level paste/drop once — SpeedDial mount (not only createCtxMenu). */
-var homeTransferListenersBound = false;
-var persistItemsTimer = null;
-/** Lazy-init: top-level `observe` + `pointerAnchorRef` ran during chunk eval and hit TDZ vs `com-app` (see vite-chunk-placement). */
-var layoutSingleton = null;
-function getLayout() {
-	if (!layoutSingleton) {
-		layoutSingleton = observe([gridLayoutState.columns ?? 4, gridLayoutState.rows ?? 8]);
-		affected(gridLayoutState, () => {
-			layoutSingleton[0] = gridLayoutState.columns ?? 4;
-			layoutSingleton[1] = gridLayoutState.rows ?? 8;
-		});
-	}
-	return layoutSingleton;
-}
-var getScreenOrient = () => {
-	const type = String(globalThis.screen?.orientation?.type || "");
-	if (type.includes("landscape")) return type.endsWith("secondary") ? 3 : 1;
-	return type.endsWith("secondary") ? 2 : 0;
-};
-var getRootOrient = (root) => {
-	return normalizeOrient(root?.getAttribute("orient") ?? getScreenOrient());
-};
-var getGridLayout = () => [Number(gridLayoutState.columns) || 4, Number(gridLayoutState.rows) || 8];
-var readCellAxis = (value) => {
-	let cur = value;
-	if (cur && typeof cur === "object" && "value" in cur) cur = cur.value;
-	const n = Number(cur);
-	return Number.isFinite(n) ? Math.max(0, Math.floor(n)) : 0;
-};
-var getItemCell = (item) => [readCellAxis(item.cell?.[0]), readCellAxis(item.cell?.[1])];
-var currentHomeRoot = () => {
-	if (typeof document === "undefined") return null;
-	return document.getElementById("home") || document.querySelector(".speed-dial-root");
-};
-var labelLayerStyle = (item) => {
-	const logical = [readCellAxis(item?.cell?.[0]), readCellAxis(item?.cell?.[1])];
-	const visual = logicalToVisualCell(logical, getGridLayout(), getRootOrient(currentHomeRoot()));
-	const col = visual[0] + 1;
-	const row = visual[1] + 1;
-	return [
-		`--cell-x:${logical[0]}`,
-		`--cell-y:${logical[1]}`,
-		`--p-cell-x:${logical[0]}`,
-		`--p-cell-y:${logical[1]}`,
-		`--cell-column:${col}`,
-		`--cell-row:${row}`,
-		`grid-column:${col} / span 1`,
-		`grid-row:${row} / span 1`
-	].join(";");
-};
-/**
-* WHY: `createShapedTileShadow` + `observeDisconnect` removes the under when M()
-* reparents the tile. Local sibling — no lure attach/destroy.
-* INVARIANT: M() maps 1 item → 1 node. Do not return under+icon as a fragment.
-*/
-var createShapedUnder = (item, host) => {
-	const under = document.createElement("div");
-	under.className = "ui-ws-item-icon-under underlying-shadow-container";
-	under.setAttribute("aria-hidden", "true");
-	under.dataset.id = String(item.id || "");
-	under.dataset.layer = "shadows";
-	const geo = document.createElement("div");
-	geo.className = "underlying-shadow-geometry shaped";
-	under.append(geo);
-	const shape = host.getAttribute("data-shape") || "";
-	under.setAttribute("data-shape", shape);
-	geo.setAttribute("data-shape", shape);
-	return under;
-};
-var shouldHideShapedUnder = (icon) => {
-	const shape = icon.getAttribute("data-shape") || "";
-	return shape === "shapeless" || shape === "none" || icon.classList.contains("sd-widget-host") || Boolean(icon.dataset.widget);
-};
-var findShapedUnder = (icon) => {
-	const id = icon.dataset.id;
-	const parent = icon.parentElement;
-	if (!id || !parent) return null;
-	for (const child of parent.children) if (child instanceof HTMLElement && child.classList.contains("ui-ws-item-icon-under") && child.dataset.id === id) return child;
-	return null;
-};
-/** WHY: attach after the icon is in the grid — H`${under}${icon}` crashed Capacitor on pin/add. */
-var ensureShapedUnderSibling = (icon, item) => {
-	try {
-		if (icon.dataset.layer !== "icons") return;
-		if (shouldHideShapedUnder(icon)) {
-			findShapedUnder(icon)?.remove();
-			return;
-		}
-		if (!icon.parentElement) return;
-		let under = findShapedUnder(icon);
-		if (!under) {
-			under = createShapedUnder(item, icon);
-			icon.before(under);
-		} else if (under.nextElementSibling !== icon) icon.before(under);
-		bindUnderDisconnect(icon, under);
-		stampShapedUnderCell(icon);
-	} catch {}
-};
-var bindUnderDisconnect = (icon, under) => {
-	if (under.dataset.disconnectBound === "1") return;
-	const parent = icon.parentElement;
-	if (!parent) return;
-	under.dataset.disconnectBound = "1";
-	const observer = new MutationObserver((mutations) => {
-		for (const mutation of mutations) for (const node of mutation.removedNodes) if (node === icon || node instanceof Node && node.contains?.(icon)) {
-			under.remove();
-			observer.disconnect();
-			return;
-		}
-	});
-	observer.observe(parent, {
-		childList: true,
-		subtree: true
-	});
-};
-var pruneOrphanUnders = (scope) => {
-	if (!scope?.querySelectorAll) return;
-	const grids = scope.querySelectorAll(".speed-dial-grid[data-grid-layer='icons']");
-	const roots = grids.length ? [...grids] : [scope];
-	for (const grid of roots) {
-		const live = /* @__PURE__ */ new Map();
-		grid.querySelectorAll(":scope > [data-speed-dial-item][data-layer=\"icons\"]").forEach((el) => {
-			if (el.dataset.id && isLiveSpeedDialNode(el)) live.set(el.dataset.id, el);
-		});
-		grid.querySelectorAll(":scope > .ui-ws-item-icon-under").forEach((under) => {
-			const icon = live.get(under.dataset.id || "");
-			if (!icon || shouldHideShapedUnder(icon)) under.remove();
-		});
-	}
-};
-var bindIconGridShadowJanitor = (root) => {
-	root.querySelectorAll(".speed-dial-grid[data-grid-layer='icons']").forEach((grid) => {
-		if (grid.dataset.shadowMo === "1") return;
-		grid.dataset.shadowMo = "1";
-		const sweep = () => pruneOrphanUnders(grid);
-		new MutationObserver(sweep).observe(grid, {
-			childList: true,
-			subtree: true
-		});
-		sweep();
-	});
-};
-var syncWidgetsAfterGridChange = (root) => {
-	const host = root || currentHomeRoot();
-	if (!host) return;
-	pruneOrphanUnders(host);
-	if (!host.querySelector("[data-speed-dial-item][data-widget=\"android\"][data-layer=\"icons\"]")) hideAndroidWidgetHosts();
-	else syncAndroidWidgetHosts(host);
-};
-var isLiveSpeedDialNode = (node) => !node.closest(".speed-dial-grid--turn-ghost");
-var usedGridLine = (el, axis) => {
-	const varName = axis === "column" ? "--cell-column" : "--cell-row";
-	const fromVar = el.style.getPropertyValue(varName).trim();
-	if (fromVar && fromVar !== "auto") return fromVar;
-	const fromData = (axis === "column" ? el.dataset.cellColumn : el.dataset.cellRow) || "";
-	return fromData && fromData !== "auto" ? fromData : "";
-};
-var stampItemGridLine = (el, visualCell, _span = [1, 1]) => {
-	const col = visualCell[0] + 1;
-	const row = visualCell[1] + 1;
-	el.dataset.cellColumn = String(col);
-	el.dataset.cellRow = String(row);
-	el.style.setProperty("--cell-column", String(col));
-	el.style.setProperty("--cell-row", String(row));
-	if (el.dataset.layer !== "labels") return;
-	el.style.setProperty("grid-column", `${col} / span 1`, "important");
-	el.style.setProperty("grid-row", `${row} / span 1`, "important");
-};
-/** WHY: under-glow is a grid sibling — CSS-anchor + `grid-column:unset` left it 0×0 on WebView. */
-var stampShapedUnderCell = (icon) => {
-	if (icon.dataset.layer !== "icons") return;
-	const id = icon.dataset.id;
-	const parent = icon.parentElement;
-	if (!id || !parent) return;
-	const col = usedGridLine(icon, "column");
-	const row = usedGridLine(icon, "row");
-	if (!col && !row) return;
-	const tile = icon.style.getPropertyValue("--tile-size").trim();
-	const shape = icon.getAttribute("data-shape") || "";
-	parent.querySelectorAll(":scope > .ui-ws-item-icon-under").forEach((under) => {
-		if (under.dataset.id !== id) return;
-		under.setAttribute("data-shape", shape);
-		const geo = under.querySelector(".underlying-shadow-geometry");
-		if (geo) geo.setAttribute("data-shape", shape);
-		if (col) {
-			under.style.setProperty("--cell-column", col);
-			under.style.setProperty("grid-column", `${col} / span 1`, "important");
-			under.dataset.cellColumn = col;
-		}
-		if (row) {
-			under.style.setProperty("--cell-row", row);
-			under.style.setProperty("grid-row", `${row} / span 1`, "important");
-			under.dataset.cellRow = row;
-		}
-		const x = icon.style.getPropertyValue("--cell-x");
-		const y = icon.style.getPropertyValue("--cell-y");
-		if (x) under.style.setProperty("--cell-x", x);
-		if (y) under.style.setProperty("--cell-y", y);
-		if (tile) under.style.setProperty("--tile-size", tile);
-	});
-};
-var applyVisualCell = (el, item, root) => {
-	const orient = getRootOrient(root);
-	const layout = getGridLayout();
-	const logicalCell = getItemCell(item);
-	const visualCell = logicalToVisualCell(logicalCell, layout, orient);
-	el.dataset.cellX = String(logicalCell[0]);
-	el.dataset.cellY = String(logicalCell[1]);
-	el.style.setProperty("--cell-x", String(logicalCell[0]));
-	el.style.setProperty("--cell-y", String(logicalCell[1]));
-	el.style.setProperty("--p-cell-x", String(logicalCell[0]));
-	el.style.setProperty("--p-cell-y", String(logicalCell[1]));
-	const [spanCols, spanRows] = getItemSpan(item.id);
-	const [spanX, spanY] = logicalToVisualSpan([spanCols, spanRows], orient);
-	const [visCols, visRows] = visualLayout(layout, orient);
-	const fitX = Math.max(1, Math.min(spanX, visCols - visualCell[0]));
-	const fitY = Math.max(1, Math.min(spanY, visRows - visualCell[1]));
-	el.style.setProperty("--cell-span-x", String(fitX));
-	el.style.setProperty("--cell-span-y", String(fitY));
-	stampItemGridLine(el, visualCell, [fitX, fitY]);
-	if (el.dataset.layer === "labels") el.removeAttribute("data-spanned");
-	else el.toggleAttribute("data-spanned", fitX > 1 || fitY > 1);
-	const widgetKind = getSpeedDialWidgetKind(item);
-	if (widgetKind) el.setAttribute("data-widget", widgetKind);
-	else el.removeAttribute("data-widget");
-	if (el.dataset.layer === "labels") el.dataset.labelPlacement = "below";
-	if (el.dataset.layer === "icons") {
-		stampTileHostAttrs(el, item);
-		ensureShapedUnderSibling(el, item);
-	}
-};
-var scheduleLabelPlacementSync = (root) => {
-	if (root.dataset.labelPlacementFrame === "pending") return;
-	root.dataset.labelPlacementFrame = "pending";
-	const sync = () => {
-		delete root.dataset.labelPlacementFrame;
-		const icons = /* @__PURE__ */ new Map();
-		root.querySelectorAll("[data-speed-dial-item][data-layer=\"icons\"]").forEach((node) => {
-			if (!isLiveSpeedDialNode(node) || !node.dataset.id) return;
-			icons.set(node.dataset.id, node);
-		});
-		root.querySelectorAll("[data-speed-dial-item][data-layer=\"labels\"]").forEach((node) => {
-			if (!isLiveSpeedDialNode(node) || !node.dataset.id) return;
-			const item = findSpeedDialItem(node.dataset.id);
-			if (item) applyVisualCell(node, item, root);
-			const icon = icons.get(node.dataset.id);
-			if (!icon) return;
-			const col = usedGridLine(icon, "column");
-			const row = usedGridLine(icon, "row");
-			if (col) {
-				node.style.setProperty("--cell-column", col);
-				node.style.setProperty("grid-column", `${col} / span 1`, "important");
-				node.dataset.cellColumn = col;
-			}
-			if (row) {
-				node.style.setProperty("--cell-row", row);
-				node.style.setProperty("grid-row", `${row} / span 1`, "important");
-				node.dataset.cellRow = row;
-			}
-			ensureShapedUnderSibling(icon, item || { id: icon.dataset.id || "" });
-		});
-	};
-	if (typeof globalThis.requestAnimationFrame === "function") globalThis.requestAnimationFrame(sync);
-	else globalThis.setTimeout(sync, 0);
-};
-var syncGridLayout = (root) => {
-	const logicalLayout = getGridLayout();
-	const orient = getRootOrient(root);
-	const [columns, rows] = visualLayout(logicalLayout, orient);
-	root.dataset.orient = String(orient);
-	root.style.setProperty("--orient", String(orient));
-	root.style.setProperty("--layout-c", String(logicalLayout[0]));
-	root.style.setProperty("--layout-r", String(logicalLayout[1]));
-	root.querySelectorAll(".speed-dial-grid").forEach((grid) => {
-		grid.style.setProperty("--layout-c", String(logicalLayout[0]));
-		grid.style.setProperty("--layout-r", String(logicalLayout[1]));
-		grid.style.setProperty("--grid-columns", String(columns));
-		grid.style.setProperty("--grid-rows", String(rows));
-		grid.dataset.gridColumns = String(logicalLayout[0]);
-		grid.dataset.gridRows = String(logicalLayout[1]);
-	});
-	root.querySelectorAll("[data-speed-dial-item]").forEach((node) => {
-		if (!isLiveSpeedDialNode(node)) return;
-		const item = findSpeedDialItem(node.dataset.id);
-		if (item) applyVisualCell(node, item, root);
-	});
-	scheduleLabelPlacementSync(root);
-};
-var SWIPE_APP_MENU_MAX_DX_RATIO = .75;
-var SWIPE_WORKSPACE_MIN_DX = 72;
-var isNativeCapacitorOrCoarse = () => {
-	try {
-		const c = globalThis.Capacitor;
-		if (typeof c?.isNativePlatform === "function" && c.isNativePlatform()) return true;
-	} catch {}
-	return typeof matchMedia === "function" && matchMedia("(pointer: coarse)").matches;
-};
-var tryOpenLauncherAppMenu = () => {
-	const api = globalThis.__CWSP_LAUNCHER_HOME__;
-	if (typeof api?.openAppMenu === "function") {
-		api.openAppMenu();
-		return;
-	}
-	globalThis.__CWSP_LAUNCHER_HOME_HOOKS_V1__?.openAppMenu?.();
-};
-var isEmptySpeedDialSurface = (root, target) => {
-	if (!(target instanceof Element)) return target === root;
-	if (!root.contains(target)) return false;
-	return !target.closest("[data-speed-dial-item], .ui-ws-item, dialog, .cw-context-menu-layer, .env-shell-app-menu, .speed-dial-editor, .speed-dial-core-rail, .speed-dial-chrome-rail");
-};
-var isLauncherChromeHit = (target) => target instanceof Element && !!target.closest("dialog, .cw-context-menu-layer, .env-shell-app-menu, .speed-dial-editor, .sd-icon-picker, .speed-dial-core-rail, .speed-dial-chrome-rail, .speed-dial-workspace-pager, input, textarea, select, .sd-widget__search");
-/** WHY: pinned tiles skip drag — workspace / app-menu swipes may start on icons too. */
-var canStartDesktopSwipe = (root, target) => {
-	if (isLauncherChromeHit(target)) return false;
-	if (isTilesLocked()) {
-		if (!(target instanceof Node)) return target === root;
-		return root === target || root.contains(target);
-	}
-	return isEmptySpeedDialSurface(root, target);
-};
-var suppressTileClickAfterSwipe = (target) => {
-	const tile = target instanceof Element ? target.closest("[data-speed-dial-item]") : null;
-	if (!tile) return;
-	tile.dataset.interactionState = "onRelax";
-	window.setTimeout(() => {
-		if (tile.dataset.interactionState === "onRelax") tile.dataset.interactionState = "onHover";
-	}, 80);
-};
-var mountWorkspacePager = (root) => {
-	if (root.querySelector(".speed-dial-workspace-pager")) return;
-	const pager = document.createElement("nav");
-	pager.className = "speed-dial-workspace-pager";
-	pager.setAttribute("aria-label", "Workspaces");
-	const paint = () => {
-		const pages = listWorkspacePages();
-		const active = getActiveWorkspaceId();
-		pager.replaceChildren();
-		for (const page of pages) {
-			const dot = document.createElement("button");
-			dot.type = "button";
-			dot.className = "speed-dial-workspace-pager__dot";
-			dot.title = page.label;
-			dot.setAttribute("aria-label", page.label);
-			dot.toggleAttribute("data-active", page.id === active);
-			dot.addEventListener("click", (ev) => {
-				ev.preventDefault();
-				ev.stopPropagation();
-				switchWorkspacePage(page.id);
-			});
-			pager.append(dot);
-		}
-	};
-	paint();
-	window.addEventListener(WORKSPACE_PAGE_EVENT, paint);
-	root.append(pager);
-};
-var bindEmptySpaceSwipeOpenAppMenu = (root) => {
-	if (root.dataset.swipeAppMenuBound === "1") return;
-	if (!isNativeCapacitorOrCoarse()) return;
-	root.dataset.swipeAppMenuBound = "1";
-	let tracking = false;
-	let pointerId = -1;
-	let startX = 0;
-	let startY = 0;
-	root.addEventListener("pointerdown", (ev) => {
-		if (ev.pointerType === "mouse") return;
-		if (!canStartDesktopSwipe(root, ev.target)) return;
-		if (document.querySelector(".env-shell-app-menu[data-open]")) return;
-		tracking = true;
-		pointerId = ev.pointerId;
-		startX = ev.clientX;
-		startY = ev.clientY;
-	}, { passive: true });
-	const endTrack = (ev) => {
-		if (!tracking || ev.pointerId !== pointerId) return;
-		tracking = false;
-		pointerId = -1;
-		const dx = ev.clientX - startX;
-		const dy = ev.clientY - startY;
-		if (Math.abs(dx) >= SWIPE_WORKSPACE_MIN_DX && Math.abs(dx) > Math.abs(dy) * 1.1) {
-			suppressTileClickAfterSwipe(ev.target);
-			switchWorkspaceByDelta(dx < 0 ? 1 : -1);
-			return;
-		}
-		if (dy > -72) return;
-		if (Math.abs(dx) > Math.abs(dy) * SWIPE_APP_MENU_MAX_DX_RATIO) return;
-		suppressTileClickAfterSwipe(ev.target);
-		tryOpenLauncherAppMenu();
-	};
-	root.addEventListener("pointerup", endTrack, { passive: true });
-	root.addEventListener("pointercancel", (ev) => {
-		if (ev.pointerId === pointerId) {
-			tracking = false;
-			pointerId = -1;
-		}
-	}, { passive: true });
-};
-var bindRootOrientation = (root) => {
-	if (root.dataset.orientObserverBound === "true") {
-		syncGridLayout(root);
-		return;
-	}
-	root.dataset.orientObserverBound = "true";
-	if (!root.hasAttribute("tabindex")) root.tabIndex = -1;
-	if (root.dataset.focusOnPointerBound !== "1") {
-		root.dataset.focusOnPointerBound = "1";
-		root.addEventListener("pointerdown", () => {
+		async goPathHistoryBack() {
+			if (this.pathHistoryIndex <= 0) return;
+			this.suppressPathHistory = true;
+			this.pathHistoryIndex -= 1;
+			const src = this.pathHistory[this.pathHistoryIndex] || "";
 			try {
-				root.focus({ preventScroll: true });
+				if (src) {
+					if (!await this.openMarkdownFromUrl(src)) this.showMessage("Could not open previous document");
+				}
+			} finally {
+				this.suppressPathHistory = false;
+				this.syncOpenedPath(src);
+			}
+		}
+		handleOpen() {
+			(async () => {
+				const canPickDir = typeof globalThis.showDirectoryPicker === "function";
+				const pickFile = globalThis.showOpenFilePicker;
+				if (canPickDir && typeof pickFile === "function") try {
+					const dir = await pickAssetDirectory({
+						mode: "read",
+						id: "markdown-assets"
+					});
+					if (dir) {
+						const root = mountPickedDirectory(dir, "md");
+						this.boundMountRoot = root;
+						this.boundDirectory = dir;
+						const [fileHandle] = await pickFile({
+							startIn: dir,
+							multiple: false,
+							types: [{
+								description: "Documents and images",
+								accept: {
+									"text/markdown": [
+										".md",
+										".markdown",
+										".mdown",
+										".mkd"
+									],
+									"text/plain": [".txt"],
+									"image/*": [
+										".png",
+										".jpg",
+										".jpeg",
+										".webp",
+										".gif",
+										".bmp",
+										".svg",
+										".avif"
+									],
+									"application/pdf": [".pdf"]
+								}
+							}]
+						});
+						const virtual = `${root}${await findEntryRelPath(dir, fileHandle) || fileHandle.name}`;
+						const file = await fileHandle.getFile();
+						if (await this.ingestOpenedFile(file, {
+							virtualPath: virtual,
+							filename: file.name
+						})) this.showMessage(`Opened ${file.name}`);
+						return;
+					}
+				} catch (error) {
+					if (error?.name === "AbortError") return;
+					console.warn("[ViewerView] Directory picker open failed, falling back:", error);
+				}
+				const picked = await pickMarkdownFile();
+				if (!picked?.file) return;
+				if (picked.sidecars.length) this.rememberSidecarFiles(picked.sidecars, picked.file);
+				if (await this.ingestOpenedFile(picked.file, {
+					virtualPath: picked.virtualPath || null,
+					filename: picked.file.name
+				})) this.showMessage(`Opened ${picked.file.name}`);
+			})();
+		}
+		/** Bind a sibling folder after Launch Queue / Share Target (no parent handle). */
+		async handleBindAssets() {
+			const picked = await pickSidecarDirectoryFiles();
+			if (picked.directory && picked.root) {
+				this.boundMountRoot = picked.root;
+				this.boundDirectory = picked.directory;
+				const name = String(this.options.filename || "document.md").trim() || "document.md";
+				const virtual = `${picked.root}${name}`;
+				this.sourceUrl = this.normalizeSourceUrl(virtual);
+				this.options.source = virtual;
+				this.options.filename = name;
+				this.watchVirtualSource(virtual);
+				if (picked.files.length) this.rememberSidecarFiles(picked.files);
+				const bound = await this.rewireBoundMedia();
+				this.showMessage(bound ? `Bound folder (${bound} refs)` : "Bound asset folder");
+				return;
+			}
+			if (!picked.files.length) {
+				this.showMessage("Folder picker cancelled");
+				return;
+			}
+			this.rememberSidecarFiles(picked.files);
+			const bound = await this.rewireBoundMedia();
+			this.showMessage(bound ? `Bound ${picked.files.length} files (${bound} refs)` : `Bound ${picked.files.length} files`);
+		}
+		viewerMarkdownRoot() {
+			const renderTarget = this.queryViewerSlotted("[data-render-target]");
+			return renderTarget?.querySelector(":scope > .view-viewer__md-root") || this.queryViewerSlotted(".view-viewer__md-root") || renderTarget || this.element;
+		}
+		async rewireBoundMedia() {
+			const root = this.viewerMarkdownRoot();
+			if (!root) {
+				this.repaintMarkdown();
+				return 0;
+			}
+			return this.rewireMarkdownRefs(root);
+		}
+		rememberSidecarFiles(files, primary) {
+			this.sidecarAssets.clear();
+			for (const file of files) {
+				if (!(file instanceof File)) continue;
+				if (primary && (file === primary || file.name === primary.name && file.size === primary.size)) continue;
+				this.indexSidecarFile(file);
+			}
+		}
+		indexSidecarFile(file, relPath) {
+			const name = file.name;
+			const droppedRel = String(relPath || file.webkitRelativePath || "").replace(/^\/+/, "");
+			const keys = /* @__PURE__ */ new Set([name, name.toLowerCase()]);
+			const base = name.split(/[\\/]/).pop() || name;
+			keys.add(base);
+			keys.add(base.toLowerCase());
+			if (droppedRel) {
+				keys.add(droppedRel);
+				keys.add(droppedRel.toLowerCase());
+				for (const candidate of relPathCandidates(droppedRel)) {
+					keys.add(candidate);
+					keys.add(candidate.toLowerCase());
+				}
+			}
+			for (const key of keys) this.sidecarAssets.set(key, file);
+		}
+		lookupSidecarFile(...keys) {
+			for (const raw of keys) {
+				const value = String(raw || "").trim();
+				if (!value) continue;
+				const rel = value.split("#")[0].split("?")[0].replace(/^\.\//, "").replace(/^\/+/, "");
+				const base = rel.split(/[\\/]/).pop() || rel;
+				for (const candidate of [
+					rel,
+					rel.toLowerCase(),
+					base,
+					base.toLowerCase(),
+					...relPathCandidates(rel)
+				]) {
+					const hit = this.sidecarAssets.get(candidate) || this.sidecarAssets.get(candidate.toLowerCase());
+					if (hit) return hit;
+				}
+			}
+			return null;
+		}
+		/** Prefer a virtual/file path; never treat the transfer enum as a document base. */
+		pickDocumentSourcePath(...candidates) {
+			for (const raw of candidates) {
+				if (typeof raw !== "string") continue;
+				const value = raw.trim();
+				if (!value || isIngressSourceToken(value)) continue;
+				if (isVirtualFsPath(value) || /^https?:/i.test(value) || /^file:/i.test(value) || value.includes("/")) return value;
+			}
+			return null;
+		}
+		handleOpenInputFallback() {
+			const input = document.createElement("input");
+			input.type = "file";
+			input.accept = ".md,.markdown,.mdown,.mkd,.mkdn,.mdtxt,.mdtext,.txt,.png,.jpg,.jpeg,.webp,.gif,.bmp,.svg,.avif,.pdf,text/markdown,text/plain,text/md,image/*,application/pdf";
+			input.onchange = async () => {
+				const file = input.files?.[0];
+				if (file) try {
+					if (await this.ingestOpenedFile(file, { filename: file.name })) this.showMessage(`Opened ${file.name}`);
+				} catch (error) {
+					console.error("[ViewerView] Failed to read file:", error);
+					this.showMessage("Failed to read file");
+				}
+			};
+			input.click();
+		}
+		async handleCopy() {
+			const raw = this.contentRef.value || "";
+			if (!raw.trim()) {
+				this.showMessage("No content to copy");
+				return;
+			}
+			try {
+				const result = await Promise.race([writeClipboardText(raw), new Promise((resolve) => globalThis.setTimeout(() => resolve({
+					ok: false,
+					error: "Clipboard timeout"
+				}), 3500))]);
+				if (!result?.ok) throw new Error(result?.error || "Clipboard write failed");
+				this.showMessage("Copied raw content to clipboard");
+				this.options.onCopy?.(raw);
+			} catch (error) {
+				console.error("[ViewerView] Failed to copy:", error);
+				this.showMessage("Failed to copy to clipboard");
+			}
+		}
+		async handleCopyRendered(renderTarget) {
+			await new Promise((r) => {
+				if (typeof requestAnimationFrame === "function") requestAnimationFrame(() => r());
+				else globalThis.setTimeout(() => r(), 0);
+			});
+			const text = (renderTarget.querySelector(":scope > .view-viewer__md-root")?.textContent || renderTarget?.textContent || "").trim();
+			if (!text) {
+				this.showMessage("No content to copy");
+				return;
+			}
+			if (text.length > VIEWER_MAX_RENDERED_COPY_CHARS) {
+				this.showMessage("Rendered page is too large to copy as text — use Copy (raw) instead");
+				return;
+			}
+			try {
+				const result = await Promise.race([writeClipboardText(text), new Promise((resolve) => globalThis.setTimeout(() => resolve({
+					ok: false,
+					error: "Clipboard timeout"
+				}), 3500))]);
+				if (!result?.ok) throw new Error(result?.error || "Clipboard write failed");
+				this.showMessage("Copied rendered text to clipboard");
 			} catch {
+				this.showMessage("Failed to copy rendered text");
+			}
+		}
+		handleDownload() {
+			const content = this.contentRef.value;
+			const filename = this.options.filename || `document-${Date.now()}.md`;
+			saveMarkdownBlob(content, filename).then((result) => {
+				if (result === "cancelled") return;
+				if (result === "failed") {
+					this.showMessage("Failed to save file");
+					return;
+				}
+				this.showMessage(result === "shared" ? `Shared ${filename}` : `Saved ${filename}`);
+				this.options.onDownload?.(content, filename);
+			});
+		}
+		async handleExportDocx() {
+			const content = this.contentRef.value;
+			if (!content.trim()) {
+				this.showMessage("No content to export");
+				return;
+			}
+			try {
+				const { downloadMarkdownAsDocx } = await __vitePreload(async () => {
+					const { downloadMarkdownAsDocx } = await import("../vendor/marked-katex-extension.js");
+					return { downloadMarkdownAsDocx };
+				}, __vite__mapDeps([5,1,6,7]), import.meta.url);
+				await downloadMarkdownAsDocx(content, {
+					title: this.options.filename || "Markdown Content",
+					filename: `document-${Date.now()}.docx`
+				});
+				this.showMessage("Exported as DOCX successfully");
+			} catch (error) {
+				console.error("[ViewerView] Failed to export DOCX:", error);
+				this.showMessage("Failed to export as DOCX");
+			}
+		}
+		handlePrint(renderTarget) {
+			try {
+				const rawTarget = this.queryViewerSlotted("[data-raw-target]");
+				const printTarget = Boolean(rawTarget && !rawTarget.hidden) ? rawTarget : renderTarget;
+				if (!printTarget || !(printTarget.textContent || "").trim()) {
+					this.showMessage("No content to print");
+					return;
+				}
+				printTarget.setAttribute("data-print", "true");
+				globalThis?.print?.();
+				setTimeout(() => {
+					printTarget.removeAttribute("data-print");
+				}, 1e3);
+				this.options.onPrint?.(this.contentRef.value);
+			} catch (error) {
+				console.error("[ViewerView] Error printing content:", error);
+				this.showMessage("Failed to print");
+			}
+		}
+		async navigateSingletonShell(viewId) {
+			try {
+				const { bootLoader } = await __vitePreload(async () => {
+					const { bootLoader } = await import("./BootLoader.js");
+					return { bootLoader };
+				}, __vite__mapDeps([8,3,4,1,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47]), import.meta.url);
+				const shell = bootLoader.getShell();
+				if (shell?.navigate && ![
+					"window",
+					"tabbed",
+					"environment"
+				].includes(shell.id)) {
+					await shell.navigate(viewId);
+					return;
+				}
+			} catch (error) {
+				console.warn("[Viewer] BootLoader.navigate unavailable (standalone build?):", error);
+			}
+			await Promise.resolve(this.shellContext?.navigate?.(viewId));
+		}
+		/** Push current markdown buffer into Work Center (toolbar attach / channel API). */
+		async attachCurrentContentToWorkcenter() {
+			const content = this.contentRef.value || "";
+			if (!content.trim()) {
+				this.showMessage("No content to attach");
+				return;
+			}
+			const filename = this.options.filename || `viewer-${Date.now()}.md`;
+			if (shouldHandoffViewToSibling("workcenter")) {
+				stashSkuHandoff({
+					dest: "workcenter",
+					content,
+					filename
+				});
+				globalThis.location.assign(publicHrefForSku("process"));
+				return;
+			}
+			const payload = {
+				text: content,
+				content,
+				filename,
+				source: "viewer-attach"
+			};
+			const initialMessage = {
+				type: "content-share",
+				contentType: "markdown",
+				data: payload
+			};
+			if (this.shellContext && [
+				"window",
+				"tabbed",
+				"environment"
+			].includes(this.shellContext.shellId)) try {
+				requestOpenView({
+					viewId: "workcenter",
+					target: "window",
+					body: initialMessage,
+					contentType: "application/json"
+				});
+				this.showMessage("Content attached to Work Center");
+				return;
+			} catch (error) {
+				console.warn("[Viewer] windowed workcenter attach failed:", error);
+			}
+			await this.navigateSingletonShell("workcenter");
+			await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+			await this.navigateSingletonShell("workcenter");
+			const markdownFile = new File([content], filename, { type: "text/markdown;charset=utf-8" });
+			try {
+				if (await sendViewProtocolMessage({
+					type: "content-share",
+					source: "viewer",
+					destination: "workcenter",
+					contentType: "text/markdown",
+					attachments: [{
+						data: markdownFile,
+						source: "viewer-workcenter-attach"
+					}],
+					data: {
+						...payload,
+						sourcePath: filename
+					},
+					metadata: {
+						filename,
+						sourcePath: filename
+					}
+				})) {
+					this.showMessage("Content attached to Work Center");
+					return;
+				}
+			} catch (error) {
+				console.warn("[Viewer] protocol workcenter attach failed:", error);
+			}
+			try {
+				const workcenter = ViewRegistry.getLoaded("workcenter") || await ViewRegistry.load("workcenter", { shellContext: this.shellContext });
+				if (workcenter?.handleMessage) {
+					await workcenter.handleMessage({
+						...initialMessage,
+						data: {
+							...payload,
+							file: markdownFile,
+							files: [markdownFile]
+						}
+					});
+					this.showMessage("Content attached to Work Center");
+					return;
+				}
+			} catch (error) {
+				console.warn("[Viewer] direct workcenter attach failed:", error);
+			}
+			this.showMessage("Attach failed — open Work Center and try again");
+		}
+		handleOpenStyleSettings() {
+			try {
+				this.shellContext?.navigate?.("settings", {
+					tab: "markdown",
+					focus: "style"
+				});
+				this.showMessage("Opened Markdown style settings");
+			} catch (error) {
+				console.warn("[Viewer] Failed to open style settings:", error);
+				this.showMessage("Failed to open style settings");
+			}
+		}
+		handleFileDrop(e) {
+			this.ingestDroppedFiles(e.dataTransfer);
+		}
+		/** True when this viewer should own global file drop / paste (demo or active shell tab). */
+		viewerAcceptsGlobalInput() {
+			const nav = this.shellContext ? this.shellContext.navigationState : void 0;
+			const current = nav && typeof nav === "object" && "currentView" in nav ? String(nav.currentView || "") || void 0 : void 0;
+			if (current && current !== this.id) {
+				if (inferCwspSkuFromLocation() !== "document") return false;
+			}
+			if (this.isViewVisible) return true;
+			return Boolean(this.element?.isConnected || this.slotProjectingHost?.isConnected);
+		}
+		bindWindowMarkdownDnD(highlightEl) {
+			this.windowDnDController?.abort();
+			this.windowDnDController = new AbortController();
+			const signal = this.windowDnDController.signal;
+			const fileDrag = (e) => {
+				if (!this.viewerAcceptsGlobalInput()) return false;
+				const types = e.dataTransfer?.types;
+				const listed = types ? Array.from(types) : [];
+				if (listed.length && !listed.some((type) => type.toLowerCase() === "files")) return false;
+				const node = e.target;
+				const el = node instanceof Element ? node : node instanceof Node ? node.parentElement : null;
+				if (el?.closest("[data-viewer-pathbar], [data-viewer-path], [data-viewer-path-form], [data-viewer-chrome]")) return true;
+				if (el?.closest("input, textarea, select, [contenteditable='true']")) return false;
+				return true;
+			};
+			window.addEventListener("dragover", (e) => {
+				if (!fileDrag(e)) return;
+				e.preventDefault();
+				if (e.dataTransfer) e.dataTransfer.dropEffect = "copy";
+				highlightEl?.classList.add("dragover");
+			}, {
+				signal,
+				capture: true
+			});
+			window.addEventListener("drop", (e) => {
+				if (!fileDrag(e)) return;
+				e.preventDefault();
+				e.stopPropagation();
+				highlightEl?.classList.remove("dragover");
+				this.handleFileDrop(e);
+			}, {
+				signal,
+				capture: true
+			});
+		}
+		async ingestDroppedFiles(dt) {
+			if (!dt) return;
+			this.openEpoch += 1;
+			const items = Array.from(dt.items || []);
+			const files = [];
+			let directoryHandle = null;
+			for (const item of items) {
+				if (item.kind !== "file") continue;
+				const asFile = typeof item.getAsFile === "function" ? item.getAsFile() : null;
+				if (asFile) {
+					files.push(asFile);
+					continue;
+				}
+				const getHandle = item.getAsFileSystemHandle;
+				if (typeof getHandle !== "function") continue;
 				try {
-					root.focus();
+					const handle = await getHandle.call(item);
+					if (handle?.kind === "directory") {
+						directoryHandle = handle;
+						break;
+					}
+					if (handle?.kind === "file" && "getFile" in handle) {
+						const fromHandle = await handle.getFile();
+						if (fromHandle) files.push(fromHandle);
+					}
 				} catch {}
 			}
-		}, { capture: true });
-	}
-	bindEmptySpaceSwipeOpenAppMenu(root);
-	applyTilesLockedAttr(root);
-	if (root.dataset.tilesLockBound !== "1") {
-		root.dataset.tilesLockBound = "1";
-		window.addEventListener(TILES_LOCKED_EVENT, () => applyTilesLockedAttr(root));
-	}
-	mountWorkspacePager(root);
-	bindIconGridShadowJanitor(root);
-	queueMicrotask(() => bindIconGridShadowJanitor(root));
-	new MutationObserver((records) => {
-		if (records.some((record) => record.attributeName === "orient")) syncGridLayout(root);
-	}).observe(root, {
-		attributes: true,
-		attributeFilter: ["orient"]
-	});
-	const screenOrientation = globalThis.screen?.orientation;
-	const onScreenOrientationChange = () => {
-		if (!root.hasAttribute("orient")) syncGridLayout(root);
-	};
-	screenOrientation?.addEventListener?.("change", onScreenOrientationChange);
-	affected(gridLayoutState, () => syncGridLayout(root));
-	syncGridLayout(root);
-	queueMicrotask(() => syncGridLayout(root));
-	if (typeof globalThis.requestAnimationFrame === "function") globalThis.requestAnimationFrame(() => refreshRootCells(root));
-};
-var refreshRootCells = (root) => {
-	pruneOrphanUnders(root);
-	root.querySelectorAll("[data-speed-dial-item]").forEach((node) => {
-		if (!isLiveSpeedDialNode(node)) return;
-		const item = findSpeedDialItem(node.dataset.id);
-		if (item) applyVisualCell(node, item, root);
-	});
-	scheduleLabelPlacementSync(root);
-};
-var scheduleRootCellRefresh = () => {
-	const run = () => {
-		const home = currentHomeRoot();
-		if (home) refreshRootCells(home);
-	};
-	queueMicrotask(run);
-	if (typeof globalThis.requestAnimationFrame === "function") globalThis.requestAnimationFrame(run);
-};
-var coordinateRefSingleton = null;
-function getCoordinateRef() {
-	if (!coordinateRefSingleton) coordinateRefSingleton = typeof document !== "undefined" ? pointerAnchorRef() : [numberRef(0), numberRef(0)];
-	return coordinateRefSingleton;
-}
-var schedulePersistItems = () => {
-	if (persistItemsTimer) clearTimeout(persistItemsTimer);
-	persistItemsTimer = setTimeout(() => {
-		persistItemsTimer = null;
-		markSpeedDialUserEditBeforeHydrate();
-		persistSpeedDialItems();
-	}, 80);
-};
-var resolveItemAction = (item, override) => {
-	if (override) return override;
-	const entry = getSpeedDialMeta(item.id);
-	const action = entry?.action || item?.action || "open-view";
-	if (action === "open-view" && nativeStorageVirtualPath(String(entry?.path || item.path || entry?.href || ""))) return "open-path";
-	return action;
-};
-var BASE_ACTION_OPTIONS = [
-	{
-		value: "open-view",
-		label: "Open view"
-	},
-	{
-		value: "open-link",
-		label: "Open link"
-	},
-	{
-		value: "open-path",
-		label: "Open path"
-	},
-	{
-		value: "copy-link",
-		label: "Copy link"
-	},
-	{
-		value: "copy-state-desc",
-		label: "Copy state + desc"
-	},
-	{
-		value: "widget",
-		label: "Widget"
-	}
-];
-/** Launcher SKU exposes Android app launch tiles via dynamic launcher-bridge import. */
-var getActionOptions = () => {
-	const options = [...BASE_ACTION_OPTIONS];
-	if (isLauncherSku()) options.push({
-		value: "launch-app",
-		label: "Launch app"
-	});
-	return options;
-};
-var WALLPAPER_EXTENSIONS = /* @__PURE__ */ new Set([
-	"png",
-	"jpg",
-	"jpeg",
-	"webp",
-	"gif",
-	"bmp",
-	"svg",
-	"avif"
-]);
-var getRefValue = (ref, fallback = "") => {
-	if (ref && typeof ref === "object" && "value" in ref) return ref.value ?? fallback;
-	return ref ?? fallback;
-};
-/** blob: object URLs die across reloads — never treat them as durable Icon resource. */
-var isDurableIconResourceUrl = (raw) => {
-	const u = String(raw || "").trim();
-	if (!u) return false;
-	if (u.startsWith("blob:")) return false;
-	return true;
-};
-var durableIconUrl = (raw) => {
-	const u = String(raw || "").trim();
-	return isDurableIconResourceUrl(u) ? u : "";
-};
-var readTileIconModel = (item) => {
-	const launchApp = isLauncherAppSpeedDialItem(item);
-	const shortcutRef = getLauncherShortcutRef(item);
-	const cacheKey = launchApp ? getLauncherAppTileCacheKey(item) : "";
-	const meta = getSpeedDialMeta(item.id) || {};
-	const iconUrl = getRefValue(meta.iconUrl, "");
-	const iconDisplay = getRefValue(meta.iconDisplay, "");
-	const iconScale = getRefValue(meta.iconScale, "");
-	const href = getRefValue(meta.href, "");
-	const entityType = getRefValue(meta.entityType, "");
-	const bookmarkId = getRefValue(meta.bookmarkId, "");
-	if (String(iconUrl || "").startsWith("blob:") && meta && "iconUrl" in meta) meta.iconUrl = "";
-	const fetchSize = tileIconFetchSize(iconScale);
-	const cachedLauncherIcon = cacheKey ? getCachedLauncherIconObjectUrl(cacheKey, fetchSize) : "";
-	const bookmarkIconUrl = resolveSpeedDialBookmarkIconUrl({
-		iconUrl: String(iconUrl || "").startsWith("blob:") ? "" : iconUrl,
-		href,
-		entityType,
-		bookmarkId
-	});
-	const customUrl = durableIconUrl(resolveSpeedDialIconUrl(item.id, String(iconUrl || "").startsWith("blob:") ? "" : iconUrl));
-	const cachedAndroid = customUrl && isAndroidIconRef(customUrl) ? getCachedIconResourceObjectUrl(customUrl, fetchSize) : "";
-	const resourceUrl = String(cachedAndroid || (isAndroidIconRef(customUrl) ? "" : customUrl) || cachedLauncherIcon || bookmarkIconUrl || "").trim();
-	return {
-		display: inferIconDisplay({
-			iconDisplay,
-			iconUrl: resourceUrl || customUrl,
-			isLauncherApp: launchApp,
-			isBookmarkFavicon: Boolean(bookmarkIconUrl)
-		}),
-		shape: normalizeTileShape(getRefValue(meta.shape, ""), getDefaultTileShape()),
-		iconScale,
-		fallbackIcon: String(getRefValue(item.icon, "link") || "link"),
-		customUrl,
-		resourceUrl,
-		launchApp,
-		shortcutRef,
-		cacheKey,
-		fetchSize,
-		cachedAndroid
-	};
-};
-/** INVARIANT: host attrs come from meta before the first paint / under-shadow. */
-var stampTileHostAttrs = (el, item, model) => {
-	const next = model || readTileIconModel(item);
-	if (getSpeedDialWidgetKind(item)) {
-		el.setAttribute("data-shape", "none");
-		el.removeAttribute("data-icon-display");
-		return next;
-	}
-	el.setAttribute("data-shape", next.shape);
-	el.setAttribute("data-icon-display", next.display);
-	applyItemIconScaleToElement(el, defaultIconScaleForDisplay(next.display, next.iconScale));
-	return next;
-};
-var bindTileIconResource = (el, iconNode, item, model, onReady) => {
-	const mode = model.display === "glyph" ? null : model.display;
-	if (!mode) return;
-	const apply = (url) => {
-		if (!url || !iconNode.isConnected) return;
-		if (el.getAttribute("data-icon-display") === "glyph") return;
-		iconNode.setAttribute("resource", url);
-		applyLauncherIconToUiIcon(iconNode, url, mode);
-		onReady?.();
-	};
-	if (model.resourceUrl) {
-		apply(model.resourceUrl);
-		if (isAndroidIconRef(model.customUrl) && !model.cachedAndroid) resolveIconResourceUrl(model.customUrl, model.fetchSize).then(apply);
-		return;
-	}
-	if (isAndroidIconRef(model.customUrl)) {
-		resolveIconResourceUrl(model.customUrl, model.fetchSize).then(apply);
-		return;
-	}
-	if (model.launchApp && model.cacheKey) {
-		ensureLauncherIconObjectUrl(model.cacheKey, model.fetchSize).then(apply);
-		return;
-	}
-	if (model.shortcutRef) hydrateLauncherAppTileIcon(el, {
-		id: item.id,
-		action: item.action,
-		iconDisplay: mode
-	}).then(() => onReady?.());
-};
-/**
-* Rebuild icon host for a SpeedDial tile from current item + meta.
-* WHY: ShortcutEditor saves iconDisplay/iconUrl/shape on meta in-place; M() does not
-* recreate the icon child unless the list entry is replaced — so Save looked like a no-op.
-*/
-var paintSpeedDialTileIcon = (el, item) => {
-	if (!el || el.dataset.layer === "labels") return;
-	if (el.classList.contains("sd-widget-host") || el.dataset.widget || getSpeedDialWidgetKind(item)) {
-		el.querySelectorAll("ui-icon, .ui-ws-item-icon-native, img[data-launcher-icon], .ui-ws-item-icon-img, .ui-ws-item-icon-mask").forEach((node) => node.remove());
-		return;
-	}
-	const model = stampTileHostAttrs(el, item);
-	el.querySelectorAll("ui-icon, .ui-ws-item-icon-native, img[data-launcher-icon], .ui-ws-item-icon-img, .ui-ws-item-icon-mask, .sd-icon-silhouette").forEach((node) => node.remove());
-	const finishPaint = () => {
-		applyIconScaleToPaintedNodes(el);
-		syncShapelessIconShadow(el);
-		requestAnimationFrame(() => syncPlateGlyphInk(el));
-	};
-	const pendingShortcut = model.display !== "glyph" && Boolean(model.shortcutRef) && !model.resourceUrl && !isAndroidIconRef(model.customUrl);
-	const iconNode = createTileUiIconElement({
-		display: pendingShortcut ? "glyph" : model.display,
-		glyph: model.fallbackIcon,
-		resourceUrl: pendingShortcut ? void 0 : model.resourceUrl || void 0,
-		launcher: model.launchApp || Boolean(model.shortcutRef),
-		className: "ui-ws-item-icon-native"
-	});
-	el.prepend(iconNode);
-	finishPaint();
-	bindTileIconResource(el, iconNode, item, model, () => {
-		if (el.isConnected) finishPaint();
-	});
-};
-var bindSpeedDialTileIconChrome = (el, item) => {
-	if (el.classList.contains("sd-widget-host") || el.dataset.widget || getSpeedDialWidgetKind(item)) return;
-	if (el.dataset.iconChromeBound === "1") return;
-	el.dataset.iconChromeBound = "1";
-	const meta = ensureSpeedDialMeta(item.id);
-	const sync = () => {
-		if (!el.isConnected) return;
-		paintSpeedDialTileIcon(el, item);
-	};
-	affected(meta, "iconDisplay", sync);
-	affected(meta, "iconUrl", sync);
-	affected(meta, "shape", sync);
-	affected(meta, "iconScale", sync);
-	el.addEventListener("cwsp:icon-bitmap-refresh", sync);
-	const iconRef = item.icon;
-	if (iconRef && typeof iconRef === "object") affected(iconRef, "value", sync);
-	else affected(item, "icon", sync);
-};
-var buildDescriptor = (item) => {
-	const meta = getSpeedDialMeta(item.id);
-	return {
-		label: getRefValue(item?.label),
-		type: meta?.view || "speed-dial",
-		DIR: "/",
-		href: meta?.href,
-		view: meta?.view,
-		packageName: meta?.packageName,
-		action: resolveItemAction(item)
-	};
-};
-var bindCell = (el, args) => {
-	const item = args?.item;
-	if (!item) return;
-	const sync = () => {
-		const mounted = el.closest(".speed-dial-root") || el.ownerDocument?.getElementById("home");
-		applyVisualCell(el, item, mounted);
-	};
-	sync();
-	queueMicrotask(sync);
-	if (typeof globalThis.requestAnimationFrame === "function") globalThis.requestAnimationFrame(sync);
-	affected([item.cell, 0], sync);
-	affected([item.cell, 1], sync);
-	affected(item, "cell", sync);
-	const meta = getSpeedDialMeta(item.id);
-	if (meta) {
-		affected([meta, "spanCols"], sync);
-		affected([meta, "spanRows"], sync);
-	}
-};
-var lastItemOpenKey = "";
-var lastItemOpenAt = 0;
-var lastFocusedSpeedDialId = "";
-var runItemAction = (item, actionId, extras = {}, makeView) => {
-	const resolvedAction = resolveItemAction(item, actionId);
-	const openKey = `${item?.id || ""}::${resolvedAction}::${extras?.openLinkTarget || ""}`;
-	const now = typeof performance !== "undefined" ? performance.now() : Date.now();
-	if (openKey && openKey === lastItemOpenKey && now - lastItemOpenAt < 400) return;
-	lastItemOpenKey = openKey;
-	lastItemOpenAt = now;
-	if (resolvedAction === "widget" || getSpeedDialWidgetKind(item)) return;
-	const action = getSpeedDialActionRegistry().get(resolvedAction);
-	if (!action) {
-		showError("Action is unavailable");
-		return;
-	}
-	const context = {
-		id: item.id,
-		items: speedDialItems,
-		meta: speedDialMeta,
-		action: resolvedAction,
-		viewMaker: makeView,
-		...extras?.openLinkTarget ? { openLinkTarget: extras.openLinkTarget } : {}
-	};
-	try {
-		action(context, item, extras?.initiator);
-	} catch (error) {
-		console.warn(error);
-		showError("Failed to run action");
-	}
-};
-var attachItemNode = (item, el, interactive = true, makeView) => {
-	if (!el) return;
-	const args = {
-		layout: getLayout(),
-		items: speedDialItems,
-		item,
-		meta: speedDialMeta
-	};
-	const root = el.closest(".speed-dial-root") || el.ownerDocument?.getElementById("home");
-	el.dataset.id = item.id;
-	el.dataset.speedDialItem = "true";
-	if (el.dataset.layer === "icons") stampTileHostAttrs(el, item);
-	if (interactive) {
-		el.addEventListener("pointerdown", () => {
-			lastFocusedSpeedDialId = item.id;
-		});
-		el.addEventListener("dragstart", (ev) => ev.preventDefault());
-		bindSpeedDialTileIconChrome(el, item);
-		const isShortcut = Boolean(getLauncherShortcutRef(item));
-		if (isShortcut || resolveItemAction(item) === "launch-app" || resolveItemAction(item) === "launch-shortcut") {
-			const meta = getSpeedDialMeta(item.id);
-			const display = String(getRefValue(meta?.iconDisplay, "") || el.getAttribute("data-icon-display") || "").trim().toLowerCase();
-			const customUrl = durableIconUrl(resolveSpeedDialIconUrl(item.id, getRefValue(meta?.iconUrl, "")));
-			if (display !== "glyph" && display !== "phosphor" && display !== "name" && !customUrl) hydrateLauncherAppTileIcon(el, {
-				id: item.id,
-				action: item.action,
-				iconDisplay: isShortcut ? "colored" : display,
-				iconUrl: customUrl
-			});
-		}
-		if (!el.dataset.dragGuardBound) {
-			el.dataset.dragGuardBound = "1";
-			el.addEventListener("m-dragsettled", () => {
-				schedulePersistItems();
-			});
-		}
-		if (!el.dataset.itemActionBound) {
-			el.dataset.itemActionBound = "1";
-			el.addEventListener("click", (ev) => {
-				ev?.preventDefault?.();
-				ev?.stopPropagation?.();
-				const interactionState = String(el?.dataset?.interactionState || "");
-				if (!(interactionState === "onGrab" || interactionState === "onMoving" || interactionState === "onRelax") && !MOCElement(ev?.target, "[data-interaction-state=\"onMoving\"],[data-interaction-state=\"onGrab\"],[data-interaction-state=\"onRelax\"]")) runItemAction(item, void 0, {
-					event: ev,
-					initiator: el
-				}, getSpeedDialViewOpener() || makeView);
-			});
-			el.addEventListener("dblclick", (ev) => {
-				ev?.preventDefault?.();
-				ev?.stopPropagation?.();
-				openItemEditor(item);
-			});
-		}
-	}
-	if (!interactive || el.dataset.layer === "labels") {
-		el.dataset.layer = "labels";
-		el.style.pointerEvents = "none";
-		if (el.dataset.cellBound !== "true") {
-			el.dataset.cellBound = "true";
-			bindCell(el, args);
-		} else applyVisualCell(el, item, root);
-	}
-	if (el.dataset.layer === "icons") {
-		const dragItem = {
-			id: item.id,
-			cell: getItemCell(item)
-		};
-		const bindDrag = (mountedRoot) => {
-			if (!mountedRoot || el.dataset.pointerInteractionBound === "true") return;
-			el.dataset.pointerInteractionBound = "true";
-			bindPointerInteraction(el, {
-				root: mountedRoot,
-				item: dragItem,
-				items: speedDialItems,
-				getLayout: getGridLayout,
-				getOrient: () => getRootOrient(mountedRoot),
-				getSpan: (id) => getItemSpan(id),
-				onCommitCell: (cell) => {
-					dragItem.cell = [...cell];
-					item.cell[0] = cell[0];
-					item.cell[1] = cell[1];
-					refreshRootCells(mountedRoot);
-					markSpeedDialUserEditBeforeHydrate();
-					persistSpeedDialItems();
-					emitSpeedDialMutation("update", item.id);
-				},
-				onSettled: () => {
-					requestAnimationFrame(() => syncAndroidWidgetHosts(mountedRoot));
+			if (!files.length) files.push(...Array.from(dt.files || []));
+			if (directoryHandle) {
+				const dir = directoryHandle;
+				const root = mountPickedDirectory(dir, "md");
+				this.boundMountRoot = root;
+				this.boundDirectory = dir;
+				const pick = this.pickMarkdownOrTextFile(files) || files.find((f) => this.looksLikeBinaryPreviewFile(f));
+				if (!pick) {
+					this.showMessage("Bound folder — open a .md or image");
+					return;
 				}
-			});
-		};
-		bindDrag(root);
-		if (!root || el.dataset.pointerInteractionBound !== "true") {
-			const retryDrag = () => bindDrag(el.closest(".speed-dial-root") || el.ownerDocument?.getElementById("home"));
-			queueMicrotask(retryDrag);
-			if (typeof globalThis.requestAnimationFrame === "function") globalThis.requestAnimationFrame(retryDrag);
-		}
-		const widgetKind = getSpeedDialWidgetKind(item);
-		if (widgetKind) {
-			decorateWidgetHost(el, widgetKind);
-			bindWidgetResize(el, item, { refresh: () => {
-				const mounted = el.closest(".speed-dial-root") || el.ownerDocument?.getElementById("home") || root;
-				if (mounted) refreshRootCells(mounted);
-				requestAnimationFrame(() => syncAndroidWidgetHosts(mounted));
-			} });
-		}
-		if (el.dataset.cellBound !== "true") {
-			el.dataset.cellBound = "true";
-			bindCell(el, args);
-		} else applyVisualCell(el, item, root);
-		ensureShapedUnderSibling(el, item);
-		if (!shouldHideShapedUnder(el) && !findShapedUnder(el)) {
-			queueMicrotask(() => ensureShapedUnderSibling(el, item));
-			if (typeof globalThis.requestAnimationFrame === "function") globalThis.requestAnimationFrame(() => ensureShapedUnderSibling(el, item));
-		}
-	}
-};
-var resolveCellFromGrid = (grid, coordinate) => {
-	if (!grid || !coordinate) return [0, 0];
-	const rect = grid.getBoundingClientRect();
-	const styles = getComputedStyle(grid);
-	const paddingLeft = parseFloat(styles.paddingLeft) || 0;
-	const paddingRight = parseFloat(styles.paddingRight) || 0;
-	const paddingTop = parseFloat(styles.paddingTop) || 0;
-	const paddingBottom = parseFloat(styles.paddingBottom) || 0;
-	const size = [Math.max(1, rect.width - paddingLeft - paddingRight), Math.max(1, rect.height - paddingTop - paddingBottom)];
-	const point = [coordinate[0] - rect.left - paddingLeft, coordinate[1] - rect.top - paddingTop];
-	return pointToLogicalCell(point, size, getGridLayout(), getRootOrient(grid.closest(".speed-dial-root")));
-};
-var deriveCellFromEvent = (ev) => {
-	return resolveCellFromGrid(document.querySelector("#home .speed-dial-grid[data-grid-layer=\"icons\"]") || document.querySelector("#home .speed-dial-grid:last-of-type") || document.querySelector("#home .speed-dial-grid"), ev ? [ev.clientX, ev.clientY] : null);
-};
-var deriveCellFromCoordinate = (coordinate) => {
-	return resolveCellFromGrid(document.querySelector("#home .speed-dial-grid[data-grid-layer=\"icons\"]") || document.querySelector("#home .speed-dial-grid:last-of-type") || document.querySelector("#home .speed-dial-grid"), coordinate);
-};
-var deriveCellFromAnchor = () => {
-	const ref = getCoordinateRef();
-	return deriveCellFromCoordinate([ref[0].value, ref[1].value]);
-};
-var looksLikeImageFile = (file) => {
-	if (!file) return false;
-	if (String(file.type || "").toLowerCase().startsWith("image/")) return true;
-	const name = String(file.name || "").trim().toLowerCase();
-	const ext = name.includes(".") ? name.slice(name.lastIndexOf(".") + 1) : "";
-	return WALLPAPER_EXTENSIONS.has(ext);
-};
-/** Prefer `files`, then DataTransferItemList (clipboard paste often only populates `items`). */
-var extractImageFileFromTransfer = (dt) => {
-	if (!dt) return null;
-	for (const file of Array.from(dt.files || [])) if (looksLikeImageFile(file)) return file;
-	const items = dt.items;
-	if (!items?.length) return null;
-	for (let i = 0; i < items.length; i++) {
-		const item = items[i];
-		if (!item || item.kind !== "file") continue;
-		const type = String(item.type || "").toLowerCase();
-		if (type && !type.startsWith("image/")) continue;
-		const file = item.getAsFile?.();
-		if (looksLikeImageFile(file)) return file;
-	}
-	return null;
-};
-var applyWallpaperFromImageFile = (file) => {
-	setAppWallpaperFromBlob(file).then(() => {
-		wallpaperState.src = getWallpaperStoragePointer() || "idb:rs-wallpaper";
-		persistWallpaper();
-		showSuccess("Wallpaper updated");
-	}).catch((err) => {
-		console.warn(err);
-		showError("Failed to set wallpaper");
-	});
-};
-/** Async Clipboard API fallback when paste event has empty `clipboardData` image slots. */
-var readImageFileFromClipboardApi = async () => {
-	try {
-		const read = navigator.clipboard?.read;
-		if (typeof read !== "function") return null;
-		const items = await read.call(navigator.clipboard);
-		for (const item of items || []) {
-			const type = item.types?.find?.((t) => String(t).toLowerCase().startsWith("image/"));
-			if (!type) continue;
-			const blob = await item.getType(type);
-			if (!blob) continue;
-			const ext = type.includes("jpeg") || type.includes("jpg") ? "jpg" : type.includes("webp") ? "webp" : "png";
-			return new File([blob], `wallpaper-${Date.now()}.${ext}`, { type: blob.type || type });
-		}
-	} catch (e) {
-		console.warn("[speed-dial] clipboard.read image failed", e);
-	}
-	return null;
-};
-var parseUrlFromHtml = (html) => {
-	const source = String(html || "").trim();
-	if (!source) return null;
-	const hrefMatch = source.match(/href\s*=\s*["']([^"']+)["']/i);
-	const href = String(hrefMatch?.[1] || "").trim();
-	if (!href) return null;
-	if (!/^https?:\/\//i.test(href) && !href.startsWith("//")) return null;
-	return href;
-};
-/** Bare host or host/path without scheme (github.com, www.youtube.com/watch?v=1). */
-var BARE_HOST_PATTERN = /^(?:www\.)?(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}(?:[/:?#][^\s]*)?$/i;
-/**
-* Normalize a pasted/dropped URL candidate to an absolute http(s) URL.
-* WHY: users paste bare domains from messengers ("github.com") without scheme;
-* relative hrefs would resolve against the shell origin and produce junk tiles.
-* Returns the canonical href string, or null when not a usable http(s) URL.
-*/
-var normalizePasteUrl = (text) => {
-	let value = String(text || "").trim();
-	if (!value) return null;
-	if (value.startsWith("<") && value.endsWith(">")) value = value.slice(1, -1).trim();
-	try {
-		const parsed = new URL(value);
-		if (/^https?:$/i.test(parsed.protocol)) return parsed.href;
-		if (/^(tel|mailto|tg|telegram|content):$/i.test(parsed.protocol)) return parsed.href;
-		return null;
-	} catch {}
-	if (!/\s/.test(value) && BARE_HOST_PATTERN.test(value)) try {
-		const parsed = new URL(`https://${value.replace(/^\/+/, "")}`);
-		if (/^https?:$/i.test(parsed.protocol)) return parsed.href;
-	} catch {}
-	return null;
-};
-/**
-* Flatten transfer payloads into URL candidates.
-* WHY: `text/uri-list` is often multiline with `#` comments (Mozilla / bookmark drags);
-* treating the whole blob as one string makes normalizePasteUrl return null.
-*/
-var extractUrlCandidatesFromTransfer = (transfer) => {
-	const out = [];
-	const pushBlob = (raw) => {
-		for (const line of String(raw || "").split(/\r?\n/)) {
-			const trimmed = line.trim();
-			if (!trimmed || trimmed.startsWith("#")) continue;
-			out.push(trimmed);
-		}
-	};
-	pushBlob(transfer.getData("text/uri-list") || "");
-	const moz = String(transfer.getData("text/x-moz-url") || "").trim();
-	if (moz) {
-		const first = moz.split(/\r?\n/).find((l) => l.trim() && !l.trim().startsWith("#"));
-		if (first) out.push(first.trim());
-	}
-	pushBlob(transfer.getData("text/plain") || "");
-	return out;
-};
-var parseShortcutFromTransfer = (transfer, suggestedCell) => {
-	if (!transfer) return null;
-	const plain = String(transfer.getData("text/plain") || "").trim();
-	const html = String(transfer.getData("text/html") || "").trim();
-	const jsonMime = String(transfer.getData("application/json") || "").trim();
-	if (looksLikeSpeedDialShortcutJson(plain)) {
-		const item = parseSpeedDialItemFromJSON(plain, suggestedCell);
-		if (item) return item;
-	}
-	if (looksLikeSpeedDialShortcutJson(jsonMime)) {
-		const item = parseSpeedDialItemFromJSON(jsonMime, suggestedCell);
-		if (item) return item;
-	}
-	if (jsonMime) {
-		const item = parseSpeedDialItemFromJSON(jsonMime, suggestedCell);
-		if (item) return item;
-	}
-	for (const candidate of extractUrlCandidatesFromTransfer(transfer)) {
-		const normalized = normalizePasteUrl(candidate);
-		if (normalized) {
-			const item = parseSpeedDialItemFromURL(normalized, suggestedCell);
-			if (item) return item;
-			continue;
-		}
-		if (isSpeedDialVirtualPath(candidate)) {
-			const item = parseSpeedDialItemFromVirtualPath(candidate, suggestedCell);
-			if (item) return item;
-		}
-		if (looksLikeJsonObjectForDrop(candidate)) {
-			const item = parseSpeedDialItemFromJSON(candidate, suggestedCell);
-			if (item) return item;
-		}
-	}
-	const href = parseUrlFromHtml(html);
-	if (href) {
-		const normalized = normalizePasteUrl(href);
-		if (normalized) {
-			const item = parseSpeedDialItemFromURL(normalized, suggestedCell);
-			if (item) return item;
-		}
-	}
-	if (plain) {
-		const item = parseSpeedDialItemFromJSON(plain, suggestedCell);
-		if (item) return item;
-		if (isSpeedDialVirtualPath(plain)) return parseSpeedDialItemFromVirtualPath(plain, suggestedCell);
-		const smart = parseSpeedDialItemFromSmartText(plain, suggestedCell);
-		if (smart) return smart;
-	}
-	return null;
-};
-var looksLikeJsonObjectForDrop = (raw) => {
-	const t = String(raw || "").trim();
-	return t.startsWith("{") && t.endsWith("}") || t.startsWith("[") && t.endsWith("]");
-};
-/** True when the event is on the launcher desktop (not a nested window/editor). */
-var isEditablePasteTarget = (el) => {
-	if (!el) return false;
-	if (el.isContentEditable) return true;
-	const tag = String(el.tagName || "").toUpperCase();
-	if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return true;
-	return !!el.closest?.("input, textarea, select, [contenteditable=\"true\"], [role=\"textbox\"], .speed-dial-editor, ui-modal, dialog");
-};
-var resolveDeepActiveElement = () => {
-	let active = document.activeElement;
-	while (active?.shadowRoot?.activeElement) active = active.shadowRoot.activeElement;
-	return active;
-};
-var isHomeWorkspaceSurface = (event) => {
-	const current = event.currentTarget;
-	if (current?.id === "home" || current?.classList?.contains("speed-dial-root")) return true;
-	const target = event.target;
-	if (target?.closest?.("#home, .speed-dial-root")) return true;
-	if (typeof event.composedPath === "function") for (const node of event.composedPath()) {
-		if (!(node instanceof HTMLElement)) continue;
-		if (node.id === "home" || node.classList.contains("speed-dial-root")) return true;
-	}
-	if (event instanceof ClipboardEvent) {
-		const home = document.getElementById("home");
-		if (!home?.isConnected) return false;
-		try {
-			if (home.checkVisibility && !home.checkVisibility({
-				checkOpacity: false,
-				checkVisibilityCSS: true
-			})) return false;
-		} catch {}
-		const deep = resolveDeepActiveElement();
-		if (isEditablePasteTarget(deep) && !home.contains(deep)) return false;
-		if (home.matches(":hover") || home.contains(deep) || deep === home) return true;
-		if (!deep || deep === document.body || deep === document.documentElement) return true;
-		if (!isEditablePasteTarget(deep)) return true;
-		return false;
-	}
-	return isInFocus(target, "#home") || isInFocus(target, "#home:is(:hover, :focus, :focus-visible), #home:has(:hover, :focus, :focus-visible)", "child");
-};
-var copySpeedDialItemAction = (item) => async () => {
-	try {
-		await copySpeedDialItemToClipboard(item);
-		showSuccess("Shortcut copied");
-	} catch (e) {
-		console.warn(e);
-		showError("Failed to copy shortcut");
-	}
-};
-var pasteSpeedDialItemAction = (suggestedCell) => async () => {
-	try {
-		const speedDialItem = await createSpeedDialItemFromClipboard(suggestedCell);
-		if (!speedDialItem) {
-			showError("Clipboard does not contain a valid URL or shortcut JSON");
-			return;
-		}
-		addSpeedDialItem(speedDialItem);
-		persistSpeedDialItems();
-		persistSpeedDialMeta();
-		showSuccess("Shortcut created from clipboard");
-	} catch (e) {
-		console.warn(e);
-		const msg = String(e?.message || e || "");
-		if (/empty/i.test(msg)) showError("Clipboard is empty");
-		else if (/unavailable|denied|failed|permission/i.test(msg)) showError("Could not read clipboard on this device");
-		else showError("Failed to paste shortcut");
-	}
-};
-var cloneToOtherSidesEntries = (item) => listWorkspacePages().filter((page) => page.id !== getActiveWorkspaceId()).map((page) => ({
-	id: `clone-to-${page.id}`,
-	label: page.label,
-	icon: "copy",
-	action: () => {
-		if (cloneSpeedDialItemToWorkspace(item, page.id)) {
-			showSuccess(`Copied to ${page.label}`);
-			return;
-		}
-		showError(`Could not copy to ${page.label}`);
-	}
-}));
-var createMenuEntryForAction = (actionId, item, fallbackLabel = "", makeView) => {
-	const descriptor = buildDescriptor(item);
-	return {
-		id: actionId,
-		label: getSpeedDialActionLabels().get(actionId)?.(descriptor) || fallbackLabel,
-		icon: getSpeedDialActionIcons().get(actionId) || "command",
-		action: (initiator, _menuItem, ev) => runItemAction(item, actionId, {
-			event: ev,
-			initiator
-		}, makeView)
-	};
-};
-var pickWallpaper = () => {
-	const input = document.createElement("input");
-	input.type = "file";
-	input.accept = "image/*";
-	input.onchange = async () => {
-		const file = input.files?.[0];
-		if (!file) return;
-		try {
-			await setAppWallpaperFromBlob(file);
-			wallpaperState.src = getWallpaperStoragePointer() || "idb:rs-wallpaper";
-			persistWallpaper();
-			showSuccess("Wallpaper updated");
-		} catch (e) {
-			console.warn(e);
-			showError("Failed to set wallpaper");
-		}
-	};
-	input.click();
-};
-var handleSpeedDialPaste = async (event, suggestedCell) => {
-	if (!isHomeWorkspaceSurface(event)) return false;
-	event.preventDefault();
-	event.stopPropagation();
-	try {
-		const targetCell = suggestedCell ?? deriveCellFromAnchor();
-		const item = parseShortcutFromTransfer(event.clipboardData, targetCell) || await createSpeedDialItemFromClipboard(targetCell);
-		if (!item) return false;
-		addSpeedDialItem(item);
-		persistSpeedDialItems();
-		persistSpeedDialMeta();
-		showSuccess("Shortcut created from clipboard");
-		return true;
-	} catch (e) {
-		console.warn("Failed to paste speed dial item:", e);
-		return false;
-	}
-};
-var handleWallpaperDropOrPaste = (event) => {
-	if (!isHomeWorkspaceSurface(event)) return;
-	const isPaste = event instanceof ClipboardEvent;
-	const droppedOnItem = !!event.target?.closest?.("[data-speed-dial-item]");
-	const suggestedCell = !isPaste && event instanceof DragEvent ? deriveCellFromEvent(event) : deriveCellFromAnchor();
-	const dataTransfer = isPaste ? event.clipboardData : event.dataTransfer;
-	const imageFile = !droppedOnItem ? extractImageFileFromTransfer(dataTransfer) : null;
-	if (imageFile) {
-		event.preventDefault();
-		event.stopPropagation();
-		const policyEv = new CustomEvent("cwsp:shell-image-open", {
-			bubbles: true,
-			cancelable: true,
-			detail: {
-				file: imageFile,
-				source: isPaste ? "paste" : "drop"
+				const rel = relPathCandidates(pick.webkitRelativePath || pick.name).find((c) => c.endsWith(pick.name)) || pick.name;
+				if (await this.ingestOpenedFile(pick, {
+					virtualPath: `${root}${rel}`,
+					filename: pick.name
+				})) this.showMessage(`Opened ${pick.name}`);
+				return;
 			}
-		});
-		try {
-			window.dispatchEvent(policyEv);
-		} catch {}
-		if (!policyEv.defaultPrevented) applyWallpaperFromImageFile(imageFile);
-		queueMicrotask(() => {
+			if (files.length > 0) {
+				const pick = this.pickMarkdownOrTextFile(files) || files.find((f) => this.looksLikeBinaryPreviewFile(f));
+				if (!pick) {
+					this.showMessage("Drop a .md, text, or image file");
+					return;
+				}
+				try {
+					if (await this.ingestOpenedFile(pick, { filename: pick.name })) this.showMessage(`Loaded ${pick.name}`);
+				} catch {
+					this.showMessage("Failed to read dropped file");
+				}
+				return;
+			}
+			const uri = (dt.getData("text/uri-list") || "").split(/\r?\n/).find((l) => l.trim() && !l.trim().startsWith("#"))?.trim() || dt.getData("text/plain")?.trim();
+			if (uri && /^https?:\/\//i.test(uri) && this.isLikelyMarkdownUrl(uri)) {
+				if (await this.openMarkdownFromUrl(uri)) this.showMessage("Opened dropped link");
+				else this.showMessage("Could not load dropped URL");
+				return;
+			}
+			if (uri && this.isLikelyMarkdownUrl(uri)) this.showMessage("Dropped link must be http(s) to load in the browser");
+		}
+		pickMarkdownOrTextFile(files) {
+			const scored = [...files].sort((a, b) => {
+				return (this.isMarkdownFilename(a.name) ? 0 : 1) - (this.isMarkdownFilename(b.name) ? 0 : 1) || a.name.localeCompare(b.name);
+			});
+			for (const f of scored) if (this.isTextLikeFile(f)) return f;
+			return null;
+		}
+		isMarkdownFilename(name) {
+			return /\.(?:md|markdown|mdown|mkd|mkdn|mdtxt|mdtext)$/i.test((name || "").trim());
+		}
+		async handlePaste(e) {
+			if (!this.shouldHandlePaste(e)) return;
+			if (!e.clipboardData) return;
+			const itemFiles = Array.from(e.clipboardData.items || []).map((item) => item.kind === "file" && item.getAsFile ? item.getAsFile() : null).filter((file) => !!file);
+			const files = itemFiles.length > 0 ? itemFiles : Array.from(e.clipboardData.files || []);
+			const text = e.clipboardData.getData("text/plain");
+			if (files.length === 0 && (!text || !text.trim())) return;
+			e.preventDefault();
+			e.stopPropagation();
+			await this.ingestPastedPayload(files, text);
+		}
+		/**
+		* Mobile / no-keyboard: read clipboard via Async Clipboard API (user gesture from toolbar tap).
+		*/
+		async handlePasteFromToolbar() {
+			if (!this.element || !this.viewerAcceptsGlobalInput()) {
+				this.showMessage("Open the Viewer tab to paste");
+				return;
+			}
+			if (document.visibilityState !== "visible") return;
 			try {
-				handleIncomingEntries(dataTransfer, "/images/wallpaper/", null, (file) => {
-					if (!looksLikeImageFile(file)) return;
-				});
-			} catch (e) {
-				console.warn(e);
-			}
-		});
-		return;
-	}
-	const parsed = parseShortcutFromTransfer(dataTransfer, suggestedCell);
-	if (parsed) {
-		event.preventDefault();
-		event.stopPropagation();
-		const mirrorPath = getSpeedDialMirrorPath();
-		if (mirrorPath && mirrorPath.startsWith("/bookmarks/")) {
-			const backend = resolveFsBackend(mirrorPath);
-			if (backend?.createUrl) {
-				const meta = getSpeedDialMeta(parsed.id);
-				const dropHref = String(meta?.href || "");
-				if (/^https?:\/\//i.test(dropHref)) {
-					const title = String(getRefValue(parsed.label, dropHref)) || dropHref;
-					Promise.resolve(backend.createUrl(mirrorPath, title, dropHref)).then(() => refreshSpeedDialMirror()).then(() => showSuccess("Bookmark created from dropped link")).catch((e) => {
-						console.warn(e);
-						showError("Failed to create bookmark");
-					});
+				const { files, text } = await this.readSystemClipboard();
+				if (files.length === 0 && (!text || !text.trim())) {
+					this.showMessage("Clipboard is empty or access denied");
 					return;
 				}
+				await this.ingestPastedPayload(files, text);
+			} catch (error) {
+				console.error("[ViewerView] Paste from toolbar failed:", error);
+				this.showMessage("Could not read clipboard — check permissions");
 			}
 		}
-		addSpeedDialItem(parsed);
-		persistSpeedDialItems();
-		persistSpeedDialMeta();
-		showSuccess(isPaste ? "Shortcut created from pasted link" : "Shortcut created from dropped link");
-		return;
-	}
-	if (isPaste) {
-		event.preventDefault();
-		event.stopPropagation();
-		(async () => {
-			if (!droppedOnItem) {
-				const apiImage = await readImageFileFromClipboardApi();
-				if (apiImage) {
-					const policyEv = new CustomEvent("cwsp:shell-image-open", {
-						bubbles: true,
-						cancelable: true,
-						detail: {
-							file: apiImage,
-							source: "paste"
+		async readSystemClipboard() {
+			const files = [];
+			let text;
+			if (typeof navigator === "undefined" || !navigator.clipboard) return {
+				files,
+				text
+			};
+			try {
+				if (typeof navigator.clipboard.read === "function") {
+					const items = await Promise.race([navigator.clipboard.read(), new Promise((resolve) => globalThis.setTimeout(() => resolve([]), 3500))]);
+					let mdNameIndex = 0;
+					for (const item of items) for (const type of item.types) {
+						const lower = type.toLowerCase();
+						if (lower === "text/html") continue;
+						let blob;
+						try {
+							blob = await item.getType(type);
+						} catch {
+							continue;
 						}
-					});
-					try {
-						window.dispatchEvent(policyEv);
-					} catch {}
-					if (!policyEv.defaultPrevented) applyWallpaperFromImageFile(apiImage);
-					return;
-				}
-			}
-			await handleSpeedDialPaste(event, suggestedCell);
-		})();
-	}
-};
-var acceptHomeLinkDragOver = (ev) => {
-	if (!isHomeWorkspaceSurface(ev)) return;
-	ev.preventDefault();
-	if (ev.dataTransfer) ev.dataTransfer.dropEffect = "copy";
-};
-/** Install once: document paste/drop so Ctrl+V works without #home focus. */
-var ensureHomeTransferListeners = () => {
-	if (homeTransferListenersBound || typeof document === "undefined") return;
-	homeTransferListenersBound = true;
-	document.addEventListener("paste", (event) => {
-		handleWallpaperDropOrPaste(event);
-	}, true);
-	document.addEventListener("keydown", (event) => {
-		if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
-		if (event.key !== "c" && event.key !== "C") return;
-		if (isEditablePasteTarget(resolveDeepActiveElement())) return;
-		if (!document.getElementById("home")?.isConnected) return;
-		const item = findSpeedDialItem(lastFocusedSpeedDialId);
-		if (!item) return;
-		event.preventDefault();
-		copySpeedDialItemAction(item)();
-	}, true);
-	document.addEventListener("dragover", (event) => {
-		const home = document.getElementById("home");
-		if (!home) return;
-		if (!(typeof event.composedPath === "function" ? event.composedPath() : []).includes(home) && !home.contains(event.target)) return;
-		acceptHomeLinkDragOver(event);
-	}, true);
-	document.addEventListener("drop", (event) => {
-		const home = document.getElementById("home");
-		if (!home) return;
-		if (!(typeof event.composedPath === "function" ? event.composedPath() : []).includes(home) && !home.contains(event.target)) return;
-		handleWallpaperDropOrPaste(event);
-	}, true);
-};
-var runMirrorItemAction = (item, makeView) => {
-	if (!item) return;
-	const actionId = String(item.action || "open-path");
-	const handler = getSpeedDialActionRegistry().get(actionId);
-	if (!handler) {
-		showError("Action is unavailable");
-		return;
-	}
-	const context = {
-		id: item.id,
-		items: mirrorSpeedDialItems,
-		meta: speedDialMeta,
-		action: actionId,
-		viewMaker: makeView,
-		path: item.path
-	};
-	try {
-		handler(context, item);
-	} catch (error) {
-		console.warn(error);
-		showError("Failed to run action");
-	}
-};
-var resolveMirrorOpener = (makeView) => makeView || getSpeedDialViewOpener();
-var attachMirrorItemNode = (item, el, makeView) => {
-	if (!el) return;
-	const root = el.closest(".speed-dial-root") || el.ownerDocument?.getElementById("home");
-	el.dataset.id = item.id;
-	el.dataset.speedDialItem = "true";
-	el.dataset.mirrorItem = "true";
-	const sync = () => {
-		const orient = getRootOrient(root);
-		const layout = getGridLayout();
-		const logicalCell = [readCellAxis(item.cell?.[0]), readCellAxis(item.cell?.[1])];
-		const visualCell = logicalToVisualCell(logicalCell, layout, orient);
-		el.style.setProperty("--cell-x", String(logicalCell[0]));
-		el.style.setProperty("--cell-y", String(logicalCell[1]));
-		el.style.setProperty("--cell-column", String(visualCell[0] + 1));
-		el.style.setProperty("--cell-row", String(visualCell[1] + 1));
-		el.dataset.cellColumn = String(visualCell[0] + 1);
-		el.dataset.cellRow = String(visualCell[1] + 1);
-		if (el.dataset.layer === "labels") {
-			el.style.setProperty("grid-column", `${visualCell[0] + 1} / span 1`, "important");
-			el.style.setProperty("grid-row", `${visualCell[1] + 1} / span 1`, "important");
-		}
-	};
-	sync();
-	if (el.dataset.layer === "icons") ensureShapedUnderSibling(el, item);
-	if (!el.dataset.mirrorActionBound) {
-		el.dataset.mirrorActionBound = "1";
-		el.addEventListener("click", (ev) => {
-			ev?.preventDefault?.();
-			ev?.stopPropagation?.();
-			runMirrorItemAction(item, resolveMirrorOpener(makeView));
-		});
-	}
-};
-var renderMirrorIconItem = (item, makeView) => {
-	const iconUrl = String(item?.iconUrl || "");
-	const fallbackIcon = String(item?.icon || "link");
-	const display = inferIconDisplay({
-		iconDisplay: item?.iconDisplay,
-		iconUrl,
-		isBookmarkFavicon: Boolean(iconUrl)
-	});
-	const iconNode = display === "glyph" || !iconUrl ? H`<ui-icon icon=${fallbackIcon}></ui-icon>` : createTileUiIconElement({
-		display,
-		glyph: fallbackIcon,
-		resourceUrl: iconUrl,
-		className: "ui-ws-item-icon-native"
-	});
-	return H`<div data-shape="squircle" data-id=${item.id} class="ui-ws-item ui-ws-item-icon shaped" data-speed-dial-item data-layer="icons" data-mirror-item ref=${(el) => attachMirrorItemNode(item, el, makeView)}>
-        ${iconNode}
-    </div>`;
-};
-var renderMirrorLabelItem = (item, makeView) => {
-	const labelRef = item?.label;
-	return H`<div data-id=${item.id} class="ui-ws-item ui-ws-item-label" data-speed-dial-item data-layer="labels" data-mirror-item style=${labelLayerStyle(item)} ref=${(el) => attachMirrorItemNode(item, el, makeView)}>
-        <span>${labelRef ?? ""}</span>
-    </div>`;
-};
-function SpeedDial(makeView) {
-	getLayout();
-	getCoordinateRef();
-	ensureVirtualKeyboardOverlay();
-	updateVP();
-	if (typeof makeView === "function") setSpeedDialViewOpener(makeView);
-	ensureHomeTransferListeners();
-	refreshSpeedDialMirror();
-	stripStaleWidgetMetaFromShortcuts();
-	bootWorkspacePages();
-	installLauncherBackStack();
-	bindWorkspacePageHotkeys();
-	const hostEvents = globalThis;
-	if (!hostEvents.__CWSP_SD_HOST_EVENTS_V1__) {
-		hostEvents.__CWSP_SD_HOST_EVENTS_V1__ = true;
-		queueMicrotask(() => syncWidgetsAfterGridChange());
-		window.addEventListener(WORKSPACE_PAGE_EVENT, () => {
-			hideAndroidWidgetHosts();
-			scheduleRootCellRefresh();
-			requestAnimationFrame(() => syncWidgetsAfterGridChange());
-		});
-		if (typeof ResizeObserver === "function") {
-			const ro = new ResizeObserver(() => syncAndroidWidgetHosts());
-			queueMicrotask(() => {
-				const home = document.getElementById("home");
-				if (home) ro.observe(home);
-			});
-		}
-		window.addEventListener("resize", () => syncAndroidWidgetHosts());
-		document.addEventListener("env-app-menu-open", () => hideAndroidWidgetHosts());
-		document.addEventListener("env-app-menu-close", () => syncWidgetsAfterGridChange());
-	}
-	const columnsRef = propRef(gridLayoutState, "columns", 4);
-	const rowsRef = propRef(gridLayoutState, "rows", 8);
-	const shapeRef = propRef(gridLayoutState, "shape", "square");
-	const tileShapeForItem = (item) => {
-		return propRef(getSpeedDialMeta(item.id) || {}, "shape", getDefaultTileShape());
-	};
-	const renderIconItem = (item) => {
-		const widgetKind = getSpeedDialWidgetKind(item);
-		if (widgetKind) {
-			const cached = reuseWidgetHost(item.id, widgetKind);
-			if (cached) return cached;
-			const widget = createWidgetNode(widgetKind, item);
-			const host = H`<div data-shape="none" data-id=${item.id} class="ui-ws-item ui-ws-item-icon sd-widget-host" data-speed-dial-item data-layer="icons" data-widget=${widgetKind} ref=${(el) => attachItemNode(item, el, true, makeView)}>
-                ${widget}
-            </div>`;
-			rememberWidgetHost(item.id, widgetKind, host);
-			return host;
-		}
-		const model = readTileIconModel(item);
-		const pendingShortcut = model.display !== "glyph" && Boolean(model.shortcutRef) && !model.resourceUrl && !isAndroidIconRef(model.customUrl);
-		const iconNode = createTileUiIconElement({
-			display: pendingShortcut ? "glyph" : model.display,
-			glyph: model.fallbackIcon,
-			resourceUrl: pendingShortcut ? void 0 : model.resourceUrl || void 0,
-			launcher: model.launchApp || Boolean(model.shortcutRef),
-			className: "ui-ws-item-icon-native"
-		});
-		return H`<div data-shape=${tileShapeForItem(item)} data-id=${item.id} class="ui-ws-item ui-ws-item-icon shaped" data-speed-dial-item data-layer="icons" data-icon-display=${model.display} ref=${(el) => {
-			const host = el;
-			stampTileHostAttrs(host, item, model);
-			attachItemNode(item, host, true, makeView);
-			if (iconNode instanceof HTMLElement) bindTileIconResource(host, iconNode, item, model);
-		}}>
-            ${iconNode}
-        </div>`;
-	};
-	const renderLabelItem = (item) => {
-		const labelRef = item?.label;
-		const widgetKind = getSpeedDialWidgetKind(item);
-		return H`<div data-id=${item.id} class="ui-ws-item ui-ws-item-label" data-speed-dial-item data-layer="labels" data-widget=${widgetKind || void 0} style=${labelLayerStyle(item)} ref=${(el) => attachItemNode(item, el, false, makeView)}>
-            <span>${labelRef ?? ""}</span>
-        </div>`;
-	};
-	const box = H`<div slot="underlay" style="pointer-events: auto; position: relative; contain: none; overflow: visible; display: grid;" id="home" class="speed-dial-root" tabindex="-1" ref=${(el) => {
-		bindRootOrientation(el);
-		mountCoreRail(el);
-		mountChromeRail(el);
-	}} on:dragover=${(ev) => acceptHomeLinkDragOver(ev)} on:drop=${(ev) => handleWallpaperDropOrPaste(ev)} on:paste=${(ev) => void handleWallpaperDropOrPaste(ev)} prop:onPaste=${async (ev) => await handleWallpaperDropOrPaste(ev)}>
-        <div class="speed-dial-grid speed-dial-label-layer speed-dial-grid--labels ui-launcher-grid" data-layer="items" data-grid-layer="labels" data-grid-columns=${columnsRef} data-grid-rows=${rowsRef} data-grid-shape=${shapeRef}>
-            ${M(speedDialItems, renderLabelItem)}
-            ${M(mirrorSpeedDialItems, renderMirrorLabelItem)}
-        </div>
-        <div class="speed-dial-grid speed-dial-icon-layer speed-dial-grid--icons ui-launcher-grid" data-layer="items" data-grid-layer="icons" data-grid-columns=${columnsRef} data-grid-rows=${rowsRef} data-grid-shape=${shapeRef}>
-            ${M(speedDialItems, renderIconItem)}
-            ${M(mirrorSpeedDialItems, renderMirrorIconItem)}
-        </div>
-    </div>`;
-	const itemsAffected = globalThis;
-	if (!itemsAffected.__CWSP_SD_ITEMS_AFFECTED_V1__) {
-		itemsAffected.__CWSP_SD_ITEMS_AFFECTED_V1__ = true;
-		affected(speedDialItems, (_items, _index, prev, operation) => {
-			if (operation === "remove" || operation === "delete") {
-				const id = String(prev?.id || "").trim();
-				if (id) {
-					disposeWidgetNode(id);
-					document.querySelectorAll(`[data-id="${CSS.escape(id)}"]`).forEach((node) => {
-						if (!(node instanceof HTMLElement)) return;
-						if (node.classList.contains("ui-ws-item-icon-under") || node.dataset.layer === "shadows") {
-							node.remove();
-							return;
+						if (!blob || blob.size === 0) continue;
+						if (lower === "text/plain") {
+							if (blob.size > VIEWER_CLIPBOARD_READ_TEXT_MAX_BYTES) continue;
+							const t = await blob.text();
+							if (t) text = text ?? t;
+							continue;
 						}
-						if (!findSpeedDialItem(id) && node.hasAttribute("data-speed-dial-item")) node.remove();
-					});
-				}
-				const home = currentHomeRoot();
-				pruneOrphanUnders(home);
-				requestAnimationFrame(() => syncWidgetsAfterGridChange(home));
-			}
-			scheduleRootCellRefresh();
-		});
-	}
-	return box;
-}
-var openItemEditor = (item, opts) => {
-	const workingItem = item ?? createEmptySpeedDialItem(opts?.suggestedCell ?? deriveCellFromAnchor());
-	const isNew = !item;
-	const workingMeta = ensureSpeedDialMeta(workingItem.id);
-	const seed = opts?.seed || {};
-	if (isNew && seed?.action) {
-		workingItem.action = seed.action;
-		workingMeta.action = seed.action;
-	}
-	if (isNew && seed?.label) workingItem.label.value = seed.label;
-	if (isNew && seed?.icon) workingItem.icon.value = seed.icon;
-	if (isNew && seed?.view) workingMeta.view = seed.view;
-	if (isNew && seed?.href) workingMeta.href = seed.href;
-	if (isNew && seed?.description) workingMeta.description = seed.description;
-	const draft = {
-		label: String(getRefValue(workingItem.label, "New shortcut") ?? "New shortcut"),
-		icon: String(getRefValue(workingItem.icon, "sparkle") ?? "sparkle"),
-		action: String(resolveItemAction(workingItem) || "open-view"),
-		href: String(workingMeta?.href || ""),
-		view: String(workingMeta?.view || ""),
-		description: String(workingMeta?.description || ""),
-		shape: String(workingMeta?.shape || getDefaultTileShape()),
-		iconDisplay: String(normalizeIconDisplay(workingMeta?.iconDisplay) || inferIconDisplay({
-			iconDisplay: workingMeta?.iconDisplay,
-			iconUrl: workingMeta?.iconUrl,
-			isLauncherApp: isLauncherAppSpeedDialItem(workingItem)
-		})),
-		iconUrl: durableIconUrl(resolveSpeedDialIconUrl(workingItem.id, workingMeta?.iconUrl)),
-		iconScale: String(workingMeta?.iconScale || "auto"),
-		openLinkTarget: resolveItemOpenLinkTarget(workingMeta),
-		packageName: String(workingMeta?.packageName || workingMeta?.iconCacheKey || ""),
-		widgetKind: String(workingMeta?.widgetKind || getSpeedDialWidgetKind(workingItem) || "clock"),
-		spanCols: getItemSpan(workingItem.id)[0],
-		spanRows: getItemSpan(workingItem.id)[1],
-		clockFormat: String(workingMeta?.clockFormat || "24h"),
-		searchUrl: String(workingMeta?.searchUrl || "")
-	};
-	openShortcutEditor({
-		mode: isNew ? "create" : "edit",
-		initial: {
-			label: draft.label,
-			icon: draft.icon,
-			action: draft.action,
-			href: draft.href,
-			view: draft.view,
-			description: draft.description,
-			shape: draft.shape,
-			iconDisplay: draft.iconDisplay,
-			iconUrl: draft.iconUrl,
-			iconScale: draft.iconScale,
-			openLinkTarget: draft.openLinkTarget || defaultOpenLinkTargetForHref(draft.href),
-			packageName: draft.packageName,
-			widgetKind: draft.widgetKind,
-			spanCols: draft.spanCols,
-			spanRows: draft.spanRows,
-			clockFormat: draft.clockFormat,
-			searchUrl: draft.searchUrl
-		},
-		actionOptions: getActionOptions(),
-		viewOptions: [...NAVIGATION_SHORTCUTS].map((shortcut) => ({
-			value: String(shortcut.view || ""),
-			label: String(shortcut.label || shortcut.view || "")
-		})),
-		registerForBackNavigation: true,
-		isViewAction: (value) => value === "open-view",
-		isHrefAction: (value) => value === "open-link" || value === "copy-link" || value === "open-view" || value === "open-path",
-		isWidgetAction: (value) => value === "widget",
-		onSave: (next) => {
-			workingItem.label.value = next.label;
-			workingItem.icon.value = next.icon || "sparkle";
-			workingItem.action = next.action || "open-view";
-			workingMeta.action = workingItem.action;
-			workingMeta.view = next.view;
-			workingMeta.href = next.href;
-			{
-				const href = String(next.href || "").trim();
-				const nativePath = /^\/(?:sdcard|saf)(?:\/|$)/i.test(href) ? href : href.replace(/^(?:\/storage\/emulated\/0|\/mnt\/sdcard)(?=\/|$)/i, "/sdcard");
-				if (/^\/(?:sdcard|saf)(?:\/|$)/i.test(nativePath)) {
-					workingMeta.path = nativePath;
-					workingItem.path = nativePath;
-					if (!workingItem.action || workingItem.action === "open-view") {
-						workingItem.action = "open-path";
-						workingMeta.action = "open-path";
+						if (lower.startsWith("image/")) {
+							const ext = lower.split("/")[1] || "img";
+							files.push(new File([blob], `paste.${ext}`, { type }));
+							continue;
+						}
+						if (lower === "text/markdown" || lower === "text/x-markdown" || lower === "text/md" || lower.includes("markdown")) {
+							if (blob.size > VIEWER_CLIPBOARD_READ_TEXT_MAX_BYTES) continue;
+							files.push(new File([blob], `pasted-${mdNameIndex++}.md`, { type: "text/markdown" }));
+							continue;
+						}
+						if (lower.startsWith("text/")) {
+							if (blob.size > VIEWER_CLIPBOARD_READ_TEXT_MAX_BYTES) continue;
+							files.push(new File([blob], `pasted-${mdNameIndex++}.md`, { type }));
+							continue;
+						}
+						const sniffed = await this.sniffBlobAsUtf8MarkdownFile(blob, mdNameIndex);
+						if (sniffed) {
+							files.push(sniffed);
+							mdNameIndex++;
+						}
 					}
-				} else if (workingItem.action === "open-path" && href) {
-					workingMeta.path = href;
-					workingItem.path = href;
+					if (files.length > 0 || text && text.trim()) return {
+						files,
+						text
+					};
 				}
-			}
-			workingMeta.description = next.description;
-			workingMeta.shape = next.shape;
-			workingMeta.iconDisplay = normalizeIconDisplay(next.iconDisplay) || "glyph";
-			{
-				const scale = String(next.iconScale || "auto").trim().toLowerCase();
-				workingMeta.iconScale = !scale || scale === "auto" || scale === "default" || scale === "inherit" ? "auto" : scale;
-			}
-			{
-				const rawUrl = String(next.iconUrl || "").trim();
-				workingMeta.iconUrl = workingMeta.iconDisplay === "glyph" || !isDurableIconResourceUrl(rawUrl) ? "" : /^data:/i.test(rawUrl) ? persistSpeedDialIconBlob(workingItem.id, rawUrl) : rawUrl;
-			}
-			workingMeta.openLinkTarget = normalizeOpenLinkTarget(next.openLinkTarget);
-			if (workingItem.action === "widget") {
-				const kind = String(next.widgetKind || "").toLowerCase();
-				const nextKind = kind === "search" || kind === "android" || kind === "clock" ? kind : "clock";
-				if (String(workingMeta.widgetKind || "") !== nextKind) disposeWidgetNode(workingItem.id);
-				workingMeta.widgetKind = nextKind;
-				setItemSpan(workingItem.id, [Math.max(1, Math.min(8, Number(next.spanCols) || 1)), Math.max(1, Math.min(8, Number(next.spanRows) || 1))]);
-				workingMeta.clockFormat = String(next.clockFormat || "24h").toLowerCase() === "12h" ? "12h" : "24h";
-				workingMeta.searchUrl = String(next.searchUrl || "").trim();
-				workingMeta.action = "widget";
-			} else {
-				disposeWidgetNode(workingItem.id);
-				delete workingMeta.widgetKind;
-				workingMeta.spanCols = 1;
-				workingMeta.spanRows = 1;
-			}
-			if (isNew) addSpeedDialItem(workingItem);
-			else upsertSpeedDialItem(workingItem);
-			persistSpeedDialItems();
-			persistSpeedDialMeta();
-			{
-				const home = document.getElementById("home");
-				if (home) refreshRootCells(home);
-				requestAnimationFrame(() => syncAndroidWidgetHosts(home));
-			}
-			const idSel = CSS.escape(String(workingItem.id));
-			document.querySelectorAll(`[data-speed-dial-item][data-id="${idSel}"][data-layer="icons"]`).forEach((tile) => paintSpeedDialTileIcon(tile, workingItem));
-			const labelText = String(next.label || "").trim();
-			document.querySelectorAll(`[data-speed-dial-item][data-id="${idSel}"][data-layer="labels"] span`).forEach((span) => {
-				span.textContent = labelText;
-			});
-			showSuccess(isNew ? "Shortcut created" : "Shortcut updated");
-		},
-		onDelete: isNew ? void 0 : () => {
-			releaseAndroidWidget(workingItem);
-			disposeWidgetNode(workingItem.id);
-			removeSpeedDialItem(workingItem.id);
-			persistSpeedDialItems();
-			persistSpeedDialMeta();
-			showSuccess("Shortcut removed");
+			} catch {}
+			try {
+				const t = await navigator.clipboard.readText();
+				if (t) text = text ?? t;
+			} catch {}
+			return {
+				files,
+				text
+			};
 		}
-	});
-};
-function createCtxMenu(makeView) {
-	getLayout();
-	getCoordinateRef();
-	if (typeof makeView === "function") setSpeedDialViewOpener(makeView);
-	if (!ctxMenuBound) {
-		ctxMenuBound = true;
-		ensureHomeTransferListeners();
-		document.addEventListener("contextmenu", (event) => {
-			const target = event.target;
-			if (!(target?.closest?.("#home, .speed-dial-root, .env-home-workspace, [data-view='home']") || null)) return;
-			event.preventDefault();
-			const targetEl = target?.closest?.("[data-speed-dial-item]");
-			const itemId = targetEl?.getAttribute?.("data-id");
-			const item = findSpeedDialItem(itemId);
-			if (item?.id) lastFocusedSpeedDialId = item.id;
-			const guessedCell = deriveCellFromEvent(event) ?? deriveCellFromAnchor();
-			const otherSides = item ? cloneToOtherSidesEntries(item) : [];
-			const toLeaf = (entry) => ({
-				id: String(entry?.id || "menu-action"),
-				label: String(entry?.label || "Action"),
-				icon: String(entry?.icon || "command"),
-				action: () => entry?.action?.(targetEl, entry, event)
-			});
-			const openViewTask = (view, params = {}) => {
-				const opener = getSpeedDialViewOpener() || makeView;
-				if (opener) {
-					opener(view, {
-						...params,
-						newTask: "1"
-					});
+		/**
+		* Clipboard sometimes exposes a copied file as application/octet-stream; if bytes look like UTF-8 text, open as .md.
+		*/
+		async sniffBlobAsUtf8MarkdownFile(blob, nameIndex) {
+			if (blob.size > 4 * 1024 * 1024) return null;
+			const sampleSize = Math.min(blob.size, 24576);
+			const sample = blob.slice(0, sampleSize);
+			const buf = new Uint8Array(await sample.arrayBuffer());
+			if (buf.length === 0) return null;
+			if (buf.includes(0)) return null;
+			let printable = 0;
+			for (let i = 0; i < buf.length; i++) {
+				const c = buf[i];
+				if (c === 9 || c === 10 || c === 13 || c >= 32 && c < 127 || c >= 160) printable++;
+			}
+			if (printable / buf.length < .9) return null;
+			return new File([blob], `pasted-${nameIndex}.md`, { type: "text/markdown" });
+		}
+		async ingestPastedPayload(files, textPlain) {
+			if (files.length > 0) {
+				const textFile = files.find((file) => this.isTextLikeFile(file));
+				const binaryFile = files.find((file) => this.looksLikeBinaryPreviewFile(file));
+				const pick = textFile || binaryFile || files[0];
+				try {
+					if (await this.ingestOpenedFile(pick, { filename: pick.name })) this.showMessage(`Opened ${pick.name || "pasted document"}`);
+					return;
+				} catch (error) {
+					console.error("[ViewerView] Failed to read pasted file:", error);
+					this.showMessage("Failed to read pasted file");
 					return;
 				}
-				getSpeedDialActionRegistry().get(`open-view-${view}`)?.({
-					id: "",
-					items: speedDialItems,
-					meta: speedDialMeta
-				}, {});
-			};
-			const menuItems = item ? [
-				{
-					id: "open",
-					label: "Open",
-					icon: "play",
-					action: () => runItemAction(item, void 0, {
-						event,
-						initiator: targetEl
-					}, getSpeedDialViewOpener() || makeView)
-				},
-				{
-					id: "copy-shortcut",
-					label: "Copy shortcut",
-					icon: "copy",
-					action: copySpeedDialItemAction(item)
-				},
-				{
-					id: "paste-shortcut",
-					label: "Paste shortcut",
-					icon: "clipboard",
-					action: pasteSpeedDialItemAction(guessedCell)
-				},
-				{
-					id: "actions",
-					label: "Actions",
-					icon: "dots-three",
-					action: () => {},
-					children: [
-						toLeaf(createMenuEntryForAction(resolveItemAction(item) || "open-view", item, "Run action", getSpeedDialViewOpener() || makeView)),
-						...getSpeedDialMeta(item.id)?.href ? [
-							toLeaf(createMenuEntryForAction("open-link", item, "Open link", getSpeedDialViewOpener() || makeView)),
-							{
-								id: "open-in-app",
-								label: "Open in app…",
-								icon: "arrow-square-out",
-								action: () => runItemAction(item, "open-link", {
-									event,
-									initiator: targetEl,
-									openLinkTarget: "external-app"
-								}, getSpeedDialViewOpener() || makeView)
-							},
-							toLeaf(createMenuEntryForAction("copy-link", item, "Copy link", getSpeedDialViewOpener() || makeView))
-						] : [],
-						toLeaf(createMenuEntryForAction("copy-state-desc", item, "Copy shortcut", getSpeedDialViewOpener() || makeView))
-					]
-				},
-				{
-					id: "open-in",
-					label: "Open In New",
-					icon: "app-window",
-					action: () => {},
-					children: [{
-						id: "open-in-regular-window",
-						label: "Regular window",
-						icon: "app-window",
-						action: () => {
-							const targetView = String(getSpeedDialMeta(item.id)?.view || "viewer");
-							openViewTask(targetView, { windowType: "regular" });
-						}
-					}, {
-						id: "open-in-tabbed-window",
-						label: "Tabbed window",
-						icon: "rows-plus-bottom",
-						action: () => {
-							const targetView = String(getSpeedDialMeta(item.id)?.view || "viewer");
-							openViewTask(targetView, { windowType: "tabbed" });
-						}
-					}]
-				},
-				{
-					id: "manage",
-					label: "Manage",
-					icon: "wrench",
-					action: () => {},
-					children: [
-						{
-							id: "edit",
-							label: "Edit Properties",
-							icon: "pencil-simple-line",
-							action: () => openItemEditor(item)
-						},
-						{
-							id: "duplicate",
-							label: "Duplicate here",
-							icon: "copy",
-							action: () => {
-								if (addClonedSpeedDialItem(item)) {
-									showSuccess("Shortcut duplicated");
-									return;
-								}
-								showError("Could not duplicate shortcut");
-							}
-						},
-						...otherSides.length ? [{
-							id: "copy-to-side",
-							label: "Copy to side",
-							icon: "squares-four",
-							action: () => {},
-							children: otherSides
-						}] : [],
-						{
-							id: "remove",
-							label: "Remove",
-							icon: "trash",
-							danger: true,
-							action: () => {
-								releaseAndroidWidget(item);
-								disposeWidgetNode(item.id);
-								removeSpeedDialItem(item.id);
-								persistSpeedDialItems();
-								persistSpeedDialMeta();
-								showSuccess("Shortcut removed");
-							}
-						}
-					]
+			}
+			const text = textPlain;
+			if (!text || !text.trim()) return;
+			try {
+				const raw = text.trim();
+				if (raw.length <= VIEWER_INGEST_BASE64_PROBE_MAX && (parseDataUrl(raw) || isBase64Like(raw))) {
+					const asset = await normalizeDataAsset(raw, {
+						namePrefix: "pasted-doc",
+						uriComponent: true
+					});
+					if (this.looksLikeBinaryPreviewFile(asset.file)) {
+						await this.ingestOpenedFile(asset.file, { filename: asset.file.name });
+						return;
+					}
+					if (!this.isTextLikeFile(asset.file)) {
+						this.showMessage("Pasted data is not a text/markdown document");
+						return;
+					}
+					const content = await asset.file.text();
+					this.setContent(content, asset.file.name, null);
+					this.showMessage("Opened pasted encoded document");
+					return;
 				}
-			] : [
-				{
-					id: "new",
-					label: "New",
-					icon: "plus",
-					action: () => {},
-					children: [
-						{
-							id: "create-shortcut",
-							label: "Create shortcut",
-							icon: "plus",
-							action: () => {
-								openItemEditor(void 0, { suggestedCell: guessedCell });
-							}
-						},
-						{
-							id: "create-link-shortcut",
-							label: "Create link shortcut",
-							icon: "link",
-							action: () => {
-								openItemEditor(void 0, {
-									suggestedCell: guessedCell,
-									seed: {
-										action: "open-link",
-										icon: "link",
-										label: "New link",
-										href: "",
-										description: ""
-									}
-								});
-							}
-						},
-						{
-							id: "add-widget",
-							label: "Add widget",
-							icon: "squares-four",
-							action: async () => {
-								const pick = await openWidgetPicker();
-								if (!pick) return;
-								if (pick.kind === "android") addSpeedDialItem(createWidgetSpeedDialItem("android", guessedCell, {
-									widgetKind: "android",
-									description: pick.bound.label,
-									androidWidgetId: pick.bound.widgetId,
-									androidProvider: pick.bound.provider,
-									spanCols: pick.bound.spanCols,
-									spanRows: pick.bound.spanRows,
-									iconUrl: pick.bound.preview,
-									iconDisplay: "colored"
-								}));
-								else addSpeedDialItem(createWidgetSpeedDialItem(pick.kind, guessedCell));
-								persistSpeedDialItems();
-								persistSpeedDialMeta();
-								requestAnimationFrame(() => syncAndroidWidgetHosts());
-								showSuccess("Widget added");
-							}
-						},
-						{
-							id: "paste-shortcut",
-							label: "Paste shortcut",
-							icon: "clipboard",
-							action: pasteSpeedDialItemAction(guessedCell)
-						}
-					]
-				},
-				{
-					id: "paste-shortcut-root",
-					label: "Paste shortcut",
-					icon: "clipboard",
-					action: pasteSpeedDialItemAction(guessedCell)
-				},
-				{
-					id: "open",
-					label: "Open",
-					icon: "squares-four",
-					action: () => {},
-					children: [
-						{
-							id: "open-explorer",
-							label: "Explorer",
-							icon: "books",
-							action: () => {
-								getSpeedDialActionRegistry().get("open-view-explorer")?.({
-									id: "",
-									items: speedDialItems,
-									meta: speedDialMeta,
-									viewMaker: getSpeedDialViewOpener() || makeView
-								}, {});
-							}
-						},
-						{
-							id: "open-settings",
-							label: "Settings",
-							icon: "gear-six",
-							action: () => {
-								getSpeedDialActionRegistry().get("open-view-settings")?.({
-									id: "",
-									items: speedDialItems,
-									meta: speedDialMeta,
-									viewMaker: getSpeedDialViewOpener() || makeView
-								}, {});
-							}
-						},
-						{
-							id: "open-window-type",
-							label: "New Window",
-							icon: "app-window",
-							action: () => {},
-							children: [{
-								id: "open-viewer-regular",
-								label: "Viewer (regular)",
-								icon: "article",
-								action: () => openViewTask("viewer", { windowType: "regular" })
-							}, {
-								id: "open-viewer-tabbed",
-								label: "Viewer (tabbed)",
-								icon: "rows-plus-bottom",
-								action: () => openViewTask("viewer", { windowType: "tabbed" })
-							}]
-						}
-					]
-				},
-				{
-					id: "wallpaper",
-					label: "Wallpaper",
-					icon: "image",
-					action: () => {},
-					children: [{
-						id: "change-wallpaper",
-						label: "Change wallpaper",
-						icon: "image",
-						action: pickWallpaper
-					}]
-				},
-				{
-					id: "speed-dial-source",
-					label: "Speed dial source",
-					icon: "squares-four",
-					action: () => {},
-					children: [{
-						id: "source-curated",
-						label: "Curated",
-						icon: "star",
-						action: () => {
-							if (isMirrorMode()) {
-								setSpeedDialMirrorPath(null);
-								showSuccess("Switched to curated speed dial");
-							}
-						}
-					}, {
-						id: "source-mirror",
-						label: "Mirror path…",
-						icon: "folders",
-						action: () => {
-							const roots = listVirtualRootEntriesFromRouter().map((e) => `/${e.name}/`);
-							const current = getSpeedDialMirrorPath() || "";
-							const quick = roots.length ? roots.map((r) => ({
-								id: `mirror-root-${r}`,
-								label: r,
-								icon: "folder",
-								action: () => {
-									setSpeedDialMirrorPath(r);
-									showSuccess(`Mirror source: ${r}`);
-								}
-							})) : [];
-							openUnifiedContextMenu({
-								x: event.clientX + 4,
-								y: event.clientY + 4,
-								items: [
-									...current ? [{
-										id: "mirror-current",
-										label: `Current: ${current}`,
-										icon: "info",
-										action: () => {}
-									}] : [],
-									...quick,
-									{
-										id: "mirror-custom",
-										label: "Custom path…",
-										icon: "pencil-simple-line",
-										action: () => {
-											const entered = String(typeof globalThis !== "undefined" && typeof globalThis.prompt === "function" ? globalThis.prompt("Mirror speed dial path", current || "/user/") : current || "/user/").trim();
-											if (!entered) return;
-											setSpeedDialMirrorPath(entered);
-											showSuccess(`Mirror source: ${entered}`);
-										}
-									},
-									...current ? [{
-										id: "mirror-clear",
-										label: "Clear (back to curated)",
-										icon: "x",
-										danger: true,
-										action: () => {
-											setSpeedDialMirrorPath(null);
-											showSuccess("Switched to curated speed dial");
-										}
-									}] : []
-								],
-								compact: true
-							});
-						}
-					}]
+				this.setContent(raw, void 0, null);
+				this.showMessage("Content pasted");
+			} catch (error) {
+				console.error("[ViewerView] Failed to process pasted data:", error);
+				this.showMessage("Failed to process pasted content");
+			}
+		}
+		looksLikeBinaryPreviewFile(file) {
+			return looksLikePreviewableBinary(file);
+		}
+		/** Share Target / Open-with: replace the painted document without open-policy handoff. */
+		async paintSharedIngressFile(file, filename, source) {
+			const name = String(filename || file.name || "").trim();
+			if (this.looksLikeBinaryPreviewFile(file)) {
+				this.showSharedBinaryPreview(file);
+				if (name) this.options.filename = name;
+				return true;
+			}
+			const body = await file.text().catch(() => "");
+			this.ingestOpenedMarkdownBody(body, name || file.name, source ?? null);
+			return true;
+		}
+		/**
+		* Open a dropped / pasted / picked file using Open & share policy.
+		* Images and PDFs render in-place by default instead of being read as UTF-8.
+		*/
+		async ingestOpenedFile(file, opts) {
+			if (inferCwspSkuFromLocation() === "document") {
+				if (this.looksLikeBinaryPreviewFile(file) || this.isTextLikeFile(file)) return this.paintSharedIngressFile(file, opts?.filename, opts?.virtualPath ?? null);
+				this.showMessage(`Unsupported file type for viewer: ${file.name || file.type || "binary file"}`);
+				return false;
+			}
+			const settings = loadSettings();
+			rememberOpenPolicyFromSettings(settings);
+			const kind = classifyOpenKind(file);
+			const sink = resolveOpenPolicy(resolveHostOpenPolicy(settings), "viewer", kind, opts?.channel || "open");
+			if (sink === "workcenter") return this.handoffOpenedFile("workcenter", file, opts?.virtualPath);
+			if (sink === "explorer") return this.handoffOpenedFile("explorer", file, opts?.virtualPath);
+			if (sink === "external" || sink === "system") {
+				const url = URL.createObjectURL(file);
+				this.assetObjectUrls.push(url);
+				try {
+					if (globalThis.open?.(url, "_blank", "noopener,noreferrer")) return true;
+				} catch {}
+			}
+			if (this.looksLikeBinaryPreviewFile(file)) {
+				this.showSharedBinaryPreview(file);
+				if (opts?.virtualPath) {
+					this.sourceUrl = this.normalizeSourceUrl(opts.virtualPath);
+					this.options.source = opts.virtualPath;
 				}
-			];
-			openUnifiedContextMenu({
-				x: event.clientX,
-				y: event.clientY,
-				items: menuItems,
-				compact: true
+				if (opts?.filename || file.name) this.options.filename = opts?.filename || file.name;
+				return true;
+			}
+			if (!this.isTextLikeFile(file)) {
+				this.showMessage(`Unsupported file type for viewer: ${file.name || file.type || "binary file"}`);
+				return false;
+			}
+			const text = await file.text().catch(() => "");
+			this.ingestOpenedMarkdownBody(text, opts?.filename || file.name, opts?.virtualPath ?? null);
+			return true;
+		}
+		async handoffOpenedFile(dest, file, virtualPath) {
+			const filename = file.name || (dest === "explorer" ? "file" : "document.md");
+			const src = String(virtualPath || filename);
+			if (shouldHandoffViewToSibling(dest)) {
+				try {
+					stashSkuHandoff({
+						dest,
+						content: this.isTextLikeFile(file) ? await file.text() : "",
+						filename,
+						src
+					});
+				} catch {
+					stashSkuHandoff({
+						dest,
+						filename,
+						src
+					});
+				}
+				globalThis.location.assign(publicHrefForSku(dest === "explorer" ? "explorer" : "process"));
+				return true;
+			}
+			try {
+				if (await sendViewProtocolMessage({
+					type: dest === "explorer" ? "file-save" : "content-share",
+					source: "viewer",
+					destination: dest,
+					contentType: file.type || "application/octet-stream",
+					attachments: [{
+						data: file,
+						source: "viewer-open-policy"
+					}],
+					data: {
+						filename,
+						path: src,
+						source: src
+					}
+				})) {
+					this.showMessage(dest === "explorer" ? `Sent ${filename} to Explorer` : `Sent ${filename} to Work Center`);
+					return true;
+				}
+			} catch (error) {
+				console.warn("[Viewer] Open-policy handoff failed:", error);
+			}
+			if (this.looksLikeBinaryPreviewFile(file)) {
+				this.showSharedBinaryPreview(file);
+				return true;
+			}
+			this.showMessage(`Could not send ${filename} to ${dest}`);
+			return false;
+		}
+		/** Image / PDF / downloadable blob — not markdown ingest. */
+		showSharedBinaryPreview(file) {
+			this.binaryPreviewActive = true;
+			const target = this.queryViewerSlotted("[data-render-target]");
+			if (!target) {
+				this.pendingBinaryPreview = file;
+				return;
+			}
+			this.pendingBinaryPreview = null;
+			const url = URL.createObjectURL(file);
+			this.assetObjectUrls.push(url);
+			const mime = (file.type || "").toLowerCase();
+			const name = file.name || "file";
+			const safeName = name.replace(/[<>&"]/g, "");
+			if (mime.startsWith("image/") || /\.(png|jpe?g|gif|webp|bmp|svg|avif)$/i.test(name)) target.innerHTML = `<img class="view-viewer__share-preview" src="${url}" alt="${safeName}" style="max-width:100%;height:auto" />`;
+			else if (mime === "application/pdf" || /\.pdf$/i.test(name)) target.innerHTML = `<iframe class="view-viewer__share-preview" src="${url}" title="${safeName}" style="width:100%;min-height:70vh;border:0"></iframe>`;
+			else target.innerHTML = `<p>Opened ${safeName} (${file.size} bytes)</p><a href="${url}" download="${safeName}">Download</a>`;
+			this.showMessage(name);
+		}
+		flushPendingBinaryPreview() {
+			const file = this.pendingBinaryPreview;
+			if (file) this.showSharedBinaryPreview(file);
+		}
+		isTextLikeFile(file) {
+			if (this.looksLikeBinaryPreviewFile(file)) return false;
+			const name = (file.name || "").toLowerCase();
+			const type = (file.type || "").toLowerCase();
+			if (type.startsWith("text/")) return true;
+			if (type.includes("markdown") || type.includes("json") || type.includes("xml")) return true;
+			if (!type) return [
+				".md",
+				".markdown",
+				".mdown",
+				".mkd",
+				".mkdn",
+				".mdtxt",
+				".mdtext",
+				".txt",
+				".json",
+				".xml",
+				".html",
+				".htm",
+				".css",
+				".js",
+				".ts",
+				".tsx",
+				".yml",
+				".yaml"
+			].some((ext) => name.endsWith(ext));
+			return [
+				".md",
+				".markdown",
+				".mdown",
+				".mkd",
+				".mkdn",
+				".mdtxt",
+				".mdtext",
+				".txt",
+				".json",
+				".xml",
+				".html",
+				".htm",
+				".css",
+				".js",
+				".ts",
+				".tsx",
+				".yml",
+				".yaml"
+			].some((ext) => name.endsWith(ext));
+		}
+		shouldHandlePaste(e) {
+			if (!this.element || !this.viewerAcceptsGlobalInput()) return false;
+			if (document.visibilityState !== "visible") return false;
+			const target = e.target;
+			if (!target) return false;
+			if (target.closest("[data-viewer-path]")) {
+				const items = e.clipboardData?.items;
+				if (!(!!items && Array.from(items).some((item) => item.kind === "file"))) return false;
+			} else if (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable) return false;
+			const hasFocusWithinView = this.viewBranchesContain(document.activeElement);
+			const targetInView = this.viewBranchesContain(target);
+			const hoverWithinView = this.isPointerInView || this.viewBranchesHover();
+			return targetInView || hasFocusWithinView || hoverWithinView;
+		}
+		saveState() {
+			this.stateManager.save({
+				content: this.contentRef.value,
+				filename: this.options.filename
 			});
-		}, { capture: true });
-	}
-	return H`<div data-home-ctx-menu style="display:none;"></div>`;
-}
-//#endregion
-//#region ../../modules/views/home-view/src/ts/OrientBox.ts
-var UIOrientBox = class extends DOMMixin {
-	constructor(name) {
-		super(name);
-	}
-	connect(ws) {
-		const self = ws?.deref?.() ?? ws;
-		self.classList.add("ui-orientbox");
-		const zoom = numberRef(1), orient = numberRef(orientationNumberMap?.[getCorrectOrientation()] || 0);
-		self.style.setProperty("--zoom", zoom.value);
-		self.style.setProperty("--orient", orient.value);
-		Object.defineProperty(self, "size", { get: () => size });
-		Object.defineProperty(self, "zoom", {
-			get: () => parseFloat(zoom.value) || 1,
-			set: (value) => {
-				zoom.value = value;
-				self.style.setProperty("--zoom", value);
+		}
+		showMessage(message) {
+			const show = this.shellContext?.showMessage || this.options?.shellContext?.showMessage;
+			if (typeof show === "function") {
+				show.call(this.shellContext || this.options?.shellContext, message);
+				return;
 			}
-		});
-		Object.defineProperty(self, "orient", {
-			get: () => parseInt(orient.value) || 0,
-			set: (value) => {
-				orient.value = value;
-				self.style.setProperty("--orient", value);
+			console.log(`[Viewer] ${message}`);
+		}
+		normalizeMarkdownExtensionFlags(rawFlags) {
+			return (rawFlags || DEFAULT_MARKDOWN_EXTENSION_FLAGS).split("").filter((flag, index, array) => /[dgimsuvy]/.test(flag) && array.indexOf(flag) === index).join("") || DEFAULT_MARKDOWN_EXTENSION_FLAGS;
+		}
+		applyCustomMarkdownExtensions(markdown) {
+			const source = markdown || "";
+			const rules = Array.isArray(this.markdownSettings.extensions) ? this.markdownSettings.extensions : [];
+			if (rules.length === 0 || !source) return source;
+			let result = source;
+			for (const rule of rules) {
+				if (!rule || rule.enabled === false) continue;
+				const pattern = (rule.pattern || "").trim();
+				if (!pattern) continue;
+				try {
+					const regex = new RegExp(pattern, this.normalizeMarkdownExtensionFlags(rule.flags));
+					result = result.replace(regex, rule.replacement ?? "");
+				} catch (error) {
+					console.warn("[Viewer] Skipping invalid markdown extension rule:", {
+						id: rule.id,
+						pattern,
+						flags: rule.flags,
+						error
+					});
+				}
 			}
-		});
-		const size = vector2Ref(self.clientWidth, self.clientHeight);
-		new ResizeObserver((entries) => {
-			for (const entry of entries) if (entry?.contentBoxSize) {
-				const contentBoxSize = entry?.contentBoxSize?.[0];
-				size.x.value = contentBoxSize?.inlineSize || size.x.value || 0;
-				size.y.value = contentBoxSize?.blockSize || size.y.value || 0;
+			return result;
+		}
+		applyMarkdownPlugins(markdown) {
+			let result = markdown || "";
+			if (!result) return result;
+			if (this.markdownSettings.plugins.smartTypography) result = result.replace(/\.\.\./g, "&hellip;").replace(/(^|[^\-])---([^\-]|$)/g, "$1&mdash;$2").replace(/(^|[^\-])--([^\-]|$)/g, "$1&ndash;$2");
+			if (this.markdownSettings.plugins.softBreaksAsBr) result = result.replace(/([^\n])\n(?!\n)/g, "$1  \n");
+			return result;
+		}
+		getFontFamilyFromPreset() {
+			const preset = this.markdownSettings.fontFamily;
+			if (preset === "serif") return "Georgia, Cambria, 'Times New Roman', Times, serif";
+			if (preset === "mono") return "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace";
+			if (preset === "sans") return "Inter, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
+			return "ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
+		}
+		applyRenderedLinkBehavior(root) {
+			const links = Array.from(root.querySelectorAll("a[href]"));
+			for (const link of links) {
+				const href = (link.getAttribute("href") || "").trim();
+				if (!href) continue;
+				const isHash = href.startsWith("#");
+				const isExternal = /^(https?:)?\/\//i.test(href);
+				if (this.markdownSettings.plugins.externalLinksNewTab && isExternal && !isHash) {
+					link.target = "_blank";
+					link.rel = "noopener noreferrer";
+				} else {
+					if (link.target === "_blank") link.removeAttribute("target");
+					if (link.rel === "noopener noreferrer") link.removeAttribute("rel");
+				}
 			}
-		}).observe(self, { box: "content-box" });
-		elementPointerMap.set(self, {
-			pointerMap: /* @__PURE__ */ new Map(),
-			pointerCache: /* @__PURE__ */ new Map()
-		});
-		return this;
-	}
-};
-new UIOrientBox("ui-orientbox");
-//#endregion
-//#region ../../modules/views/home-view/src/ts/OrientDesktop.ts
-/** Orient-layer desktop shares SpeedDial styles; HomeView only adopts this sheet while home is visible, so load once here. */
-var orientDesktopStyleSheet = null;
-var homeHostStyleSheet = null;
-var ensureOrientDesktopStyles = () => {
-	if (!orientDesktopStyleSheet) orientDesktopStyleSheet = loadAsAdopted(speed_dial_default);
-	if (!homeHostStyleSheet) homeHostStyleSheet = loadAsAdopted(home_host_apply_default);
-};
+		}
+		getPresetVariablesCss() {
+			const preset = this.markdownSettings.preset;
+			if (preset === "classic") return `
+                --md-letter-spacing: 0;
+                --md-h1-size: 2.05em;
+                --md-h2-size: 1.65em;
+                --md-p-margin: 1.05em;
+            `;
+			if (preset === "compact") return `
+                --md-letter-spacing: -0.01em;
+                --md-h1-size: 1.8em;
+                --md-h2-size: 1.45em;
+                --md-p-margin: 0.72em;
+            `;
+			if (preset === "paper") return `
+                --md-letter-spacing: 0.005em;
+                --md-h1-size: 2em;
+                --md-h2-size: 1.6em;
+                --md-p-margin: 0.95em;
+            `;
+			return `
+            --md-letter-spacing: 0;
+            --md-h1-size: 1.95em;
+            --md-h2-size: 1.55em;
+            --md-p-margin: 0.9em;
+        `;
+		}
+		buildCustomStyleText() {
+			const pageSize = this.markdownSettings.page.size || "auto";
+			const pageOrientation = this.markdownSettings.page.orientation || "portrait";
+			const pageMargin = Number.isFinite(this.markdownSettings.page.marginMm) ? Math.max(5, Math.min(40, this.markdownSettings.page.marginMm)) : 12;
+			const printScale = Number.isFinite(this.markdownSettings.printScale) ? Math.max(.5, Math.min(1.5, this.markdownSettings.printScale)) : 1;
+			const fontSizePx = Number.isFinite(this.markdownSettings.fontSizePx) ? Math.max(12, Math.min(26, this.markdownSettings.fontSizePx)) : 16;
+			const lineHeight = Number.isFinite(this.markdownSettings.lineHeight) ? Math.max(1.1, Math.min(2.2, this.markdownSettings.lineHeight)) : 1.7;
+			Number.isFinite(this.markdownSettings.contentMaxWidthPx) && Math.max(500, Math.min(1400, this.markdownSettings.contentMaxWidthPx));
+			const systemCss = `
+            .cw-view-viewer-shell .markdown-viewer-content {
+                font-family: ${this.getFontFamilyFromPreset()};
+                font-size: ${fontSizePx}px;
+                line-height: ${lineHeight};
+                letter-spacing: var(--md-letter-spacing, 0);
+                padding: 1rem 1.1rem 3rem;
+            }
+
+            .cw-view-viewer-shell .markdown-viewer-content h1 { font-size: var(--md-h1-size, 1.95em); }
+            .cw-view-viewer-shell .markdown-viewer-content h2 { font-size: var(--md-h2-size, 1.55em); }
+            .cw-view-viewer-shell .markdown-viewer-content p,
+            .cw-view-viewer-shell .markdown-viewer-content li {
+                margin-block: var(--md-p-margin, 0.9em);
+            }
+
+            .cw-view-viewer-shell .markdown-viewer-content {
+                ${this.getPresetVariablesCss()}
+            }
+        `;
+			const modulesCss = `
+            ${this.markdownSettings.modules.typography ? "" : `
+            .cw-view-viewer-shell .markdown-viewer-content .view-viewer__md-root p,
+            .cw-view-viewer-shell .markdown-viewer-content .view-viewer__md-root li,
+            .cw-view-viewer-shell .markdown-viewer-content p,
+            .cw-view-viewer-shell .markdown-viewer-content li {
+                margin-block: 0.35em;
+            }
+            .cw-view-viewer-shell .markdown-viewer-content .view-viewer__md-root h1,
+            .cw-view-viewer-shell .markdown-viewer-content .view-viewer__md-root h2,
+            .cw-view-viewer-shell .markdown-viewer-content .view-viewer__md-root h3,
+            .cw-view-viewer-shell .markdown-viewer-content h1,
+            .cw-view-viewer-shell .markdown-viewer-content h2,
+            .cw-view-viewer-shell .markdown-viewer-content h3 {
+                margin-block: 0.45em;
+            }`}
+
+            ${this.markdownSettings.modules.lists ? `
+            .cw-view-viewer-shell .markdown-viewer-content .view-viewer__md-root ul,
+            .cw-view-viewer-shell .markdown-viewer-content .view-viewer__md-root ol {
+                margin-block: 0.65em;
+                padding-inline-start: 1.35em;
+            }
+            .cw-view-viewer-shell .markdown-viewer-content .view-viewer__md-root li {
+                margin-block: 0.28em;
+            }
+            .cw-view-viewer-shell .markdown-viewer-content .view-viewer__md-root li > ul,
+            .cw-view-viewer-shell .markdown-viewer-content .view-viewer__md-root li > ol {
+                margin-block: 0.4em;
+            }` : `
+            .cw-view-viewer-shell .markdown-viewer-content .view-viewer__md-root ul,
+            .cw-view-viewer-shell .markdown-viewer-content .view-viewer__md-root ol {
+                padding-inline-start: 1.15em;
+            }`}
+
+            ${this.markdownSettings.modules.codeBlocks ? `
+            .cw-view-viewer-shell .markdown-viewer-content pre {
+                border-radius: 10px;
+                padding: 0.8rem 1rem;
+                overflow-x: auto;
+            }
+            .cw-view-viewer-shell .markdown-viewer-content code {
+                font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+                font-size: 0.92em;
+            }` : ""}
+
+            ${this.markdownSettings.modules.tables ? `
+            .cw-view-viewer-shell .markdown-viewer-content table {
+                inline-size: 100%;
+                border-collapse: collapse;
+                margin: 1rem 0;
+            }
+            .cw-view-viewer-shell .markdown-viewer-content th,
+            .cw-view-viewer-shell .markdown-viewer-content td {
+                border: 1px solid color-mix(in oklab, currentColor 18%, transparent);
+                padding: 0.45rem 0.6rem;
+                text-align: left;
+                vertical-align: top;
+            }` : ""}
+
+            ${this.markdownSettings.modules.blockquotes ? `
+            .cw-view-viewer-shell .markdown-viewer-content blockquote {
+                border-inline-start: 4px solid color-mix(in oklab, currentColor 30%, transparent);
+                padding-inline: 1rem;
+                margin-inline: 0;
+            }` : ""}
+
+            ${this.markdownSettings.modules.media ? `
+            .cw-view-viewer-shell .markdown-viewer-content img,
+            .cw-view-viewer-shell .markdown-viewer-content video {
+                max-inline-size: 100%;
+                border-radius: 8px;
+                display: block;
+                margin-inline: auto;
+            }` : ""}
+        `;
+			const builtInPrintCss = `
+            @media print {
+                .cw-view-viewer-shell .markdown-viewer-content {
+                    zoom: ${printScale};
+                }
+                ${this.markdownSettings.modules.printBreaks ? `
+                .cw-view-viewer-shell .markdown-viewer-content h1,
+                .cw-view-viewer-shell .markdown-viewer-content h2,
+                .cw-view-viewer-shell .markdown-viewer-content h3 {
+                    break-after: avoid-page;
+                    break-inside: avoid;
+                }
+                .cw-view-viewer-shell .markdown-viewer-content pre,
+                .cw-view-viewer-shell .markdown-viewer-content table,
+                .cw-view-viewer-shell .markdown-viewer-content blockquote {
+                    break-inside: avoid;
+                }` : ""}
+            }
+        `;
+			const screenCss = [this.userStyleModules.screenCss, (this.markdownSettings.customCss || "").trim()].map((value) => (value || "").trim()).filter(Boolean).join("\n\n");
+			const userPrintCss = [this.userStyleModules.printCss, (this.markdownSettings.printCss || "").trim()].map((value) => (value || "").trim()).filter(Boolean).join("\n\n");
+			const pageCss = pageSize !== "auto" ? `@page { size: ${pageSize} ${pageOrientation}; margin: ${pageMargin}mm; }` : "";
+			return [
+				cssLayerOrder(VIEWER_CSS_LAYER_ORDER),
+				cssLayerBlock("rs-md-system", systemCss),
+				cssLayerBlock("rs-md-modules", modulesCss),
+				normalizeCssForLayer("rs-md-user", screenCss),
+				cssLayerBlock("rs-md-print", `${builtInPrintCss}\n${pageCss}`),
+				normalizeCssForLayer("rs-md-user-print", userPrintCss ? `@media print {\n${userPrintCss}\n}` : "")
+			].filter(Boolean).join("\n\n");
+		}
+		async loadUserStyleModules() {
+			const result = {
+				screenCss: "",
+				printCss: ""
+			};
+			try {
+				const dir = openDirectory(null, "/user/styles/", { create: true });
+				await dir;
+				const names = (await Array.fromAsync(dir.entries?.() ?? [])).map((entry) => String(entry?.[0] || "").trim()).filter((name) => !!name && name.toLowerCase().endsWith(".css")).sort((a, b) => a.localeCompare(b));
+				const screenChunks = [];
+				const printChunks = [];
+				for (const name of names) {
+					const file = await provide(`/user/styles/${name}`).catch(() => null);
+					const cssText = file instanceof File ? await file.text().catch(() => "") : "";
+					if (!cssText.trim()) continue;
+					if (name.toLowerCase().endsWith(".print.css")) printChunks.push(`/* ${name} */\n${cssText}`);
+					else screenChunks.push(`/* ${name} */\n${cssText}`);
+				}
+				result.screenCss = screenChunks.join("\n\n").trim();
+				result.printCss = printChunks.join("\n\n").trim();
+			} catch (error) {
+				console.warn("[Viewer] Failed to load /user/styles modules:", error);
+			}
+			this.userStyleModules = result;
+		}
+		applyCustomStyles() {
+			if (this.customSheet) {
+				removeAdopted(this.customSheet);
+				this.customSheet = null;
+			}
+			const styleText = this.buildCustomStyleText();
+			if (!styleText) return;
+			try {
+				this.customSheet = loadAsAdopted(styleText);
+			} catch (error) {
+				console.warn("[Viewer] Failed to load custom markdown styles:", error);
+				this.customSheet = null;
+			}
+			this.syncAdoptedSheetsToShadow();
+		}
+		/**
+		* Stable fingerprint for the markdown **pipeline** (pre-marked transforms + marked input + link post-processing).
+		* WHY: `loadMarkdownSettings` runs from constructor and on every `onShow`; re-applying typography/CSS must not
+		* always call `renderMarkdown`, which resets the viewport to the loading placeholder even when HTML is unchanged.
+		*/
+		markdownPipelineSignature(settings) {
+			return JSON.stringify({
+				plugins: settings.plugins,
+				extensions: settings.extensions
+			});
+		}
+		async loadMarkdownSettings() {
+			try {
+				const markdown = (await loadSettings())?.appearance?.markdown;
+				const prevPipelineSig = this.markdownPipelineSignature(this.markdownSettings);
+				const nextSettings = {
+					preset: markdown?.preset || "default",
+					fontFamily: markdown?.fontFamily || "system",
+					fontSizePx: Number(markdown?.fontSizePx ?? 16),
+					lineHeight: Number(markdown?.lineHeight ?? 1.7),
+					contentMaxWidthPx: Number(markdown?.contentMaxWidthPx ?? 860),
+					printScale: Number(markdown?.printScale ?? 1),
+					page: {
+						size: markdown?.page?.size || "auto",
+						orientation: markdown?.page?.orientation || "portrait",
+						marginMm: Number(markdown?.page?.marginMm ?? 12)
+					},
+					modules: {
+						typography: (markdown?.modules?.typography ?? true) !== false,
+						lists: (markdown?.modules?.lists ?? true) !== false,
+						tables: (markdown?.modules?.tables ?? true) !== false,
+						codeBlocks: (markdown?.modules?.codeBlocks ?? true) !== false,
+						blockquotes: (markdown?.modules?.blockquotes ?? true) !== false,
+						media: (markdown?.modules?.media ?? true) !== false,
+						printBreaks: (markdown?.modules?.printBreaks ?? true) !== false
+					},
+					plugins: {
+						smartTypography: Boolean(markdown?.plugins?.smartTypography),
+						softBreaksAsBr: Boolean(markdown?.plugins?.softBreaksAsBr),
+						externalLinksNewTab: (markdown?.plugins?.externalLinksNewTab ?? true) !== false
+					},
+					customCss: (markdown?.customCss || "").trim(),
+					printCss: (markdown?.printCss || "").trim(),
+					extensions: Array.isArray(markdown?.extensions) ? markdown.extensions : []
+				};
+				const nextPipelineSig = this.markdownPipelineSignature(nextSettings);
+				this.markdownSettings = nextSettings;
+				await this.loadUserStyleModules();
+				this.applyCustomStyles();
+				if (nextPipelineSig !== prevPipelineSig) this.onRefresh();
+			} catch (error) {
+				console.warn("[Viewer] Failed to load markdown settings:", error);
+			}
+		}
+		onMount() {
+			console.log("[Viewer] Mounted");
+			if (!this.documentOpenListener) {
+				this.documentOpenListener = (ev) => {
+					const ce = ev;
+					const detail = ce.detail;
+					const file = detail?.file instanceof File ? detail.file : Array.isArray(detail?.files) ? detail.files.find((row) => row instanceof File) : void 0;
+					if (file) {
+						ce.preventDefault();
+						this.paintSharedIngressFile(file, detail?.filename, detail?.src || null);
+						return;
+					}
+					const text = String(detail?.content || "");
+					if (text.trim()) {
+						ce.preventDefault();
+						this.setContent(text, detail?.filename, detail?.src || null);
+						return;
+					}
+					const src = String(detail?.src || "").trim();
+					if (src) {
+						ce.preventDefault();
+						this.applyRouteParams({
+							src,
+							filename: detail?.filename
+						});
+						return;
+					}
+					this.pullCapacitorPendingOpen();
+				};
+				window.addEventListener("cwsp:document-open", this.documentOpenListener);
+			}
+			if (!this.shareIntentListener) {
+				this.shareIntentListener = () => {
+					this.pullCapacitorPendingOpen();
+				};
+				window.addEventListener("cws:shareIntent", this.shareIntentListener);
+			}
+			if (!this.visibilityOpenListener) {
+				this.visibilityOpenListener = () => {
+					if (document.visibilityState === "visible") this.pullCapacitorPendingOpen();
+				};
+				document.addEventListener("visibilitychange", this.visibilityOpenListener);
+				window.addEventListener("pageshow", this.visibilityOpenListener);
+			}
+			ensureViewerIconRuntime();
+			this._sheet ??= loadAsAdopted(src_default$1);
+			this.applyCustomStyles();
+			this.markdownSettingsPromise;
+			this.flushPendingBinaryPreview();
+			this.isViewVisible = true;
+			this.refreshDocumentTheme();
+			this.pullCapacitorPendingOpen();
+		}
+		onUnmount() {
+			console.log("[Viewer] Unmounting");
+			this.disposeContentRefSubscription();
+			this.restoreViewerDocumentTheme();
+			this.saveState();
+			this.isViewVisible = false;
+			this.isPointerInView = false;
+			this.pasteController?.abort();
+			this.pasteController = null;
+			if (this.documentOpenListener) {
+				window.removeEventListener("cwsp:document-open", this.documentOpenListener);
+				this.documentOpenListener = null;
+			}
+			if (this.shareIntentListener) {
+				window.removeEventListener("cws:shareIntent", this.shareIntentListener);
+				this.shareIntentListener = null;
+			}
+			if (this.visibilityOpenListener) {
+				document.removeEventListener("visibilitychange", this.visibilityOpenListener);
+				window.removeEventListener("pageshow", this.visibilityOpenListener);
+				this.visibilityOpenListener = null;
+			}
+			this.windowDnDController?.abort();
+			this.windowDnDController = null;
+			if (this.customSheet) {
+				removeAdopted(this.customSheet);
+				this.customSheet = null;
+			}
+			this.unbakeViewerScreenColors();
+			removeAdopted(this._sheet);
+			this.element = null;
+			this.slotProjectingHost = null;
+		}
+		/**
+		* WHY: Capacitor share-intent can fire before the viewer binds. Read the native
+		* pending-share stash here so a second open replaces the painted document.
+		*/
+		pullCapacitorPendingOpen() {
+			this.capacitorOpenPull = this.capacitorOpenPull.then(() => this.pullCapacitorPendingOpenOnce(), () => this.pullCapacitorPendingOpenOnce());
+			return this.capacitorOpenPull;
+		}
+		async pullCapacitorPendingOpenOnce() {
+			try {
+				const g = globalThis;
+				if (typeof g.Capacitor?.isNativePlatform !== "function" || !g.Capacitor.isNativePlatform()) return;
+				const { invokeCwsPlatformIPC } = await __vitePreload(async () => {
+					const { invokeCwsPlatformIPC } = await import("./cws-bridge.js").then((n) => n.n);
+					return { invokeCwsPlatformIPC };
+				}, __vite__mapDeps([25,1,12,10,14,3,4,23,24,26,18,15]), import.meta.url);
+				const peek = await invokeCwsPlatformIPC({ channel: "launcher:pending-share" });
+				if (!peek?.ok) return;
+				const echo = peek.echo || peek;
+				const stashedAt = Number(echo.stashedAt || 0) || 0;
+				if (!echo.text && !echo.title && !echo.name && !echo.url && echo.hasFile == null) return;
+				const flagged = echo.hasFile === true || echo.hasFile === "true" || echo.hasFile === 1 || echo.hasFile === "1";
+				const url = String(echo.url || "").trim();
+				const local = isAndroidLocalShareUri(url) || isAndroidLocalShareUri(echo.text);
+				const mime = String(echo.mime || "").toLowerCase();
+				const nameHint = String(echo.name || echo.title || "").toLowerCase();
+				const wantFile = flagged || local || mime.startsWith("image/") || mime.startsWith("application/") || /\.(md|markdown|txt|pdf|png|jpe?g|gif|webp|html?)$/i.test(nameHint);
+				const pullFile = async () => {
+					const read = await invokeCwsPlatformIPC({ channel: "launcher:read-share-file" });
+					const blob = read.echo || read;
+					if (!blob?.data) return null;
+					return dataUrlToFile(blob.data, String(blob.name || echo.name || "shared.bin"), String(blob.mime || echo.mime || "application/octet-stream"));
+				};
+				let file = wantFile ? await pullFile() : null;
+				if (wantFile && !file) {
+					await invokeCwsPlatformIPC({ channel: "launcher:restash-share-file" }).catch(() => null);
+					file = await pullFile();
+				}
+				const source = local ? null : url || null;
+				const filename = String(echo.name || echo.title || file?.name || "").trim();
+				const text = String(echo.text || "").trim();
+				let applied = false;
+				if (file) applied = await this.paintSharedIngressFile(file, filename, source);
+				else if (text && !isAndroidLocalShareUri(text)) {
+					this.ingestOpenedMarkdownBody(text, filename, source);
+					applied = true;
+				} else if (url && !local) applied = await this.openMarkdownFromUrl(url, filename);
+				if (!applied) return;
+				await invokeCwsPlatformIPC({
+					channel: "launcher:ack-share",
+					payload: stashedAt ? { stashedAt } : {}
+				}).catch(() => null);
+				if (this.binaryPreviewActive) return;
+				this.saveState();
+				this.repaintMarkdown();
+			} catch {}
+		}
+		onShow() {
+			this._sheet ??= loadAsAdopted(src_default$1);
+			this.applyCustomStyles();
+			this.markdownSettingsPromise = this.loadMarkdownSettings();
+			this.isViewVisible = true;
+			this.refreshDocumentTheme();
+			const handed = takeSkuHandoff("viewer", "document");
+			if (handed?.content?.trim()) this.ingestOpenedMarkdownBody(handed.content, handed.filename, handed.src);
+			this.pullCapacitorPendingOpen();
+			console.log("[Viewer] Shown");
+		}
+		onHide() {
+			this.unbakeViewerScreenColors();
+			this.saveState();
+			this.isViewVisible = false;
+			this.isPointerInView = false;
+			this.revokeAssetUrls();
+			if (this.boundFsChangeTimer) {
+				clearTimeout(this.boundFsChangeTimer);
+				this.boundFsChangeTimer = 0;
+			}
+			this.sourceObserver?.disconnect?.();
+			this.sourceObserver = null;
+			console.log("[Viewer] Hidden");
+		}
+		onRefresh() {
+			this.repaintMarkdown();
+		}
+		async invokeChannelApi(action, payload) {
+			const p = payload != null && typeof payload === "object" && !Array.isArray(payload) ? payload : {};
+			switch (action) {
+				case ViewerChannelAction.SetColorScheme:
+				case ExplorerChannelAction.SetColorScheme: {
+					const next = normalizeViewerSetColorSchemePayload(p) ?? "system";
+					this.setViewerColorScheme(next);
+					return;
+				}
+				case ViewerChannelAction.AttachToWorkcenter: return this.attachCurrentContentToWorkcenter().then(() => void 0);
+				case ViewerChannelAction.OpenUrl:
+				case ViewerChannelAction.OpenMarkdownUrl: {
+					const url = String(p.url || "");
+					if (!url) return false;
+					return this.openMarkdownFromUrl(url, typeof p.filename === "string" ? p.filename : void 0);
+				}
+				default: return this.handleMessage({
+					type: action,
+					data: {
+						text: typeof p.text === "string" ? p.text : void 0,
+						content: typeof p.content === "string" ? p.content : void 0,
+						filename: typeof p.filename === "string" ? p.filename : void 0,
+						url: typeof p.url === "string" ? p.url : void 0,
+						source: typeof p.source === "string" ? p.source : void 0,
+						path: typeof p.path === "string" ? p.path : void 0,
+						src: typeof p.src === "string" ? p.src : void 0,
+						file: p.file instanceof File ? p.file : void 0,
+						files: Array.isArray(p.files) ? p.files.filter((x) => x instanceof File) : void 0
+					}
+				}).then(() => void 0);
+			}
+		}
+		/**
+		* Drop in-flight ingress when a newer unified message bumped the supersede counter (after `await file.text()` / fetch).
+		*/
+		viewIngressSupersededAfterAsync(metadata) {
+			const stamp = metadata && typeof metadata === "object" && !Array.isArray(metadata) ? metadata.__ingressStamp : void 0;
+			return ingressStampWasSuperseded(this, stamp);
+		}
+		canHandleMessage(messageType) {
+			return [
+				"content-view",
+				"content-load",
+				"markdown-content",
+				"content-share",
+				"share-target-input",
+				ViewerChannelAction.SetColorScheme,
+				ExplorerChannelAction.SetColorScheme
+			].includes(messageType);
+		}
+		async handleMessage(message) {
+			const msg = message;
+			if (msg.type === ViewerChannelAction.SetColorScheme || msg.type === ExplorerChannelAction.SetColorScheme) {
+				const next = normalizeViewerSetColorSchemePayload(msg.data?.colorScheme ?? msg.data?.scheme ?? msg.data?.theme ?? msg.data) ?? "system";
+				this.setViewerColorScheme(next);
+				return;
+			}
+			/** WHY: `chrome-extension:` pages must not treat `file:` as a document base — Chromium blocks nested file loads and leaks console errors unique to file origins. */
+			const stripFileUrlHintsFromCrxMarkdownPayload = (raw) => {
+				if (!raw) return raw;
+				try {
+					if (globalThis.location?.protocol !== "chrome-extension:") return raw;
+				} catch {
+					return raw;
+				}
+				const copy = { ...raw };
+				for (const key of [
+					"url",
+					"source",
+					"src",
+					"path"
+				]) {
+					const v = copy[key];
+					if (typeof v === "string" && /^file:/i.test(v.trim())) delete copy[key];
+				}
+				return copy;
+			};
+			const payload = stripFileUrlHintsFromCrxMarkdownPayload(msg.data) ?? msg.data;
+			const meta = msg.metadata;
+			const sourceMeta = meta && typeof meta.source === "string" ? meta.source : "";
+			const routeMeta = meta && typeof meta.route === "string" ? String(meta.route) : "";
+			const fromLaunchQueue = sourceMeta.includes("launch-queue") || routeMeta.includes("launch-queue");
+			/** Share-target and SW metadata envelopes can duplicate title/url as stale `text` while `files[]` holds the doc. */
+			const fromShareTarget = sourceMeta.includes("share-target") || routeMeta.includes("share-target") || meta && typeof meta === "object" && !Array.isArray(meta) && String(meta.shareTarget ?? "") === "1";
+			const preferAuthoritativeTextFile = fromLaunchQueue || fromShareTarget || msg.type === "share-target-input";
+			const hintName = typeof payload?.filename === "string" && payload.filename.trim().length > 0 ? payload.filename.trim() : typeof payload?.hint?.filename === "string" ? String(payload.hint.filename).trim() : void 0;
+			let fileEarly = payload?.file instanceof File ? payload.file : null;
+			if (Array.isArray(payload?.files) && payload.files.some((f) => f instanceof File)) fileEarly = pickAuthoritativeTransferFiles(payload.files.filter((f) => f instanceof File), {
+				hintFilename: hintName,
+				isTextLike: (f) => this.isTextLikeFile(f)
+			}) ?? fileEarly;
+			if (fileEarly) {
+				const vr = validateReadableFileForIngress(fileEarly);
+				if (!vr.ok) {
+					console.warn("[Viewer] Ingress file rejected:", vr.reason, fileEarly.name);
+					fileEarly = null;
+				}
+			}
+			if (fileEarly && this.looksLikeBinaryPreviewFile(fileEarly)) {
+				const channel = fromShareTarget ? ["share-target"] : fromLaunchQueue ? ["launch-queue"] : ["open"];
+				await this.ingestOpenedFile(fileEarly, {
+					virtualPath: this.pickDocumentSourcePath(payload?.virtualPath, payload?.src, payload?.path, payload?.hint?.source, payload?.source),
+					filename: hintName || fileEarly.name,
+					channel
+				});
+				return;
+			}
+			if (Array.isArray(payload?.files)) this.rememberSidecarFiles(payload.files.filter((file) => file instanceof File), fileEarly);
+			const transferSource = this.pickDocumentSourcePath(payload?.virtualPath, payload?.src, payload?.path, payload?.hint?.source, payload?.source);
+			/** Launch-queue / share merges can retain stale inline text; prefer a text-like File when present. */
+			const textLikeMergedEnvelopeFile = preferAuthoritativeTextFile && !!fileEarly && this.isTextLikeFile(fileEarly);
+			if (fileEarly && this.isTextLikeFile(fileEarly) && (preferAuthoritativeTextFile || msg.type === "content-load" || msg.type === "content-view" || msg.type === "markdown-content") && fileEarly) try {
+				const text = await fileEarly.text();
+				if (this.viewIngressSupersededAfterAsync(meta)) return;
+				const sourcePath = transferSource;
+				this.ingestOpenedMarkdownBody(text || "", payload?.filename || fileEarly.name, sourcePath);
+				return;
+			} catch (error) {
+				console.warn("[Viewer] Failed to read prioritized file payload, falling back to inline/url:", error);
+				if (preferAuthoritativeTextFile) {
+					const sourcePath = transferSource;
+					this.setContent(`> Failed to read transferred file:\n> ${fileEarly.name}`, payload?.filename || fileEarly.name, sourcePath);
+					return;
+				}
+			}
+			if (!textLikeMergedEnvelopeFile && (payload?.text || payload?.content)) {
+				const content = payload.text || payload.content || "";
+				const source = transferSource || this.pickDocumentSourcePath(payload.source, payload.src, payload.path);
+				this.ingestOpenedMarkdownBody(content, payload.filename, source);
+				return;
+			}
+			if (payload?.url) {
+				const source = transferSource || this.pickDocumentSourcePath(payload.source, payload.src, payload.path, payload.url) || payload.url;
+				const opened = await this.openMarkdownFromUrl(source, payload.filename);
+				if (this.viewIngressSupersededAfterAsync(meta)) return;
+				if (!opened) {
+					const fallbackContent = `> Failed to load markdown from:\n> ${source}`;
+					this.setContent(fallbackContent, payload.filename, /^file:/i.test(String(source || "").trim()) ? null : source);
+				}
+				return;
+			}
+			let fileCandidate = payload?.file instanceof File ? payload.file : Array.isArray(payload?.files) ? payload?.files.find((f) => f instanceof File) ?? null : null;
+			fileCandidate ??= hintName && Array.isArray(payload?.files) ? payload.files.filter((f) => f instanceof File).find((f) => f.name === hintName) ?? null : null;
+			if (fileCandidate) {
+				const vc = validateReadableFileForIngress(fileCandidate);
+				if (!vc.ok) {
+					console.warn("[Viewer] File candidate rejected:", vc.reason, fileCandidate.name);
+					return;
+				}
+				try {
+					const text = await fileCandidate.text();
+					if (this.viewIngressSupersededAfterAsync(meta)) return;
+					const srcPath = transferSource;
+					this.ingestOpenedMarkdownBody(text || "", payload?.filename || fileCandidate.name, srcPath);
+				} catch (error) {
+					console.warn("[Viewer] Failed to read markdown file payload:", error);
+				}
+			}
+		}
+	};
+});
 /**
-* Compatibility entrypoint for shells that used the former manual desktop
-* renderer. All rendering delegates to the canonical SpeedDial renderer
-* (MutationObserver orient + `bindPointerInteraction`); no second desktop
-* implementation lives here.
+* <md-view> Web Component and MarkdownViewer API
 *
-* INVARIANT: OrientDesktop stays an adapter — do not re-add a parallel
-* desktop renderer here. Product behaviors (wallpaper IDB, paste/drop URL
-* hygiene) belong in SpeedDial so both mount paths share them.
+* Unified markdown rendering service that provides both:
+* - Web Component API: <md-view src="..." content="..."></md-view>
+*   Parsed HTML is rendered into a light-DOM `.markdown-body` child (default slot); shadow DOM holds layout/chrome only.
+* - Class-based API: createMarkdownViewer({ content: "...", ... })
+*
+* Usage:
+*   // Web Component
+*   <md-view content="# Hello World"></md-view>
+*   <md-view src="/path/to/file.md"></md-view>
+*
+*   // Class-based API
+*   import { createMarkdownViewer } from "@fest-lib/fl-ui/services/markdown-view";
+*   const viewer = createMarkdownViewer({ content: "# Hello", showActions: true });
+*   document.body.append(viewer.render());
+*
+* See fest/fl-ui/services/markdown-view/Markdown for implementation.
 */
-var initializeOrientedDesktop = (host, makeView) => {
-	if (!host || host.dataset.desktopMounted === "true") return;
-	host.dataset.desktopMounted = "true";
-	ensureOrientDesktopStyles();
-	const root = SpeedDial(makeView);
-	root.classList.add("app-oriented-desktop");
-	host.appendChild(root);
-	createCtxMenu(makeView);
-};
 //#endregion
-//#region ../../modules/views/home-view/src/index.ts
-var HomeView = class {
-	id = "home";
-	name = "Home";
-	icon = "house";
-	options;
-	shellContext;
-	element = null;
-	lifecycle = { onUnmount: () => {
-		setSpeedDialViewOpener(null);
-		setHomeOverlayMountResolver(null);
-		this.element = null;
-	} };
-	constructor(options = {}) {
-		this.options = options;
-		this.shellContext = options.shellContext;
-	}
-	/**
-	* WHY: prefer `openView` when the host provides it — calling both navigate + openView
-	* caused duplicate navigation and unreliable overlay open on environment shell.
-	*/
-	dispatchShellRoute(viewId, opts) {
-		const id = resolveOpenViewTarget(viewId);
-		if (!id) return;
-		const shellContext = this.shellContext;
-		if (!shellContext) {
-			console.warn("[HomeView] No shellContext; cannot open:", id);
-			return;
-		}
-		if (typeof shellContext.openView === "function") Promise.resolve(shellContext.openView(id, opts)).catch((e) => console.warn("[HomeView] shellContext.openView failed", id, e));
-		else if (typeof shellContext.navigate === "function") Promise.resolve(shellContext.navigate(id, opts)).catch((e) => console.warn("[HomeView] shellContext.navigate failed", id, e));
-		else console.warn("[HomeView] shellContext has no navigate/openView; cannot open:", id);
-	}
-	render(options) {
-		if (options) {
-			this.options = {
-				...this.options,
-				...options
-			};
-			this.shellContext = options.shellContext ?? this.shellContext;
-		}
-		const root = document.createElement("section");
-		root.className = "view-home view-home--grid env-home-workspace";
-		root.dataset.view = "home";
-		root.id = "home-view";
-		const openFromLauncher = (viewId, paramsOrOpts) => {
-			const raw = paramsOrOpts || {};
-			const p = { ...(raw.params && typeof raw.params === "object" && !Array.isArray(raw.params) ? raw.params : null) || {} };
-			for (const [k, v] of Object.entries(raw)) {
-				if (k === "params" || k === "shellContext" || k === "initialData") continue;
-				if (v === void 0 || v === null) continue;
-				if (typeof v === "string" || typeof v === "number" || typeof v === "boolean") p[k] = String(v);
-			}
-			const native = String(p.native || "");
-			this.dispatchShellRoute(viewId, {
-				...native === "1" || native === "true" ? { native: "1" } : {},
-				params: p
-			});
-		};
-		setSpeedDialViewOpener(openFromLauncher);
-		setHomeOverlayMountResolver(typeof this.shellContext?.resolveOverlayMountPoint === "function" ? (anchor) => this.shellContext.resolveOverlayMountPoint(anchor) : null);
-		initializeOrientedDesktop(root, openFromLauncher);
-		this.element = root;
-		return root;
-	}
-	invokeChannelApi(action, payload) {
-		if (action !== HomeChannelAction.Navigate && action !== HomeChannelAction.OpenView) return void 0;
-		const viewId = typeof payload === "string" ? payload : payload && typeof payload === "object" && "viewId" in payload ? String(payload.viewId) : "";
-		if (!viewId.trim()) return false;
-		this.dispatchShellRoute(viewId.trim());
-		return true;
-	}
-};
-function createView(options) {
-	return new HomeView(options);
-}
-var createHomeView = createView;
+//#region ../../modules/views/viewer-view/src/index.ts
+var src_default = CwViewViewer;
 //#endregion
-export { HomeView, createHomeView, createView, createView as default, initializeOrientedDesktop };
+export { CwViewViewer, CwViewViewer as ViewerView, TAG, coerceViewerColorScheme, src_default as default, normalizeViewerSetColorSchemePayload, resolveViewerColorSchemePreference, resolveViewerOptionsColorScheme, warmViewerMarkdownEngine };

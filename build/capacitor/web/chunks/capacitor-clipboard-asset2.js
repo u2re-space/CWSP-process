@@ -1,4 +1,4 @@
-import { u as isCapacitorNative } from "../shells/boot-index.js";
+import { t as isCapacitorNative } from "./capacitor-permissions3.js";
 //#region ../../modules/projects/subsystem/src/boot/capacitor-clipboard-asset.ts
 var installed = false;
 var dataUrlFromAsset = async (asset) => {

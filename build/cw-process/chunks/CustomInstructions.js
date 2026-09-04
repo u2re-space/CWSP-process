@@ -1,5 +1,6 @@
 import { r as __exportAll } from "./rolldown-runtime.js";
-import { Ft as saveSettings, Nt as loadSettings } from "../shells/boot-index.js";
+import { a as loadSettings, s as saveSettings } from "../vendor/jsox.js";
+import "./SettingsTypes.js";
 import { a as generateInstructionId } from "./utils.js";
 //#region src/service/instructions/CustomInstructions.ts
 var CustomInstructions_exports = /* @__PURE__ */ __exportAll({
@@ -55,14 +56,13 @@ var getActiveInstructionText = async () => {
 };
 var setActiveInstruction = async (id) => {
 	const settings = await loadSettings();
-	const updated = {
+	await saveSettings({
 		...settings,
 		ai: {
 			...settings.ai,
 			activeInstructionId: id || ""
 		}
-	};
-	await saveSettings(updated);
+	});
 };
 var addInstruction = async (label, instruction) => {
 	const settings = await loadSettings();
@@ -74,14 +74,13 @@ var addInstruction = async (label, instruction) => {
 		enabled: true,
 		order: instructions.length
 	};
-	const updated = {
+	await saveSettings({
 		...settings,
 		ai: {
 			...settings.ai,
 			customInstructions: [...instructions, newInstruction]
 		}
-	};
-	await saveSettings(updated);
+	});
 	return newInstruction;
 };
 /**
@@ -98,14 +97,13 @@ var addInstructions = async (items) => {
 		enabled: item.enabled ?? true,
 		order: instructions.length + index
 	}));
-	const updated = {
+	await saveSettings({
 		...settings,
 		ai: {
 			...settings.ai,
 			customInstructions: [...instructions, ...newInstructions]
 		}
-	};
-	await saveSettings(updated);
+	});
 	return newInstructions;
 };
 var updateInstruction = async (id, updates) => {
@@ -117,14 +115,13 @@ var updateInstruction = async (id, updates) => {
 		...instructions[index],
 		...updates
 	};
-	const updated = {
+	await saveSettings({
 		...settings,
 		ai: {
 			...settings.ai,
 			customInstructions: instructions
 		}
-	};
-	await saveSettings(updated);
+	});
 	return true;
 };
 var deleteInstruction = async (id) => {
@@ -133,15 +130,14 @@ var deleteInstruction = async (id) => {
 	const filtered = instructions.filter((i) => i.id !== id);
 	if (filtered.length === instructions.length) return false;
 	const newActiveId = settings.ai?.activeInstructionId === id ? "" : settings.ai?.activeInstructionId || "";
-	const updated = {
+	await saveSettings({
 		...settings,
 		ai: {
 			...settings.ai,
 			customInstructions: filtered,
 			activeInstructionId: newActiveId
 		}
-	};
-	await saveSettings(updated);
+	});
 	return true;
 };
 //#endregion

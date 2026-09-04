@@ -1,1691 +1,472 @@
-import { Vn as H, br as loadAsAdopted } from "../com/app.js";
-import { Bn as parseConnectHostInput, Nt as loadSettings, Rn as buildEndpointOriginCandidates, S as writeClipboardTextToDevice, Un as resolveFleetWanGatewayHost, Vn as probeEndpointOriginReport, Wn as splitConnectHostList, a as initWebSocket, cn as CwsBridge, cr as resolveEcosystemToken, dn as invokeCwsNative, fn as invokeCwsPlatformIPC, i as disconnectWS, in as isPreferNativeWebsocketEnabled, nn as isMaintainHubSocketConnectionEnabled, o as isWSConnected, pn as isCapacitorCwsNativeShell, r as connectWS, rn as isNeutralinoNodeClipboardHubOwned, s as onWSConnectionChange, zn as collectEndpointProbeCandidates } from "../shells/boot-index.js";
-import { n as getFrontendDebugApi, r as initFrontendDebugCapture } from "./frontend-debug-capture.js";
-//#region ../../modules/views/network-view/src/network-probe-origin.ts
-var trim$1 = (value) => typeof value === "string" ? value.trim() : "";
-/** Strip probe path suffix; canonical CWSP HTTPS origin (`https://host:8434`). */
-var normalizeProbeOrigin = (raw) => {
-	const t = trim$1(raw).replace(/\/lna-probe\/?$/i, "").replace(/\/+$/, "");
-	if (!t) return "";
-	const parsed = parseConnectHostInput(t);
-	if (!parsed?.host) return t;
-	const proto = parsed.protocol ?? "https";
-	if (parsed.port) return `${proto}://${parsed.host}:${parsed.port}`;
-	return `${proto}://${parsed.host}:8434`;
-};
-var labelForProbeCandidate = (origin, index, fields) => {
-	const relaySet = new Set(splitConnectHostList(fields.relay ?? "").map((h) => normalizeProbeOrigin(h)));
-	const directSet = new Set(splitConnectHostList(fields.direct ?? "").map((h) => normalizeProbeOrigin(h)));
-	const norm = normalizeProbeOrigin(origin);
-	if (relaySet.has(norm)) return index === 0 ? "Relay / gateway" : "Relay (alt)";
-	if (directSet.has(norm)) return "Direct peer";
-	if (norm.includes("192.168.0.200")) return "Gateway LAN fallback";
-	const wanHost = resolveFleetWanGatewayHost({
-		relay: fields.relay,
-		extras: [fields.direct]
-	}).toLowerCase();
-	const hostPart = (() => {
-		try {
-			return new URL(norm).hostname.toLowerCase();
-		} catch {
-			return norm.toLowerCase();
-		}
-	})();
-	if (hostPart === wanHost || hostPart === "45.147.121.152" || norm.includes("45.147.121.152")) return "Gateway WAN fallback";
-	if (norm.includes("127.0.0.1") || norm.includes("localhost")) return "Loopback";
-	return `Candidate ${index + 1}`;
-};
-var pickDispatchOrigin = (probes, fields) => {
-	const okOrigin = probes.find((p) => p.ok)?.origin;
-	if (okOrigin) return normalizeProbeOrigin(okOrigin);
-	const configured = collectEndpointProbeCandidates(fields);
-	if (configured[0]) return configured[0];
-	if (probes[0]?.origin) return normalizeProbeOrigin(probes[0].origin);
-	return "";
-};
+import { Tt as removeAdopted, gt as loadAsAdopted } from "../fest/core.js";
+import { Z as defineElement } from "../fest/core4.js";
+import { y as takeSkuHandoff } from "./ecosystem-skus.js";
+import { c as __decorate, o as UIElement } from "../com/app3.js";
+import "../fest/veela3.js";
+import { r as queryLiveWorkCenterChats, t as WorkCenterManager } from "../com/app7.js";
+import { f as registerWorkCenterFlushHost, i as flushHeldIngressToWorkCenter, u as peekHeldIngressFiles } from "./sku-ingress.js";
+//#region ../../modules/views/workcenter-view/src/scss/_index.scss?inline
+var _index_default = "@layer components{.code-highlight-overlay{box-sizing:border-box;color:light-dark(#1f2328,#e6edf3);color-scheme:inherit;display:block;margin:0;overflow:hidden;padding:0;padding-inline-start:var(--code-gutter,0);pointer-events:none;user-select:none;-webkit-text-fill-color:currentColor;opacity:1;tab-size:4;visibility:visible;white-space:pre;z-index:1}.code-highlight-overlay,.code-highlight-overlay__gutter,.code-highlight-overlay__paint,.code-highlight-overlay__paint *{font-family:inherit;font-feature-settings:\"liga\" 0,\"clig\" 0,\"calt\" 0,\"dlig\" 0;font-kerning:none;font-size:inherit;font-stretch:inherit;font-style:inherit;font-synthesis:none;font-variant:inherit;font-variant-ligatures:none;font-variation-settings:inherit;font-weight:inherit;letter-spacing:inherit;line-height:var(--code-line-height,inherit);tab-size:inherit;text-rendering:inherit;word-spacing:inherit;-webkit-text-fill-color:currentColor}.code-highlight-overlay__gutter{box-sizing:border-box;color:light-dark(#656d76,#8b949e);inline-size:var(--code-gutter,0);inset-block-start:0;inset-inline-start:0;overflow:hidden;padding-inline-end:.5rem;pointer-events:none;position:absolute;text-align:end;user-select:none;white-space:pre}.code-highlight-overlay__paint{margin:0;min-inline-size:0;overflow:visible;padding:0;white-space:pre}.code-highlight-host:has(>.code-highlight-overlay),pre:has(>.code-highlight-overlay){position:relative}.code-highlight-host>.code-highlight-source,.code-highlight-source:has(+.code-highlight-overlay),pre:has(>.code-highlight-overlay)>code{caret-color:light-dark(#1f2328,#e6edf3);display:block;font-feature-settings:\"liga\" 0,\"clig\" 0,\"calt\" 0,\"dlig\" 0;font-kerning:none;font-variant-ligatures:none;line-height:var(--code-line-height,normal);padding-inline-start:var(--code-gutter,0)}.code-highlight-host>.code-highlight-source.code-highlight-painted,.code-highlight-source.code-highlight-painted:has(+.code-highlight-overlay),pre:has(>.code-highlight-painted+.code-highlight-overlay)>code.code-highlight-painted{color:transparent;-webkit-text-fill-color:transparent}.code-highlight-source::selection,pre:has(>.code-highlight-overlay)>code::selection{background-color:color-mix(in oklab,#79c0ff 32%,transparent);color:transparent;-webkit-text-fill-color:transparent}pre[data-language]:not([data-language=\"\"]){position:relative}pre[data-language]:not([data-language=\"\"]):after{background:color-mix(in oklab,var(--md-bg-code,var(--view-code-bg,Canvas)) 70%,transparent);border-radius:var(--radius-xs,4px);color:light-dark(#656d76,#8b949e);content:attr(data-language);font-family:var(--md-font-sans,var(--font-family,sans-serif));font-size:.7em;inset-block-start:.35rem;inset-inline-end:.5rem;letter-spacing:.02em;line-height:1.2;padding:.1em .45em;pointer-events:none;position:absolute;text-transform:lowercase;z-index:2}.code-highlight-overlay :is(.hljs-comment,.hljs-quote){color:light-dark(#656d76,#8b949e)}.code-highlight-overlay :is(.hljs-built_in,.hljs-keyword,.hljs-literal,.hljs-selector-tag){color:light-dark(#0550ae,#79c0ff)}.code-highlight-overlay :is(.hljs-addition,.hljs-attr,.hljs-string){color:light-dark(#0a3069,#a5d6ff)}.code-highlight-overlay :is(.hljs-number,.hljs-template-variable,.hljs-type,.hljs-variable){color:light-dark(#116329,#3fb950)}.code-highlight-overlay .hljs-name,.code-highlight-overlay .hljs-section,.code-highlight-overlay .hljs-title,.code-highlight-overlay .hljs-title.function_{color:light-dark(#0550ae,#79c0ff)}.code-highlight-overlay :is(.hljs-attribute,.hljs-property,.hljs-selector-class,.hljs-selector-id){color:light-dark(#116329,#7ee787)}.code-highlight-overlay :is(.hljs-doctag,.hljs-meta,.hljs-operator,.hljs-punctuation,.hljs-tag){color:light-dark(#656d76,#c9d1d9)}.code-highlight-overlay .hljs-deletion{color:light-dark(#cf222e,#ffa198)}.code-highlight-overlay :is(.hljs-emphasis,.hljs-strong){color:inherit}}@layer overrides{::highlight(code-selection){background-color:color-mix(in oklab,#79c0ff 32%,transparent);color:inherit}}@layer utilities{@keyframes h{to{transform:rotate(1turn)}}@keyframes i{0%{opacity:0}to{opacity:1}}@keyframes j{0%{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}@keyframes k{0%,to{opacity:1;transform:scale(1)}50%{opacity:.82;transform:scale(.98)}}@keyframes l{0%,49%{opacity:1}50%,to{opacity:.25}}}@layer tokens{:is(html,body):has([data-view=workcenter]){--view-layout:\"grid\";--view-sidebar-visible:true;--view-toolbar-expanded:true;--view-content-max-width:none}}@layer base{cw-workcenter-view{block-size:100%;box-sizing:border-box;display:block;min-block-size:0;min-inline-size:0}.workcenter-view{animation:j .3s ease-out;background:var(--color-background);block-size:stretch;color:var(--color-on-background);contain:layout;container-type:size;display:grid;flex-direction:column;gap:var(--space-md);grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,max-content) minmax(0,1fr);inline-size:stretch;max-block-size:stretch;max-inline-size:stretch;min-block-size:0;min-inline-size:0;overflow-x:hidden;overflow-y:auto;padding-block:max(var(--space-md),env(safe-area-inset-top,0px)) max(var(--space-md),env(safe-area-inset-bottom,0px));padding-inline:max(var(--space-md),env(safe-area-inset-left,0px)) max(var(--space-md),env(safe-area-inset-right,0px));scrollbar-color:var(--color-outline-variant) transparent;scrollbar-width:thin}.workcenter-view :is(button,input,select,textarea){box-sizing:border-box;max-inline-size:100%}.workcenter-view select{appearance:none;-webkit-appearance:none;-moz-appearance:none;background-color:var(--color-surface-container);background-image:url(\"data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' fill='none' viewBox='0 0 24 24'%3E%3Cpath stroke='%2394a3b8' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m6 9 6 6 6-6'/%3E%3C/svg%3E\");background-position:right var(--space-sm) center;background-repeat:no-repeat;background-size:1rem 1rem;border:1px solid var(--color-outline-variant);border-radius:var(--radius-md);color:var(--color-on-surface);cursor:pointer;font-family:inherit;margin:0;padding-block:var(--space-sm);padding-inline:var(--space-sm) 2rem;transition:border-color var(--motion-fast,.15s ease),background-color var(--motion-fast,.15s ease)}@supports (color:contrast-color(red)){.workcenter-view select{color:contrast-color(var(--color-surface-container))}}.workcenter-view select:hover{background-color:var(--color-surface-container-high);border-color:color-mix(in oklab,var(--color-primary) 35%,var(--color-outline-variant));color:contrast-color(var(--color-surface-container-high))}.workcenter-view select:focus{outline:none}.workcenter-view select:focus-visible{border-color:var(--color-primary);box-shadow:0 0 0 2px color-mix(in oklab,var(--color-primary) 28%,transparent)}.workcenter-view select:disabled{cursor:not-allowed;opacity:.55}.workcenter-view button{flex-wrap:nowrap;overflow:hidden;text-align:center;text-decoration:none;text-overflow:ellipsis;text-rendering:auto;text-shadow:none;text-transform:none;text-wrap:nowrap;white-space:nowrap}.workcenter-view h3{padding:var(--space-sm)}@container (max-inline-size: 1024px){.workcenter-view{gap:var(--space-sm);padding:var(--space-sm)}}@container (max-inline-size: 768px){.workcenter-view{gap:var(--space-xs);padding:var(--space-xs)}}.workcenter-view::-webkit-scrollbar{inline-size:4px}.workcenter-view::-webkit-scrollbar-track{background:transparent}.workcenter-view::-webkit-scrollbar-thumb{background:var(--color-outline-variant);border-radius:2px}.workcenter-view::-webkit-scrollbar-thumb:hover{background:var(--color-outline)}.workcenter-view:focus-visible{outline:2px solid var(--color-primary);outline-offset:-2px}}@layer layout{.workcenter-content{block-size:stretch;contain:layout;flex:1;max-block-size:stretch;min-block-size:0;min-inline-size:0}.workcenter-layout{block-size:stretch;display:grid;flex-direction:column;gap:var(--space-md);grid-auto-flow:row;grid-auto-rows:minmax(min(8rem,100%),1fr);grid-template-columns:minmax(0,1fr);min-block-size:0}.workcenter-layout,.workcenter-layout>*{inline-size:stretch}.workcenter-block{block-size:stretch;display:flex;flex-basis:fit-content;flex-direction:column;flex-grow:1;flex-shrink:1;gap:var(--space-md);max-block-size:stretch;min-block-size:fit-content}.input-tabs-section,.prompts-block{grid-row:2;order:2}.results-block,.results-section{block-size:stretch;grid-row:1;max-block-size:stretch;order:1;overflow:hidden}.results-block,.results-section{flex-basis:fit-content;flex-grow:1;flex-shrink:1}.results-block{min-block-size:calc-size(fit-content,max(size,min(100%,16rem)))}.input-tabs-section,.results-section{align-items:stretch;display:flex;flex-basis:fit-content;flex-direction:column;flex-shrink:1;gap:var(--space-md);justify-content:stretch;max-block-size:stretch;min-block-size:0;place-content:stretch;place-items:stretch}.input-tabs-section,.results-tabs-section{block-size:stretch;display:flex;flex-basis:0;flex-direction:column;flex-grow:1;flex-shrink:1;flex-wrap:nowrap;gap:var(--space-xs);max-block-size:stretch;min-block-size:0;min-inline-size:0;overflow:hidden}.input-tab-actions,.results-tab-actions{display:flex;gap:var(--space-xs)}.input-tab-actions,.input-tab-actions>*,.results-tab-actions,.results-tab-actions>*{flex-grow:0;flex-shrink:1;flex-wrap:nowrap;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.input-tab-actions>*,.results-tab-actions>*{inline-size:fit-content;max-inline-size:stretch;min-inline-size:0}.tab-btn{background:var(--color-surface-container-low);border:0 solid var(--color-outline-variant);border-radius:var(--radius-sm);color:var(--color-on-surface-variant);cursor:pointer;font-size:var(--text-sm);padding:var(--space-sm) var(--space-md)}.tab-btn.is-active{background:var(--color-primary);border-color:var(--color-primary);color:var(--color-on-primary)}.input-tab-panels,.results-tab-panels{block-size:stretch;display:flex;flex-basis:0;flex-direction:column;flex-grow:1;flex-shrink:1;inline-size:stretch;max-block-size:stretch;min-block-size:0;min-inline-size:0;place-content:stretch;align-content:stretch;justify-content:stretch;place-items:stretch;align-items:stretch;justify-items:stretch}.input-tab-panels{overflow-x:hidden;overflow-y:auto;scrollbar-gutter:stable;-webkit-overflow-scrolling:touch}.results-tab-panels{flex-basis:fit-content;min-block-size:min(12rem,100%)}.results-tab-panel,.tab-panel{block-size:stretch;display:none;flex-basis:0;flex-grow:1;flex-shrink:1;inline-size:stretch;max-block-size:stretch;min-block-size:0;min-inline-size:0;place-content:stretch;align-content:stretch;justify-content:stretch;place-items:stretch;align-items:stretch;justify-items:stretch}.results-tab-panel.is-active,.tab-panel.is-active{display:flex;flex-direction:column;overflow:hidden}.results-tab-panel>*,.tab-panel>*{flex-basis:0;flex-grow:1;flex-shrink:1;inline-size:stretch;max-block-size:stretch;min-block-size:0;min-inline-size:0}.results-tab-panel,.results-tab-panel[data-results-tab-panel=history]>*,.results-tab-panel[data-results-tab-panel=output]>*,.results-tab-panel[data-results-tab-panel=pipeline]>*{flex-basis:fit-content}@container (min-inline-size: 1120px){.workcenter-layout{align-items:start;grid-auto-flow:row;grid-template-columns:minmax(0,1fr)}.results-block{order:1}.prompts-block{order:2}}}@layer components{.workcenter-header{background:var(--color-surface-container-low);border:1px solid var(--color-outline-variant);border-radius:var(--radius-lg);display:grid;gap:var(--space-sm);grid-template-columns:[logo] minmax(0,max-content) [controls] minmax(0,1fr);inset-block-start:0;padding:var(--space-xs) var(--space-md);place-content:center;justify-content:space-between;place-items:center;position:sticky;z-index:2}.workcenter-header h2{color:var(--color-on-surface);font-size:var(--text-base);font-weight:var(--font-weight-bold);grid-column:logo;letter-spacing:-.01em;margin:0;white-space:nowrap}@container (max-inline-size: 768px){.workcenter-header{gap:var(--space-sm);grid-template-columns:[logo] minmax(0,max-content) [controls] minmax(0,1fr);padding:var(--space-sm)}.workcenter-header h2{font-size:var(--text-sm)}}@container (max-inline-size: 480px){.workcenter-header{gap:var(--space-xs);grid-template-columns:[controls] minmax(0,1fr);padding:var(--space-xs)}.workcenter-header h2{display:none}}.header-controls{border:0;display:block;grid-column:controls;inline-size:stretch;justify-self:end;margin:0;max-inline-size:stretch;min-inline-size:0;padding:0}@container (max-inline-size: 768px){.header-controls{justify-self:stretch}}@media (max-width:768px){.header-controls{inline-size:100%;justify-self:stretch}}.control-selectors{align-items:start;background:var(--color-surface-container-low);border-radius:var(--radius-sm);display:grid;gap:var(--space-md);grid-template-columns:repeat(4,minmax(0,1fr));inline-size:stretch;justify-self:end;max-inline-size:min(min(100%,64rem),round(up,100%,32rem));padding:0}@container (max-inline-size: 1024px){.control-selectors{gap:var(--space-sm);grid-template-columns:repeat(2,minmax(0,1fr));padding:var(--space-sm)}}@container (max-inline-size: 900px){.control-selectors{gap:var(--space-sm);grid-template-columns:repeat(2,minmax(0,1fr));inline-size:stretch}}@container (max-inline-size: 768px){.control-selectors{background:var(--color-surface-container-low);border:1px solid var(--color-outline-variant);border-radius:var(--radius-md);box-shadow:none;gap:var(--space-xs);grid-template-columns:repeat(2,minmax(0,1fr));inset:auto;max-block-size:none;overflow:visible;padding:var(--space-sm);position:static;z-index:auto}}@container (max-inline-size: 360px){.control-selectors{gap:var(--space-xs);grid-template-columns:minmax(0,1fr);inset-inline-end:calc(var(--space-xs) * -1);padding:var(--space-xs)}}.format-selector,.language-selector,.processing-selector,.recognition-selector{background:var(--color-surface);border-radius:var(--radius-sm);color:var(--color-on-surface);display:grid;font-family:var(--font-family);font-size:max(var(--text-sm),.875rem);font-weight:var(--font-weight-medium);gap:var(--space-sm);grid-template-columns:minmax(0,1fr) minmax(0,8rem);inline-size:stretch;max-inline-size:stretch;min-inline-size:fit-content;overflow:hidden;padding:var(--space-xs) var(--space-sm);place-content:center;place-items:center}:is(.format-selector,.language-selector,.processing-selector,.recognition-selector) select{font-size:.875rem;inline-size:100%;line-height:1.2;min-block-size:2.75rem;overflow:hidden;place-content:center;place-items:center;text-align:start;text-overflow:ellipsis;white-space:nowrap}:is(.format-selector,.language-selector,.processing-selector,.recognition-selector) label{color:var(--color-on-surface-variant);flex-wrap:nowrap;font-size:var(--text-xs);justify-self:end;max-inline-size:stretch;overflow:hidden;padding-inline:var(--space-md);place-content:center;place-items:center;text-align:end;text-overflow:ellipsis;white-space:nowrap}@container (max-inline-size: 768px){:is(.format-selector,.language-selector,.processing-selector,.recognition-selector) label{justify-self:start;text-align:start}}@container (max-inline-size: 900px){.format-selector,.language-selector,.processing-selector,.recognition-selector{font-size:var(--text-xs);gap:var(--space-xs);padding:var(--space-xs)}}@container (max-inline-size: 768px){.format-selector,.language-selector,.processing-selector,.recognition-selector{gap:var(--space-sm)}}@container (max-inline-size: 640px){.format-selector,.language-selector,.processing-selector,.recognition-selector{gap:var(--space-xs)}}.workcenter-view :where(button,input,select,textarea){font-size:.875rem;line-height:1.25}}@layer components{.prompt-panel{block-size:stretch;flex-basis:0;flex-grow:1;flex-shrink:1;max-block-size:stretch;min-block-size:0;min-inline-size:0}.prompt-panel,.prompt-section{border:none;border-radius:var(--radius-md);padding:0;position:relative}:is(.prompt-panel,.prompt-section)>:where(.wc-file-drop-overlay){inset:0;opacity:0;pointer-events:none;position:absolute;transition:all var(--motion-normal);visibility:hidden}:is(.prompt-panel,.prompt-section) .prompt-controls{align-items:center;display:flex;flex-wrap:wrap;gap:var(--space-md);place-content:center;place-items:center}@container (max-inline-size: 480px){:is(.prompt-panel,.prompt-section) .prompt-controls .btn-icon span{display:none}}:is(.prompt-panel,.prompt-section) .prompt-controls .icon-btn{align-items:center;background:var(--color-surface-container);block-size:40px;border:none;border-radius:var(--radius-sm);color:var(--color-on-surface);cursor:pointer;display:flex;inline-size:40px;justify-content:center;transition:all var(--motion-fast)}:is(.prompt-panel,.prompt-section) .prompt-controls .icon-btn ui-icon{transition:color var(--motion-fast)}:is(.prompt-panel,.prompt-section) .prompt-controls .icon-btn:hover{background:var(--color-surface-container-high);box-shadow:var(--elev-1)}:is(.prompt-panel,.prompt-section) .prompt-controls .icon-btn:hover ui-icon{color:var(--color-primary)}:is(.prompt-panel,.prompt-section) .prompt-controls .icon-btn:focus-visible{box-shadow:var(--focus-ring);outline:none}@container (max-inline-size: 768px){:is(.prompt-panel,.prompt-section) .prompt-controls .icon-btn{block-size:36px;inline-size:36px}}@container (max-inline-size: 480px){:is(.prompt-panel,.prompt-section) .prompt-controls .icon-btn{block-size:32px;inline-size:32px}}@container (max-inline-size: 768px){:is(.prompt-panel,.prompt-section) .prompt-controls{gap:var(--space-sm)}}@container (max-inline-size: 480px){:is(.prompt-panel,.prompt-section) .prompt-controls{align-items:stretch;gap:var(--space-sm)}}.template-select{background:var(--color-surface);border-radius:var(--radius-sm);color:var(--color-on-surface);cursor:pointer;flex:1;font-family:var(--font-family);font-size:var(--text-sm);font-weight:var(--font-weight-medium);min-block-size:36px;padding:var(--space-sm) var(--space-md)}.template-select:hover{background:var(--color-surface-container-high);border-color:var(--color-primary)}.template-select:focus{border-color:var(--color-primary);outline:none}@container (max-inline-size: 768px){.template-select{min-block-size:40px}}.instruction-selector-row{align-items:center;display:flex;gap:var(--space-sm);padding:var(--space-sm) 0}.instruction-selector-row .instruction-label{align-items:center;color:var(--color-on-surface-variant);display:flex;flex-shrink:0;font-size:var(--text-xs);font-weight:var(--font-weight-medium);gap:var(--space-xs);white-space:nowrap}.instruction-selector-row .instruction-label ui-icon{color:var(--color-primary);opacity:.8}.instruction-selector-row .instruction-select{background:var(--color-surface);border:1px solid var(--color-outline-variant);border-radius:var(--radius-sm);color:var(--color-on-surface);cursor:pointer;flex:1;font-family:var(--font-family);font-size:var(--text-xs);min-block-size:30px;padding:var(--space-xs) var(--space-sm);transition:border-color var(--motion-fast)}.instruction-selector-row .instruction-select:hover{background:var(--color-surface-container-high);border-color:var(--color-primary)}.instruction-selector-row .instruction-select:focus{border-color:var(--color-primary);box-shadow:0 0 0 2px color-mix(in oklab,var(--color-primary) 15%,transparent);outline:none}.instruction-selector-row .btn-sm{align-items:center;background:transparent;border:1px solid var(--color-outline-variant);border-radius:var(--radius-sm);color:var(--color-on-surface-variant);cursor:pointer;display:flex;flex-shrink:0;justify-content:center;min-block-size:28px;min-inline-size:28px;padding:var(--space-xs);transition:all var(--motion-fast)}.instruction-selector-row .btn-sm:hover{background:var(--color-surface-container-high);border-color:var(--color-primary);color:var(--color-primary)}@container (max-inline-size: 480px){.instruction-selector-row{flex-wrap:wrap}.instruction-selector-row .instruction-label{flex-basis:100%}}.prompt-input{background:var(--color-surface);block-size:100%;border:1px solid var(--color-outline-variant);border-radius:var(--radius-md);color:var(--color-on-surface);flex:1 1 auto;flex-basis:0;flex-shrink:1;font-family:var(--font-family-system);font-size:var(--text-sm);inline-size:stretch;line-height:var(--leading-relaxed);max-block-size:100%;min-block-size:0;overflow-y:auto;padding:var(--space-sm) var(--space-md);resize:vertical;scrollbar-color:var(--color-outline-variant) transparent;scrollbar-width:thin}.prompt-input::placeholder{color:var(--color-on-surface-variant);opacity:.8}.prompt-input::-webkit-scrollbar{block-size:4px;inline-size:4px}.prompt-input::-webkit-scrollbar-thumb{background:var(--color-outline-variant)}.prompt-input:hover{background:var(--color-surface-container-low);box-shadow:var(--elev-1)}.prompt-input:focus{background:var(--color-surface-container-high);box-shadow:var(--focus-ring);outline:none}@container (max-inline-size: 1024px){.prompt-input{padding:var(--space-sm)}}@container (max-inline-size: 768px){.prompt-input{padding:var(--space-xs) var(--space-sm)}}.wc-file-drop-overlay{background:var(--color-surface-container-low);border:none;border-radius:var(--radius-md);box-shadow:var(--elev-1);inset:0;opacity:0;padding-block:var(--space-lg);padding-inline:var(--space-lg);pointer-events:none;position:absolute;transition:all var(--motion-normal);visibility:hidden;z-index:4}.wc-file-drop-overlay.drag-over{background:color-mix(in oklab,var(--color-primary) 10%,var(--color-surface-container-low));box-shadow:var(--focus-ring),var(--elev-2);opacity:1;visibility:visible}.wc-file-drop-overlay.drag-over .drop-zone-content{opacity:1;visibility:visible}@container (max-inline-size: 1024px){.wc-file-drop-overlay{padding-block:var(--space-md);padding-inline:var(--space-md)}}@container (max-inline-size: 768px){.wc-file-drop-overlay{padding-block:var(--space-sm);padding-inline:var(--space-sm)}}.prompt-input-group{block-size:stretch;display:flex;flex:1 1 auto;flex-basis:0;flex-direction:column;gap:var(--space-xl);inset:0;max-block-size:stretch;min-block-size:0;min-inline-size:0;place-content:center;place-items:stretch;position:relative}.prompt-input-group[data-dropzone]{position:relative;transition:all var(--motion-normal)}.prompt-input-group .file-drop-zone{align-items:center;display:flex;flex-direction:column;gap:var(--space-lg);pointer-events:none;position:relative;text-align:center}.prompt-input-group .file-drop-zone .drop-zone-content{align-items:center;display:flex;flex-direction:column;gap:var(--space-lg);justify-content:center;opacity:0;transition:all var(--motion-normal);visibility:hidden}.prompt-input-group .file-drop-zone .drop-zone-content .drop-icon{color:var(--color-primary);filter:drop-shadow(0 2px 8px rgba(0,0,0,.15));opacity:.8;transition:all var(--motion-normal)}@container (max-inline-size: 1024px){.prompt-input-group .file-drop-zone .drop-zone-content .drop-icon[size=\"4rem\"]{--icon-size:3.5rem;block-size:4rem;inline-size:4rem}}@container (max-inline-size: 768px){.prompt-input-group .file-drop-zone .drop-zone-content .drop-icon[size=\"4rem\"]{--icon-size:3rem;block-size:4rem;inline-size:4rem}}@container (max-inline-size: 480px){.prompt-input-group .file-drop-zone .drop-zone-content .drop-icon[size=\"4rem\"]{--icon-size:2.5rem;block-size:4rem;inline-size:4rem}}.prompt-input-group .file-drop-zone .drop-zone-content .drop-text{color:var(--color-on-surface);font-size:var(--text-xl);font-variant-emoji:text;font-weight:var(--font-weight-bold);letter-spacing:-.01em;line-height:var(--leading-tight);text-align:center}@container (max-inline-size: 1024px){.prompt-input-group .file-drop-zone .drop-zone-content .drop-text{font-size:var(--text-lg)}}@container (max-inline-size: 768px){.prompt-input-group .file-drop-zone .drop-zone-content .drop-text{font-size:var(--text-base)}}.prompt-input-group .file-drop-zone .drop-zone-content .drop-hint{color:var(--color-on-surface-variant);font-size:var(--text-sm);font-weight:var(--font-weight-medium);line-height:var(--leading-normal);max-inline-size:280px;opacity:.9;text-align:center}@container (max-inline-size: 768px){.prompt-input-group .file-drop-zone .drop-zone-content .drop-hint{font-size:var(--text-xs);max-inline-size:240px}}@container (max-inline-size: 1024px){.prompt-input-group .file-drop-zone .drop-zone-content{gap:var(--space-md)}}@container (max-inline-size: 768px){.prompt-input-group .file-drop-zone .drop-zone-content{gap:var(--space-sm)}}.prompt-input-group .wc-recognized-status{align-items:center;background:color-mix(in oklab,var(--color-success) 5%,transparent);border:none;border-radius:var(--radius-lg);box-shadow:var(--elev-1);color:var(--color-on-surface);display:flex;font-size:var(--text-sm);gap:var(--space-sm);margin-block-start:var(--space-md);padding:var(--space-sm) var(--space-md)}.prompt-input-group .wc-recognized-status .status-icon{color:var(--color-success);flex-shrink:0}.prompt-input-group .wc-recognized-status .clear-recognized{background:transparent;border:none;border-radius:var(--radius-full);box-shadow:none;color:var(--color-on-surface-variant);font-size:var(--text-xs);margin-inline-start:auto;min-block-size:28px;padding:var(--space-xs) var(--space-sm)}.prompt-input-group .wc-recognized-status .clear-recognized:hover{background:color-mix(in oklab,var(--color-error) 5%,transparent);color:var(--color-error)}.prompt-input-group .file-list{box-sizing:border-box;inline-size:stretch;margin-block-start:var(--space-md);max-inline-size:stretch;min-inline-size:0}.prompt-input-group .file-item{background:var(--color-surface-container);border:none;box-shadow:var(--elev-0);padding:var(--space-sm) var(--space-md)}.prompt-input-group .file-item:hover{background:var(--color-surface-container-high);box-shadow:var(--elev-1)}.prompt-input-group .file-info{gap:var(--space-md)}.prompt-input-group .file-icon{align-items:center;background:var(--color-surface-container-high);block-size:32px;border-radius:var(--radius-sm);display:flex;inline-size:32px;justify-content:center}.prompt-input-group .file-icon ui-icon{color:var(--color-primary)}@container (max-inline-size: 768px){.prompt-input-group .file-icon{block-size:28px;inline-size:28px}}.prompt-input-group .remove-btn{background:transparent;block-size:24px;border:none;color:var(--color-error);inline-size:24px;padding:0}.prompt-input-group .remove-btn:hover{background:color-mix(in oklab,var(--color-error) 20%,transparent);color:var(--color-error)}@container (max-inline-size: 1024px){.prompt-input-group{gap:var(--space-lg)}}@container (max-inline-size: 768px){.prompt-input-group{gap:var(--space-md)}}.action-section,.prompt-section,.prompts-section{background:var(--color-surface-container-low);border:1px solid var(--color-outline-variant);border-radius:var(--radius-lg);padding:var(--space-lg);place-content:center;place-items:center;align-items:stretch}:is(.action-section,.prompt-section,.prompts-section) .prompt-actions{display:grid;gap:var(--space-md);grid-template-columns:minmax(0,1fr) minmax(0,max-content);grid-template-rows:auto auto;place-self:stretch;align-self:stretch;box-sizing:border-box;inline-size:100%;max-inline-size:100%;min-inline-size:0;place-content:stretch;place-items:center}:is(.action-section,.prompt-section,.prompts-section) .prompt-actions .voice-btn{align-items:center;background:var(--color-surface-container-high);border:none;border-radius:var(--radius-xl);box-shadow:var(--elev-0);color:var(--color-on-surface);cursor:pointer;display:flex;font-size:var(--text-sm);font-weight:var(--font-weight-medium);grid-column:1;grid-row:1;inline-size:stretch;justify-content:center;min-block-size:44px;padding:var(--space-lg);transition:all var(--motion-normal)}:is(.action-section,.prompt-section,.prompts-section) .prompt-actions .voice-btn:hover{background:var(--color-surface-container-highest);box-shadow:var(--elev-1)}:is(.action-section,.prompt-section,.prompts-section) .prompt-actions .voice-btn:focus{box-shadow:var(--focus-ring);outline:none}:is(.action-section,.prompt-section,.prompts-section) .prompt-actions .voice-btn.recording{animation:k 1.5s infinite;background:var(--color-error);color:var(--color-on-error)}:is(.action-section,.prompt-section,.prompts-section) .prompt-actions .voice-btn.recording:before{animation:l 1s infinite;color:var(--color-on-error);content:\"●\";margin-inline-end:var(--space-sm)}@container (max-inline-size: 768px){:is(.action-section,.prompt-section,.prompts-section) .prompt-actions .voice-btn{font-size:var(--text-xs);min-block-size:40px}}@container (max-inline-size: 480px){:is(.action-section,.prompt-section,.prompts-section) .prompt-actions .voice-btn{min-block-size:36px;padding:var(--space-sm)}}:is(.action-section,.prompt-section,.prompts-section) .prompt-actions .auto-action-label{background:var(--color-surface-container);block-size:44px;border:none;border-radius:var(--radius-lg);box-shadow:var(--elev-0);cursor:pointer;display:flex;grid-column:2;grid-row:1;inline-size:44px;place-content:center;justify-content:center;padding:.5rem;place-items:center;transition:all var(--motion-fast)}:is(.action-section,.prompt-section,.prompts-section) .prompt-actions .auto-action-label>:not(ui-icon){display:none}:is(.action-section,.prompt-section,.prompts-section) .prompt-actions .auto-action-label ui-icon{color:var(--color-on-surface-variant);transition:all var(--motion-fast)}:is(.action-section,.prompt-section,.prompts-section) .prompt-actions .auto-action-label input[type=checkbox]{block-size:1px;inline-size:1px;margin:-1px;opacity:0;overflow:hidden;padding:0;position:absolute;clip:rect(0,0,0,0);border:0;white-space:nowrap}.action-section .prompt-actions .auto-action-label:has(input[type=checkbox]:checked),.prompt-section .prompt-actions .auto-action-label:has(input[type=checkbox]:checked),.prompts-section .prompt-actions .auto-action-label:has(input[type=checkbox]:checked),input[type=checkbox]:checked~.action-section .prompt-actions .auto-action-label,input[type=checkbox]:checked~.prompt-section .prompt-actions .auto-action-label,input[type=checkbox]:checked~.prompts-section .prompt-actions .auto-action-label{background:var(--color-primary);box-shadow:var(--elev-1)}:is(.action-section .prompt-actions .auto-action-label:has(input[type=checkbox]:checked),.prompt-section .prompt-actions .auto-action-label:has(input[type=checkbox]:checked),.prompts-section .prompt-actions .auto-action-label:has(input[type=checkbox]:checked),input[type=checkbox]:checked~.action-section .prompt-actions .auto-action-label,input[type=checkbox]:checked~.prompt-section .prompt-actions .auto-action-label,input[type=checkbox]:checked~.prompts-section .prompt-actions .auto-action-label) ui-icon{color:var(--color-on-primary)}:is(.action-section,.prompt-section,.prompts-section) .prompt-actions .auto-action-label:hover{background:var(--color-surface-container-high);box-shadow:var(--elev-1)}.action-section .prompt-actions .auto-action-label:hover:has(input[type=checkbox]:checked),.prompt-section .prompt-actions .auto-action-label:hover:has(input[type=checkbox]:checked),.prompts-section .prompt-actions .auto-action-label:hover:has(input[type=checkbox]:checked),input[type=checkbox]:checked~.action-section .prompt-actions .auto-action-label:hover,input[type=checkbox]:checked~.prompt-section .prompt-actions .auto-action-label:hover,input[type=checkbox]:checked~.prompts-section .prompt-actions .auto-action-label:hover{background:color-mix(in oklab,var(--color-primary) 90%,black)}:is(.action-section,.prompt-section,.prompts-section) .prompt-actions .auto-action-label:focus-within{box-shadow:var(--focus-ring);outline:none}@container (max-inline-size: 768px){:is(.action-section,.prompt-section,.prompts-section) .prompt-actions .auto-action-label{block-size:40px;inline-size:40px}:is(.action-section,.prompt-section,.prompts-section) .prompt-actions .auto-action-label ui-icon[size=\"20\"]{--size:18px}}@container (max-inline-size: 480px){:is(.action-section,.prompt-section,.prompts-section) .prompt-actions .auto-action-label{block-size:36px;inline-size:36px}:is(.action-section,.prompt-section,.prompts-section) .prompt-actions .auto-action-label ui-icon[size=\"20\"]{--size:16px}}:is(.action-section,.prompt-section,.prompts-section) .prompt-actions .action-btn{align-items:center;background:var(--color-primary);border:none;border-radius:var(--radius-md);color:var(--color-on-primary);cursor:pointer;display:flex;font-size:var(--text-sm);font-weight:var(--font-weight-medium);gap:var(--space-xs);grid-column:1;grid-row:2;inline-size:stretch;justify-content:center;max-inline-size:stretch;min-block-size:44px;padding:var(--space-md) var(--space-lg);transition:all var(--motion-normal)}:is(.action-section,.prompt-section,.prompts-section) .prompt-actions .action-btn:hover{background:color-mix(in oklab,var(--color-primary) 85%,black);box-shadow:var(--elev-1);transform:translateY(-1px)}:is(.action-section,.prompt-section,.prompts-section) .prompt-actions .action-btn:focus{box-shadow:var(--focus-ring);outline:none}:is(.action-section,.prompt-section,.prompts-section) .prompt-actions .action-btn:disabled{background:var(--color-surface-container-high);box-shadow:var(--elev-0);color:var(--color-on-surface-variant);cursor:not-allowed;transform:none}@container (max-inline-size: 768px){:is(.action-section,.prompt-section,.prompts-section) .prompt-actions .action-btn ui-icon[size=\"20\"]{--icon-size:16px}}@container (max-inline-size: 640px){:is(.action-section,.prompt-section,.prompts-section) .prompt-actions .action-btn .btn-text{display:none}}@container (max-inline-size: 768px){:is(.action-section,.prompt-section,.prompts-section) .prompt-actions .action-btn{min-block-size:40px;padding:var(--space-sm) var(--space-md)}}@container (max-inline-size: 480px){:is(.action-section,.prompt-section,.prompts-section) .prompt-actions .action-btn{font-size:var(--text-xs);min-block-size:36px;padding:var(--space-xs) var(--space-sm)}}:is(.action-section,.prompt-section,.prompts-section) .prompt-actions .clear-btn{align-items:center;aspect-ratio:auto;background:var(--color-surface-container);block-size:max-content;border:none;border-radius:var(--radius-md);color:var(--color-on-surface);cursor:pointer;display:flex;grid-column:2;grid-row:2;inline-size:stretch;justify-content:center;max-block-size:fit-content;max-inline-size:stretch;min-block-size:44px;min-block-size:2.5rem;min-inline-size:44px;transition:all var(--motion-fast)}:is(.action-section,.prompt-section,.prompts-section) .prompt-actions .clear-btn:hover{background:var(--color-error-container);color:var(--color-on-error-container)}:is(.action-section,.prompt-section,.prompts-section) .prompt-actions .clear-btn:focus{box-shadow:var(--focus-ring);outline:none}@container (max-inline-size: 768px){:is(.action-section,.prompt-section,.prompts-section) .prompt-actions .clear-btn{min-block-size:40px;min-inline-size:40px}}@container (max-inline-size: 480px){:is(.action-section,.prompt-section,.prompts-section) .prompt-actions .clear-btn{min-block-size:36px;min-inline-size:36px}}@container (max-inline-size: 1024px){.action-section,.prompt-section,.prompts-section{padding:var(--space-md)}}@container (max-inline-size: 768px){.action-section,.prompt-section,.prompts-section{padding:var(--space-sm)}}.prompt-panel{background:var(--color-surface-container-low);border:1px solid var(--color-outline-variant);border-radius:var(--radius-lg);padding:var(--space-lg);place-content:center;place-items:center;align-items:stretch}@container (max-inline-size: 1024px){.prompt-panel{padding:var(--space-md)}}@container (max-inline-size: 768px){.prompt-panel{padding:var(--space-sm)}}.wc-block-header{align-items:center;display:flex;flex-direction:row;flex-wrap:nowrap;gap:var(--space-md);inline-size:stretch;justify-content:space-between;max-inline-size:stretch}.wc-block-header h3{color:var(--color-on-surface);flex-basis:fit-content;flex-grow:1;flex-shrink:1;font-size:var(--text-lg);font-weight:var(--font-weight-medium);margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.wc-block-header .prompt-actions{align-items:center;flex-wrap:wrap;gap:var(--space-xs)}.instruction-panel,.prompt-panel{display:flex;flex-direction:column;gap:var(--space-md);min-block-size:0;min-inline-size:0}.instruction-panel .instruction-help{background:var(--color-surface-container-high);border-radius:var(--radius-sm);color:var(--color-on-surface-variant);font-size:var(--text-xs);padding:var(--space-sm)}.prompt-panel>.prompt-controls{flex:0 0 auto}.prompt-panel>.prompt-input-group{flex:1 1 auto;flex-basis:0;min-block-size:0;min-inline-size:0;overflow:hidden}.prompt-panel>.prompt-actions{align-content:flex-start;align-items:center;box-sizing:border-box;display:flex;flex:0 0 auto;flex-flow:row wrap;flex-grow:0;flex-shrink:0;gap:var(--space-sm);grid-template-columns:unset;grid-template-rows:unset;inline-size:100%;justify-content:flex-start;margin-block-start:auto;max-inline-size:100%;min-inline-size:0;padding-block-end:max(var(--space-xs),env(safe-area-inset-bottom,0px));place-items:center;place-self:stretch}.prompt-panel>.prompt-actions>*{grid-column:unset;grid-row:unset}.prompt-panel :is(.auto-action-label,.clear-btn,.prompt-attach-btn){flex:0 0 auto}.prompt-panel .voice-btn{flex:1 1 14rem;inline-size:auto;justify-content:center;max-inline-size:100%;min-inline-size:12rem}.prompt-panel .action-btn{flex:0 0 auto;min-inline-size:10.5rem}@container (max-inline-size: 760px){.prompt-panel .voice-btn{flex-basis:100%;min-inline-size:0}.prompt-panel .action-btn{flex:1 1 auto;min-inline-size:0}}.prompt-attach-btn{align-items:center;background:var(--color-surface-container);border:1px solid var(--color-outline-variant);display:inline-flex;gap:var(--space-xs);justify-content:center;min-block-size:44px;min-inline-size:44px}.prompt-attach-btn .attach-count{background:var(--color-primary-container);border-radius:var(--radius-full);color:var(--color-primary);font-size:var(--text-xs);font-weight:var(--font-weight-semibold);min-inline-size:1.35rem;padding:0 .35rem;text-align:center}.prompt-input-group[data-prompt-dropzone]{border:2px dashed transparent;border-radius:var(--radius-md);position:relative;transition:border-color var(--motion-fast),background-color var(--motion-fast)}.prompt-input-group[data-prompt-dropzone].drag-over{background:color-mix(in oklab,var(--color-primary) 7%,transparent);border-color:var(--color-primary)}.prompt-input-overlay{align-items:center;background:color-mix(in oklab,var(--color-primary) 12%,var(--color-surface-container-high));block-size:stretch;border-radius:var(--radius-sm);color:var(--color-on-surface);display:flex;gap:var(--space-xs);inline-size:stretch;inset:var(--space-xs);inset:0;justify-content:center;opacity:0;pointer-events:none;position:absolute!important;transition:opacity var(--motion-fast),visibility var(--motion-fast);visibility:hidden;z-index:3}.prompt-input-overlay.visible{opacity:1;visibility:visible}.prompt-actions .btn,.prompt-actions .clear-btn,.prompt-actions .icon-btn,.prompt-panel .btn,.prompt-panel .clear-btn,.prompt-panel .icon-btn{block-size:2.5rem;block-size:max-content;max-inline-size:fit-content;min-block-size:fit-content;min-inline-size:0;padding:var(--space-sm) var(--space-md)}.prompt-actions .clear-btn,.prompt-actions .voice-btn,.prompt-panel .clear-btn,.prompt-panel .voice-btn{aspect-ratio:auto;inline-size:auto;max-inline-size:stretch}.wc-attachments-section{block-size:fit-content;display:flex;flex-basis:fit-content;flex-grow:1;flex-shrink:1;max-block-size:stretch}.file-attachment-area,.wc-attachments-section{flex-direction:column;gap:var(--space-md);min-block-size:fit-content}.file-attachment-area{block-size:stretch;display:grid;flex:1;flex-basis:fit-content;flex-grow:1;flex-shrink:1;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr);inline-size:stretch;max-inline-size:stretch;min-inline-size:0;overflow-x:hidden;pointer-events:auto}.file-attachment-area>*{grid-area:1/1;grid-column:1/-1;grid-row:1/-1}.file-attachment-area .file-list{block-size:stretch;box-sizing:border-box;flex-basis:fit-content;flex-grow:1;flex-shrink:1;inline-size:stretch;max-inline-size:stretch;min-inline-size:0;pointer-events:none;z-index:2}.file-attachment-area .file-item{pointer-events:none}.file-attachment-area button{pointer-events:auto}.file-attachment-area :is(.file-list:empty,.file-list:has(.wc-attachments-empty)),.file-attachment-area:has(.file-list .file-item) .file-drop-zone{display:none!important;pointer-events:none!important;visibility:hidden!important}.file-drop-zone{align-items:center;block-size:stretch;border-radius:var(--radius-lg);cursor:pointer;display:flex;flex-basis:fit-content;flex-direction:column;flex-grow:1;flex-shrink:1;gap:var(--space-md);justify-content:center;min-block-size:8rem;overflow:auto;pointer-events:none;position:relative;transition:all var(--motion-normal)}[data-dropzone]{background:var(--color-surface-container-low);border:2px dashed color-mix(in oklab,var(--color-outline-variant) 40%,transparent);border-radius:var(--radius-sm)}[data-dropzone]:hover{background:color-mix(in oklab,var(--color-primary) 5%,var(--color-surface-container-low));border-color:color-mix(in oklab,var(--color-primary) 40%,transparent)}[data-dropzone].drag-over{background:color-mix(in oklab,var(--color-primary) 10%,var(--color-surface-container-low));border-color:var(--color-primary);box-shadow:var(--focus-ring)}[data-dropzone].drag-over:before{background:linear-gradient(45deg,color-mix(in oklab,var(--color-primary) 5%,transparent) 25%,transparent 25%,transparent 50%,color-mix(in oklab,var(--color-primary) 5%,transparent) 50%,color-mix(in oklab,var(--color-primary) 5%,transparent) 75%,transparent 75%);background-size:20px 20px;border-radius:inherit;content:\"\";inset:0;pointer-events:none;position:absolute;z-index:1}[data-dropzone].drag-over>*{position:relative;z-index:2}.drop-zone-content{align-items:center;block-size:max-content;display:flex;flex-direction:column;gap:var(--space-md);text-align:center}.drop-icon{color:var(--color-primary);opacity:.7}.drop-text{color:var(--color-on-surface);font-size:var(--text-lg);font-weight:500}.drop-hint{color:var(--color-on-surface-variant);font-size:var(--text-sm);opacity:.8}.file-list{block-size:max-content;box-sizing:border-box;flex:1;max-block-size:stretch;min-block-size:0;overflow-x:hidden;overflow-y:auto}.file-item,.file-list{inline-size:stretch;max-inline-size:stretch;min-inline-size:0}.file-item{align-items:center;align-self:safe center;background:var(--color-surface-container-high);border:1px solid var(--color-outline-variant);border-radius:var(--radius-sm);display:grid;gap:var(--space-sm);grid-template-columns:[info] minmax(0,1fr) [button] minmax(0,2rem);grid-template-rows:minmax(0,1fr);margin-block-end:var(--space-xs);overflow:hidden;padding:var(--space-sm);place-content:center;align-content:safe center;justify-content:safe center;place-items:center;justify-items:safe center}.file-item .file-info{grid-column:info;grid-row:1/-1}.file-item .remove-btn{aspect-ratio:auto;block-size:stretch;box-sizing:border-box;grid-column:button;grid-row:1/-1;inline-size:stretch;max-block-size:min(2rem,100%)!important;max-inline-size:min(2rem,100%)!important;padding:0}.file-item:hover{background:var(--color-surface-container-highest)}.file-info{align-self:safe center;display:grid;flex:1;gap:var(--space-sm);grid-template-columns:[icon] minmax(0,2rem) [details] minmax(0,1fr);grid-template-rows:minmax(0,1fr);inline-size:stretch;max-inline-size:stretch;min-inline-size:0;overflow:hidden;place-content:center;align-content:safe center;justify-content:safe center;place-items:center;justify-items:safe center;text-align:start;text-overflow:ellipsis;white-space:nowrap}.file-info :is(.file-icon,.file-preview){grid-column:icon;grid-row:1/-1}.file-info .file-details{grid-column:details;grid-row:1/-1}.file-info:has(.file-preview) .file-icon{display:none!important}.file-icon,.file-preview{flex-shrink:0}.file-preview{aspect-ratio:1/1;block-size:2rem;border-radius:var(--radius-sm);inline-size:2rem;object-fit:cover;object-position:center}.file-details{display:grid;gap:var(--space-xs);grid-template-columns:[name] minmax(0,1fr) [size] minmax(0,max-content) [type] minmax(0,max-content);grid-template-rows:minmax(0,1fr);inline-size:stretch;justify-self:start;max-inline-size:stretch;min-inline-size:fit-content;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.file-details .file-name{grid-column:name;grid-row:1/-1}.file-details .file-size{grid-column:size;grid-row:1/-1}.file-details .file-type{grid-column:type;grid-row:1/-1}.file-name{color:var(--color-on-surface);font-size:var(--text-sm);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.file-size,.file-type{color:var(--color-on-surface-variant);font-size:var(--text-xs)}.remove-btn{background:var(--color-error-container);border:none;border-radius:var(--radius-sm);color:var(--color-on-error-container);cursor:pointer;flex-shrink:0;font-size:var(--text-sm);line-height:1;padding:var(--space-xs)}.remove-btn:hover{background:var(--color-error);color:var(--color-on-error)}.wc-attachments-toolbar{align-items:center;display:flex;flex-wrap:wrap;gap:var(--space-sm) var(--space-md);justify-content:space-between}.file-actions{align-items:center;display:flex;gap:var(--space-md);inline-size:auto;justify-content:flex-start;max-inline-size:100%;min-inline-size:max-content;place-self:center}.file-stats{align-items:center;background:var(--color-surface-container-high);border:1px solid var(--color-outline-variant);border-radius:var(--radius-sm);display:flex;flex-direction:row;flex-grow:1;flex-wrap:wrap;gap:var(--space-sm);padding:var(--space-sm)}.file-stats :is(.data-counter,.file-counter){align-items:center;border-radius:var(--radius-md);display:inline-flex;font-size:var(--text-sm);font-weight:var(--font-weight-medium);gap:var(--space-xs);inline-size:max-content;padding:var(--space-xs) var(--space-sm)}.file-stats :is(.data-counter,.file-counter) .count{min-inline-size:1ch;text-align:center}.file-stats .file-counter{background:var(--color-surface-container-high);border:1px solid color-mix(in oklab,var(--color-outline-variant) 30%,transparent);color:var(--color-on-surface-variant);min-inline-size:calc-size(fit-content,max(size,25px) + .5rem + var(--icon-size,1rem))}.file-stats .file-counter ui-icon{color:var(--color-primary);opacity:.8}.file-stats .file-counter .count{color:var(--color-primary);font-weight:600}.file-stats .file-counter .label{font-size:var(--text-xs)}}@layer components{.file-stats .file-counter:has(.count:empty),.file-stats .file-counter:has(.count:not([data-count]):not(:has-text):not([data-count=\"0\"]):not(:has(.count:empty))){display:none}.file-stats .data-counter{min-inline-size:1.5rem}.file-stats .data-counter ui-icon{font-size:var(--text-sm)}.file-stats .data-counter.recognized{background:var(--color-secondary-container);border:1px solid var(--color-secondary)}.file-stats .data-counter.recognized,.file-stats .data-counter.recognized ui-icon{color:var(--color-on-secondary-container)}.file-stats .data-counter.processed{background:var(--color-tertiary-container);border:1px solid var(--color-tertiary)}.file-stats .data-counter.processed,.file-stats .data-counter.processed ui-icon{color:var(--color-on-tertiary-container)}.wc-recognized-status{align-items:center;background:color-mix(in oklab,var(--color-tertiary) 10%,var(--color-surface-container-high));border:1px solid color-mix(in oklab,var(--color-tertiary) 30%,transparent);border-radius:var(--radius-sm);color:var(--color-on-surface-variant);display:flex;font-size:var(--text-sm);gap:var(--space-sm);padding:var(--space-sm)}.wc-recognized-status .status-icon{color:var(--color-tertiary);flex-shrink:0}.wc-recognized-status .clear-recognized{background:var(--color-tertiary-container);border:none;border-radius:var(--radius-sm);color:var(--color-on-tertiary-container);cursor:pointer;font-size:var(--text-xs);margin-inline-start:auto;padding:var(--space-xs) var(--space-sm)}.wc-recognized-status .clear-recognized:hover{background:var(--color-tertiary);color:var(--color-on-tertiary)}.wc-output-section{block-size:fit-content;display:flex;flex-basis:fit-content;flex-direction:column;flex-grow:1;flex-shrink:1;gap:var(--space-md);max-block-size:stretch;min-block-size:fit-content;overflow:hidden;place-content:center;align-content:stretch;justify-content:stretch;place-items:center}.wc-output-section>*{inline-size:stretch}.wc-output-content{background:var(--color-surface-container-low);block-size:min(10rem,100%);block-size:fit-content;border:1px solid var(--color-outline-variant);border-radius:var(--radius-md);color:var(--color-on-surface);contain:strict;display:flex;flex-basis:fit-content;flex-direction:column;flex-grow:1;flex-shrink:1;font-family:var(--font-family);gap:var(--space-md);line-height:1.6;max-block-size:stretch;min-block-size:fit-content;overflow:auto;padding:var(--space-md);position:relative;text-wrap:pretty;transition:all var(--motion-normal)}.wc-output-content:has(.result-content){min-block-size:10rem}.wc-output-content[data-dropzone]{background:var(--color-surface-container-low);border:2px dashed color-mix(in oklab,var(--color-outline-variant) 30%,transparent);min-block-size:6rem;padding:var(--space-md)}.wc-output-content[data-dropzone]:has(.result-content){border-color:var(--color-outline-variant);border-style:solid;min-block-size:10rem}.wc-output-content[data-dropzone]:hover{background:color-mix(in oklab,var(--color-primary) 5%,var(--color-surface-container-low));border-color:color-mix(in oklab,var(--color-primary) 40%,transparent)}.wc-output-content[data-dropzone].drag-over{background:color-mix(in oklab,var(--color-primary) 10%,var(--color-surface-container-low));border-color:var(--color-primary);box-shadow:var(--focus-ring)}.wc-output-content[data-dropzone].drag-over:before{background:linear-gradient(45deg,color-mix(in oklab,var(--color-primary) 5%,transparent) 25%,transparent 25%,transparent 50%,color-mix(in oklab,var(--color-primary) 5%,transparent) 50%,color-mix(in oklab,var(--color-primary) 5%,transparent) 75%,transparent 75%);background-size:20px 20px;border-radius:inherit;content:\"\";inset:0;pointer-events:none;position:absolute;z-index:1}.wc-output-content[data-dropzone].drag-over>*{position:relative;z-index:2}.history-section .result-actions,.pipeline-actions,.step-actions,.wc-output-actions{align-items:center;display:flex;gap:var(--space-xs)}.pipeline-actions .btn,.wc-output-actions .btn{font-size:var(--text-sm);min-inline-size:auto;padding:var(--space-xs) var(--space-sm)}.results-tabs-header{align-items:center;display:flex;flex-wrap:nowrap;gap:var(--space-sm);justify-content:flex-start;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.results-tabs-header h3{color:var(--color-on-surface);font-size:var(--text-lg);font-weight:600;margin:0;white-space:nowrap}.results-tab-actions{margin-inline-start:var(--space-sm)}.wc-output-header{display:flex;justify-content:flex-end;margin-inline-start:auto}.step-actions{margin-block-start:var(--space-xs)}.step-actions .btn{font-size:var(--text-xs);min-inline-size:auto;padding:var(--space-xs) var(--space-sm)}.history-section{block-size:fit-content;display:flex;flex-basis:fit-content;flex-direction:column;flex-grow:1;flex-shrink:1;gap:var(--space-sm);max-block-size:stretch}.history-section .result-actions .btn{font-size:var(--text-xs);min-inline-size:auto;padding:var(--space-xs) var(--space-sm)}.result-content{background:var(--color-surface-container-high);border-radius:var(--radius-md);color:var(--color-on-surface);font-family:var(--font-family);line-height:1.6;overflow-wrap:break-word;padding:var(--space-md);word-wrap:break-word}.result-content pre{background:var(--color-surface-container-low);border:1px solid var(--color-outline);border-radius:var(--radius-sm);font-family:var(--font-family-mono);font-size:var(--text-sm);line-height:1.4;margin:var(--space-sm) 0;overflow-x:auto;padding:var(--space-sm)}.result-content pre code{background:transparent;border:none;border-radius:0;font-size:inherit;padding:0}.result-content code{background:var(--color-surface-container-low);border:1px solid var(--color-outline);border-radius:var(--radius-sm);color:var(--color-on-surface);font-family:var(--font-family-mono);font-size:.875em;padding:.125em .25em}.result-content .katex{font-size:1em}.result-content .katex-display{margin:var(--space-md) 0;text-align:center}.result-content table{background:var(--color-surface-container-high);border:1px solid var(--color-outline);border-collapse:collapse;border-radius:var(--radius-md);inline-size:100%;margin:var(--space-md) 0;overflow:hidden}.result-content table :is(td,th){border-block-end:1px solid var(--color-outline);border-inline-end:1px solid var(--color-outline);padding:var(--space-sm);text-align:start}.result-content table :is(td:last-child,th:last-child){border-inline-end:none}.result-content table th{background:var(--color-surface-container-low);color:var(--color-on-surface);font-weight:600}.result-content table tr:last-child td{border-block-end:none}.result-content :is(ol,ul){margin:var(--space-sm) 0;padding-inline-start:var(--space-lg)}.result-content :is(ol,ul) li{line-height:1.6;margin:var(--space-xs) 0}.result-content blockquote{background:color-mix(in oklab,var(--color-primary) 5%,var(--color-surface-container-low));border-inline-start:4px solid var(--color-primary);border-radius:0 var(--radius-sm) var(--radius-sm) 0;color:var(--color-on-surface-variant);font-style:italic;margin:var(--space-md) 0;padding:var(--space-sm) var(--space-md)}.result-content a{color:var(--color-primary);text-decoration:underline}.result-content a:hover{background:color-mix(in oklab,var(--color-primary) 10%,transparent);color:var(--color-primary-container)}.result-content a:focus{outline:2px solid var(--color-primary);outline-offset:2px}.result-content img{block-size:auto;border-radius:var(--radius-sm);margin:var(--space-sm) 0;max-inline-size:100%}.result-content :is(h1,h2,h3,h4,h5,h6){color:var(--color-on-surface);line-height:1.3;margin:var(--space-lg) 0 var(--space-sm)}.result-content :is(h1:first-child,h2:first-child,h3:first-child,h4:first-child,h5:first-child,h6:first-child){margin-block-start:0}.result-content h1{font-size:var(--text-3xl);font-weight:700}.result-content h2{font-size:var(--text-2xl);font-weight:600}.result-content h3{font-size:var(--text-xl);font-weight:600}.result-content h4{font-size:var(--text-lg);font-weight:600}.result-content h5{font-size:var(--text-base);font-weight:600}.result-content h6{font-size:var(--text-sm);font-weight:600}.result-content p{margin:var(--space-sm) 0}.result-content p:first-child{margin-block-start:0}.result-content p:last-child{margin-block-end:0}.result-content hr{border:none;border-block-start:1px solid var(--color-outline);margin:var(--space-lg) 0}.code-result,.raw-result{background:var(--color-surface-container-low);block-size:max-content;border:1px solid var(--color-outline-variant);border-radius:var(--radius-md);color:var(--color-on-surface);font-family:var(--font-family-mono);font-size:var(--text-sm);inline-size:stretch;line-height:1.5;margin:0;max-block-size:calc-size(max-content,min(size,100%));max-inline-size:stretch;min-inline-size:calc-size(fit-content,min(size,100%));overflow:auto;overflow-x:auto;padding:var(--space-md);white-space:pre}.code-result,.data-pipeline-section,.raw-result{min-block-size:calc-size(fit-content,min(size,100%));overflow-y:auto;scrollbar-color:var(--color-outline-variant) transparent;scrollbar-width:thin}.data-pipeline-section{block-size:stretch;contain:strict;container-type:size;display:flex;flex-direction:column;gap:var(--space-sm);max-block-size:stretch;overflow-x:hidden}.pipeline-header{align-items:center;block-size:max-content;display:flex;gap:var(--space-sm);inline-size:stretch;justify-content:space-between;margin-block-end:var(--space-sm);max-block-size:fit-content;min-block-size:calc-size(fit-content,min(size,100%));overflow:hidden;text-overflow:ellipsis}.pipeline-header h3{color:var(--color-on-surface);font-size:var(--text-base);font-weight:600;margin:0}.pipeline-content{block-size:max-content;display:flex;flex-direction:column;gap:var(--space-sm);inline-size:stretch;max-block-size:fit-content;min-block-size:calc-size(fit-content,min(size,100%));overflow:hidden}.pipeline-actions{justify-content:flex-end}.pipeline-steps{gap:var(--space-md)}.pipeline-step,.pipeline-steps{block-size:max-content;display:flex;flex-direction:column;inline-size:stretch;max-block-size:fit-content;min-block-size:calc-size(fit-content,min(size,100%));overflow:hidden}.pipeline-step{background:var(--color-surface-container-high);border:1px solid var(--color-outline-variant);border-radius:var(--radius-md);gap:var(--space-sm);padding:var(--space-sm);text-overflow:ellipsis;transition:all var(--motion-fast)}.pipeline-step:hover{background:var(--color-surface-container-highest);border-color:var(--color-primary)}.pipeline-step.recognized-step{background:color-mix(in oklab,var(--color-secondary) 5%,var(--color-surface-container-high));border-color:var(--color-secondary)}.pipeline-step.processed-step{background:color-mix(in oklab,var(--color-tertiary) 5%,var(--color-surface-container-high));border-color:var(--color-tertiary)}.step-header{align-items:center;display:flex;flex-wrap:wrap;gap:var(--space-sm)}.step-icon{color:var(--color-primary);flex-shrink:0}.step-title{color:var(--color-on-surface);flex:1;font-size:var(--text-sm);font-weight:600}.step-format,.step-source,.step-time{color:var(--color-on-surface-variant);font-size:var(--text-xs)}.step-content{border-inline-start:2px solid var(--color-outline);padding-inline-start:var(--space-lg)}.step-preview{color:var(--color-on-surface-variant);display:-webkit-box;font-size:var(--text-sm);-webkit-line-clamp:3;line-height:1.4;-webkit-box-orient:vertical;overflow:hidden}.history-header{align-items:center;background:var(--color-surface-container-high);border-radius:var(--radius-md);display:grid;gap:var(--space-md);grid-template-columns:1fr max-content;max-block-size:stretch;padding:var(--space-sm) var(--space-md)}.history-header h4{color:var(--color-on-surface);font-size:var(--text-base);font-weight:var(--font-weight-semibold);letter-spacing:-.01em;margin:0}.recent-history{display:flex;flex-direction:column;gap:var(--space-xs);max-block-size:min(300px,100%);max-block-size:stretch;overflow-y:auto}.history-item-compact{align-items:center;background:var(--color-surface-container-high);border:1px solid var(--color-outline-variant);border-radius:var(--radius-sm);display:flex;gap:var(--space-sm);justify-content:space-between;max-block-size:stretch;padding:var(--space-sm);transition:all var(--motion-fast)}.history-item-compact:hover{background:var(--color-surface-container-highest);border-color:var(--color-primary)}.history-meta{align-items:center;display:flex;flex:1;gap:var(--space-sm);max-block-size:stretch;min-inline-size:0}.history-status{flex-shrink:0;font-size:var(--text-sm);font-weight:600;max-block-size:stretch}.history-status.success{color:var(--color-tertiary)}.history-status.error{color:var(--color-error)}.history-prompt{color:var(--color-on-surface);flex:1;font-size:var(--text-sm);max-block-size:stretch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.history-time{flex-shrink:0;font-size:var(--text-xs);max-block-size:stretch}.history-time,.wc-loading{color:var(--color-on-surface-variant)}.wc-loading{align-items:center;display:flex;font-size:var(--text-base);gap:var(--space-sm);justify-content:center;padding:var(--space-xl)}.wc-loading:before{animation:h 1s linear infinite;block-size:20px;border:2px solid var(--color-primary);border-block-start-color:transparent;border-radius:50%;content:\"\";inline-size:20px}.error{background:color-mix(in oklab,var(--color-error) 10%,var(--color-surface-container-high));border:1px solid var(--color-error);border-radius:var(--radius-md);color:var(--color-error);font-size:var(--text-sm);padding:var(--space-md)}.wc-attachments-empty,.wc-history-empty,.wc-results-empty{align-items:center;color:var(--color-on-surface-variant);display:flex;font-size:var(--text-sm);font-style:italic;justify-content:center;padding:var(--space-lg)}.wc-results-empty{font-size:var(--text-base);padding:var(--space-xl)}}@layer components{@container (max-inline-size: 768px){.results-tabs-header h3{display:none}.results-tab-actions{inline-size:auto;margin-inline-start:0}.results-tab-actions .tab-btn{flex:initial}.result-content{padding:var(--space-sm)}.step-header{align-items:flex-start;flex-direction:column;gap:var(--space-xs)}.history-header h4{font-size:var(--text-sm)}}}@layer components{.workcenter-chat{background:transparent;block-size:100%;container-type:inline-size;display:grid;gap:var(--space-md);grid-template-rows:auto minmax(0,1fr) auto;isolation:isolate;min-block-size:0;overflow:hidden;padding:max(var(--space-md),env(safe-area-inset-top,0px)) max(var(--space-md),env(safe-area-inset-right,0px)) max(var(--space-md),env(safe-area-inset-bottom,0px)) max(var(--space-md),env(safe-area-inset-left,0px));position:relative}.workcenter-chat .workcenter-header{align-items:center;background:transparent;border:0;border-radius:0;display:flex;gap:var(--space-sm);justify-content:space-between;padding:0;position:static}.workcenter-chat .workcenter-header h2{font-size:var(--text-lg);font-weight:var(--font-weight-semibold)}.workcenter-header__actions,.workcenter-message__actions{align-items:center;display:inline-flex;gap:var(--space-xs)}.wc-chip-remove,.wc-icon-button,.wc-quiet-button{align-items:center;background:transparent;border:0;border-radius:var(--radius-full);color:var(--color-on-surface-variant);cursor:pointer;display:inline-flex;justify-content:center;min-block-size:var(--touch-min);min-inline-size:var(--touch-min);padding:var(--space-sm);transition:background-color var(--transition-fast),color var(--transition-fast),box-shadow var(--transition-fast)}.wc-chip-remove:hover,.wc-icon-button:hover,.wc-quiet-button:hover{background:color-mix(in oklab,var(--color-on-surface) var(--state-opacity-hover),transparent);color:var(--color-on-surface)}.wc-chip-remove:focus-visible,.wc-icon-button:focus-visible,.wc-quiet-button:focus-visible{box-shadow:var(--focus-ring);outline:0}.wc-send-button{background:var(--color-primary);color:var(--color-on-primary)}.wc-send-button:hover{background:var(--color-primary-hover);color:var(--color-on-primary)}.wc-send-button ui-icon{pointer-events:none}.workcenter-transcript{align-content:safe center;align-items:safe center;display:flex;flex-direction:column!important;flex-grow:1;flex-wrap:nowrap;gap:var(--space-lg);justify-content:safe center;justify-items:safe center;min-block-size:0;overflow-y:auto;overscroll-behavior:contain;padding:var(--space-sm) max(var(--space-sm),8cqi);position:relative;scrollbar-color:color-mix(in oklab,var(--color-on-surface) 24%,transparent) transparent;scrollbar-width:thin;z-index:0}.workcenter-transcript__empty{color:var(--color-on-surface-variant);font-size:var(--text-sm);margin:auto;max-inline-size:28rem;text-align:center}.workcenter-message{background:var(--color-surface-container-low);border:0;border-radius:var(--shape-medium);box-shadow:var(--elev-0);color:var(--color-on-surface);display:flex;flex-direction:column;gap:var(--space-xs);inline-size:fit-content;max-inline-size:min(48rem,94%);overflow-wrap:anywhere;padding:var(--space-sm) var(--space-md)}.workcenter-message--user{align-self:flex-end;background:var(--color-primary-container);color:var(--color-on-primary-container)}.workcenter-message--assistant{align-self:flex-start;background:var(--color-surface-container-low)}.workcenter-message.is-cancelled,.workcenter-message.is-pending{color:var(--color-on-surface-variant)}.workcenter-message.is-failed{background:color-mix(in oklab,var(--color-error) 8%,var(--color-surface-container-low));color:var(--color-on-surface)}.workcenter-message__header{color:inherit;font-size:var(--text-xs);font-weight:var(--font-weight-semibold);opacity:.7}.workcenter-message__body{font-family:var(--font-family);font-size:var(--text-base);line-height:var(--leading-normal)}.workcenter-message__body>:first-child{margin-block-start:0}.workcenter-message__body>:last-child{margin-block-end:0}.workcenter-message__body :is(blockquote,ol,p,pre,ul){margin-block:var(--space-sm)}.workcenter-message__body :is(ol,ul){padding-inline-start:var(--space-xl)}.workcenter-message__body pre{border-radius:var(--radius-sm);font-size:var(--text-sm);overflow-x:auto;padding:var(--space-sm)}.workcenter-message__body code,.workcenter-message__body pre{background:color-mix(in oklab,var(--color-on-surface) 7%,transparent);font-family:var(--font-family-mono)}.workcenter-message__body code{border-radius:var(--radius-xs);padding-inline:.2em}.workcenter-message__body a{color:var(--color-primary)}.workcenter-message__body a:focus-visible{box-shadow:var(--focus-ring);outline:0}.workcenter-message__body img{block-size:auto;border-radius:var(--shape-small);display:block;max-inline-size:100%}.workcenter-composer__attachments,.workcenter-message__attachments{display:flex;flex-wrap:wrap;gap:var(--space-xs)}.wc-attachment-chip{align-items:stretch;background:color-mix(in oklab,var(--color-on-surface) 6%,transparent);border:0;border-radius:var(--shape-medium);font-size:var(--text-xs);gap:var(--space-2xs);max-inline-size:min(18rem,100%);padding:var(--space-xs)}.wc-attachment-chip,.wc-attachment-chip__open{color:inherit;display:inline-flex;min-inline-size:0}.wc-attachment-chip__open{align-items:center;background:transparent;border:0;cursor:pointer;flex:1 1 auto;gap:var(--space-xs);padding:0;text-align:start}.wc-attachment-chip__open:focus-visible{box-shadow:var(--focus-ring);outline:0}.wc-attachment-chip__glyph,.wc-attachment-chip__preview{block-size:2.75rem;border-radius:var(--shape-small);flex:0 0 auto;inline-size:2.75rem;object-fit:cover}.wc-attachment-chip.is-image .wc-attachment-chip__preview{block-size:4.5rem;inline-size:4.5rem}.wc-attachment-chip__glyph{align-items:center;background:color-mix(in oklab,var(--color-on-surface) 8%,transparent);display:inline-flex;justify-content:center}.wc-attachment-chip__copy{display:grid;gap:.1rem;min-inline-size:0}.wc-attachment-chip__label{color:inherit;text-decoration:none}.wc-attachment-chip__label,.wc-attachment-chip__meta{min-inline-size:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.wc-attachment-chip__meta{opacity:.65}.wc-attachment-chip__actions{align-items:center;display:inline-flex;flex:0 0 auto}.wc-chip-remove{color:var(--color-on-surface-variant);min-block-size:var(--touch-min);min-inline-size:var(--touch-min);overflow:visible}.workcenter-composer{--wc-composer-min:calc-size(fit-content,1rem + size);background:var(--color-surface-container);block-size:max-content;border:0;border-radius:var(--shape-extra-large);box-shadow:var(--elev-1);display:flex;flex-direction:column;gap:var(--space-sm);max-block-size:min(72dvh,75%);min-block-size:var(--wc-composer-min,4.5rem);overflow:auto;padding:var(--space-sm);padding-block-start:var(--space-md);position:relative;transition:background-color var(--transition-fast),box-shadow var(--transition-fast)}.workcenter-composer.is-dragging,.workcenter-composer:has(.prompt-input:focus-visible){background:var(--color-surface-container-high);box-shadow:var(--focus-ring),var(--elev-1)}.workcenter-composer.has-attachments{max-block-size:min(80dvh,88%)}.workcenter-composer__resize{block-size:.85rem;cursor:ns-resize;inset-block-start:0;inset-inline:0;position:absolute;touch-action:none;z-index:1}.workcenter-composer__resize:before{background:color-mix(in oklab,var(--color-on-surface) 28%,transparent);block-size:.22rem;border-radius:var(--radius-full);content:\"\";display:block;inline-size:2.5rem;margin:.28rem auto 0}.workcenter-composer__files{background:color-mix(in oklab,var(--color-on-surface) 7%,transparent);border-radius:var(--shape-medium);display:grid;gap:var(--space-xs);padding:var(--space-xs)}.workcenter-composer__files[hidden]{display:none!important}.workcenter-composer__files-head{color:var(--color-primary);font-size:var(--text-xs);font-weight:var(--font-weight-semibold)}.workcenter-composer__attachments:empty{display:none}.wc-attach-button{overflow:visible;position:relative}.wc-attach-button,.wc-attach-button input{cursor:pointer;pointer-events:auto}.wc-attach-button ui-icon{cursor:pointer;pointer-events:none}.wc-attach-button span{display:flex;place-content:center;place-items:center;pointer-events:none}.wc-attach-count{background:var(--color-primary);border-radius:var(--radius-full);color:var(--color-on-primary);font-size:.65rem;font-weight:700;inset-block-start:.15rem;inset-inline-end:.15rem;line-height:1.1rem;min-block-size:1.1rem;min-inline-size:1.1rem;padding-inline:.2rem;position:absolute;text-align:center}.wc-attach-count[hidden]{display:none!important}.wc-file-picker{block-size:100%;cursor:pointer;inline-size:100%;inset:0;margin:0;opacity:0;position:absolute}.workcenter-composer__input-row{align-items:end;block-size:max-content;display:flex;gap:var(--space-xs);max-block-size:stretch}.workcenter-chat .prompt-input{background:transparent;block-size:fit-content;border:0;border-radius:var(--shape-large);box-shadow:none;color:var(--color-on-surface);field-sizing:content;flex:1 1 auto;flex-basis:auto;font:inherit;line-height:var(--leading-normal);max-block-size:stretch;min-block-size:max(var(--touch-min,100%),100%);min-inline-size:0;overflow-y:auto;padding:var(--space-md);resize:none}.workcenter-chat :is(.prompt-input:focus,.prompt-input:hover){background:color-mix(in oklab,var(--color-on-surface) 4%,transparent);border:0;box-shadow:none;outline:0}.workcenter-chat .prompt-input:focus-visible{outline:0}.workcenter-request-options,.workcenter-secondary-panel{background:var(--color-surface-container-high);border:0;border-radius:var(--shape-large);box-shadow:var(--elev-2);display:grid;gap:var(--space-sm);inline-size:min(24rem,100% - var(--space-lg) * 2);inset-block-start:calc(var(--touch-min) + var(--space-lg));inset-inline-end:var(--space-md);padding:var(--space-md);pointer-events:auto;position:absolute;z-index:var(--z-popover,8)}.workcenter-request-options[hidden],.workcenter-secondary-panel[hidden]{display:none!important}:is(.workcenter-request-options,.workcenter-secondary-panel) label{color:var(--color-on-surface-variant);display:grid;font-size:var(--text-xs);gap:var(--space-2xs)}:is(.workcenter-request-options,.workcenter-secondary-panel) select{background-color:var(--color-surface-container-low);border:0;border-radius:var(--shape-small);min-block-size:var(--touch-min);padding:var(--space-sm) var(--space-md);pointer-events:auto}:is(.workcenter-request-options,.workcenter-secondary-panel) select:focus-visible{border:0;box-shadow:var(--focus-ring)}:is(.workcenter-request-options,.workcenter-secondary-panel) button{max-block-size:2rem;max-inline-size:2rem}.workcenter-secondary-panel{inline-size:fit-content;inset-block-start:calc(var(--touch-min) + var(--space-lg))}.wc-attachment-viewer{background:var(--color-surface-container-high);border:0;border-radius:var(--shape-large);box-shadow:var(--elev-3);color:var(--color-on-surface);inline-size:min(56rem,100% - var(--space-lg) * 2);max-block-size:92dvh;max-inline-size:96vw;padding:0}.wc-attachment-viewer::backdrop{background:color-mix(in oklab,black 56%,transparent)}.wc-attachment-viewer__header{align-items:center;display:flex;gap:var(--space-sm);justify-content:space-between;padding:var(--space-sm) var(--space-md)}.wc-attachment-viewer__header h3{font-size:var(--text-sm);margin:0;min-inline-size:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.wc-attachment-viewer__body{max-block-size:80dvh;overflow:auto;padding:0 var(--space-md) var(--space-md)}.wc-attachment-viewer__frame{border:0;display:block;inline-size:100%;max-block-size:80dvh;min-block-size:min(32rem,70dvh);object-fit:contain}.wc-attachment-viewer__frame,.wc-attachment-viewer__text{background:color-mix(in oklab,var(--color-on-surface) 6%,transparent);border-radius:var(--shape-small)}.wc-attachment-viewer__text{font-family:var(--font-family-mono);font-size:var(--text-sm);margin:0;overflow:auto;overflow-wrap:anywhere;padding:var(--space-sm);white-space:pre-wrap}@container (max-inline-size: 640px){.workcenter-chat{gap:var(--space-sm);padding:var(--space-sm)}.workcenter-transcript{padding-inline:0}.workcenter-message{max-inline-size:100%}.workcenter-header h2{font-size:var(--text-base)}.wc-icon-button,.wc-quiet-button,.wc-send-button{min-block-size:2.75rem;min-inline-size:2.75rem}}}@layer components{.action-details-modal,.action-history-modal,.template-editor-modal{align-items:center;display:flex;inset:0;justify-content:center;padding:var(--space-md);position:fixed;z-index:5}.action-details-modal,.action-history-modal{background:rgba(0,0,0,.5)}.template-editor-modal{animation:i var(--motion-fast) ease;backdrop-filter:blur(4px);background:color-mix(in oklab,black 40%,transparent)}:is(.action-details-modal,.action-history-modal,.template-editor-modal) .modal-content{background:var(--color-surface-container-high);border-radius:var(--radius-lg);box-shadow:var(--elev-4);display:flex;flex-direction:column;inline-size:100%;max-block-size:80vh;overflow:hidden}:is(.action-details-modal,.action-history-modal) .modal-content{max-inline-size:90vw}:is(.action-details-modal,.action-history-modal) .modal-header{align-items:center;background:var(--color-surface-container-low);border-block-end:1px solid var(--color-outline-variant);display:flex;justify-content:space-between;padding:var(--space-lg)}:is(.action-details-modal,.action-history-modal) .modal-header h3{color:var(--color-on-surface);font-size:var(--text-lg);font-weight:var(--font-weight-semibold);margin:0}:is(.action-details-modal,.action-history-modal) .modal-header .modal-actions{align-items:center;display:flex;flex-wrap:nowrap;gap:var(--space-sm)}:is(.action-details-modal,.action-history-modal) .modal-body{flex:1;overflow-y:auto;padding:var(--space-lg)}@container (max-inline-size: 768px){:is(.action-details-modal,.action-history-modal) .modal-content{max-block-size:90vh;max-inline-size:95vw}}.template-editor-modal .modal-content{animation:j var(--motion-normal) ease;max-inline-size:640px;padding:var(--space-xl)}@container (max-inline-size: 768px){.template-editor-modal .modal-content{max-block-size:90vh;max-inline-size:95vw;padding:var(--space-lg)}}.template-editor-modal .modal-content .modal-header{display:grid;gap:var(--space-xs);margin-block-end:var(--space-lg)}.template-editor-modal .modal-content .modal-header h3{color:var(--color-on-surface);font-size:var(--text-lg);font-weight:var(--font-weight-semibold);margin:0}.template-editor-modal .modal-content .modal-header .modal-desc{color:var(--color-on-surface-variant);font-size:var(--text-xs);line-height:1.5;margin:0;opacity:.85}.template-editor-modal .modal-content>h3{color:var(--color-on-surface);font-size:var(--text-lg);font-weight:var(--font-weight-semibold);margin:0 0 var(--space-lg) 0}.template-editor-modal .modal-content .template-list{display:flex;flex:1;flex-direction:column;gap:var(--space-md);overflow-y:auto;scrollbar-color:var(--color-outline-variant) transparent;scrollbar-width:thin}.template-editor-modal .modal-content .template-list .template-item{background:var(--color-surface-container);border:1px solid var(--color-outline-variant);border-radius:var(--radius-md);display:flex;flex-direction:column;gap:var(--space-sm);padding:var(--space-md);transition:border-color var(--motion-fast)}.template-editor-modal .modal-content .template-list .template-item:hover{border-color:var(--color-primary)}.template-editor-modal .modal-content .template-list .template-item .template-item-header{align-items:center;display:flex;gap:var(--space-sm)}.template-editor-modal .modal-content .template-list .template-item :is(input,textarea){background:var(--color-surface);border:1px solid var(--color-outline);border-radius:var(--radius-sm);color:var(--color-on-surface);font-family:inherit;font-size:var(--text-sm);padding:var(--space-sm);transition:border-color var(--motion-fast)}.template-editor-modal .modal-content .template-list .template-item :is(input:focus,textarea:focus){border-color:var(--color-primary);box-shadow:0 0 0 2px color-mix(in oklab,var(--color-primary) 20%,transparent);outline:none}.template-editor-modal .modal-content .template-list .template-item input::placeholder,.template-editor-modal .modal-content .template-list .template-item textarea::placeholder{color:var(--color-on-surface-variant);opacity:.6}.template-editor-modal .modal-content .template-list .template-item input{flex:1;font-weight:var(--font-weight-medium)}.template-editor-modal .modal-content .template-list .template-item textarea{font-family:var(--font-family-mono);line-height:1.5;min-block-size:80px;resize:vertical}.template-editor-modal .modal-content .template-list .template-item .remove-template{align-items:center;background:transparent;border:1px solid var(--color-outline-variant);border-radius:var(--radius-sm);color:var(--color-on-surface-variant);cursor:pointer;display:flex;flex-shrink:0;font-size:var(--text-sm);justify-content:center;min-block-size:28px;min-inline-size:28px;padding:var(--space-xs);transition:all var(--motion-fast)}.template-editor-modal .modal-content .template-list .template-item .remove-template:hover{background:color-mix(in oklab,var(--color-error) 12%,transparent);border-color:var(--color-error);color:var(--color-error)}.template-editor-modal .modal-content .modal-actions{border-block-start:1px solid var(--color-outline-variant);justify-content:space-between;padding-block-start:var(--space-lg)}.template-editor-modal .modal-content .modal-actions,.template-editor-modal .modal-content .modal-actions .modal-actions-group{align-items:center;block-size:max-content;display:flex;flex-wrap:nowrap;gap:var(--space-sm);max-block-size:stretch}.template-editor-modal .modal-content .modal-actions .modal-actions-group-start{block-size:max-content;flex:1 1 320px;max-block-size:max-content}.template-editor-modal .modal-content .modal-actions .modal-actions-group-end{justify-content:flex-end}.template-editor-modal .modal-content .modal-actions .btn{align-items:center;border-radius:var(--radius-md);cursor:pointer;display:inline-flex;font-size:var(--text-sm);font-weight:var(--font-weight-medium);gap:var(--space-xs);justify-content:center;line-height:1;min-block-size:2.25rem;padding:var(--space-sm) var(--space-lg);transition:all var(--motion-fast);white-space:nowrap}.template-editor-modal .modal-content .modal-actions .btn.primary{background:var(--color-primary);border:1px solid var(--color-primary);color:var(--color-on-primary)}.template-editor-modal .modal-content .modal-actions .btn.primary:hover{background:color-mix(in oklab,var(--color-primary) 90%,black)}.template-editor-modal .modal-content .modal-actions .btn:not(.primary){background:var(--color-surface-container);border:1px solid var(--color-outline);color:var(--color-on-surface)}.template-editor-modal .modal-content .modal-actions .btn:not(.primary):hover{background:var(--color-surface-container-high)}@container (max-inline-size: 560px){.template-editor-modal .modal-content .modal-actions{align-items:stretch;flex-direction:column}.template-editor-modal .modal-content .modal-actions .modal-actions-group{inline-size:100%}.template-editor-modal .modal-content .modal-actions .btn{flex:1 1 calc(50% - var(--space-sm))}}.action-history-modal .history-stats{display:flex;gap:var(--space-md);margin-block-end:var(--space-lg)}@container (max-inline-size: 768px){.action-history-modal .history-stats{flex-direction:column;gap:var(--space-sm)}}.action-history-modal .history-stats .stat-card{background:var(--color-surface-container);border:1px solid var(--color-outline-variant);border-radius:var(--radius-md);flex:1;padding:var(--space-md);text-align:center}.action-history-modal .history-stats .stat-card .stat-value{color:var(--color-on-surface);display:block;font-size:var(--text-2xl);font-weight:var(--font-weight-bold);margin-block-end:var(--space-xs)}.action-history-modal .history-stats .stat-card .stat-value.success{color:var(--color-success)}.action-history-modal .history-stats .stat-card .stat-value.error{color:var(--color-error)}.action-history-modal .history-stats .stat-card .stat-label{color:var(--color-on-surface-variant);font-size:var(--text-sm);font-weight:var(--font-weight-medium)}.action-history-modal .history-filters{display:flex;gap:var(--space-md);margin-block-end:var(--space-lg)}@container (max-inline-size: 768px){.action-history-modal .history-filters{flex-direction:column;gap:var(--space-sm)}}.action-history-modal .history-filters .filter-select{appearance:none;-webkit-appearance:none;-moz-appearance:none;background-color:var(--color-surface-container);background-image:url(\"data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' fill='none' viewBox='0 0 24 24'%3E%3Cpath stroke='%2394a3b8' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m6 9 6 6 6-6'/%3E%3C/svg%3E\");background-position:right var(--space-sm) center;background-repeat:no-repeat;background-size:1rem 1rem;border:1px solid var(--color-outline);border-radius:var(--radius-md);color:var(--color-on-surface);cursor:pointer;font-size:var(--text-sm);padding-block:var(--space-sm);padding-inline:var(--space-sm) 2rem}@supports (color:contrast-color(red)){.action-history-modal .history-filters .filter-select{color:contrast-color(var(--color-surface-container))}}.action-history-modal .history-filters .filter-select:focus{border-color:var(--color-primary);outline:none}.action-history-modal .action-history-list{display:flex;flex:1;flex-direction:column;gap:var(--space-sm);overflow-y:auto}.action-history-modal .action-history-list .wc-history-empty{color:var(--color-on-surface-variant);font-style:italic;padding:var(--space-xl);text-align:center}.action-history-modal .action-history-list .action-history-item{background:var(--color-surface-container);border:1px solid var(--color-outline-variant);border-radius:var(--radius-md);padding:var(--space-md);transition:all var(--motion-fast)}.action-history-modal .action-history-list .action-history-item:hover{background:var(--color-surface-container-high);box-shadow:var(--elev-1)}.action-history-modal .action-history-list .action-history-item.completed{border-color:var(--color-success)}.action-history-modal .action-history-list .action-history-item.failed{border-color:var(--color-error)}.action-history-modal .action-history-list .action-history-item.processing{animation:k 2s infinite;border-color:var(--color-primary)}.action-history-modal .action-history-list .action-history-item .action-header{align-items:flex-start;display:flex;gap:var(--space-sm);justify-content:space-between;margin-block-end:var(--space-sm)}@container (max-inline-size: 768px){.action-history-modal .action-history-list .action-history-item .action-header{align-items:stretch;flex-direction:column}}.action-history-modal .action-history-list .action-history-item .action-header .action-meta{display:flex;flex:1;flex-direction:column;gap:var(--space-xs)}.action-history-modal .action-history-list .action-history-item .action-header .action-meta .action-status{align-items:center;display:inline-flex;font-size:var(--text-sm);font-weight:var(--font-weight-medium);gap:var(--space-xs)}.action-history-modal .action-history-list .action-history-item .action-header .action-meta .action-status:before{block-size:8px;border-radius:50%;content:\"\";inline-size:8px}.completed .action-history-modal .action-history-list .action-history-item .action-header .action-meta .action-status:before{background:var(--color-success)}.failed .action-history-modal .action-history-list .action-history-item .action-header .action-meta .action-status:before{background:var(--color-error)}.processing .action-history-modal .action-history-list .action-history-item .action-header .action-meta .action-status:before{animation:l 1s infinite;background:var(--color-primary)}.action-history-modal .action-history-list .action-history-item .action-header .action-meta .action-type{color:var(--color-on-surface);font-size:var(--text-sm);font-weight:var(--font-weight-semibold)}.action-history-modal .action-history-list .action-history-item .action-header .action-meta .action-time{color:var(--color-on-surface-variant);font-size:var(--text-xs)}.action-history-modal .action-history-list .action-history-item .action-header .action-meta .action-duration{color:var(--color-primary);font-size:var(--text-xs);font-weight:var(--font-weight-medium)}.action-history-modal .action-history-list .action-history-item .action-header .action-actions{display:flex;flex-shrink:0;gap:var(--space-xs)}.action-history-modal .action-history-list .action-history-item .action-header .action-actions .btn{font-size:var(--text-xs);padding:var(--space-xs) var(--space-sm)}.action-history-modal .action-history-list .action-history-item .action-content{display:flex;flex-direction:column;gap:var(--space-sm)}.action-history-modal .action-history-list .action-history-item .action-content :is(.input-preview,.result-preview){font-size:var(--text-sm)}.action-history-modal .action-history-list .action-history-item .action-content :is(.input-preview,.result-preview) strong{color:var(--color-on-surface);font-weight:var(--font-weight-semibold)}.action-history-modal .action-history-list .action-history-item .action-content :is(.input-preview,.result-preview) .result-content{background:var(--color-surface);border-radius:var(--radius-sm);color:var(--color-on-surface);font-family:var(--font-family-mono);font-size:var(--text-xs);margin-block-start:var(--space-xs);max-block-size:200px;overflow-y:auto;padding:var(--space-sm)}.action-history-modal .action-history-list .action-history-item .action-content .error-preview{background:color-mix(in oklab,var(--color-error) 10%,transparent);border:1px solid color-mix(in oklab,var(--color-error) 30%,transparent);border-radius:var(--radius-sm);color:var(--color-error);font-size:var(--text-sm);padding:var(--space-sm)}.action-history-modal .action-history-list .action-history-item .action-content .error-preview strong{color:var(--color-error)}.action-details-modal .details-grid{display:grid;gap:var(--space-md);grid-template-columns:1fr 1fr;margin-block-end:var(--space-lg)}@container (max-inline-size: 768px){.action-details-modal .details-grid{gap:var(--space-sm);grid-template-columns:1fr}}.action-details-modal .details-grid .detail-item{display:flex;flex-direction:column;gap:var(--space-xs)}.action-details-modal .details-grid .detail-item label{color:var(--color-on-surface);font-size:var(--text-sm);font-weight:var(--font-weight-semibold)}.action-details-modal .details-grid .detail-item span{color:var(--color-on-surface-variant);font-family:var(--font-family-mono);font-size:var(--text-sm)}.action-details-modal .details-grid .detail-item span.status-completed{color:var(--color-success)}.action-details-modal .details-grid .detail-item span.status-failed{color:var(--color-error)}.action-details-modal .details-grid .detail-item span.status-processing{color:var(--color-primary)}.action-details-modal .details-section{margin-block-end:var(--space-lg)}.action-details-modal .details-section:last-child{margin-block-end:0}.action-details-modal .details-section h4{color:var(--color-on-surface);font-size:var(--text-base);font-weight:var(--font-weight-semibold);margin:0 0 var(--space-md) 0}.action-details-modal .details-section :is(.input-details,.result-details){color:var(--color-on-surface-variant);font-size:var(--text-sm);line-height:1.5}.action-details-modal .details-section .error-details{background:color-mix(in oklab,var(--color-error) 10%,transparent);border:1px solid color-mix(in oklab,var(--color-error) 30%,transparent);border-radius:var(--radius-md);color:var(--color-error);font-family:var(--font-family-mono);font-size:var(--text-sm);padding:var(--space-md)}.history-section .history-header{align-items:center;display:flex;justify-content:space-between;margin-block-end:var(--space-md)}.history-section .history-header h3{color:var(--color-on-surface);font-size:var(--text-lg);font-weight:var(--font-weight-semibold);margin:0}.history-section .history-header .history-actions{align-items:center;display:flex;gap:var(--space-sm)}.history-section .recent-history{display:flex;flex-direction:column;gap:var(--space-sm);margin-block-end:var(--space-md)}.history-section .recent-history .wc-history-empty{color:var(--color-on-surface-variant);font-style:italic;padding:var(--space-lg);text-align:center}.history-section .recent-history .history-item-compact{align-items:center;background:var(--color-surface-container);border:1px solid var(--color-outline-variant);border-radius:var(--radius-md);display:flex;justify-content:space-between;padding:var(--space-sm) var(--space-md);transition:all var(--motion-fast)}.history-section .recent-history .history-item-compact:hover{background:var(--color-surface-container-high)}.history-section .recent-history .history-item-compact .history-meta{align-items:center;display:flex;flex:1;gap:var(--space-sm)}.history-section .recent-history .history-item-compact .history-meta .history-status{color:var(--color-success);font-size:var(--text-sm);font-weight:var(--font-weight-medium)}.history-section .recent-history .history-item-compact .history-meta .history-prompt{color:var(--color-on-surface);flex:1;font-size:var(--text-sm)}.history-section .recent-history .history-item-compact .history-meta .history-time{color:var(--color-on-surface-variant);font-size:var(--text-xs);font-weight:var(--font-weight-medium)}.history-section .recent-history .history-item-compact .btn{font-size:var(--text-xs);padding:var(--space-xs) var(--space-sm)}.history-section .action-stats{display:grid;gap:var(--space-sm);grid-template-columns:repeat(auto-fit,minmax(120px,1fr))}.history-section .action-stats .stats-item{background:var(--color-surface-container);border:1px solid var(--color-outline-variant);border-radius:var(--radius-md);padding:var(--space-sm);text-align:center}.history-section .action-stats .stats-item:first-child{background:var(--color-primary-container);border-color:var(--color-primary);color:var(--color-on-primary-container)}.data-pipeline-section{background:var(--color-surface-container);block-size:stretch;border:1px solid var(--color-outline-variant);border-radius:var(--radius-lg);contain:strict;container-type:size;display:flex;flex-direction:column;gap:var(--space-sm);margin-block-start:var(--space-lg);max-block-size:stretch;min-block-size:calc-size(fit-content,min(size,100%));overflow-x:hidden;overflow-y:auto;padding:var(--space-lg);scrollbar-color:var(--color-outline-variant) transparent;scrollbar-width:thin}.data-pipeline-section .pipeline-header{align-items:center;display:flex;justify-content:space-between;margin-block-end:var(--space-lg)}.data-pipeline-section .pipeline-header h3{color:var(--color-on-surface);font-size:var(--text-lg);font-weight:var(--font-weight-semibold);margin:0}.data-pipeline-section .pipeline-header .pipeline-actions{align-items:center;display:flex;gap:var(--space-sm)}.data-pipeline-section .pipeline-steps{display:flex;flex-direction:column;gap:var(--space-md)}.data-pipeline-section .pipeline-steps,.data-pipeline-section .pipeline-steps .pipeline-step{block-size:max-content;inline-size:stretch;max-block-size:fit-content;min-block-size:calc-size(fit-content,min(size,100%));overflow:hidden}.data-pipeline-section .pipeline-steps .pipeline-step{background:var(--color-surface-container-low);border:1px solid var(--color-outline-variant);border-radius:var(--radius-md);padding:var(--space-md);text-overflow:ellipsis}.data-pipeline-section .pipeline-steps .pipeline-step.recognized-step{background:var(--color-secondary-container);border-color:var(--color-secondary)}.data-pipeline-section .pipeline-steps .pipeline-step.processed-step{background:var(--color-tertiary-container);border-color:var(--color-tertiary)}.data-pipeline-section .pipeline-steps .pipeline-step .step-header{align-items:center;display:flex;gap:var(--space-sm);margin-block-end:var(--space-sm)}.data-pipeline-section .pipeline-steps .pipeline-step .step-header ui-icon{color:var(--color-on-surface-variant);flex-shrink:0}.data-pipeline-section .pipeline-steps .pipeline-step .step-header .step-title{color:var(--color-on-surface);flex:1;font-size:var(--text-sm);font-weight:var(--font-weight-semibold)}.data-pipeline-section .pipeline-steps .pipeline-step .step-header .step-time{color:var(--color-on-surface-variant);font-size:var(--text-xs)}.data-pipeline-section .pipeline-steps .pipeline-step .step-header .step-source{color:var(--color-primary);font-size:var(--text-xs);font-weight:var(--font-weight-medium)}.data-pipeline-section .pipeline-steps .pipeline-step .step-header .step-format{color:var(--color-on-surface-variant);font-family:var(--font-family-mono);font-size:var(--text-xs)}.data-pipeline-section .pipeline-steps .pipeline-step .step-header .btn{font-size:var(--text-xs);padding:var(--space-xs) var(--space-sm)}.data-pipeline-section .pipeline-steps .pipeline-step .step-content .step-preview{color:var(--color-on-surface);font-size:var(--text-sm);line-height:1.5;max-block-size:100px;overflow:hidden;text-overflow:ellipsis}}";
 //#endregion
-//#region ../../modules/views/network-view/src/network-probe.ts
-var trim = (value) => typeof value === "string" ? value.trim() : "";
-var isNeutralinoDesktop = () => {
-	try {
-		const g = globalThis;
-		return Boolean(g.__CWS_NEUTRALINO_BOOT__ || g.NL_OS != null || g.Neutralino);
-	} catch {
-		return false;
-	}
-};
-var isWebnativeSurface = () => {
-	try {
-		if (isNeutralinoDesktop()) return false;
-		const g = globalThis;
-		return Boolean(g.__WEBNATIVE_AUTH__ || g.__CWS_WEBNATIVE_BOOT__);
-	} catch {
-		return false;
-	}
-};
-var webnativeControlUrl = (pathname) => {
-	try {
-		const auth = globalThis.__WEBNATIVE_AUTH__;
-		if (!auth?.port) return null;
-		return `http://127.0.0.1:${auth.port}${pathname}`;
-	} catch {
-		return null;
-	}
-};
-var describeFetchError = (error) => {
-	const msg = error instanceof Error ? error.message : String(error ?? "fetch failed");
-	if (/abort/i.test(msg)) return "timeout";
-	if (/refused|ECONNREFUSED/i.test(msg)) return "connection refused";
-	if (/ENOTFOUND|NAME_NOT_RESOLVED/i.test(msg)) return "host not found";
-	if (/certificate|cert\.|ssl|tls|ERR_CERT/i.test(msg)) return `TLS: ${msg}`;
-	if (/failed to fetch/i.test(msg) && isCapacitorCwsNativeShell()) return "WebView fetch blocked (CORS/TLS) — use native bridge";
-	return msg;
-};
-var formatNativeProbeError = (row, ok, status) => {
-	if (ok) return void 0;
-	const bits = [];
-	if (row.error) bits.push(String(row.error));
-	if (status != null && status >= 0 && status !== 204) bits.push(`HTTP ${status}`);
-	return bits.join(" · ") || "unreachable";
-};
-/** Java {@code network:probe} via CwsBridge — bypasses WebView fetch restrictions on LAN HTTPS. */
-async function runNativeRouteProbes(fields) {
-	if (!isCapacitorCwsNativeShell()) return null;
-	const candidates = collectEndpointProbeCandidates(fields);
-	try {
-		const bag = await invokeCwsPlatformIPC({
-			channel: "network:probe",
-			payload: {
-				relay: normalizeProbeOrigin(trim(fields.relay)),
-				direct: normalizeProbeOrigin(trim(fields.direct)),
-				candidates
-			}
-		});
-		const echo = bag.echo;
-		const raw = bag.results ?? echo?.results;
-		if (!Array.isArray(raw) || !raw.length) return null;
-		const seen = /* @__PURE__ */ new Set();
-		const rows = [];
-		for (let index = 0; index < raw.length; index++) {
-			const row = raw[index];
-			const origin = normalizeProbeOrigin(String(row.url ?? ""));
-			if (!origin || seen.has(origin)) continue;
-			seen.add(origin);
-			const ok = Boolean(row.reachable);
-			const status = typeof row.statusCode === "number" ? row.statusCode : void 0;
-			rows.push({
-				label: labelForProbeCandidate(origin, rows.length, fields),
-				origin,
-				ok,
-				status,
-				error: formatNativeProbeError(row, ok, status)
-			});
-		}
-		return rows.length ? rows : null;
-	} catch {
-		return null;
-	}
-}
-/** Native POST `/api/network/dispatch` (Java TLS stack). */
-async function runNativeDispatchProbe(origin, auth) {
-	if (!isCapacitorCwsNativeShell()) return null;
-	const base = normalizeProbeOrigin(origin);
-	if (!base) return null;
-	const started = Date.now();
-	try {
-		const bag = await invokeCwsPlatformIPC({
-			channel: "network:dispatch-probe",
-			payload: {
-				origin: base,
-				clientId: trim(auth.clientId),
-				token: trim(auth.token),
-				accessToken: trim(auth.accessToken)
-			}
-		});
-		const status = typeof bag.statusCode === "number" ? bag.statusCode : void 0;
-		const ok = Boolean(bag.ok);
-		const errorRaw = typeof bag.error === "string" ? bag.error.trim() : "";
-		const bodySnippet = typeof bag.bodySnippet === "string" ? bag.bodySnippet : "";
-		return {
-			origin: base,
-			ok,
-			status,
-			latencyMs: Date.now() - started,
-			bodySnippet,
-			error: ok ? void 0 : errorRaw || (status != null ? `HTTP ${status}` : "dispatch failed")
-		};
-	} catch {
-		return null;
-	}
-}
-/** Probe relay/direct hosts and fleet fallbacks (port scan when bare IP/domain). */
-async function runEndpointProbes(fields, opts = {}) {
-	const nativeRows = await runNativeRouteProbes(fields);
-	if (nativeRows?.length) return nativeRows;
-	const webnativeRows = await runWebnativeBackendProbes(fields);
-	if (webnativeRows?.length) return webnativeRows;
-	const timeoutMs = opts.timeoutMs ?? 3500;
-	const maxCandidates = opts.maxCandidates ?? 6;
-	const rows = [];
-	const origins = collectEndpointProbeCandidates(fields);
-	for (let index = 0; index < origins.length; index++) {
-		const seed = origins[index];
-		const label = labelForProbeCandidate(seed, index, fields);
-		const hostCandidates = buildEndpointOriginCandidates(seed).slice(0, maxCandidates);
-		if (!hostCandidates.length) {
-			rows.push({
-				label,
-				origin: seed,
-				ok: false,
-				error: "invalid host"
-			});
-			continue;
-		}
-		for (const origin of hostCandidates) {
-			const report = await probeEndpointOriginReport(origin, { timeoutMs });
-			rows.push({
-				label,
-				...report
-			});
-			if (report.ok) break;
-		}
-	}
-	return rows;
-}
+//#region ../../modules/views/workcenter-view/src/index.ts
 /**
-* WebNative backend proxy: POST `/service/endpoint-probe` with `dispatch:true` so the backend runs
-* both the `/lna-probe` reachability set AND a `/api/network/dispatch` probe from its loopback
-* context, then return both as a combined snapshot. Returns `null` when not on the WebNative surface
-* or the control RPC is unreachable (so callers fall back to direct fetch).
-*/
-async function runWebnativeBackendProbe(fields, auth) {
-	if (!isWebnativeSurface()) return null;
-	const url = webnativeControlUrl("/service/endpoint-probe");
-	if (!url) return null;
-	const authKey = globalThis.__WEBNATIVE_AUTH__?.key;
-	const origins = collectEndpointProbeCandidates(fields);
-	const controller = typeof AbortController !== "undefined" ? new AbortController() : void 0;
-	const timer = controller ? globalThis.setTimeout(() => controller.abort(), 12e3) : void 0;
-	try {
-		const res = await fetch(url, {
-			method: "POST",
-			headers: authKey ? {
-				"Content-Type": "application/json",
-				"X-API-Key": authKey
-			} : { "Content-Type": "application/json" },
-			body: JSON.stringify({
-				origins,
-				dispatch: true,
-				auth
-			}),
-			signal: controller?.signal
-		});
-		if (!res.ok) return null;
-		const bag = await res.json();
-		return {
-			probes: (bag.rows ?? []).map((r, i) => ({
-				label: labelForProbeCandidate(r.origin, i, fields),
-				origin: r.origin,
-				ok: r.ok,
-				status: r.status,
-				error: r.error,
-				latencyMs: r.latencyMs
-			})),
-			dispatch: bag.dispatch ? {
-				origin: bag.dispatch.origin,
-				ok: bag.dispatch.ok,
-				status: bag.dispatch.status,
-				error: bag.dispatch.error,
-				bodySnippet: bag.dispatch.bodySnippet,
-				latencyMs: bag.dispatch.latencyMs
-			} : void 0
-		};
-	} catch {
-		return null;
-	} finally {
-		if (timer) clearTimeout(timer);
-	}
-}
-var runWebnativeBackendProbes = async (fields) => {
-	const r = await runWebnativeBackendProbe(fields, {});
-	return r?.probes.length ? r.probes : null;
-};
-/** Try dispatch on the first reachable probe origin, then fall back through other OK probes. */
-async function runDispatchProbeWithFallback(probes, fields, auth, timeoutMs = 8e3) {
-	const okOrigins = probes.filter((p) => p.ok).map((p) => normalizeProbeOrigin(p.origin));
-	const seeds = okOrigins.length ? okOrigins : collectEndpointProbeCandidates(fields);
-	let last = {
-		origin: "",
-		ok: false,
-		error: "no origin"
-	};
-	for (const origin of seeds) {
-		last = await runDispatchProbe(origin, auth, timeoutMs);
-		if (last.ok) return last;
-	}
-	return last;
-}
-/** POST `debug:isReady` via `/api/network/dispatch` — surfaces 401/403/405/429 clearly. */
-async function runDispatchProbe(origin, auth, timeoutMs = 8e3) {
-	const base = normalizeProbeOrigin(origin);
-	const started = Date.now();
-	if (!base) return {
-		origin: "",
-		ok: false,
-		error: "no origin"
-	};
-	const native = await runNativeDispatchProbe(base, auth);
-	if (native) return native;
-	const controller = typeof AbortController !== "undefined" ? new AbortController() : void 0;
-	const timer = controller && timeoutMs > 0 ? globalThis.setTimeout(() => controller.abort(), timeoutMs) : void 0;
-	const clientId = trim(auth.clientId);
-	const token = trim(auth.token);
-	const accessToken = trim(auth.accessToken);
-	const headers = { "Content-Type": "application/json" };
-	if (accessToken) headers["x-auth-token"] = accessToken;
-	if (token) headers["x-cws-token"] = token;
-	const body = {
-		userId: clientId,
-		byId: clientId,
-		from: clientId,
-		clientId,
-		userKey: accessToken || token,
-		token: token || accessToken,
-		accessToken: accessToken || token,
-		op: "ask",
-		what: "debug:isReady",
-		payload: {}
-	};
-	try {
-		const res = await fetch(`${base}/api/network/dispatch`, {
-			method: "POST",
-			mode: "cors",
-			cache: "no-store",
-			credentials: "omit",
-			headers,
-			body: JSON.stringify(body),
-			signal: controller?.signal
-		});
-		const text = await res.text().catch(() => "");
-		const latencyMs = Date.now() - started;
-		const ok = res.ok;
-		return {
-			origin: base,
-			ok,
-			status: res.status,
-			statusText: res.statusText,
-			latencyMs,
-			bodySnippet: text.slice(0, 240),
-			error: ok ? void 0 : `HTTP ${res.status}${res.statusText ? ` ${res.statusText}` : ""}`.trim()
-		};
-	} catch (error) {
-		return {
-			origin: base,
-			ok: false,
-			error: describeFetchError(error),
-			latencyMs: Date.now() - started
-		};
-	} finally {
-		if (timer) clearTimeout(timer);
-	}
-}
-/** Split destination id list (`L-196;L-210` / commas / spaces / newlines). */
-var parseDestinationIds = (raw) => {
-	const text = String(raw || "").trim();
-	if (!text) return [];
-	const seen = /* @__PURE__ */ new Set();
-	const out = [];
-	for (const part of text.split(/[,;\s\n\r]+/)) {
-		const id = part.trim();
-		if (!id || seen.has(id)) continue;
-		seen.add(id);
-		out.push(id);
-	}
-	return out;
-};
-/**
-* Ask each destination via gateway `/api/network/dispatch` (`clipboard:isReady`).
-* WHY: verifies node-to-node routing through the coordinator, not just host reachability.
-*/
-async function probeDestinationLinks(destinations, fields, auth, opts = {}) {
-	const ids = destinations.map((d) => d.trim()).filter(Boolean);
-	if (!ids.length) return [];
-	const timeoutMs = opts.timeoutMs ?? 8e3;
-	const origin = [normalizeProbeOrigin(opts.originHint || ""), ...collectEndpointProbeCandidates(fields).map(normalizeProbeOrigin)].filter(Boolean)[0] || "";
-	if (!origin) return ids.map((id) => ({
-		id,
-		ok: false,
-		origin: "",
-		error: "no gateway origin"
-	}));
-	const clientId = trim(auth.clientId);
-	const token = trim(auth.token);
-	const accessToken = trim(auth.accessToken);
-	const results = [];
-	for (const id of ids) {
-		const started = Date.now();
-		const headers = { "Content-Type": "application/json" };
-		if (accessToken) headers["x-auth-token"] = accessToken;
-		if (token) headers["x-cws-token"] = token;
-		const body = {
-			userId: clientId,
-			byId: clientId,
-			from: clientId,
-			clientId,
-			userKey: accessToken || token,
-			token: token || accessToken,
-			accessToken: accessToken || token,
-			op: "ask",
-			what: "clipboard:isReady",
-			purpose: "clipboard",
-			nodes: [id],
-			destinations: [id],
-			payload: {
-				probe: true,
-				destination: id
-			}
-		};
-		if (isCapacitorCwsNativeShell()) try {
-			const bag = await invokeCwsPlatformIPC({
-				channel: "network:dispatch-probe",
-				payload: {
-					origin,
-					clientId,
-					token,
-					accessToken,
-					what: "clipboard:isReady",
-					nodes: [id],
-					destinations: [id]
-				}
-			});
-			const status = typeof bag.statusCode === "number" ? bag.statusCode : void 0;
-			const ok = Boolean(bag.ok);
-			const errorRaw = typeof bag.error === "string" ? bag.error.trim() : "";
-			results.push({
-				id,
-				origin,
-				ok,
-				status,
-				latencyMs: Date.now() - started,
-				bodySnippet: typeof bag.bodySnippet === "string" ? bag.bodySnippet : void 0,
-				error: ok ? void 0 : errorRaw || (status != null ? `HTTP ${status}` : "dispatch failed")
-			});
-			continue;
-		} catch {}
-		const controller = typeof AbortController !== "undefined" ? new AbortController() : void 0;
-		const timer = controller && timeoutMs > 0 ? globalThis.setTimeout(() => controller.abort(), timeoutMs) : void 0;
-		try {
-			const res = await fetch(`${origin}/api/network/dispatch`, {
-				method: "POST",
-				mode: "cors",
-				cache: "no-store",
-				credentials: "omit",
-				headers,
-				body: JSON.stringify(body),
-				signal: controller?.signal
-			});
-			const text = await res.text().catch(() => "");
-			const ok = res.ok;
-			results.push({
-				id,
-				origin,
-				ok,
-				status: res.status,
-				latencyMs: Date.now() - started,
-				bodySnippet: text.slice(0, 240),
-				error: ok ? void 0 : `HTTP ${res.status}${res.statusText ? ` ${res.statusText}` : ""}`.trim()
-			});
-		} catch (error) {
-			results.push({
-				id,
-				origin,
-				ok: false,
-				error: describeFetchError(error),
-				latencyMs: Date.now() - started
-			});
-		} finally {
-			if (timer) clearTimeout(timer);
-		}
-	}
-	return results;
-}
-//#endregion
-//#region ../../modules/views/network-view/src/network-log-export.ts
-/**
-* Copy / save helpers for Network diagnostics page logs.
-*/
-var formatDebugEntry = (row) => {
-	return `${new Date(row.ts).toISOString()} [${row.level}] (${row.scope}) ${row.msg}`;
-};
-/** Text from WebView ring buffer ({@link __CWSP_FRONTEND_DEBUG__}). */
-var collectFrontendLogText = (limit = 400) => {
-	const rows = getFrontendDebugApi()?.tail(limit) ?? [];
-	if (!rows.length) return "(no frontend log entries — boot WebView debug capture first)\n";
-	return rows.map(formatDebugEntry).join("\n") + "\n";
-};
-/** Native logcat snapshot via CwsBridge {@code debug:logcat}. */
-var collectNativeLogcatText = async (limit = 400) => {
-	try {
-		const bag = await invokeCwsPlatformIPC({
-			channel: "debug:logcat",
-			payload: { limit }
-		});
-		const echo = bag.echo;
-		const direct = typeof bag.text === "string" ? bag.text : "";
-		const nested = typeof echo?.text === "string" ? echo.text : "";
-		const text = (direct || nested).trim();
-		if (text) return text.endsWith("\n") ? text : `${text}\n`;
-	} catch (error) {
-		return `(logcat failed: ${error instanceof Error ? error.message : String(error)})\n`;
-	}
-	return "(logcat unavailable — native bridge missing or not on Android)\n";
-};
-/** Pull WebView batches stored in the native ring ({@code debug:append}). */
-var collectNativeFrontendRingText = async (limit = 400) => {
-	try {
-		const bag = await invokeCwsPlatformIPC({
-			channel: "debug:frontend",
-			payload: { limit }
-		});
-		const echo = bag.echo;
-		const text = typeof bag.text === "string" ? bag.text : typeof echo?.text === "string" ? echo.text : "";
-		if (text.trim()) return text.endsWith("\n") ? text : `${text}\n`;
-	} catch {}
-	return "";
-};
-var buildCombinedPageLog = async (pageLog, probeSummary = "") => {
-	const header = [
-		"CWSP Network diagnostics export",
-		`generated: ${(/* @__PURE__ */ new Date()).toISOString()}`,
-		`userAgent: ${navigator.userAgent}`,
-		""
-	].join("\n");
-	const frontend = collectFrontendLogText(500);
-	const nativeRing = await collectNativeFrontendRingText(500);
-	const logcat = await collectNativeLogcatText(500);
-	return [
-		header,
-		"=== Page log ===",
-		pageLog || "(empty)",
-		"",
-		probeSummary ? "=== Probe summary ===\n" + probeSummary + "\n" : "",
-		"=== Frontend log (WebView ring) ===",
-		frontend,
-		nativeRing.trim() ? "=== Frontend log (native ring) ===\n" + nativeRing + "\n" : "",
-		"=== Logcat (native) ===",
-		logcat
-	].filter(Boolean).join("\n");
-};
-var copyTextToClipboard = async (text) => {
-	const payload = text || "(empty log)";
-	try {
-		await writeClipboardTextToDevice(payload);
-		return true;
-	} catch {
-		return false;
-	}
-};
-var saveTextAsDownload = (filename, text) => {
-	const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
-	const url = URL.createObjectURL(blob);
-	const a = document.createElement("a");
-	a.href = url;
-	a.download = filename;
-	a.rel = "noopener";
-	document.body.append(a);
-	a.click();
-	a.remove();
-	URL.revokeObjectURL(url);
-};
-var timestampFilename = (prefix) => {
-	return `${prefix}-${(/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-")}.txt`;
-};
-//#endregion
-//#region ../../modules/views/network-view/src/network-a11y.ts
-/**
-* Network view a11y contract — landmarks, live regions, labeled actions.
+* Work Center View
 *
-* WHY: VIEWS.md asks for accessible live status and log semantics. The panel
-* markup is the surface; this module is the auditable contract tests pin without
-* mounting fest/lure or transport side effects.
+* Shell adapter for the module-based WorkCenter implementation.
 */
-var NETWORK_A11Y = {
-	root: {
-		selector: ".cw-network-view",
-		role: "main",
-		label: "CWSP Network"
-	},
-	statusGrid: {
-		selector: ".cw-network-status-grid",
-		role: "status",
-		ariaLive: "polite",
-		ariaAtomic: "false"
-	},
-	activityLog: {
-		selector: "[data-log]",
-		ariaLive: "polite",
-		ariaRelevant: "additions text",
-		role: "log"
-	},
-	probeList: {
-		selector: "[data-probe-list]",
-		role: "list"
-	},
-	actions: [
-		{
-			action: "test",
-			label: "Run network test"
-		},
-		{
-			action: "reconnect",
-			label: "Reconnect WebSocket"
-		},
-		{
-			action: "open-settings",
-			label: "Open settings"
-		},
-		{
-			action: "copy-frontend-log",
-			label: "Copy frontend log"
-		},
-		{
-			action: "copy-logcat",
-			label: "Copy logcat"
-		},
-		{
-			action: "save-page-logs",
-			label: "Save page logs"
-		}
-	],
-	/** Mobile shell touch-target floor (CSS px). */
-	minTouchTargetPx: 44
-};
 /**
-* Apply Network a11y attributes onto an already-built panel root.
-* Idempotent — safe to call after mount and after re-render of static chrome.
+* WHY: `document.adoptedStyleSheets` entries are global; closing one floating window must not unmount styles for another.
+* WHY: `mountViewModule` runs `render()` before `connectedCallback`/`onMount`, so consumers may attach DOM before CE lifecycle runs.
 */
-var applyNetworkA11y = (root) => {
-	const { root: rootSpec, statusGrid, activityLog, probeList, actions } = NETWORK_A11Y;
-	root.setAttribute("role", rootSpec.role);
-	if (!root.getAttribute("aria-label") && !root.getAttribute("aria-labelledby")) root.setAttribute("aria-label", rootSpec.label);
-	const heading = root.querySelector("h1");
-	if (heading && !heading.id) {
-		heading.id = "cw-network-view-title";
-		root.setAttribute("aria-labelledby", heading.id);
-		root.removeAttribute("aria-label");
-	}
-	const grid = root.querySelector(statusGrid.selector);
-	if (grid instanceof HTMLElement) {
-		grid.setAttribute("role", statusGrid.role);
-		grid.setAttribute("aria-live", statusGrid.ariaLive);
-		grid.setAttribute("aria-atomic", statusGrid.ariaAtomic);
-	}
-	const log = root.querySelector(activityLog.selector);
-	if (log instanceof HTMLElement) {
-		log.setAttribute("role", activityLog.role);
-		log.setAttribute("aria-live", activityLog.ariaLive);
-		log.setAttribute("aria-relevant", activityLog.ariaRelevant);
-	}
-	const probes = root.querySelector(probeList.selector);
-	if (probes instanceof HTMLElement) probes.setAttribute("role", probeList.role);
-	for (const action of actions) {
-		const btn = root.querySelector(`[data-action="${action.action}"]`);
-		if (btn instanceof HTMLElement) {
-			if (!btn.getAttribute("aria-label") && !btn.textContent?.trim()) btn.setAttribute("aria-label", action.label);
-			if (btn instanceof HTMLButtonElement && !btn.type) btn.type = "button";
-		}
-	}
-};
-/**
-* Audit a Network panel root against {@link NETWORK_A11Y}.
-* Returns issues (empty = pass). Does not throw.
-*/
-var auditNetworkA11y = (root) => {
-	const issues = [];
-	const { root: rootSpec, statusGrid, activityLog, probeList, actions } = NETWORK_A11Y;
-	if (root.getAttribute("role") !== rootSpec.role) issues.push({
-		code: "root-role",
-		message: `root role must be "${rootSpec.role}"`
-	});
-	if (!root.getAttribute("aria-label") && !root.getAttribute("aria-labelledby")) issues.push({
-		code: "root-label",
-		message: "root needs aria-label or aria-labelledby"
-	});
-	const grid = root.querySelector(statusGrid.selector);
-	if (!grid) issues.push({
-		code: "status-grid-missing",
-		message: "status grid missing"
-	});
-	else {
-		if (grid.getAttribute("role") !== statusGrid.role) issues.push({
-			code: "status-role",
-			message: `status grid role must be "${statusGrid.role}"`
-		});
-		if (grid.getAttribute("aria-live") !== statusGrid.ariaLive) issues.push({
-			code: "status-live",
-			message: `status grid aria-live must be "${statusGrid.ariaLive}"`
-		});
-	}
-	const log = root.querySelector(activityLog.selector);
-	if (!log) issues.push({
-		code: "log-missing",
-		message: "activity log [data-log] missing"
-	});
-	else {
-		if (log.getAttribute("aria-live") !== activityLog.ariaLive) issues.push({
-			code: "log-live",
-			message: `log aria-live must be "${activityLog.ariaLive}"`
-		});
-		if (log.getAttribute("role") !== activityLog.role) issues.push({
-			code: "log-role",
-			message: `log role must be "${activityLog.role}"`
-		});
-	}
-	const probes = root.querySelector(probeList.selector);
-	if (!probes) issues.push({
-		code: "probe-list-missing",
-		message: "probe list missing"
-	});
-	else if (probes.getAttribute("role") !== probeList.role) issues.push({
-		code: "probe-list-role",
-		message: `probe list role must be "${probeList.role}"`
-	});
-	for (const action of actions) {
-		const btn = root.querySelector(`[data-action="${action.action}"]`);
-		if (!btn) {
-			issues.push({
-				code: `action-missing:${action.action}`,
-				message: `action button data-action="${action.action}" missing`
-			});
-			continue;
-		}
-		if (!Boolean(btn.getAttribute("aria-label") || btn.textContent?.trim())) issues.push({
-			code: `action-label:${action.action}`,
-			message: `action "${action.action}" needs accessible name`
-		});
-	}
-	return issues;
-};
-/**
-* Build a minimal Network chrome fixture for contract tests (no fest/lure).
-* Mirrors the static structure NetworkStatusPanel mounts.
-*/
-var createNetworkA11yFixture = (doc = document) => {
-	const root = doc.createElement("div");
-	root.className = "cw-network-view";
-	root.dataset.view = "network";
-	root.innerHTML = `
-        <header class="cw-network-view__header">
-            <p>Connection status, reachability probes, and dispatch errors.</p>
-        </header>
-        <div class="cw-network-body">
-            <div class="cw-network-status-grid"></div>
-            <div class="cw-network-actions">
-                <button type="button" data-action="test">Run network test</button>
-                <button type="button" data-action="reconnect">Reconnect WS</button>
-                <button type="button" data-action="open-settings">Settings</button>
-            </div>
-            <div class="cw-network-actions cw-network-actions--logs">
-                <button type="button" data-action="copy-frontend-log">Copy Frontend Log</button>
-                <button type="button" data-action="copy-logcat">Copy Logcat</button>
-                <button type="button" data-action="save-page-logs">Save page logs</button>
-            </div>
-            <section class="cw-network-probes">
-                <h2>Probe results</h2>
-                <div data-probe-list></div>
-            </section>
-        </div>
-        <section class="cw-network-log-panel">
-            <h2 class="cw-network-log-panel__title">Activity log</h2>
-            <pre class="cw-network-log" data-log></pre>
-        </section>
-    `;
-	applyNetworkA11y(root);
-	return root;
-};
-//#endregion
-//#region ../../modules/views/network-view/src/network.scss?inline
-var network_default = "@layer ui-network{:is(html[data-theme=light] .cw-network-view-host,html[data-theme=light] .cw-network-view){color-scheme:light only;--sv-bg:var(--sv-surface-2,var(--color-surface-container,--u2-color-mod(var(--base-color,#5a9ec8),40)));--sv-fg:var(--sv-on-surface,var(--color-on-surface,--u2-color-mod(var(--base-color,#5a9ec8),900)));--sv-muted:var(--sv-on-surface-variant,var(--color-on-surface-variant,--u2-color-mod(var(--base-color,#5a9ec8),700)));--sv-outline:var(--sv-outline-variant,var(--color-outline-variant,--u2-color-mod(var(--base-color,#5a9ec8),400)));--sv-surface-1:var(--sv-surface-1,var(--color-surface-container-low,--u2-color-mod(var(--base-color,#5a9ec8),10)));--sv-surface-2:var(--sv-surface-2,var(--color-surface-container,--u2-color-mod(var(--base-color,#5a9ec8),80)))}:is(html[data-theme=dark] .cw-network-view-host,html[data-theme=dark] .cw-network-view){color-scheme:dark only;--sv-bg:var(--sv-surface-2,var(--color-surface-container,--u2-color-mod(var(--base-color,#5a9ec8),1000)));--sv-fg:var(--sv-on-surface,var(--color-on-surface,--u2-color-mod(var(--base-color,#5a9ec8),100)));--sv-muted:var(--sv-on-surface-variant,var(--color-on-surface-variant,--u2-color-mod(var(--base-color,#5a9ec8),280)));--sv-outline:var(--sv-outline-variant,var(--color-outline-variant,--u2-color-mod(var(--base-color,#5a9ec8),640)));--sv-surface-1:var(--sv-surface-1,var(--color-surface-container-low,--u2-color-mod(var(--base-color,#5a9ec8),900)));--sv-surface-2:var(--sv-surface-2,var(--color-surface-container,--u2-color-mod(var(--base-color,#5a9ec8),960)))}.cw-network-view-host{color:var(--sv-fg,var(--color-on-surface))}.cw-network-view,.cw-network-view-host{background:var(--sv-surface-2,var(--sv-bg,var(--color-surface)));block-size:100%;display:flex;flex-direction:column;min-block-size:0;overflow:hidden}.cw-network-view{color:var(--sv-fg,var(--color-on-surface));color-scheme:inherit;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;gap:0;z-index:1;--sv-accent:light-dark(--u2-color-mod(oklch(from var(--sv-primary,var(--color-primary,#5a9ec8)) calc(l * 1.6) calc(c * 2) h),600),--u2-color-mod(oklch(from var(--sv-primary,var(--color-primary,#5a9ec8)) calc(l * 1.6) calc(c * 2) h),400));--sv-on-primary:var(\n        --color-on-primary,light-dark(--u2-color-mod(var(--sv-primary,#5a9ec8),10),--u2-color-mod(var(--sv-primary,#5a9ec8),990))\n    )}.cw-network-view__header{flex:0 0 auto;padding:.85rem 1rem .65rem}.cw-network-view__header h1{color:var(--sv-fg,var(--color-on-surface));font-size:1.15rem;font-weight:650;margin:0}.cw-network-view__header p{color:var(--sv-muted,var(--color-on-surface-variant));font-size:.88rem;margin:.25rem 0 0}.cw-network-body{display:flex;flex:1 1 auto;flex-direction:column;gap:.75rem;min-block-size:0;overflow:auto;overscroll-behavior:contain;padding:0 1rem .75rem}.cw-network-status-grid{display:grid;gap:.55rem}.cw-network-status-card{background:var(--sv-surface-1,var(--sv-surface-1,var(--color-surface-container-low)));border:none;border-radius:16px;color:var(--sv-fg,var(--color-on-surface));display:grid;gap:.35rem;justify-content:start;justify-items:start;padding:.65rem .75rem;text-align:start}.cw-network-status-card[data-state=ok]{background:color-mix(in oklab,var(--color-success,#66bb6a) 16%,var(--sv-surface-1,var(--sv-surface-1,var(--color-surface-container-low))));box-shadow:inset 0 0 0 1px color-mix(in oklab,var(--color-success,#66bb6a) 45%,transparent)}.cw-network-status-card[data-state=bad]{background:color-mix(in oklab,var(--color-error,#f87171) 14%,var(--sv-surface-1,var(--sv-surface-1,var(--color-surface-container-low))));box-shadow:inset 0 0 0 1px color-mix(in oklab,var(--color-error,#f87171) 45%,transparent)}.cw-network-status-card[data-state=warn]{background:color-mix(in oklab,var(--sv-primary,var(--color-primary,#5a9ec8)) 12%,var(--sv-surface-1,var(--sv-surface-1,var(--color-surface-container-low))));box-shadow:inset 0 0 0 1px color-mix(in oklab,var(--sv-primary,var(--color-primary,#5a9ec8)) 28%,transparent)}.cw-network-status-card__title{color:var(--sv-muted,var(--color-on-surface-variant));font-size:.78rem;letter-spacing:.04em;text-transform:uppercase}.cw-network-status-card__value{font-size:1rem;font-weight:600;word-break:break-word}.cw-network-status-card__detail{color:var(--sv-muted,var(--color-on-surface-variant));font-size:.82rem;word-break:break-word}.cw-network-actions{display:flex;flex-wrap:wrap;gap:.5rem}.cw-network-actions button{appearance:none;background:var(--sv-surface-2,var(--sv-surface-2,var(--color-surface-container)));border:none;border-radius:999px;color:var(--sv-fg,var(--color-on-surface));cursor:pointer;font-size:.8125rem;font-weight:500;min-block-size:2.5rem;padding:.5rem 1.125rem;transition:background-color .12s ease,filter .12s ease}@supports (color:contrast-color(red)){.cw-network-actions button{color:contrast-color(var(--sv-surface-2,var(--sv-surface-2,var(--color-surface-container))))}}.cw-network-actions button:hover{background:color-mix(in oklab,var(--sv-fg,var(--color-on-surface)) 6%,var(--sv-surface-1,var(--sv-surface-1,var(--color-surface-container-low))))}.cw-network-actions button.primary{background:var(--sv-accent,var(--sv-primary,var(--color-primary,#5a9ec8)));color:contrast-color(var(--sv-accent,var(--sv-primary,#5a9ec8)))}.cw-network-actions button.primary:hover{background:var(--sv-accent,var(--sv-primary,var(--color-primary,#5a9ec8)));filter:brightness(1.1)}.cw-network-actions button:disabled{cursor:wait;filter:none;opacity:.55}.cw-network-actions--logs button{font-size:.75rem;min-block-size:2rem;padding:.35rem .85rem}.cw-network-dest-field{color:var(--sv-muted,var(--color-on-surface-variant));display:flex;flex-direction:column;font-size:.88rem;gap:.35rem}.cw-network-dest-field input{appearance:none;background:var(--sv-surface-2,var(--sv-surface-2,var(--color-surface-container)));border:none;border-radius:10px;color:var(--sv-fg,var(--color-on-surface));font-size:.9rem;padding:.5rem .75rem}.cw-network-dest-field input:focus-visible{outline:2px solid var(--sv-accent,var(--color-primary,#5a9ec8));outline-offset:2px}.cw-network-dest-hint{color:var(--sv-muted,var(--color-on-surface-variant));font-size:.8rem;margin:0}.cw-network-probes{min-block-size:0}.cw-network-probes,.cw-network-probes [data-probe-list]{display:flex;flex-direction:column;flex-wrap:nowrap;gap:.45rem;min-block-size:max-content}.cw-network-probes h2{color:var(--sv-fg,var(--color-on-surface));font-size:.95rem;margin:0}.cw-network-probe-row{background:var(--sv-surface-1,var(--sv-surface-1,var(--color-surface-container-low)));border-radius:12px;display:grid;font-size:.82rem;gap:.15rem;min-block-size:max-content;padding:.55rem .65rem}.cw-network-probe-row[data-ok=true]{box-shadow:inset 3px 0 0 var(--color-success,#66bb6a)}.cw-network-probe-row[data-ok=false]{box-shadow:inset 3px 0 0 var(--color-error,#f87171)}.cw-network-probe-row__head{display:flex;font-weight:600;gap:.5rem;justify-content:space-between}.cw-network-probe-row__error{color:var(--color-error,#f87171);word-break:break-word}.cw-network-log-panel{background:var(--sv-surface-2,var(--sv-surface-2,var(--color-surface-container)));border-block-start:1px solid color-mix(in oklab,var(--sv-outline,var(--color-outline-variant)) 35%,transparent);display:flex;flex:0 0 auto;flex-direction:column;flex-wrap:nowrap;gap:.35rem;justify-content:start;justify-items:start;max-block-size:min(32vh,11rem);min-block-size:0;min-block-size:max-content;padding:.55rem 1rem .85rem;text-align:start}.cw-network-log-panel__title{color:var(--sv-muted,var(--color-on-surface-variant));flex:0 0 auto;font-size:.72rem;letter-spacing:.04em;margin:0;text-transform:uppercase}.cw-network-log{background:var(--sv-surface-1,var(--sv-surface-1,var(--color-surface-container-low)));border-radius:12px;flex:1 1 auto;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.75rem;justify-content:start;justify-items:start;line-height:1.35;margin:0;min-block-size:3.5rem;overflow:auto;padding:.55rem .65rem;text-align:start;white-space:pre-wrap;word-break:break-word}.cw-network-dropzone,.cw-network-log{color:var(--sv-fg,var(--color-on-surface))}.cw-network-dropzone{background:color-mix(in oklab,var(--sv-primary,var(--color-primary,#5a9ec8)) 12%,var(--sv-surface-1,var(--sv-surface-1,var(--color-surface-container-low))));border:1.5px dashed color-mix(in oklab,var(--sv-primary,var(--color-primary,#5a9ec8)) 45%,var(--sv-outline,var(--color-outline-variant)));border-radius:16px;margin:.75rem 1rem 0;outline:none;padding:1rem 1.1rem;transition:border-color .15s ease,background .15s ease}.cw-network-dropzone:focus-visible{border-color:var(--sv-accent,var(--color-primary,#5a9ec8));box-shadow:0 0 0 2px color-mix(in oklab,var(--sv-accent,var(--color-primary,#5a9ec8)) 35%,transparent)}.cw-network-dropzone.is-dragover{background:color-mix(in oklab,var(--sv-primary,var(--color-primary,#5a9ec8)) 22%,var(--sv-surface-1,var(--sv-surface-1,var(--color-surface-container-low))));border-color:var(--sv-accent,var(--color-primary,#5a9ec8))}.cw-network-dropzone__title{font-size:.95rem;font-weight:650}.cw-network-dropzone__hint{color:var(--sv-muted,var(--color-on-surface-variant));font-size:.82rem;margin:.35rem 0 0}.cw-network-dropzone__status{color:var(--sv-muted,var(--color-on-surface-variant));font-size:.8rem;margin-top:.55rem;min-block-size:1.1em}}";
-//#endregion
-//#region ../../modules/views/network-view/src/NetworkStatusPanel.ts
-/**
-* Network status panel — connection state, HTTP probes, dispatch auth errors.
-*/
-var isCapacitorNative = () => {
-	try {
-		const cap = globalThis.Capacitor;
-		return typeof cap?.isNativePlatform === "function" && Boolean(cap.isNativePlatform());
-	} catch {
-		return false;
-	}
-};
-/**
-* Public Control SPA on VDS (cwsp.u2re.space) — static UI only.
-* WHY: connectWS() intentionally no-ops here so a browser tab does not steal
-* the same clientId as Capacitor/Neutralino on the gateway hub.
-*/
-var isPublicControlSpa = () => {
-	try {
-		if (isCapacitorNative()) return false;
-		if (isNeutralinoNodeClipboardHubOwned()) return false;
-		const surface = String(document.documentElement?.dataset?.cwspSurface || "").toLowerCase();
-		const host = String(location.hostname || "").toLowerCase();
-		if (surface === "cwsp-control") return true;
-		if (host === "cwsp.u2re.space" || host === "www.cwsp.u2re.space") return true;
-		return location.protocol === "https:" && host !== "localhost" && host !== "127.0.0.1";
-	} catch {
-		return false;
-	}
-};
-var DEFAULT_CONTROL_PORT = 29110;
-var DEFAULT_CONTROL_KEY = "cwsp-neutralino-local";
-var readControlAuth = () => {
-	try {
-		const g = globalThis;
-		const auth = g.__WEBNATIVE_AUTH__ || g.__NEUTRALINO_AUTH__;
-		return {
-			port: Number(auth?.port) || DEFAULT_CONTROL_PORT,
-			key: String(auth?.key || DEFAULT_CONTROL_KEY)
-		};
-	} catch {
-		return {
-			port: DEFAULT_CONTROL_PORT,
-			key: DEFAULT_CONTROL_KEY
-		};
-	}
-};
-/** Refresh loopback auth from disk — Cursor.exe often steals :19875; backend may bind :19876+. */
-var refreshControlAuthFromDisk = async () => {
-	try {
-		const g = globalThis;
-		const root = typeof g.NL_PATH === "string" ? g.NL_PATH : "";
-		const readFile = g.Neutralino?.filesystem?.readFile;
-		if (!root || !readFile) return;
-		const raw = await readFile(`${root}/.tmp/cwsp-control-auth.json`);
-		const parsed = JSON.parse(raw);
-		const port = Number(parsed?.port);
-		if (!Number.isFinite(port) || port < 1024 || port === 8434) return;
-		const next = {
-			port,
-			key: String(parsed?.key || "cwsp-neutralino-local")
-		};
-		g.__WEBNATIVE_AUTH__ = next;
-		g.__NEUTRALINO_AUTH__ = next;
-	} catch {}
-};
-var probeControlPort = async (port, key) => {
-	const ctrl = typeof AbortSignal !== "undefined" && typeof AbortSignal.timeout === "function" ? AbortSignal.timeout(1500) : void 0;
-	try {
-		const res = await fetch(`http://127.0.0.1:${port}/service/clipboard-hub`, {
-			method: "GET",
-			headers: { "X-API-Key": key },
-			cache: "no-store",
-			signal: ctrl
-		});
-		if (!res.ok) return null;
-		const json = await res.json();
-		if (typeof json?.running !== "boolean" && typeof json?.connected !== "boolean") return null;
-		return json;
-	} catch {
-		return null;
-	}
-};
-var fetchNodeClipboardHubStatus = async () => {
-	try {
-		const g = globalThis;
-		if (document.documentElement?.dataset?.cwspSurface === "cwsp-control" && !g.__CWS_NODE_CLIPBOARD_HUB__) return null;
-	} catch {}
-	await refreshControlAuthFromDisk();
-	const auth = readControlAuth();
-	const candidates = Array.from(new Set([
-		auth.port,
-		DEFAULT_CONTROL_PORT,
-		29110
-	].filter((p) => p > 1024)));
-	for (const port of candidates) {
-		const status = await probeControlPort(port, auth.key);
-		if (status) {
-			const g = globalThis;
-			g.__WEBNATIVE_AUTH__ = {
-				port,
-				key: auth.key
-			};
-			g.__NEUTRALINO_AUTH__ = {
-				port,
-				key: auth.key
-			};
-			return status;
-		}
-	}
-	return null;
-};
-var reloadNodeClipboardHub = async () => {
-	const discovered = await fetchNodeClipboardHubStatus();
-	const { port, key } = readControlAuth();
-	const ctrl = typeof AbortSignal !== "undefined" && typeof AbortSignal.timeout === "function" ? AbortSignal.timeout(3e3) : void 0;
-	try {
-		const res = await fetch(`http://127.0.0.1:${port}/service/clipboard-hub`, {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-				"X-API-Key": key
-			},
-			body: JSON.stringify({
-				reload: true,
-				force: true
-			}),
-			cache: "no-store",
-			signal: ctrl
-		});
-		if (!res.ok) return discovered;
-		return await res.json();
-	} catch {
-		return discovered;
-	}
-};
-/** Throttle extNode backend.ensure when control host is down. */
-var lastBackendEnsureAt = 0;
-var lastHubHealAt = 0;
-var ensureNeutralinoBackend = async () => {
-	const now = Date.now();
-	if (now - lastBackendEnsureAt < 8e3) return false;
-	lastBackendEnsureAt = now;
-	try {
-		const NL = globalThis.Neutralino;
-		if (!NL?.extensions?.dispatch) return false;
-		await NL.extensions.dispatch("extNode", "runNode", {
-			function: "backend.ensure",
-			parameter: null
-		});
-		return true;
-	} catch {
-		return false;
-	}
-};
-/** When hub is running but /ws dropped, force a reconnect (throttled). */
-var healDisconnectedHub = async () => {
-	const now = Date.now();
-	if (now - lastHubHealAt < 1e4) return null;
-	lastHubHealAt = now;
-	return reloadNodeClipboardHub();
-};
-var formatProbeLine = (row) => {
-	const parts = [`${row.label}: ${row.origin}`];
-	if (row.ok) parts.push(`OK (${row.latencyMs ?? "?"}ms)`);
-	else if (row.status) parts.push(`FAIL HTTP ${row.status}`);
-	if (row.error) parts.push(row.error);
-	return parts.join(" — ");
-};
-var NetworkStatusPanel = class {
-	root = null;
-	sheet = null;
-	wsUnsub = null;
-	nodeHubPoll = null;
-	running = false;
-	logLines = [];
-	probeSummary = "";
-	els = {
-		wsCard: null,
-		wsValue: null,
-		wsDetail: null,
-		nativeCard: null,
-		nativeValue: null,
-		configDetail: null,
-		probeList: null,
-		log: null,
-		testBtn: null,
-		destBtn: null,
-		destInput: null,
-		reconnectBtn: null,
-		filesDropzone: null,
-		filesDropStatus: null
-	};
-	mount(parent) {
-		this.sheet ??= loadAsAdopted(network_default);
-		this.root = H`
-            <div class="cw-network-view" data-view="network">
-                <header class="cw-network-view__header">
-                    <p>Connection status, reachability probes, and dispatch errors.</p>
-                </header>
-
-                <div class="cw-network-body">
-                    <div class="cw-network-status-grid">
-                        <section class="cw-network-status-card" data-state="warn" data-ws-card>
-                            <div class="cw-network-status-card__title">WebSocket hub</div>
-                            <div class="cw-network-status-card__value" data-ws-value>…</div>
-                            <div class="cw-network-status-card__detail" data-ws-detail></div>
-                        </section>
-                        <section class="cw-network-status-card" data-state="warn" data-native-card hidden>
-                            <div class="cw-network-status-card__title">Native runtime</div>
-                            <div class="cw-network-status-card__value" data-native-value>…</div>
-                        </section>
-                        <section class="cw-network-status-card">
-                            <div class="cw-network-status-card__title">Configuration</div>
-                            <div class="cw-network-status-card__detail" data-config-detail>Loading…</div>
-                        </section>
-                    </div>
-
-                    <div class="cw-network-actions">
-                        <button type="button" class="primary" data-action="test">Run network test</button>
-                        <button type="button" data-action="check-destinations">Check destinations</button>
-                        <button type="button" data-action="reconnect">Reconnect WS</button>
-                        <button type="button" data-action="open-settings">Settings</button>
-                    </div>
-
-                    <label class="cw-network-dest-field">
-                        <span>Destination node ids</span>
-                        <input type="text" data-dest-ids placeholder="L-196;L-210;L-208" autocomplete="off" />
-                    </label>
-                    <p class="cw-network-dest-hint">Probe clipboard:isReady to each id via gateway (45.147 / .200) — works for Android↔Android on LAN too.</p>
-
-                    <div class="cw-network-dropzone" data-files-dropzone hidden tabindex="0" role="region" aria-label="Open for Share drop or paste zone">
-                        <div class="cw-network-dropzone__title">Drop or paste files to share</div>
-                        <p class="cw-network-dropzone__hint">Drop or paste (Ctrl+V) files here to Open for Share to configured peers (Neutralino desk).</p>
-                        <div class="cw-network-dropzone__status" data-files-drop-status aria-live="polite"></div>
-                    </div>
-
-                    <div class="cw-network-actions cw-network-actions--logs">
-                        <button type="button" data-action="copy-frontend-log">Copy Frontend Log</button>
-                        <button type="button" data-action="copy-logcat">Copy Logcat</button>
-                        <button type="button" data-action="save-page-logs">Save page logs</button>
-                    </div>
-
-                    <section class="cw-network-probes">
-                        <h2>Probe results</h2>
-                        <div data-probe-list></div>
-                    </section>
-                </div>
-
-                <section class="cw-network-log-panel">
-                    <h2 class="cw-network-log-panel__title">Activity log</h2>
-                    <pre class="cw-network-log" data-log aria-live="polite"></pre>
-                </section>
-            </div>
-        `;
-		this.els.wsCard = this.root.querySelector("[data-ws-card]");
-		this.els.wsValue = this.root.querySelector("[data-ws-value]");
-		this.els.wsDetail = this.root.querySelector("[data-ws-detail]");
-		this.els.nativeCard = this.root.querySelector("[data-native-card]");
-		this.els.nativeValue = this.root.querySelector("[data-native-value]");
-		this.els.configDetail = this.root.querySelector("[data-config-detail]");
-		this.els.probeList = this.root.querySelector("[data-probe-list]");
-		this.els.log = this.root.querySelector("[data-log]");
-		this.els.testBtn = this.root.querySelector("[data-action=\"test\"]");
-		this.els.destBtn = this.root.querySelector("[data-action=\"check-destinations\"]");
-		this.els.destInput = this.root.querySelector("[data-dest-ids]");
-		this.els.reconnectBtn = this.root.querySelector("[data-action=\"reconnect\"]");
-		this.els.filesDropzone = this.root.querySelector("[data-files-dropzone]");
-		this.els.filesDropStatus = this.root.querySelector("[data-files-drop-status]");
-		applyNetworkA11y(this.root);
-		this.els.testBtn?.addEventListener("click", () => void this.runFullTest());
-		this.els.destBtn?.addEventListener("click", () => void this.runDestinationCheck());
-		this.els.reconnectBtn?.addEventListener("click", () => void this.reconnectWs());
-		this.wireFilesDropzone();
-		this.root.querySelector("[data-action=\"open-settings\"]")?.addEventListener("click", () => {
-			globalThis.dispatchEvent(new CustomEvent("cw:view-open-request", { detail: {
-				viewId: "settings",
-				target: "minimal"
-			} }));
-		});
-		this.root.querySelector("[data-action=\"copy-frontend-log\"]")?.addEventListener("click", () => {
-			this.copyFrontendLog();
-		});
-		this.root.querySelector("[data-action=\"copy-logcat\"]")?.addEventListener("click", () => {
-			this.copyLogcat();
-		});
-		this.root.querySelector("[data-action=\"save-page-logs\"]")?.addEventListener("click", () => {
-			this.savePageLogs();
-		});
-		parent.replaceChildren(this.root);
-		this.bootstrap();
-		return this.root;
-	}
-	unmount() {
-		this.wsUnsub?.();
-		this.wsUnsub = null;
-		if (this.nodeHubPoll) {
-			clearInterval(this.nodeHubPoll);
-			this.nodeHubPoll = null;
-		}
-		this.root?.remove();
-		this.root = null;
-	}
-	appendLog(line) {
-		const ts = (/* @__PURE__ */ new Date()).toLocaleTimeString();
-		this.logLines.unshift(`[${ts}] ${line}`);
-		this.logLines = this.logLines.slice(0, 40);
-		if (this.els.log) this.els.log.textContent = this.logLines.join("\n");
-	}
-	setWsUi(connected, detail) {
-		if (!this.els.wsCard || !this.els.wsValue) return;
-		if (isPublicControlSpa()) {
-			this.els.wsCard.dataset.state = "warn";
-			this.els.wsValue.textContent = "N/A — Control SPA";
-			if (this.els.wsDetail) this.els.wsDetail.textContent = detail || "Hub lives on Neutralino/Capacitor → gateway :8434. This page only runs HTTP probes.";
-			return;
-		}
-		if (isCapacitorNative() && isPreferNativeWebsocketEnabled()) {
-			this.els.wsCard.dataset.state = connected ? "ok" : "bad";
-			this.els.wsValue.textContent = connected ? "Java CwspBridge Connected" : "Java CwspBridge Disconnected";
-			if (this.els.wsDetail) this.els.wsDetail.textContent = detail || "CwspBridgeService holds `/ws` — WebView browser WebSocket is not used.";
-			return;
-		}
-		if (isNeutralinoNodeClipboardHubOwned()) {
-			this.els.wsCard.dataset.state = connected ? "ok" : "bad";
-			this.els.wsValue.textContent = connected ? "Node clipboard-hub Connected" : "Node clipboard-hub Disconnected";
-			if (this.els.wsDetail) this.els.wsDetail.textContent = detail || "LAN clipboard uses Node `/service/clipboard-hub` — not the WebView WebSocket API.";
-			return;
-		}
-		this.els.wsCard.dataset.state = connected ? "ok" : "bad";
-		this.els.wsValue.textContent = connected ? "Connected" : "Disconnected";
-		if (this.els.wsDetail) this.els.wsDetail.textContent = detail || "";
-	}
-	async refreshJavaHubStatus() {
-		try {
-			const result = await invokeCwsNative("coordinator:status", {});
-			const echo = result.echo ?? {};
-			const connected = Boolean(echo.wsOpen ?? echo.connected ?? result.ok);
-			const parts = [echo.daemon === false ? "daemon-stopped" : "daemon", connected ? "ws-open" : "ws-closed"];
-			this.setWsUi(connected, parts.join(" · "));
-		} catch (error) {
-			this.setWsUi(false, "Java coordinator:status unreachable");
-			this.appendLog(String(error instanceof Error ? error.message : error));
-		}
-	}
-	applyNodeHubStatus(status) {
-		if (!status) {
-			this.setWsUi(false, `Node clipboard-hub unreachable (:${readControlAuth().port})`);
-			return;
-		}
-		const connected = Boolean(status.connected);
-		const parts = [
-			status.running ? "running" : "stopped",
-			status.localId ? `id=${status.localId}` : "",
-			status.hasToken === false ? "no-token" : "",
-			status.hubUrl ? status.hubUrl : "",
-			status.lastError ? `err=${status.lastError}` : ""
-		].filter(Boolean);
-		this.setWsUi(connected, parts.join(" · "));
-	}
-	renderConfig(settings) {
-		if (!this.els.configDetail) return;
-		const core = settings?.core;
-		const relay = String(core?.endpointUrl ?? "—");
-		const direct = String(core?.ops?.directUrl ?? "—");
-		const clientId = String(core?.userId ?? "—");
-		const route = String(core?.socket?.routeTarget ?? "*");
-		this.els.configDetail.textContent = [
-			`Relay: ${relay}`,
-			`Direct: ${direct}`,
-			`Client: ${clientId}`,
-			`Route: ${route}`
-		].join("\n");
-		if (this.els.destInput && !this.els.destInput.value.trim()) {
-			const share = String(settings?.shell?.clipboardShareDestinationIds || "").trim();
-			this.els.destInput.value = route && route !== "*" ? route : share || "L-196;L-210;L-208";
-		}
-	}
-	renderProbes(snapshot) {
-		if (!this.els.probeList) return;
-		this.els.probeList.replaceChildren();
-		const rows = [...snapshot.probes];
-		if (snapshot.dispatch) {
-			const d = snapshot.dispatch;
-			rows.push({
-				label: "Dispatch /api/network/dispatch",
-				origin: d.origin,
-				ok: d.ok,
-				status: d.status,
-				statusText: d.statusText,
-				error: d.error || (d.bodySnippet ? d.bodySnippet.slice(0, 120) : void 0),
-				latencyMs: d.latencyMs
-			});
-		}
-		for (const dest of snapshot.destinations || []) rows.push({
-			label: `Destination ${dest.id}`,
-			origin: dest.origin || dest.id,
-			ok: dest.ok,
-			status: dest.status,
-			error: dest.error || (dest.bodySnippet ? dest.bodySnippet.slice(0, 120) : void 0),
-			latencyMs: dest.latencyMs
-		});
-		if (!rows.length) {
-			const empty = document.createElement("p");
-			empty.textContent = "No probes yet — tap Run network test.";
-			empty.style.opacity = "0.75";
-			empty.style.fontSize = "0.85rem";
-			this.els.probeList.append(empty);
-			return;
-		}
-		for (const row of rows) {
-			const el = H`
-                <div class="cw-network-probe-row" data-ok="${row.ok ? "true" : "false"}">
-                    <div class="cw-network-probe-row__head">
-                        <span>${row.label}</span>
-                        <span>${row.ok ? "OK" : "FAIL"}${row.latencyMs != null ? ` · ${row.latencyMs}ms` : ""}</span>
-                    </div>
-                    <div>${row.origin}</div>
-                    ${row.error ? `<div class="cw-network-probe-row__error">${row.error}</div>` : ""}
-                </div>
-            `;
-			this.els.probeList.append(el);
-		}
-	}
-	/**
-	* Neutralino desk: drop or paste files onto the Network view to Open-for-Share.
-	* WHY: Explorer Copy is one path; drag-drop / Ctrl+V in the CWSP window are
-	* explicit share paths. Absolute paths come from Neutralino/Chromium
-	* `File.path`; paste falls back to Node reading OS CF_HDROP.
-	*/
-	wireFilesDropzone() {
-		const zone = this.els.filesDropzone;
-		if (!zone) return;
-		if (!isNeutralinoNodeClipboardHubOwned() || isPublicControlSpa()) {
-			zone.hidden = true;
-			return;
-		}
-		zone.hidden = false;
-		const setStatus = (msg) => {
-			if (this.els.filesDropStatus) this.els.filesDropStatus.textContent = msg;
-			this.appendLog(msg);
-		};
-		const runIngress = (label, paths, fromClipboard) => {
-			this.ingressFilesForShare(paths, fromClipboard).then((msg) => setStatus(msg), (err) => setStatus(`${label} failed: ${err instanceof Error ? err.message : String(err)}`));
-		};
-		const onDrag = (e) => {
-			e.preventDefault();
-			e.stopPropagation();
-			zone.classList.toggle("is-dragover", e.type === "dragover" || e.type === "dragenter");
-			if (e.type === "dragleave" || e.type === "drop") zone.classList.remove("is-dragover");
-		};
-		zone.addEventListener("dragenter", onDrag);
-		zone.addEventListener("dragover", onDrag);
-		zone.addEventListener("dragleave", onDrag);
-		zone.addEventListener("drop", (e) => {
-			onDrag(e);
-			runIngress("Drop", this.pathsFromFileList(e.dataTransfer?.files), false);
-		});
-		const onPaste = (e) => {
-			const t = e.target;
-			if (t && (t.closest("input, textarea, [contenteditable='true']") || t.tagName === "INPUT" || t.tagName === "TEXTAREA")) return;
-			const paths = this.pathsFromFileList(e.clipboardData?.files);
-			const hasFileItems = Array.from(e.clipboardData?.items || []).some((it) => it.kind === "file");
-			const types = Array.from(e.clipboardData?.types || []);
-			const plain = String(e.clipboardData?.getData("text/plain") || "").trim();
-			if (!(hasFileItems || paths.length > 0 || types.some((ty) => /Files|text\/uri-list|CF_HDROP/i.test(ty)) || zone.contains(t) || t === zone || !plain && this.root.contains(t))) return;
-			e.preventDefault();
-			e.stopPropagation();
-			runIngress("Paste", paths, paths.length === 0);
-		};
-		zone.addEventListener("paste", onPaste);
-		this.root.addEventListener("paste", onPaste);
-	}
-	/** Absolute paths from Neutralino/WebView2 File.path (empty in normal browsers). */
-	pathsFromFileList(files) {
-		if (!files || files.length === 0) return [];
-		const paths = [];
-		for (let i = 0; i < files.length; i++) {
-			const f = files.item(i);
-			if (!f) continue;
-			const p = String(f.path || "").trim();
-			if (p) paths.push(p);
-		}
-		return paths;
-	}
-	async ingressFilesForShare(paths, fromClipboard) {
-		if (!fromClipboard && paths.length === 0) return "No files to share.";
-		await refreshControlAuthFromDisk();
-		const auth = readControlAuth();
-		const res = await fetch(`http://127.0.0.1:${auth.port}/service/files-ingress`, {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-				"X-API-Key": auth.key
-			},
-			body: JSON.stringify(fromClipboard ? {
-				fromClipboard: true,
-				paths
-			} : { paths })
-		});
-		const body = await res.json().catch(() => ({}));
-		if (!res.ok || body.ok === false) throw new Error(String(body.error || `HTTP ${res.status}`));
-		return `Shared ${Number(body.fileCount || paths.length || 0)} file(s) → transfer ${String(body.transferId || "?")} (${String(body.phase || "ok")})`;
-	}
-	async bootstrap() {
-		initFrontendDebugCapture();
-		const publicHttpsSpa = isPublicControlSpa();
-		if (publicHttpsSpa) {
-			this.els.nativeCard?.removeAttribute("hidden");
-			if (this.els.nativeValue) this.els.nativeValue.textContent = "Browser · no local hub";
-			if (this.els.nativeCard) this.els.nativeCard.dataset.state = "warn";
-			this.setWsUi(false);
-			if (this.els.reconnectBtn) {
-				this.els.reconnectBtn.disabled = true;
-				this.els.reconnectBtn.title = "Fleet /ws is owned by Neutralino/Capacitor — use Run network test here.";
-			}
-			const settings = await loadSettings().catch(() => null);
-			this.renderConfig(settings);
-			this.appendLog("Control SPA — WebSocket hub N/A (use Neutralino/Capacitor for live /ws).");
-			this.appendLog("Ready — tap Run network test for HTTP/dispatch probes.");
-			return;
-		}
-		if (!publicHttpsSpa && isNeutralinoNodeClipboardHubOwned()) {
-			this.els.nativeCard?.removeAttribute("hidden");
-			if (this.els.nativeValue) this.els.nativeValue.textContent = "Node clipboard-hub";
-			if (this.els.nativeCard) this.els.nativeCard.dataset.state = "ok";
-			const refresh = async () => {
-				try {
-					await refreshControlAuthFromDisk();
-					let status = await fetchNodeClipboardHubStatus();
-					if (status?.running && !status.connected) {
-						const healed = await healDisconnectedHub();
-						if (healed) status = healed;
-					}
-					this.applyNodeHubStatus(status);
-					if (!status) {
-						if (await ensureNeutralinoBackend()) this.appendLog("Requested backend.ensure (control unreachable).");
-					}
-				} catch (error) {
-					this.applyNodeHubStatus(null);
-					ensureNeutralinoBackend();
-					this.appendLog(String(error instanceof Error ? error.message : error));
-				}
-			};
-			await refresh();
-			this.nodeHubPoll = setInterval(() => void refresh(), 2500);
-			const onVisible = () => {
-				if (document.visibilityState !== "visible") return;
-				(async () => {
-					const status = await fetchNodeClipboardHubStatus();
-					if (!status) {
-						if (await ensureNeutralinoBackend()) this.appendLog("Wake: backend.ensure (control was down).");
-						return;
-					}
-					if (status.running && !status.connected) {
-						const healed = await healDisconnectedHub();
-						if (healed) {
-							this.applyNodeHubStatus(healed);
-							this.appendLog("Wake: clipboard-hub reload requested.");
-						}
-					}
-				})();
-			};
-			document.addEventListener("visibilitychange", onVisible);
-			window.addEventListener("pageshow", onVisible);
-			const settings = await loadSettings().catch(() => null);
-			this.renderConfig(settings);
-			this.appendLog("Ready — WebSocket status from Node clipboard-hub (not WebView).");
-			return;
-		}
-		if (isCapacitorNative() && isPreferNativeWebsocketEnabled()) {
-			this.els.nativeCard?.removeAttribute("hidden");
-			try {
-				const info = await CwsBridge.getShellInfo();
-				if (this.els.nativeValue) this.els.nativeValue.textContent = info.native ? `Capacitor · Java /ws · ${info.platform ?? "android"}` : "Web fallback";
-				if (this.els.nativeCard) this.els.nativeCard.dataset.state = info.native ? "ok" : "warn";
-			} catch (error) {
-				if (this.els.nativeValue) this.els.nativeValue.textContent = "Bridge unavailable";
-				this.appendLog(String(error instanceof Error ? error.message : error));
-			}
-			await this.refreshJavaHubStatus();
-			this.nodeHubPoll = setInterval(() => void this.refreshJavaHubStatus(), 2500);
-			const onCapVisible = () => {
-				if (document.visibilityState !== "visible") return;
-				(async () => {
-					await this.refreshJavaHubStatus();
-					if (!(this.els.wsCard?.dataset.state === "ok")) {
-						this.appendLog("Wake: Java /ws reconnect…");
-						try {
-							const result = await invokeCwsNative("runtime:reload-settings", {});
-							await this.refreshJavaHubStatus();
-							this.appendLog(result?.ok ? "Wake: Java /ws reconnect requested." : "Wake: Java /ws reconnect failed.");
-						} catch (error) {
-							this.appendLog(String(error instanceof Error ? error.message : error));
-						}
-					}
-				})();
-			};
-			document.addEventListener("visibilitychange", onCapVisible);
-			window.addEventListener("pageshow", onCapVisible);
-			const settings = await loadSettings().catch(() => null);
-			this.renderConfig(settings);
-			this.appendLog("Ready — WebSocket status from Java CwspBridgeService (not WebView).");
-			return;
-		}
-		initWebSocket(null);
-		this.wsUnsub = onWSConnectionChange((connected) => {
-			this.setWsUi(connected);
-		});
-		this.setWsUi(isWSConnected());
-		if (isCapacitorNative()) {
-			this.els.nativeCard?.removeAttribute("hidden");
-			try {
-				const info = await CwsBridge.getShellInfo();
-				if (this.els.nativeValue) this.els.nativeValue.textContent = info.native ? `Capacitor · ${info.platform ?? "android"}` : "Web fallback";
-				if (this.els.nativeCard) this.els.nativeCard.dataset.state = info.native ? "ok" : "warn";
-			} catch (error) {
-				if (this.els.nativeValue) this.els.nativeValue.textContent = "Bridge unavailable";
-				this.appendLog(String(error instanceof Error ? error.message : error));
-			}
-		}
-		const settings = await loadSettings().catch(() => null);
-		this.renderConfig(settings);
-		this.appendLog("Ready — tap Run network test for full probe.");
-	}
-	async reconnectWs() {
-		if (isPublicControlSpa()) {
-			this.appendLog("Reconnect WS skipped — Control SPA does not own fleet /ws (would kick Capacitor/Neutralino).");
-			this.appendLog("Use Run network test / Check destinations, or reconnect from the desk/phone app.");
-			this.setWsUi(false);
-			return;
-		}
-		if (isCapacitorNative() && isPreferNativeWebsocketEnabled()) {
-			this.appendLog("Reconnecting Java CwspBridge /ws…");
-			try {
-				const result = await invokeCwsNative("runtime:reload-settings", {});
-				await this.refreshJavaHubStatus();
-				this.appendLog(result?.ok ? "Java /ws reconnect requested" : "Java /ws reconnect failed");
-			} catch (error) {
-				this.appendLog(String(error instanceof Error ? error.message : error));
-			}
-			return;
-		}
-		if (isNeutralinoNodeClipboardHubOwned()) {
-			this.appendLog("Reloading Node clipboard-hub…");
-			try {
-				const status = await reloadNodeClipboardHub();
-				this.applyNodeHubStatus(status);
-				this.appendLog(status?.connected ? "Node clipboard-hub reconnected" : `Node clipboard-hub not connected${status?.lastError ? `: ${status.lastError}` : ""}`);
-			} catch (error) {
-				this.applyNodeHubStatus(null);
-				this.appendLog(String(error instanceof Error ? error.message : error));
-			}
-			return;
-		}
-		this.appendLog("Reconnecting WebSocket…");
-		disconnectWS();
-		connectWS();
-	}
-	async runFullTest() {
-		if (this.running) return;
-		this.running = true;
-		if (this.els.testBtn) this.els.testBtn.disabled = true;
-		try {
-			const settings = await loadSettings().catch(() => null);
-			this.renderConfig(settings);
-			const core = settings?.core;
-			const relay = String(core?.endpointUrl ?? "");
-			const direct = String(core?.ops?.directUrl ?? "");
-			const clientId = String(core?.userId ?? "");
-			const eco = resolveEcosystemToken(settings);
-			const token = eco;
-			const accessToken = eco;
-			this.appendLog("Running /lna-probe on relay, direct, and fallback hosts…");
-			const webnative = await runWebnativeBackendProbe({
-				relay,
-				direct
-			}, {
-				clientId,
-				token,
-				accessToken
-			});
-			let probes;
-			let dispatch;
-			if (webnative?.probes.length) {
-				probes = webnative.probes;
-				dispatch = webnative.dispatch;
-				this.appendLog("Probes via WebNative backend control RPC (/service/endpoint-probe).");
-			} else {
-				probes = await runEndpointProbes({
-					relay,
-					direct
-				});
-				if (isCapacitorNative() && probes.length && probes[0]?.label.startsWith("Relay")) this.appendLog("Probes via native Java bridge (network:probe).");
-			}
-			for (const row of probes) this.appendLog(formatProbeLine(row));
-			const okCount = probes.filter((p) => p.ok).length;
-			if (!dispatch && (okCount || relay || direct)) {
-				this.appendLog(okCount ? `Testing dispatch on ${okCount} reachable host(s)…` : "Testing dispatch on configured hosts (all probes failed)…");
-				dispatch = await runDispatchProbeWithFallback(probes, {
-					relay,
-					direct
-				}, {
-					clientId,
-					token,
-					accessToken
-				});
-			}
-			if (dispatch) {
-				if (dispatch.ok) this.appendLog(`Dispatch OK (${dispatch.latencyMs ?? "?"}ms)`);
-				else this.appendLog(`Dispatch FAIL: ${dispatch.error ?? dispatch.status}${dispatch.bodySnippet ? ` — ${dispatch.bodySnippet.slice(0, 80)}` : ""}`);
-			}
-			this.renderProbes({
-				probes,
-				dispatch
-			});
-			this.probeSummary = [...probes.map(formatProbeLine), dispatch ? `Dispatch: ${dispatch.ok ? "OK" : "FAIL"} ${dispatch.origin} ${dispatch.error ?? dispatch.status ?? ""}` : ""].filter(Boolean).join("\n");
-			if (isPublicControlSpa()) this.setWsUi(false);
-			else if (!isNeutralinoNodeClipboardHubOwned() && (!isCapacitorNative() || !isPreferNativeWebsocketEnabled())) {
-				if (!isWSConnected() && isMaintainHubSocketConnectionEnabled()) connectWS();
-			} else if (isNeutralinoNodeClipboardHubOwned()) try {
-				this.applyNodeHubStatus(await fetchNodeClipboardHubStatus());
-			} catch {}
-			else if (isCapacitorNative() && isPreferNativeWebsocketEnabled()) await this.refreshJavaHubStatus();
-		} catch (error) {
-			this.appendLog(String(error instanceof Error ? error.message : error));
-		} finally {
-			this.running = false;
-			if (this.els.testBtn) this.els.testBtn.disabled = false;
-		}
-	}
-	async runDestinationCheck() {
-		if (this.running) return;
-		this.running = true;
-		if (this.els.destBtn) this.els.destBtn.disabled = true;
-		if (this.els.testBtn) this.els.testBtn.disabled = true;
-		try {
-			const settings = await loadSettings().catch(() => null);
-			this.renderConfig(settings);
-			const core = settings?.core;
-			const relay = String(core?.endpointUrl ?? "");
-			const direct = String(core?.ops?.directUrl ?? "");
-			const clientId = String(core?.userId ?? "");
-			const eco = resolveEcosystemToken(settings);
-			const ids = parseDestinationIds(this.els.destInput?.value?.trim() || String(core?.socket?.routeTarget || "") || String(settings?.shell?.clipboardShareDestinationIds || ""));
-			if (!ids.length) {
-				this.appendLog("No destination ids — enter L-196;L-210;… or set routeTarget in Settings.");
-				return;
-			}
-			this.appendLog(`Checking ${ids.length} destination(s) via gateway: ${ids.join(", ")}`);
-			const destinations = await probeDestinationLinks(ids, {
-				relay,
-				direct
-			}, {
-				clientId,
-				token: eco,
-				accessToken: eco
-			});
-			for (const row of destinations) this.appendLog(`Dest ${row.id}: ${row.ok ? "OK" : "FAIL"}${row.latencyMs != null ? ` (${row.latencyMs}ms)` : ""}${row.error ? ` — ${row.error}` : ""}`);
-			this.renderProbes({
-				probes: [],
-				destinations
-			});
-			this.probeSummary = destinations.map((d) => `Dest ${d.id}: ${d.ok ? "OK" : "FAIL"} ${d.origin} ${d.error ?? d.status ?? ""}`).join("\n");
-		} catch (error) {
-			this.appendLog(String(error instanceof Error ? error.message : error));
-		} finally {
-			this.running = false;
-			if (this.els.destBtn) this.els.destBtn.disabled = false;
-			if (this.els.testBtn) this.els.testBtn.disabled = false;
-		}
-	}
-	pageLogText() {
-		return [...this.logLines].reverse().join("\n");
-	}
-	async copyFrontendLog() {
-		try {
-			await initFrontendDebugCapture().flush?.();
-		} catch {}
-		const ok = await copyTextToClipboard(collectFrontendLogText(600));
-		this.appendLog(ok ? "Frontend log copied to clipboard." : "Copy failed — check clipboard permission.");
-	}
-	async copyLogcat() {
-		this.appendLog("Reading logcat…");
-		const ok = await copyTextToClipboard(await collectNativeLogcatText(600));
-		this.appendLog(ok ? "Logcat copied to clipboard." : "Logcat copy failed.");
-	}
-	async savePageLogs() {
-		this.appendLog("Building page log export…");
-		const combined = await buildCombinedPageLog(this.pageLogText(), this.probeSummary);
-		const name = timestampFilename("cwsp-network");
-		saveTextAsDownload(name, combined);
-		this.appendLog(`Saved ${name}`);
-	}
-};
-//#endregion
-//#region ../../modules/views/network-view/src/network-capability.ts
-/**
-* Detect Network surface from runtime globals (Capacitor → WebNative → web).
-* WHY: mirrors settings-view surface detection without importing that package.
-*/
-var detectNetworkSurface = (g = globalThis) => {
-	try {
-		if (typeof g.Capacitor?.isNativePlatform === "function" && g.Capacitor.isNativePlatform()) return "capacitor";
-	} catch {}
-	try {
-		if (g.__CWS_NEUTRALINO_BOOT__ || g.NL_OS != null || g.Neutralino) return "web";
-		if (g.__WEBNATIVE_AUTH__ || g.__CWS_WEBNATIVE_BOOT__) return "webnative";
-	} catch {}
-	return "web";
-};
-var cap = (id, layer, state, extra = {}) => ({
-	id,
-	layer,
-	state,
-	...extra
-});
-/**
-* Resolve per-surface Network capabilities.
-*
-* Transport = WS / HTTP probe / dispatch reachability.
-* Platform = native bridge or WebNative control RPC (how probes actually run).
-* Diagnostics = log export paths (frontend always; logcat Capacitor-only).
-*/
-var resolveNetworkCapabilities = (surface, hints = {}) => {
-	const wsNativeOwned = surface === "capacitor" && Boolean(hints.preferNativeWebsocket);
-	const transport = [
-		cap("transport.ws", "transport", wsNativeOwned ? hints.nativeBridgeReady ? "available" : "degraded" : hints.wsConnected ? "available" : "unavailable", {
-			implementation: wsNativeOwned ? "native-java-ws" : "webview-ws",
-			reason: wsNativeOwned ? hints.nativeBridgeReady ? "CwspRuntime owns /ws" : "Native WS preferred but bridge not ready" : hints.wsConnected ? "WebView hub connected" : "WebView hub disconnected"
-		}),
-		cap("transport.http-probe", "transport", hints.httpProbeReady === false ? "unavailable" : "available", {
-			implementation: surface === "capacitor" ? "native-bridge-or-fetch" : surface === "webnative" ? "webnative-control-rpc" : "browser-fetch",
-			reason: hints.httpProbeReady === false ? "No reachable /lna-probe candidate" : "Probe path enabled for surface"
-		}),
-		cap("transport.dispatch", "transport", hints.dispatchReady === false ? "unavailable" : "available", {
-			implementation: surface === "capacitor" ? "network:dispatch-probe" : surface === "webnative" ? "webnative-endpoint-probe" : "http-dispatch",
-			reason: hints.dispatchReady === false ? "Dispatch probe path not ready" : "Dispatch probe path enabled"
-		})
-	];
-	const platform = surface === "capacitor" ? [cap("platform.native-bridge", "platform", hints.nativeBridgeReady ? "available" : "unavailable", {
-		implementation: "CwsBridge",
-		reason: hints.nativeBridgeReady ? "Native IPC ready" : "Native bridge unavailable"
-	}), cap("platform.webnative-control", "platform", "unsupported", { reason: "WebNative control RPC is desktop-only" })] : surface === "webnative" ? [cap("platform.native-bridge", "platform", "unsupported", { reason: "Capacitor native bridge is Android-only" }), cap("platform.webnative-control", "platform", hints.webnativeControlReady === false ? "unavailable" : "available", {
-		implementation: "/service/endpoint-probe",
-		reason: hints.webnativeControlReady === false ? "WebNative auth/control port missing" : "WebNative control RPC available"
-	})] : [cap("platform.native-bridge", "platform", "unsupported", { reason: "Browser surface has no native bridge" }), cap("platform.webnative-control", "platform", "unsupported", { reason: "Browser surface has no WebNative control RPC" })];
-	const diagnostics = [
-		cap("diagnostics.frontend-log", "diagnostics", hints.frontendLogReady === false ? "degraded" : "available", {
-			implementation: "__CWSP_FRONTEND_DEBUG__",
-			reason: hints.frontendLogReady === false ? "Frontend debug capture not started" : "Frontend log ring available"
-		}),
-		cap("diagnostics.logcat", "diagnostics", surface === "capacitor" ? hints.nativeBridgeReady ? "available" : "unavailable" : "unsupported", {
-			implementation: surface === "capacitor" ? "debug:logcat" : void 0,
-			reason: surface === "capacitor" ? hints.nativeBridgeReady ? "Native logcat channel available" : "Logcat requires native bridge" : "Logcat is Capacitor/Android-only"
-		}),
-		cap("diagnostics.page-export", "diagnostics", "available", {
-			implementation: "download-blob",
-			reason: "Page log download always available in Network view"
-		})
-	];
-	return [
-		...transport,
-		...platform,
-		...diagnostics
-	];
-};
-/** True when the surface can run Network probes (platform path + http-probe). */
-var isNetworkProbePathReady = (surface, caps) => {
-	const byId = new Map(caps.map((c) => [c.id, c]));
-	const http = byId.get("transport.http-probe");
-	if (!http || http.state === "unavailable") return false;
-	if (surface === "capacitor") return byId.get("platform.native-bridge")?.state === "available" || http.state === "available";
-	if (surface === "webnative") return byId.get("platform.webnative-control")?.state === "available";
-	return http.state === "available";
-};
-var summarizeNetworkCapabilities = (surface, hints = {}) => {
-	const all = resolveNetworkCapabilities(surface, hints);
-	const transport = all.filter((c) => c.layer === "transport");
-	const platform = all.filter((c) => c.layer === "platform");
-	const diagnostics = all.filter((c) => c.layer === "diagnostics");
-	const ready = isNetworkProbePathReady(surface, all);
+var workcenterDocumentStyles = (() => {
+	let consumers = 0;
+	let sheet = null;
 	return {
-		surface,
-		ready,
-		transport,
-		platform,
-		diagnostics,
-		blocker: ready ? void 0 : all.find((c) => c.state === "unavailable" && (c.id === "transport.http-probe" || c.id === "platform.native-bridge" || c.id === "platform.webnative-control"))
-	};
-};
-//#endregion
-//#region ../../modules/views/network-view/src/index.ts
-var NetworkView = class {
-	id = "network";
-	name = "Network";
-	icon = "wifi-high";
-	options;
-	element = null;
-	panel = null;
-	lifecycle = {
-		onMount: () => {
-			if (!this.element) return;
-			this.panel ??= new NetworkStatusPanel();
-			this.panel.mount(this.element);
+		acquire() {
+			const next = loadAsAdopted(_index_default);
+			if (next) sheet = next;
+			if (sheet) consumers += 1;
+			return sheet;
 		},
-		onUnmount: () => {
-			this.panel?.unmount();
-			this.panel = null;
-			this.element = null;
-		},
-		onShow: () => {
-			if (!this.panel && this.element) {
-				this.panel = new NetworkStatusPanel();
-				this.panel.mount(this.element);
+		release() {
+			if (consumers <= 0 || !sheet) return;
+			consumers -= 1;
+			if (consumers === 0) {
+				removeAdopted(sheet);
+				sheet = null;
 			}
 		}
+	};
+})();
+var WorkCenterView = class WorkCenterView extends UIElement {
+	id = "workcenter";
+	name = "Work Center";
+	icon = "lightning";
+	options;
+	shellContext;
+	element = null;
+	manager = null;
+	deps;
+	initializedFromOptions = false;
+	lastOutputText = "";
+	pendingRenderAfterMount = false;
+	resultObserver = null;
+	_sheet = null;
+	processedInboundMessageIds = /* @__PURE__ */ new Set();
+	pendingMessages = [];
+	/** True after this instance acquired a refcount on the shared workcenter document stylesheet. */
+	leasedDocumentStyles = false;
+	unbindFlushHost = null;
+	lifecycle = {
+		onMount: () => this.onMount(),
+		onUnmount: () => this.onUnmount(),
+		onShow: () => this.onShow(),
+		onHide: () => this.onHide()
 	};
 	constructor(options = {}) {
+		super();
 		this.options = options;
-	}
-	render = (options) => {
-		if (options) this.options = {
-			...this.options,
-			...options
+		this.shellContext = options.shellContext;
+		this.deps = {
+			state: {},
+			history: [],
+			getSpeechPrompt: async () => null,
+			showMessage: (message) => this.showMessage(message),
+			render: () => this.requestRender(),
+			navigate: (viewId) => this.shellContext?.navigate(viewId),
+			onFilesChanged: () => this.emitFilesChanged()
 		};
-		this.panel?.unmount();
-		this.panel = null;
-		this.element = document.createElement("div");
-		this.element.className = "cw-network-view-host";
-		this.element.dataset.view = "network";
-		return this.element;
+	}
+	/**
+	* GLitElement calls `render(weakRef)` when the host is connected; the shell calls `render(options?)`.
+	* Only merge real view options — never a WeakRef from GLit.
+	*/
+	isGlitterWeakRef(arg) {
+		return Boolean(arg && typeof arg.deref === "function");
+	}
+	/** Ensure constructable sheet is on `document` and optional CE shadow (standalone embedded host). */
+	leaseWorkCenterDocumentStyles() {
+		if (this.leasedDocumentStyles) return this._sheet;
+		const sheet = workcenterDocumentStyles.acquire();
+		if (sheet) {
+			this._sheet = sheet;
+			this.leasedDocumentStyles = true;
+		}
+		return sheet;
+	}
+	ensureWorkCenterStylesOnShadow() {
+		const sheet = this.leaseWorkCenterDocumentStyles();
+		const root = this.shadowRoot;
+		if (!sheet || !root?.adoptedStyleSheets) return;
+		if (!root.adoptedStyleSheets.includes(sheet)) root.adoptedStyleSheets = [...root.adoptedStyleSheets, sheet];
+	}
+	onInitialize() {
+		const self = super.onInitialize();
+		this.ensureWorkCenterStylesOnShadow();
+		return self ?? this;
+	}
+	/** Shell passes `ViewOptions`; GLitElement passes a `WeakRef` — ignore the latter for option merging. */
+	render = (weakOrOptions) => {
+		const fromGlit = this.isGlitterWeakRef(weakOrOptions);
+		const options = fromGlit ? void 0 : weakOrOptions;
+		if (options) {
+			this.options = {
+				...this.options,
+				...options
+			};
+			this.shellContext = options.shellContext || this.shellContext;
+		}
+		this.manager ??= new WorkCenterManager(this.deps);
+		if (!this.initializedFromOptions) {
+			this.applyInitialOptions();
+			this.initializedFromOptions = true;
+		}
+		this.unbindFlushHost ??= registerWorkCenterFlushHost(this);
+		this.leaseWorkCenterDocumentStyles();
+		const live = this.connectedChat() ?? this.element;
+		if (live?.querySelector("[data-workcenter-composer]")) {
+			this.element = live;
+			this.manager.adoptLiveRoot(live);
+			if (live.isConnected) this.manager.paintLiveConversation();
+			this.syncPromptInputFromState();
+			this.setupProcessResultObserver();
+			this.emitFilesChanged();
+			return this.hostForShell(fromGlit);
+		}
+		this.element = this.manager.renderWorkCenterView();
+		this.syncPromptInputFromState();
+		this.setupProcessResultObserver();
+		this.emitFilesChanged();
+		/**
+		* Return the CE to the shell. GLit gets a `<slot>` so the chat stays in light DOM.
+		* WHY: share/flush/`querySelector("cw-workcenter-view")` missed the disconnected host
+		* while the visible tree was only `.workcenter-chat`.
+		*/
+		return this.hostForShell(fromGlit);
 	};
+	/** Shell mounts this host; GLit projects light-DOM chat through a shadow slot. */
+	hostForShell(fromGlit) {
+		this.style.display = "flex";
+		this.style.flexDirection = "column";
+		this.style.flex = "1";
+		this.style.minHeight = "0";
+		this.style.height = "100%";
+		if (this.element && this.element.parentNode !== this) this.replaceChildren(this.element);
+		if (fromGlit) return document.createElement("slot");
+		return this;
+	}
 	getToolbar() {
 		return null;
 	}
+	normalizeInitialDataMessage(initialData) {
+		if (!initialData) return null;
+		if (typeof initialData === "string") return {
+			type: "content-share",
+			contentType: "text",
+			data: {
+				text: initialData,
+				content: initialData
+			}
+		};
+		if (initialData instanceof File) return {
+			type: "content-share",
+			contentType: initialData.type || "application/octet-stream",
+			data: {
+				file: initialData,
+				filename: initialData.name
+			}
+		};
+		if (Array.isArray(initialData)) {
+			const files = initialData.filter((entry) => entry instanceof File);
+			if (files.length > 0) return {
+				type: "content-share",
+				contentType: files[0]?.type || "application/octet-stream",
+				data: {
+					file: files[0],
+					files,
+					filename: files[0]?.name
+				}
+			};
+			return null;
+		}
+		if (typeof initialData !== "object") return null;
+		const record = initialData;
+		const nestedData = record.data && typeof record.data === "object" ? record.data : record;
+		const files = Array.isArray(nestedData.files) ? nestedData.files.filter((entry) => entry instanceof File) : void 0;
+		const file = nestedData.file instanceof File ? nestedData.file : files?.[0];
+		const text = typeof nestedData.text === "string" ? nestedData.text : void 0;
+		const content = typeof nestedData.content === "string" ? nestedData.content : void 0;
+		const url = typeof nestedData.url === "string" ? nestedData.url : void 0;
+		const filename = typeof nestedData.filename === "string" ? nestedData.filename : file?.name;
+		const source = typeof nestedData.source === "string" ? nestedData.source : void 0;
+		if (!file && !files?.length && !text && !content && !url) return null;
+		return {
+			type: typeof record.type === "string" ? record.type : "content-share",
+			contentType: typeof record.contentType === "string" ? record.contentType : file?.type || "text",
+			data: {
+				file,
+				files,
+				text,
+				content,
+				url,
+				filename,
+				source
+			}
+		};
+	}
+	async addFiles(files) {
+		if (!this.manager || files.length === 0) return;
+		await this.manager.addFiles(files);
+	}
+	async setPrompt(prompt) {
+		await this.manager?.setPrompt(prompt);
+		this.syncPromptInputFromState();
+	}
+	getFiles() {
+		return [...this.manager?.getState().files || []];
+	}
+	canHandleMessage(messageType) {
+		return [
+			"content-attach",
+			"content-process",
+			"file-attach",
+			"share-target-input",
+			"share-received",
+			"share-target-result",
+			"ai-result",
+			"process-api-result",
+			"content-share"
+		].includes(messageType);
+	}
+	async handleMessage(message) {
+		const msg = message;
+		if (!this.manager) {
+			if (this.pendingMessages.length >= 64) this.pendingMessages.shift();
+			this.pendingMessages.push(msg);
+			return;
+		}
+		await this.handleMessageWithManager(msg);
+	}
+	/** Stable imperative entry for channels — mirrors {@link handleMessage} shapes. */
+	async invokeChannelApi(action, payload) {
+		let data;
+		if (payload != null && typeof payload === "object" && !Array.isArray(payload)) data = payload;
+		else if (Array.isArray(payload) && payload.length > 0 && payload.every((f) => f instanceof File)) data = { files: payload };
+		else if (payload instanceof File) data = { file: payload };
+		else if (typeof payload === "string") data = { text: payload };
+		await this.handleMessage({
+			type: action,
+			data
+		});
+		return true;
+	}
+	async handleMessageWithManager(msg) {
+		if (!this.manager) return;
+		const mid = typeof msg.id === "string" ? msg.id.trim() : "";
+		if (mid) {
+			if (this.processedInboundMessageIds.has(mid)) return;
+			this.processedInboundMessageIds.add(mid);
+			if (this.processedInboundMessageIds.size > 256) {
+				const iter = this.processedInboundMessageIds.values().next();
+				if (!iter.done) this.processedInboundMessageIds.delete(iter.value);
+			}
+		}
+		if (msg.type === "share-target-input" || msg.type === "share-received" || msg.type === "share-target-result" || msg.type === "ai-result" || msg.type === "process-api-result") {
+			await this.manager.handleExternalMessage(msg);
+			this.emitFilesChanged();
+			return;
+		}
+		if (msg.type === "content-share" || msg.type === "content-attach" || msg.type === "file-attach") {
+			await this.manager.handleExternalMessage(msg);
+			this.emitFilesChanged();
+			return;
+		}
+		if (msg.data?.file) await this.addFiles([msg.data.file]);
+		if (msg.data?.files?.length) await this.addFiles(msg.data.files);
+		const prompt = msg.data?.text || msg.data?.content || msg.data?.url || "";
+		if (prompt.trim()) await this.setPrompt(prompt);
+		if (msg.type === "content-process") (this.element?.querySelector("[data-action=\"execute\"]"))?.click();
+	}
+	async flushPendingMessages() {
+		if (!this.manager || this.pendingMessages.length === 0) return;
+		const queue = this.pendingMessages.splice(0, this.pendingMessages.length);
+		for (const message of queue) {
+			const msg = message;
+			await this.handleMessageWithManager(msg);
+		}
+	}
+	applyInitialOptions() {
+		if (!this.manager) return;
+		if (Array.isArray(this.options.initialFiles) && this.options.initialFiles.length > 0) this.pendingMessages.unshift({
+			type: "content-attach",
+			data: { files: this.options.initialFiles }
+		});
+		if (typeof this.options.initialPrompt === "string" && this.options.initialPrompt.trim()) this.pendingMessages.unshift({
+			type: "content-share",
+			data: { text: this.options.initialPrompt }
+		});
+		const initialMessage = this.normalizeInitialDataMessage(this.options.initialData);
+		if (initialMessage) this.pendingMessages.unshift(initialMessage);
+		const handoff = takeSkuHandoff("workcenter", "process");
+		if (handoff && (handoff.content || handoff.filename)) this.pendingMessages.unshift({
+			type: "content-attach",
+			contentType: "file",
+			data: {
+				text: handoff.content,
+				filename: handoff.filename,
+				source: "sku-handoff",
+				hint: {
+					action: "attach",
+					filename: handoff.filename
+				}
+			}
+		});
+	}
+	syncPromptInputFromState() {
+		const state = this.manager?.getState();
+		if (!state || !this.element) return;
+		const promptInput = this.element.querySelector(".prompt-input");
+		if (promptInput) promptInput.value = state.currentPrompt || "";
+	}
+	setupProcessResultObserver() {
+		this.resultObserver?.disconnect();
+		if (!this.element || !this.options.onProcessComplete) return;
+		const transcript = this.element.querySelector("[data-workcenter-transcript]");
+		if (!transcript) return;
+		const emitLatestResult = () => {
+			const text = Array.from(transcript.querySelectorAll(".workcenter-message--assistant.is-complete .workcenter-message__body")).at(-1)?.textContent?.trim() || "";
+			if (!text || text === this.lastOutputText) return;
+			this.lastOutputText = text;
+			this.options.onProcessComplete?.(text);
+		};
+		emitLatestResult();
+		this.resultObserver = new MutationObserver(emitLatestResult);
+		this.resultObserver.observe(transcript, {
+			childList: true,
+			subtree: true,
+			characterData: true
+		});
+	}
+	emitFilesChanged() {
+		const files = this.manager?.getState().files || [];
+		this.options.onFilesChange?.([...files]);
+	}
+	connectedChat() {
+		if (this.element?.isConnected) return this.element;
+		const live = queryLiveWorkCenterChats()[0];
+		if (live) return live;
+		if (typeof document === "undefined") return null;
+		return document.querySelector(".workcenter-chat[data-view='workcenter']");
+	}
+	requestRender() {
+		if (!this.manager) return;
+		const live = this.connectedChat();
+		if (live?.querySelector("[data-workcenter-composer]")) {
+			this.pendingRenderAfterMount = false;
+			this.element = live;
+			this.manager.adoptLiveRoot(live);
+			this.manager.paintLiveConversation();
+			this.syncPromptInputFromState();
+			this.setupProcessResultObserver();
+			return;
+		}
+		let currentElement = this.element;
+		if (!currentElement?.parentElement) {
+			const connected = live;
+			if (connected?.parentElement) {
+				currentElement = connected;
+				this.element = connected;
+			}
+		}
+		const parent = currentElement?.parentElement;
+		if (!currentElement || !parent) {
+			this.pendingRenderAfterMount = true;
+			return;
+		}
+		this.pendingRenderAfterMount = false;
+		const next = this.manager.renderWorkCenterView();
+		const activeViewMarker = currentElement.getAttribute("data-view");
+		if (activeViewMarker) next.setAttribute("data-view", activeViewMarker);
+		next.hidden = currentElement.hidden;
+		if (currentElement.hasAttribute("slot")) next.slot = currentElement.slot;
+		parent.replaceChild(next, currentElement);
+		this.element = next;
+		this.syncPromptInputFromState();
+		this.setupProcessResultObserver();
+	}
+	showMessage(message) {
+		this.shellContext?.showMessage(message);
+	}
+	onProcessOpen = (ev) => {
+		const detail = ev.detail;
+		const content = String(detail?.content || "").trim();
+		if (!content) return;
+		this.pendingMessages.push({
+			type: "content-share",
+			contentType: "markdown",
+			data: {
+				text: content,
+				content,
+				filename: detail?.filename,
+				source: "process-share"
+			}
+		});
+		this.flushPendingMessages();
+	};
+	onMount() {
+		this.leaseWorkCenterDocumentStyles();
+		window.addEventListener("cwsp:process-open", this.onProcessOpen);
+	}
+	onUnmount() {
+		window.removeEventListener("cwsp:process-open", this.onProcessOpen);
+		this.unbindFlushHost?.();
+		this.unbindFlushHost = null;
+		this.resultObserver?.disconnect();
+		this.resultObserver = null;
+		this.manager?.destroy();
+		this.manager = null;
+		if (this.leasedDocumentStyles) {
+			try {
+				const sr = this.shadowRoot;
+				const sh = this._sheet;
+				if (sr?.adoptedStyleSheets?.length && sh && sr.adoptedStyleSheets.includes(sh)) sr.adoptedStyleSheets = [...sr.adoptedStyleSheets].filter((s) => s !== sh);
+			} catch {}
+			workcenterDocumentStyles.release();
+			this.leasedDocumentStyles = false;
+		}
+		this._sheet = null;
+	}
+	onShow() {
+		this.leaseWorkCenterDocumentStyles();
+		this.ensureWorkCenterStylesOnShadow();
+		if (this.pendingRenderAfterMount) {
+			this.pendingRenderAfterMount = false;
+			this.requestRender();
+		}
+		requestAnimationFrame(() => {
+			this.flushVisibleAttachments();
+		});
+	}
+	/** Share/launch Files sit in hold; unified delivery can skip handleMessage. Paint the live composer. */
+	async flushVisibleAttachments() {
+		const live = this.connectedChat();
+		if (live && this.manager) {
+			this.element = live;
+			this.manager.adoptLiveRoot(live);
+		}
+		await flushHeldIngressToWorkCenter();
+		const held = peekHeldIngressFiles();
+		if (held.length && this.manager) await this.manager.addFiles(held);
+		this.manager?.paintLiveConversation();
+		this.emitFilesChanged();
+		await this.flushPendingMessages();
+	}
+	onHide() {}
 };
-function createNetworkView(options) {
-	return new NetworkView(options);
+WorkCenterView = __decorate([defineElement("cw-workcenter-view")], WorkCenterView);
+function createView(options) {
+	return new WorkCenterView(options);
 }
+var createWorkCenterView = createView;
 //#endregion
-export { NETWORK_A11Y, NetworkView, applyNetworkA11y, auditNetworkA11y, createNetworkA11yFixture, createNetworkView, createNetworkView as default, detectNetworkSurface, isNetworkProbePathReady, labelForProbeCandidate, normalizeProbeOrigin, pickDispatchOrigin, resolveNetworkCapabilities, summarizeNetworkCapabilities };
+export { WorkCenterView, createView, createView as default, createWorkCenterView };

@@ -30,12 +30,12 @@ var app = (function(exports) {
 		if (name === "InvalidStateError" && /database connection is closing|IDBDatabase/i.test(msg)) event.preventDefault();
 	});
 	//#endregion
-	//#region ../../node_modules/workbox-core/_version.js
+	//#region node_modules/workbox-core/_version.js
 	try {
 		self["workbox:core:7.4.0"] && _();
 	} catch (e) {}
 	//#endregion
-	//#region ../../node_modules/workbox-core/models/messages/messageGenerator.js
+	//#region node_modules/workbox-core/models/messages/messageGenerator.js
 	var fallback = (code, ...args) => {
 		let msg = code;
 		if (args.length > 0) msg += ` :: ${JSON.stringify(args)}`;
@@ -43,7 +43,7 @@ var app = (function(exports) {
 	};
 	var messageGenerator = fallback;
 	//#endregion
-	//#region ../../node_modules/workbox-core/_private/WorkboxError.js
+	//#region node_modules/workbox-core/_private/WorkboxError.js
 	/**
 	* Workbox errors should be thrown with this class.
 	* This allows use to ensure the type easily in tests,
@@ -70,12 +70,12 @@ var app = (function(exports) {
 		}
 	};
 	//#endregion
-	//#region ../../node_modules/workbox-routing/_version.js
+	//#region node_modules/workbox-routing/_version.js
 	try {
 		self["workbox:routing:7.4.0"] && _();
 	} catch (e) {}
 	//#endregion
-	//#region ../../node_modules/workbox-routing/utils/normalizeHandler.js
+	//#region node_modules/workbox-routing/utils/normalizeHandler.js
 	/**
 	* @param {function()|Object} handler Either a function, or an object with a
 	* 'handle' method.
@@ -88,7 +88,7 @@ var app = (function(exports) {
 		else return { handle: handler };
 	};
 	//#endregion
-	//#region ../../node_modules/workbox-routing/Route.js
+	//#region node_modules/workbox-routing/Route.js
 	/**
 	* A `Route` consists of a pair of callback functions, "match" and "handler".
 	* The "match" callback determine if a route should be used to "handle" a
@@ -125,7 +125,7 @@ var app = (function(exports) {
 		}
 	};
 	//#endregion
-	//#region ../../node_modules/workbox-routing/RegExpRoute.js
+	//#region node_modules/workbox-routing/RegExpRoute.js
 	/**
 	* RegExpRoute makes it easy to create a regular expression based
 	* {@link workbox-routing.Route}.
@@ -162,12 +162,12 @@ var app = (function(exports) {
 		}
 	};
 	//#endregion
-	//#region ../../node_modules/workbox-core/_private/getFriendlyURL.js
+	//#region node_modules/workbox-core/_private/getFriendlyURL.js
 	var getFriendlyURL = (url) => {
 		return new URL(String(url), location.href).href.replace(new RegExp(`^${location.origin}`), "");
 	};
 	//#endregion
-	//#region ../../node_modules/workbox-routing/Router.js
+	//#region node_modules/workbox-routing/Router.js
 	/**
 	* The Router can be used to process a `FetchEvent` using one or more
 	* {@link workbox-routing.Route}, responding with a `Response` if
@@ -399,7 +399,7 @@ var app = (function(exports) {
 		}
 	};
 	//#endregion
-	//#region ../../node_modules/workbox-routing/utils/getOrCreateDefaultRouter.js
+	//#region node_modules/workbox-routing/utils/getOrCreateDefaultRouter.js
 	var defaultRouter;
 	/**
 	* Creates a new, singleton Router instance if one does not exist. If one
@@ -417,7 +417,7 @@ var app = (function(exports) {
 		return defaultRouter;
 	};
 	//#endregion
-	//#region ../../node_modules/workbox-routing/registerRoute.js
+	//#region node_modules/workbox-routing/registerRoute.js
 	/**
 	* Easily register a RegExp, string, or function with a caching
 	* strategy to a singleton Router instance.
@@ -456,7 +456,7 @@ var app = (function(exports) {
 		return route;
 	}
 	//#endregion
-	//#region ../../node_modules/workbox-routing/setCatchHandler.js
+	//#region node_modules/workbox-routing/setCatchHandler.js
 	/**
 	* If a Route throws an error while handling a request, this `handler`
 	* will be called and given a chance to provide a response.
@@ -470,7 +470,7 @@ var app = (function(exports) {
 		getOrCreateDefaultRouter().setCatchHandler(handler);
 	}
 	//#endregion
-	//#region ../../node_modules/workbox-routing/setDefaultHandler.js
+	//#region node_modules/workbox-routing/setDefaultHandler.js
 	/**
 	* Define a default `handler` that's called when no routes explicitly
 	* match the incoming request.
@@ -487,7 +487,7 @@ var app = (function(exports) {
 		getOrCreateDefaultRouter().setDefaultHandler(handler);
 	}
 	//#endregion
-	//#region ../../node_modules/workbox-core/_private/cacheNames.js
+	//#region node_modules/workbox-core/_private/cacheNames.js
 	var _cacheNameDetails = {
 		googleAnalytics: "googleAnalytics",
 		precache: "precache-v2",
@@ -528,7 +528,7 @@ var app = (function(exports) {
 		}
 	};
 	//#endregion
-	//#region ../../node_modules/workbox-core/_private/cacheMatchIgnoreParams.js
+	//#region node_modules/workbox-core/_private/cacheMatchIgnoreParams.js
 	function stripParams(fullURL, ignoreParams) {
 		const strippedURL = new URL(fullURL);
 		for (const param of ignoreParams) strippedURL.searchParams.delete(param);
@@ -554,7 +554,7 @@ var app = (function(exports) {
 		for (const cacheKey of cacheKeys) if (strippedRequestURL === stripParams(cacheKey.url, ignoreParams)) return cache.match(cacheKey, matchOptions);
 	}
 	//#endregion
-	//#region ../../node_modules/workbox-core/_private/Deferred.js
+	//#region node_modules/workbox-core/_private/Deferred.js
 	/**
 	* The Deferred class composes Promises in a way that allows for them to be
 	* resolved or rejected from outside the constructor. In most cases promises
@@ -575,10 +575,10 @@ var app = (function(exports) {
 		}
 	};
 	//#endregion
-	//#region ../../node_modules/workbox-core/models/quotaErrorCallbacks.js
+	//#region node_modules/workbox-core/models/quotaErrorCallbacks.js
 	var quotaErrorCallbacks = /* @__PURE__ */ new Set();
 	//#endregion
-	//#region ../../node_modules/workbox-core/_private/executeQuotaErrorCallbacks.js
+	//#region node_modules/workbox-core/_private/executeQuotaErrorCallbacks.js
 	/**
 	* Runs all of the callback functions, one at a time sequentially, in the order
 	* in which they were registered.
@@ -590,7 +590,7 @@ var app = (function(exports) {
 		for (const callback of quotaErrorCallbacks) await callback();
 	}
 	//#endregion
-	//#region ../../node_modules/workbox-core/_private/timeout.js
+	//#region node_modules/workbox-core/_private/timeout.js
 	/**
 	* Returns a promise that resolves and the passed number of milliseconds.
 	* This utility is an async/await-friendly version of `setTimeout`.
@@ -603,12 +603,12 @@ var app = (function(exports) {
 		return new Promise((resolve) => setTimeout(resolve, ms));
 	}
 	//#endregion
-	//#region ../../node_modules/workbox-strategies/_version.js
+	//#region node_modules/workbox-strategies/_version.js
 	try {
 		self["workbox:strategies:7.4.0"] && _();
 	} catch (e) {}
 	//#endregion
-	//#region ../../node_modules/workbox-strategies/StrategyHandler.js
+	//#region node_modules/workbox-strategies/StrategyHandler.js
 	function toRequest(input) {
 		return typeof input === "string" ? new Request(input) : input;
 	}
@@ -930,7 +930,7 @@ var app = (function(exports) {
 		}
 	};
 	//#endregion
-	//#region ../../node_modules/workbox-strategies/Strategy.js
+	//#region node_modules/workbox-strategies/Strategy.js
 	/**
 	* An abstract base class that all other strategy classes must extend from:
 	*
@@ -1125,7 +1125,7 @@ var app = (function(exports) {
 	* @memberof workbox-strategies.Strategy
 	*/
 	//#endregion
-	//#region ../../node_modules/workbox-strategies/CacheFirst.js
+	//#region node_modules/workbox-strategies/CacheFirst.js
 	/**
 	* An implementation of a [cache-first](https://developer.chrome.com/docs/workbox/caching-strategies-overview/#cache-first-falling-back-to-network)
 	* request strategy.
@@ -1164,7 +1164,7 @@ var app = (function(exports) {
 		}
 	};
 	//#endregion
-	//#region ../../node_modules/workbox-strategies/plugins/cacheOkAndOpaquePlugin.js
+	//#region node_modules/workbox-strategies/plugins/cacheOkAndOpaquePlugin.js
 	var cacheOkAndOpaquePlugin = { 
 	/**
 	* Returns a valid response (to allow caching) if the status is 200 (OK) or
@@ -1181,7 +1181,7 @@ cacheWillUpdate: async ({ response }) => {
 		return null;
 	} };
 	//#endregion
-	//#region ../../node_modules/workbox-strategies/NetworkFirst.js
+	//#region node_modules/workbox-strategies/NetworkFirst.js
 	/**
 	* An implementation of a
 	* [network first](https://developer.chrome.com/docs/workbox/caching-strategies-overview/#network-first-falling-back-to-cache)
@@ -1301,7 +1301,7 @@ cacheWillUpdate: async ({ response }) => {
 		}
 	};
 	//#endregion
-	//#region ../../node_modules/workbox-strategies/NetworkOnly.js
+	//#region node_modules/workbox-strategies/NetworkOnly.js
 	/**
 	* An implementation of a
 	* [network-only](https://developer.chrome.com/docs/workbox/caching-strategies-overview/#network-only)
@@ -1360,7 +1360,7 @@ cacheWillUpdate: async ({ response }) => {
 		}
 	};
 	//#endregion
-	//#region ../../node_modules/workbox-strategies/StaleWhileRevalidate.js
+	//#region node_modules/workbox-strategies/StaleWhileRevalidate.js
 	/**
 	* An implementation of a
 	* [stale-while-revalidate](https://developer.chrome.com/docs/workbox/caching-strategies-overview/#stale-while-revalidate)
@@ -1425,7 +1425,7 @@ cacheWillUpdate: async ({ response }) => {
 		}
 	};
 	//#endregion
-	//#region ../../node_modules/workbox-core/_private/waitUntil.js
+	//#region node_modules/workbox-core/_private/waitUntil.js
 	/**
 	* A utility method that makes it easier to use `event.waitUntil` with
 	* async functions and return the result.
@@ -1441,12 +1441,12 @@ cacheWillUpdate: async ({ response }) => {
 		return returnPromise;
 	}
 	//#endregion
-	//#region ../../node_modules/workbox-precaching/_version.js
+	//#region node_modules/workbox-precaching/_version.js
 	try {
 		self["workbox:precaching:7.4.0"] && _();
 	} catch (e) {}
 	//#endregion
-	//#region ../../node_modules/workbox-precaching/utils/createCacheKey.js
+	//#region node_modules/workbox-precaching/utils/createCacheKey.js
 	var REVISION_SEARCH_PARAM = "__WB_REVISION__";
 	/**
 	* Converts a manifest entry into a versioned URL suitable for precaching.
@@ -1484,7 +1484,7 @@ cacheWillUpdate: async ({ response }) => {
 		};
 	}
 	//#endregion
-	//#region ../../node_modules/workbox-precaching/utils/PrecacheInstallReportPlugin.js
+	//#region node_modules/workbox-precaching/utils/PrecacheInstallReportPlugin.js
 	/**
 	* A plugin, designed to be used with PrecacheController, to determine the
 	* of assets that were updated (or not updated) during the install event.
@@ -1511,7 +1511,7 @@ cacheWillUpdate: async ({ response }) => {
 		}
 	};
 	//#endregion
-	//#region ../../node_modules/workbox-precaching/utils/PrecacheCacheKeyPlugin.js
+	//#region node_modules/workbox-precaching/utils/PrecacheCacheKeyPlugin.js
 	/**
 	* A plugin, designed to be used with PrecacheController, to translate URLs into
 	* the corresponding cache key, based on the current revision info.
@@ -1528,7 +1528,7 @@ cacheWillUpdate: async ({ response }) => {
 		}
 	};
 	//#endregion
-	//#region ../../node_modules/workbox-core/_private/canConstructResponseFromBodyStream.js
+	//#region node_modules/workbox-core/_private/canConstructResponseFromBodyStream.js
 	var supportStatus;
 	/**
 	* A utility function that determines whether the current browser supports
@@ -1553,7 +1553,7 @@ cacheWillUpdate: async ({ response }) => {
 		return supportStatus;
 	}
 	//#endregion
-	//#region ../../node_modules/workbox-core/copyResponse.js
+	//#region node_modules/workbox-core/copyResponse.js
 	/**
 	* Allows developers to copy a response and modify its `headers`, `status`,
 	* or `statusText` values (the values settable via a
@@ -1588,7 +1588,7 @@ cacheWillUpdate: async ({ response }) => {
 		return new Response(body, modifiedResponseInit);
 	}
 	//#endregion
-	//#region ../../node_modules/workbox-precaching/PrecacheStrategy.js
+	//#region node_modules/workbox-precaching/PrecacheStrategy.js
 	/**
 	* A {@link workbox-strategies.Strategy} implementation
 	* specifically designed to work with
@@ -1712,7 +1712,7 @@ cacheWillUpdate: async ({ response }) => {
 		return response.redirected ? await copyResponse(response) : response;
 	} };
 	//#endregion
-	//#region ../../node_modules/workbox-precaching/PrecacheController.js
+	//#region node_modules/workbox-precaching/PrecacheController.js
 	/**
 	* Performs efficient precaching of assets.
 	*
@@ -1935,7 +1935,7 @@ cacheWillUpdate: async ({ response }) => {
 		}
 	};
 	//#endregion
-	//#region ../../node_modules/workbox-precaching/utils/getOrCreatePrecacheController.js
+	//#region node_modules/workbox-precaching/utils/getOrCreatePrecacheController.js
 	var precacheController;
 	/**
 	* @return {PrecacheController}
@@ -1946,7 +1946,7 @@ cacheWillUpdate: async ({ response }) => {
 		return precacheController;
 	};
 	//#endregion
-	//#region ../../node_modules/workbox-precaching/utils/removeIgnoredSearchParams.js
+	//#region node_modules/workbox-precaching/utils/removeIgnoredSearchParams.js
 	/**
 	* Removes any URL search parameters that should be ignored.
 	*
@@ -1964,7 +1964,7 @@ cacheWillUpdate: async ({ response }) => {
 		return urlObject;
 	}
 	//#endregion
-	//#region ../../node_modules/workbox-precaching/utils/generateURLVariations.js
+	//#region node_modules/workbox-precaching/utils/generateURLVariations.js
 	/**
 	* Generator function that yields possible variations on the original URL to
 	* check, one at a time.
@@ -1997,7 +1997,7 @@ cacheWillUpdate: async ({ response }) => {
 		}
 	}
 	//#endregion
-	//#region ../../node_modules/workbox-precaching/PrecacheRoute.js
+	//#region node_modules/workbox-precaching/PrecacheRoute.js
 	/**
 	* A subclass of {@link workbox-routing.Route} that takes a
 	* {@link workbox-precaching.PrecacheController}
@@ -2039,7 +2039,7 @@ cacheWillUpdate: async ({ response }) => {
 		}
 	};
 	//#endregion
-	//#region ../../node_modules/workbox-precaching/addRoute.js
+	//#region node_modules/workbox-precaching/addRoute.js
 	/**
 	* Add a `fetch` listener to the service worker that will
 	* respond to
@@ -2059,7 +2059,7 @@ cacheWillUpdate: async ({ response }) => {
 		registerRoute(new PrecacheRoute(getOrCreatePrecacheController(), options));
 	}
 	//#endregion
-	//#region ../../node_modules/workbox-precaching/utils/deleteOutdatedCaches.js
+	//#region node_modules/workbox-precaching/utils/deleteOutdatedCaches.js
 	var SUBSTRING_TO_FIND = "-precache-";
 	/**
 	* Cleans up incompatible precaches that were created by older versions of
@@ -2087,7 +2087,7 @@ cacheWillUpdate: async ({ response }) => {
 		return cacheNamesToDelete;
 	};
 	//#endregion
-	//#region ../../node_modules/workbox-precaching/cleanupOutdatedCaches.js
+	//#region node_modules/workbox-precaching/cleanupOutdatedCaches.js
 	/**
 	* Adds an `activate` event listener which will clean up incompatible
 	* precaches that were created by older versions of Workbox.
@@ -2101,7 +2101,7 @@ cacheWillUpdate: async ({ response }) => {
 		}));
 	}
 	//#endregion
-	//#region ../../node_modules/workbox-precaching/precache.js
+	//#region node_modules/workbox-precaching/precache.js
 	/**
 	* Adds items to the precache list, removing any duplicates and
 	* stores the files in the
@@ -2125,7 +2125,7 @@ cacheWillUpdate: async ({ response }) => {
 		getOrCreatePrecacheController().precache(entries);
 	}
 	//#endregion
-	//#region ../../node_modules/workbox-precaching/precacheAndRoute.js
+	//#region node_modules/workbox-precaching/precacheAndRoute.js
 	/**
 	* This method will add entries to the precache list and add a route to
 	* respond to fetch events.
@@ -2145,7 +2145,7 @@ cacheWillUpdate: async ({ response }) => {
 		addRoute(options);
 	}
 	//#endregion
-	//#region ../../node_modules/workbox-precaching/_types.js
+	//#region node_modules/workbox-precaching/_types.js
 	/**
 	* @typedef {Object} InstallResult
 	* @property {Array<string>} updatedURLs List of URLs that were updated during
@@ -2188,7 +2188,7 @@ cacheWillUpdate: async ({ response }) => {
 	* @memberof workbox-precaching
 	*/
 	//#endregion
-	//#region ../../node_modules/workbox-core/_private/dontWaitFor.js
+	//#region node_modules/workbox-core/_private/dontWaitFor.js
 	/**
 	* A helper function that prevents a promise from being flagged as unused.
 	*
@@ -2198,7 +2198,7 @@ cacheWillUpdate: async ({ response }) => {
 		promise.then(() => {});
 	}
 	//#endregion
-	//#region ../../node_modules/idb/build/wrap-idb-value.js
+	//#region node_modules/idb/build/wrap-idb-value.js
 	var instanceOfAny = (object, constructors) => constructors.some((c) => object instanceof c);
 	var idbProxyableTypes;
 	var cursorAdvanceMethods;
@@ -2321,7 +2321,7 @@ cacheWillUpdate: async ({ response }) => {
 	}
 	var unwrap$2 = (value) => reverseTransformCache.get(value);
 	//#endregion
-	//#region ../../node_modules/idb/build/index.js
+	//#region node_modules/idb/build/index.js
 	/**
 	* Open a database.
 	*
@@ -2388,12 +2388,12 @@ cacheWillUpdate: async ({ response }) => {
 		has: (target, prop) => !!getMethod(target, prop) || oldTraps.has(target, prop)
 	}));
 	//#endregion
-	//#region ../../node_modules/workbox-expiration/_version.js
+	//#region node_modules/workbox-expiration/_version.js
 	try {
 		self["workbox:expiration:7.4.0"] && _();
 	} catch (e) {}
 	//#endregion
-	//#region ../../node_modules/workbox-expiration/models/CacheTimestampsModel.js
+	//#region node_modules/workbox-expiration/models/CacheTimestampsModel.js
 	var DB_NAME$3 = "workbox-expiration";
 	var CACHE_OBJECT_STORE = "cache-entries";
 	var normalizeURL = (unNormalizedUrl) => {
@@ -2488,10 +2488,8 @@ cacheWillUpdate: async ({ response }) => {
 			let entriesNotDeletedCount = 0;
 			while (cursor) {
 				const result = cursor.value;
-				if (result.cacheName === this._cacheName) {
-					if (minTimestamp && result.timestamp < minTimestamp || maxCount && entriesNotDeletedCount >= maxCount) entriesToDelete.push(cursor.value);
-					else entriesNotDeletedCount++;
-				}
+				if (result.cacheName === this._cacheName) if (minTimestamp && result.timestamp < minTimestamp || maxCount && entriesNotDeletedCount >= maxCount) entriesToDelete.push(cursor.value);
+				else entriesNotDeletedCount++;
 				cursor = await cursor.continue();
 			}
 			const urlsDeleted = [];
@@ -2523,7 +2521,7 @@ cacheWillUpdate: async ({ response }) => {
 		}
 	};
 	//#endregion
-	//#region ../../node_modules/workbox-expiration/CacheExpiration.js
+	//#region node_modules/workbox-expiration/CacheExpiration.js
 	/**
 	* The `CacheExpiration` class allows you define an expiration and / or
 	* limit on the number of responses stored in a
@@ -2612,7 +2610,7 @@ cacheWillUpdate: async ({ response }) => {
 		}
 	};
 	//#endregion
-	//#region ../../node_modules/workbox-core/registerQuotaErrorCallback.js
+	//#region node_modules/workbox-core/registerQuotaErrorCallback.js
 	/**
 	* Adds a function to the set of quotaErrorCallbacks that will be executed if
 	* there's a quota error.
@@ -2624,7 +2622,7 @@ cacheWillUpdate: async ({ response }) => {
 		quotaErrorCallbacks.add(callback);
 	}
 	//#endregion
-	//#region ../../node_modules/workbox-expiration/ExpirationPlugin.js
+	//#region node_modules/workbox-expiration/ExpirationPlugin.js
 	/**
 	* This plugin can be used in a `workbox-strategy` to regularly enforce a
 	* limit on the age and / or the number of cached requests.
@@ -3497,20 +3495,34 @@ cacheWillUpdate: async ({ response }) => {
 		};
 	}));
 	//#endregion
-	//#region ../../node_modules/jsox/lib/jsox.mjs
+	//#region node_modules/jsox/lib/jsox.mjs
+	function dateNSPad6(num) {
+		const norm = Math.floor(Math.abs(num));
+		return (norm < 1e5 ? "0" : "") + (norm < 1e4 ? "0" : "") + (norm < 1e3 ? "0" : "") + (norm < 100 ? "0" : "") + (norm < 10 ? "0" : "") + norm;
+	}
+	function dateNSToLocalISO(this_) {
+		const tzo = -this_.getTimezoneOffset(), dif = tzo >= 0 ? "+" : "-", pad = function(num) {
+			const norm = Math.floor(Math.abs(num));
+			return (norm < 10 ? "0" : "") + norm;
+		}, pad3 = function(num) {
+			const norm = Math.floor(Math.abs(num));
+			return (norm < 100 ? "0" : "") + (norm < 10 ? "0" : "") + norm;
+		};
+		return this_.getFullYear() + "-" + pad(this_.getMonth() + 1) + "-" + pad(this_.getDate()) + "T" + pad(this_.getHours()) + ":" + pad(this_.getMinutes()) + ":" + pad(this_.getSeconds()) + "." + pad3(this_.getMilliseconds()) + dateNSPad6(this_.ns) + dif + pad(Math.abs(tzo) / 60) + ":" + pad(Math.abs(tzo) % 60);
+	}
 	/**
 	* get a context from stack (reuse contexts)
 	* @internal
 	*/
-	function getContext() {
-		let ctx = contexts.pop();
+	function getContext$1() {
+		let ctx = contexts$1.pop();
 		if (!ctx) ctx = {
-			context: CONTEXT_UNKNOWN,
+			context: CONTEXT_UNKNOWN$1,
 			current_proto: null,
 			current_class: null,
 			current_class_field: 0,
 			arrayType: -1,
-			valueType: VALUE_UNSET,
+			valueType: VALUE_UNSET$1,
 			elements: null
 		};
 		return ctx;
@@ -3519,11 +3531,11 @@ cacheWillUpdate: async ({ response }) => {
 	* return a context to the stack (reuse contexts)
 	* @internal
 	*/
-	function dropContext(ctx) {
-		contexts.push(ctx);
+	function dropContext$1(ctx) {
+		contexts$1.push(ctx);
 	}
-	function getBuffer() {
-		let buf = buffers.pop();
+	function getBuffer$1() {
+		let buf = buffers$1.pop();
 		if (!buf) buf = {
 			buf: null,
 			n: 0
@@ -3531,13 +3543,57 @@ cacheWillUpdate: async ({ response }) => {
 		else buf.n = 0;
 		return buf;
 	}
-	function dropBuffer(buf) {
-		buffers.push(buf);
+	function dropBuffer$1(buf) {
+		buffers$1.push(buf);
 	}
-	function this_value() {
+	/**
+	* Second pass: once the value is complete, every reference path resolves by plain
+	* traversal from the root, so no context-stack guessing is required. Resolves each
+	* deferred path, then substitutes the placeholders wherever they landed.
+	* @internal
+	*/
+	function resolveDeferredRefs(root, refs, fixups) {
+		const resolved = /* @__PURE__ */ new Map();
+		const inProgress = /* @__PURE__ */ new Set();
+		const deref = (v) => v instanceof DeferredRef ? resolveOne(v) : v;
+		function resolveOne(ref) {
+			if (resolved.has(ref)) return resolved.get(ref);
+			if (inProgress.has(ref)) throw new Error("Reference path is circular through other references: " + ref.path);
+			inProgress.add(ref);
+			let obj = deref(root);
+			for (let i = 0; i < ref.path.length; i++) {
+				const key = ref.path[i];
+				if (obj === void 0 || obj === null) throw new Error("Reference did not resolve: ref[" + ref.path + "] -- nothing to index at position " + i + " ('" + key + "')");
+				obj = deref(obj[key]);
+			}
+			if (obj === void 0) throw new Error("Reference did not resolve: ref[" + ref.path + "] -- target is undefined");
+			inProgress.delete(ref);
+			resolved.set(ref, obj);
+			return obj;
+		}
+		for (const ref of refs) resolveOne(ref);
+		if (fixups) {
+			for (const f of fixups) if (f.container[f.key] === f.ref) f.container[f.key] = resolved.get(f.ref);
+		}
+		const seen = /* @__PURE__ */ new Set();
+		function substitute(node) {
+			if (!node || "object" !== typeof node || seen.has(node)) return;
+			seen.add(node);
+			const keys = Array.isArray(node) ? node.keys() : Object.keys(node);
+			for (const k of keys) {
+				const v = node[k];
+				if (v instanceof DeferredRef) node[k] = resolved.get(v);
+				else substitute(v);
+			}
+		}
+		substitute(root);
+		for (const ref of refs) substitute(ref.owner);
+		return root instanceof DeferredRef ? resolved.get(root) : root;
+	}
+	function this_value$1() {
 		return this && this.valueOf();
 	}
-	function base64ArrayBuffer(arrayBuffer) {
+	function base64ArrayBuffer$1(arrayBuffer) {
 		let base64 = "";
 		let bytes = new Uint8Array(arrayBuffer);
 		let byteLength = bytes.byteLength;
@@ -3551,68 +3607,68 @@ cacheWillUpdate: async ({ response }) => {
 			b = (chunk & 258048) >> 12;
 			c = (chunk & 4032) >> 6;
 			d = chunk & 63;
-			base64 += encodings[a] + encodings[b] + encodings[c] + encodings[d];
+			base64 += encodings$1[a] + encodings$1[b] + encodings$1[c] + encodings$1[d];
 		}
 		if (byteRemainder == 1) {
 			chunk = bytes[mainLength];
 			a = (chunk & 252) >> 2;
 			b = (chunk & 3) << 4;
-			base64 += encodings[a] + encodings[b] + "==";
+			base64 += encodings$1[a] + encodings$1[b] + "==";
 		} else if (byteRemainder == 2) {
 			chunk = bytes[mainLength] << 8 | bytes[mainLength + 1];
 			a = (chunk & 64512) >> 10;
 			b = (chunk & 1008) >> 4;
 			c = (chunk & 15) << 2;
-			base64 += encodings[a] + encodings[b] + encodings[c] + "=";
+			base64 += encodings$1[a] + encodings$1[b] + encodings$1[c] + "=";
 		}
 		return base64;
 	}
-	function DecodeBase64(buf) {
+	function DecodeBase64$1(buf) {
 		let outsize;
 		if (buf.length % 4 == 1) outsize = ((buf.length + 3) / 4 | 0) * 3 - 3;
 		else if (buf.length % 4 == 2) outsize = ((buf.length + 3) / 4 | 0) * 3 - 2;
 		else if (buf.length % 4 == 3) outsize = ((buf.length + 3) / 4 | 0) * 3 - 1;
-		else if (decodings[buf[buf.length - 3]] == -1) outsize = ((buf.length + 3) / 4 | 0) * 3 - 3;
-		else if (decodings[buf[buf.length - 2]] == -1) outsize = ((buf.length + 3) / 4 | 0) * 3 - 2;
-		else if (decodings[buf[buf.length - 1]] == -1) outsize = ((buf.length + 3) / 4 | 0) * 3 - 1;
+		else if (decodings$1[buf[buf.length - 3]] == -1) outsize = ((buf.length + 3) / 4 | 0) * 3 - 3;
+		else if (decodings$1[buf[buf.length - 2]] == -1) outsize = ((buf.length + 3) / 4 | 0) * 3 - 2;
+		else if (decodings$1[buf[buf.length - 1]] == -1) outsize = ((buf.length + 3) / 4 | 0) * 3 - 1;
 		else outsize = ((buf.length + 3) / 4 | 0) * 3;
 		let ab = new ArrayBuffer(outsize);
 		let out = new Uint8Array(ab);
 		let n;
 		let l = buf.length + 3 >> 2;
 		for (n = 0; n < l; n++) {
-			let index0 = decodings[buf[n * 4]];
-			let index1 = n * 4 + 1 < buf.length ? decodings[buf[n * 4 + 1]] : -1;
-			let index2 = index1 >= 0 && n * 4 + 2 < buf.length ? decodings[buf[n * 4 + 2]] : -1;
-			let index3 = index2 >= 0 && n * 4 + 3 < buf.length ? decodings[buf[n * 4 + 3]] : -1;
+			let index0 = decodings$1[buf[n * 4]];
+			let index1 = n * 4 + 1 < buf.length ? decodings$1[buf[n * 4 + 1]] : -1;
+			let index2 = index1 >= 0 && n * 4 + 2 < buf.length ? decodings$1[buf[n * 4 + 2]] : -1;
+			let index3 = index2 >= 0 && n * 4 + 3 < buf.length ? decodings$1[buf[n * 4 + 3]] : -1;
 			if (index1 >= 0) out[n * 3 + 0] = index0 << 2 | index1 >> 4;
 			if (index2 >= 0) out[n * 3 + 1] = index1 << 4 | index2 >> 2 & 15;
 			if (index3 >= 0) out[n * 3 + 2] = index2 << 6 | index3 & 63;
 		}
 		return ab;
 	}
-	var _JSON, JSOX, hasBigInt, VALUE_UNDEFINED, VALUE_UNSET, VALUE_NULL, VALUE_TRUE, VALUE_FALSE, VALUE_STRING, VALUE_NUMBER, VALUE_OBJECT, VALUE_NEG_NAN, VALUE_NAN, VALUE_NEG_INFINITY, VALUE_INFINITY, VALUE_EMPTY, VALUE_ARRAY, knownArrayTypeNames, arrayToJSOX, mapToJSOX, knownArrayTypes, WORD_POS_RESET, WORD_POS_TRUE_1, WORD_POS_TRUE_2, WORD_POS_TRUE_3, WORD_POS_FALSE_1, WORD_POS_FALSE_2, WORD_POS_FALSE_3, WORD_POS_FALSE_4, WORD_POS_NULL_1, WORD_POS_NULL_2, WORD_POS_NULL_3, WORD_POS_UNDEFINED_1, WORD_POS_UNDEFINED_2, WORD_POS_UNDEFINED_3, WORD_POS_UNDEFINED_4, WORD_POS_UNDEFINED_5, WORD_POS_UNDEFINED_6, WORD_POS_UNDEFINED_7, WORD_POS_UNDEFINED_8, WORD_POS_NAN_1, WORD_POS_NAN_2, WORD_POS_INFINITY_1, WORD_POS_INFINITY_2, WORD_POS_INFINITY_3, WORD_POS_INFINITY_4, WORD_POS_INFINITY_5, WORD_POS_INFINITY_6, WORD_POS_INFINITY_7, WORD_POS_FIELD, WORD_POS_AFTER_FIELD, WORD_POS_END, WORD_POS_AFTER_FIELD_VALUE, CONTEXT_UNKNOWN, CONTEXT_IN_ARRAY, CONTEXT_OBJECT_FIELD, CONTEXT_OBJECT_FIELD_VALUE, CONTEXT_CLASS_FIELD, CONTEXT_CLASS_VALUE, CONTEXT_CLASS_FIELD_VALUE, keywords, DateNS, contexts, buffers, toProtoTypes, toObjectTypes, fromProtoTypes, commonClasses, _parser, _parse_level, encodings, decodings;
-	var init_jsox = __esmMin((() => {
-		_JSON = JSON;
-		JSOX = {};
-		JSOX.JSOX = JSOX;
-		JSOX.version = "1.2.125";
-		hasBigInt = typeof BigInt === "function";
-		VALUE_UNDEFINED = -1;
-		VALUE_UNSET = 0;
-		VALUE_NULL = 1;
-		VALUE_TRUE = 2;
-		VALUE_FALSE = 3;
-		VALUE_STRING = 4;
-		VALUE_NUMBER = 5;
-		VALUE_OBJECT = 6;
-		VALUE_NEG_NAN = 7;
-		VALUE_NAN = 8;
-		VALUE_NEG_INFINITY = 9;
-		VALUE_INFINITY = 10;
-		VALUE_EMPTY = 12;
-		VALUE_ARRAY = 13;
-		knownArrayTypeNames = [
+	var _JSON$1, JSOX$1, hasBigInt$1, VALUE_UNDEFINED$1, VALUE_UNSET$1, VALUE_NULL$1, VALUE_TRUE$1, VALUE_FALSE$1, VALUE_STRING$1, VALUE_NUMBER$1, VALUE_OBJECT$1, VALUE_NEG_NAN$1, VALUE_NAN$1, VALUE_NEG_INFINITY$1, VALUE_INFINITY$1, VALUE_EMPTY$1, VALUE_ARRAY$1, knownArrayTypeNames$1, arrayToJSOX$1, mapToJSOX$1, knownArrayTypes$1, WORD_POS_RESET$1, WORD_POS_TRUE_1$1, WORD_POS_TRUE_2$1, WORD_POS_TRUE_3$1, WORD_POS_FALSE_1$1, WORD_POS_FALSE_2$1, WORD_POS_FALSE_3$1, WORD_POS_FALSE_4$1, WORD_POS_NULL_1$1, WORD_POS_NULL_2$1, WORD_POS_NULL_3$1, WORD_POS_UNDEFINED_1$1, WORD_POS_UNDEFINED_2$1, WORD_POS_UNDEFINED_3$1, WORD_POS_UNDEFINED_4$1, WORD_POS_UNDEFINED_5$1, WORD_POS_UNDEFINED_6$1, WORD_POS_UNDEFINED_7$1, WORD_POS_UNDEFINED_8$1, WORD_POS_NAN_1$1, WORD_POS_NAN_2$1, WORD_POS_INFINITY_1$1, WORD_POS_INFINITY_2$1, WORD_POS_INFINITY_3$1, WORD_POS_INFINITY_4$1, WORD_POS_INFINITY_5$1, WORD_POS_INFINITY_6$1, WORD_POS_INFINITY_7$1, WORD_POS_FIELD$1, WORD_POS_AFTER_FIELD$1, WORD_POS_END$1, WORD_POS_AFTER_FIELD_VALUE$1, CONTEXT_UNKNOWN$1, CONTEXT_IN_ARRAY$1, CONTEXT_OBJECT_FIELD$1, CONTEXT_OBJECT_FIELD_VALUE$1, CONTEXT_CLASS_FIELD$1, CONTEXT_CLASS_VALUE$1, CONTEXT_CLASS_FIELD_VALUE$1, keywords$1, canTagOrBeTagged, isKeywordValue, isWhitespace, isLineTerminator, DateNS$1, contexts$1, buffers$1, toProtoTypes$1, toObjectTypes$1, fromProtoTypes$1, commonClasses$1, DeferredRef, _parser$1, _parse_level$1, encodings$1, decodings$1;
+	var init_jsox$1 = __esmMin((() => {
+		_JSON$1 = JSON;
+		JSOX$1 = {};
+		JSOX$1.JSOX = JSOX$1;
+		JSOX$1.version = "1.2.125";
+		hasBigInt$1 = typeof BigInt === "function";
+		VALUE_UNDEFINED$1 = -1;
+		VALUE_UNSET$1 = 0;
+		VALUE_NULL$1 = 1;
+		VALUE_TRUE$1 = 2;
+		VALUE_FALSE$1 = 3;
+		VALUE_STRING$1 = 4;
+		VALUE_NUMBER$1 = 5;
+		VALUE_OBJECT$1 = 6;
+		VALUE_NEG_NAN$1 = 7;
+		VALUE_NAN$1 = 8;
+		VALUE_NEG_INFINITY$1 = 9;
+		VALUE_INFINITY$1 = 10;
+		VALUE_EMPTY$1 = 12;
+		VALUE_ARRAY$1 = 13;
+		knownArrayTypeNames$1 = [
 			"ab",
 			"u8",
 			"cu8",
@@ -3626,9 +3682,9 @@ cacheWillUpdate: async ({ response }) => {
 			"f32",
 			"f64"
 		];
-		arrayToJSOX = null;
-		mapToJSOX = null;
-		knownArrayTypes = [
+		arrayToJSOX$1 = null;
+		mapToJSOX$1 = null;
+		knownArrayTypes$1 = [
 			ArrayBuffer,
 			Uint8Array,
 			Uint8ClampedArray,
@@ -3642,46 +3698,46 @@ cacheWillUpdate: async ({ response }) => {
 			Float32Array,
 			Float64Array
 		];
-		WORD_POS_RESET = 0;
-		WORD_POS_TRUE_1 = 1;
-		WORD_POS_TRUE_2 = 2;
-		WORD_POS_TRUE_3 = 3;
-		WORD_POS_FALSE_1 = 5;
-		WORD_POS_FALSE_2 = 6;
-		WORD_POS_FALSE_3 = 7;
-		WORD_POS_FALSE_4 = 8;
-		WORD_POS_NULL_1 = 9;
-		WORD_POS_NULL_2 = 10;
-		WORD_POS_NULL_3 = 11;
-		WORD_POS_UNDEFINED_1 = 12;
-		WORD_POS_UNDEFINED_2 = 13;
-		WORD_POS_UNDEFINED_3 = 14;
-		WORD_POS_UNDEFINED_4 = 15;
-		WORD_POS_UNDEFINED_5 = 16;
-		WORD_POS_UNDEFINED_6 = 17;
-		WORD_POS_UNDEFINED_7 = 18;
-		WORD_POS_UNDEFINED_8 = 19;
-		WORD_POS_NAN_1 = 20;
-		WORD_POS_NAN_2 = 21;
-		WORD_POS_INFINITY_1 = 22;
-		WORD_POS_INFINITY_2 = 23;
-		WORD_POS_INFINITY_3 = 24;
-		WORD_POS_INFINITY_4 = 25;
-		WORD_POS_INFINITY_5 = 26;
-		WORD_POS_INFINITY_6 = 27;
-		WORD_POS_INFINITY_7 = 28;
-		WORD_POS_FIELD = 29;
-		WORD_POS_AFTER_FIELD = 30;
-		WORD_POS_END = 31;
-		WORD_POS_AFTER_FIELD_VALUE = 32;
-		CONTEXT_UNKNOWN = 0;
-		CONTEXT_IN_ARRAY = 1;
-		CONTEXT_OBJECT_FIELD = 2;
-		CONTEXT_OBJECT_FIELD_VALUE = 3;
-		CONTEXT_CLASS_FIELD = 4;
-		CONTEXT_CLASS_VALUE = 5;
-		CONTEXT_CLASS_FIELD_VALUE = 6;
-		keywords = {
+		WORD_POS_RESET$1 = 0;
+		WORD_POS_TRUE_1$1 = 1;
+		WORD_POS_TRUE_2$1 = 2;
+		WORD_POS_TRUE_3$1 = 3;
+		WORD_POS_FALSE_1$1 = 5;
+		WORD_POS_FALSE_2$1 = 6;
+		WORD_POS_FALSE_3$1 = 7;
+		WORD_POS_FALSE_4$1 = 8;
+		WORD_POS_NULL_1$1 = 9;
+		WORD_POS_NULL_2$1 = 10;
+		WORD_POS_NULL_3$1 = 11;
+		WORD_POS_UNDEFINED_1$1 = 12;
+		WORD_POS_UNDEFINED_2$1 = 13;
+		WORD_POS_UNDEFINED_3$1 = 14;
+		WORD_POS_UNDEFINED_4$1 = 15;
+		WORD_POS_UNDEFINED_5$1 = 16;
+		WORD_POS_UNDEFINED_6$1 = 17;
+		WORD_POS_UNDEFINED_7$1 = 18;
+		WORD_POS_UNDEFINED_8$1 = 19;
+		WORD_POS_NAN_1$1 = 20;
+		WORD_POS_NAN_2$1 = 21;
+		WORD_POS_INFINITY_1$1 = 22;
+		WORD_POS_INFINITY_2$1 = 23;
+		WORD_POS_INFINITY_3$1 = 24;
+		WORD_POS_INFINITY_4$1 = 25;
+		WORD_POS_INFINITY_5$1 = 26;
+		WORD_POS_INFINITY_6$1 = 27;
+		WORD_POS_INFINITY_7$1 = 28;
+		WORD_POS_FIELD$1 = 29;
+		WORD_POS_AFTER_FIELD$1 = 30;
+		WORD_POS_END$1 = 31;
+		WORD_POS_AFTER_FIELD_VALUE$1 = 32;
+		CONTEXT_UNKNOWN$1 = 0;
+		CONTEXT_IN_ARRAY$1 = 1;
+		CONTEXT_OBJECT_FIELD$1 = 2;
+		CONTEXT_OBJECT_FIELD_VALUE$1 = 3;
+		CONTEXT_CLASS_FIELD$1 = 4;
+		CONTEXT_CLASS_VALUE$1 = 5;
+		CONTEXT_CLASS_FIELD_VALUE$1 = 6;
+		keywords$1 = {
 			["true"]: true,
 			["false"]: false,
 			["null"]: null,
@@ -3689,27 +3745,48 @@ cacheWillUpdate: async ({ response }) => {
 			["Infinity"]: Infinity,
 			["undefined"]: void 0
 		};
-		DateNS = class extends Date {
+		canTagOrBeTagged = (value_type) => value_type === VALUE_UNSET$1 || value_type === VALUE_STRING$1;
+		isKeywordValue = (value_type) => value_type === VALUE_TRUE$1 || value_type === VALUE_FALSE$1 || value_type === VALUE_NULL$1 || value_type === VALUE_UNDEFINED$1 || value_type === VALUE_NAN$1 || value_type === VALUE_NEG_NAN$1 || value_type === VALUE_INFINITY$1 || value_type === VALUE_NEG_INFINITY$1;
+		isWhitespace = (cInt) => cInt === 32 || cInt === 9 || cInt === 10 || cInt === 13 || cInt === 65279 || cInt === 8232 || cInt === 8233;
+		isLineTerminator = (cInt) => cInt === 10 || cInt === 13 || cInt === 8232 || cInt === 8233;
+		DateNS$1 = class extends Date {
 			constructor(a, b) {
-				super(a);
+				if (a === void 0) super();
+				else super(a);
 				this.ns = b || 0;
 			}
+			toString() {
+				return dateNSToLocalISO(this);
+			}
+			toISOString() {
+				const base = Date.prototype.toISOString.call(this);
+				const frac = (base.slice(-4, -1) + dateNSPad6(this.ns)).replace(/0+$/, "");
+				return base.slice(0, -5) + (frac ? "." + frac : "") + "Z";
+			}
+			toLocalISOString() {
+				return dateNSToLocalISO(this);
+			}
 		};
-		JSOX.DateNS = DateNS;
-		contexts = [];
+		JSOX$1.DateNS = DateNS$1;
+		contexts$1 = [];
 		/**
 		* SACK jsox compatibility; hands maps to internal C++ code in other case.
 		* @internal
 		*/
-		JSOX.updateContext = function() {};
-		buffers = [];
+		JSOX$1.updateContext = function() {};
+		buffers$1 = [];
 		/**
 		* Provide minimal escapes for a string to be encapsulated as a JSOX string in quotes.
 		*
-		* @param {string} string 
+		* The caller supplies the quotes, and may append the result in segments, so this
+		* cannot know which of the three quote characters will end up delimiting it; all
+		* three are escaped regardless.  A parser accepts a foreign quote unescaped -- and
+		* a raw newline in any quote style -- so this is conservative, not required.
+		*
+		* @param {string} string
 		* @returns {string}
 		*/
-		JSOX.escape = function(string) {
+		JSOX$1.escape = function(string) {
 			let n;
 			let output = "";
 			if (!string) return string;
@@ -3719,33 +3796,40 @@ cacheWillUpdate: async ({ response }) => {
 			}
 			return output;
 		};
-		toProtoTypes = /* @__PURE__ */ new WeakMap();
-		toObjectTypes = /* @__PURE__ */ new Map();
-		fromProtoTypes = /* @__PURE__ */ new Map();
-		commonClasses = [];
+		toProtoTypes$1 = /* @__PURE__ */ new WeakMap();
+		toObjectTypes$1 = /* @__PURE__ */ new Map();
+		fromProtoTypes$1 = /* @__PURE__ */ new Map();
+		commonClasses$1 = [];
 		/**
 		* reset JSOX parser entirely; clears all type mappings
 		*
 		* @returns {void}
 		*/
-		JSOX.reset = function() {
-			toProtoTypes = /* @__PURE__ */ new WeakMap();
-			toObjectTypes = /* @__PURE__ */ new Map();
-			fromProtoTypes = /* @__PURE__ */ new Map();
-			commonClasses = [];
+		JSOX$1.reset = function() {
+			toProtoTypes$1 = /* @__PURE__ */ new WeakMap();
+			toObjectTypes$1 = /* @__PURE__ */ new Map();
+			fromProtoTypes$1 = /* @__PURE__ */ new Map();
+			commonClasses$1 = [];
+			_parse_level$1 = 0;
+		};
+		DeferredRef = class {
+			constructor(path, cause) {
+				this.path = path;
+				this.cause = cause;
+			}
 		};
 		/**
 		* Create a streaming parser.  Add data with parser.write(data); values that
 		* are found are dispatched to the callback.
 		*
 		* @param {(value:any) => void} [cb]
-		* @param {(this: any, key: string, value: any) => any} [reviver] 
+		* @param {(this: any, key: string, value: any) => any} [reviver]
 		* @returns {JSOXParser}
 		*/
-		JSOX.begin = function(cb, reviver) {
+		JSOX$1.begin = function(cb, reviver) {
 			const val = {
 				name: null,
-				value_type: VALUE_UNSET,
+				value_type: VALUE_UNSET$1,
 				string: "",
 				contains: null,
 				className: null
@@ -3757,7 +3841,7 @@ cacheWillUpdate: async ({ response }) => {
 			let n = 0;
 			let str;
 			let localFromProtoTypes = /* @__PURE__ */ new Map();
-			let word = WORD_POS_RESET, status = true, redefineClass = false, negative = false, result = null, rootObject = null, elements = void 0, context_stack = {
+			let word = WORD_POS_RESET$1, status = true, redefineClass = false, negative = false, signPending = false, result = null, rootObject = null, deferredRefs = null, deferredFixups = null, elements = void 0, context_stack = {
 				first: null,
 				last: null,
 				saved: null,
@@ -3779,17 +3863,27 @@ cacheWillUpdate: async ({ response }) => {
 					this.length++;
 				},
 				pop() {
-					let result = this.last;
-					if (!(this.last = result.prior)) this.first = null;
-					result.next = this.saved;
+					let r = this.last;
+					if (!(this.last = r.prior)) this.first = null;
+					r.next = this.saved;
 					if (this.last) this.last.next = null;
-					if (!result.next) result.first = null;
-					this.saved = result;
+					if (!r.next) r.first = null;
+					this.saved = r;
 					this.length--;
-					return result.node;
+					return r.node;
 				},
-				length: 0
-			}, classes = [], protoTypes = {}, current_proto = null, current_class = null, current_class_field = 0, arrayType = -1, parse_context = CONTEXT_UNKNOWN, comment = 0, fromHex = false, decimal = false, exponent = false, exponent_sign = false, exponent_digit = false, inQueue = {
+				length: 0,
+				dump() {
+					console.log("STACK LENGTH:", this.length);
+					let cur = this.first;
+					let level = 0;
+					while (cur) {
+						console.log("Context:", level, cur.node);
+						level++;
+						cur = cur.next;
+					}
+				}
+			}, classes = [], protoTypes = {}, current_proto = null, current_class = null, current_class_field = 0, arrayType = -1, parse_context = CONTEXT_UNKNOWN$1, comment = 0, fromHex = false, decimal = false, exponent = false, exponent_sign = false, exponent_digit = false, inQueue = {
 				first: null,
 				last: null,
 				saved: null,
@@ -3810,12 +3904,12 @@ cacheWillUpdate: async ({ response }) => {
 					this.last = recover;
 				},
 				shift() {
-					let result = this.first;
-					if (!result) return null;
-					if (!(this.first = result.next)) this.last = null;
-					result.next = this.saved;
-					this.saved = result;
-					return result.node;
+					let r = this.first;
+					if (!r) return null;
+					if (!(this.first = r.next)) this.last = null;
+					r.next = this.saved;
+					this.saved = r;
+					return r.node;
 				},
 				unshift(node) {
 					let recover = this.saved;
@@ -3869,8 +3963,9 @@ cacheWillUpdate: async ({ response }) => {
 				* Reset the parser to a blank state.
 				*/
 				reset() {
-					word = WORD_POS_RESET;
+					word = WORD_POS_RESET$1;
 					status = true;
+					result = null;
 					if (inQueue.last) inQueue.last.next = inQueue.save;
 					inQueue.save = inQueue.first;
 					inQueue.first = inQueue.last = null;
@@ -3879,16 +3974,17 @@ cacheWillUpdate: async ({ response }) => {
 					context_stack.save = inQueue.first;
 					context_stack.first = context_stack.last = null;
 					elements = void 0;
-					parse_context = CONTEXT_UNKNOWN;
+					parse_context = CONTEXT_UNKNOWN$1;
 					classes = [];
 					protoTypes = {};
 					current_proto = null;
 					current_class = null;
 					current_class_field = 0;
-					val.value_type = VALUE_UNSET;
+					val.value_type = VALUE_UNSET$1;
 					val.name = null;
 					val.string = "";
 					val.className = null;
+					val.contains = null;
 					pos.line = 1;
 					pos.col = 1;
 					negative = false;
@@ -3898,6 +3994,18 @@ cacheWillUpdate: async ({ response }) => {
 					stringEscape = false;
 					cr_escaped = false;
 					date_format = false;
+					arrayType = -1;
+					gatheringNumber = false;
+					signPending = false;
+					redefineClass = false;
+					rootObject = null;
+					deferredRefs = null;
+					deferredFixups = null;
+					stringUnicode = false;
+					unicodeWide = false;
+					stringHex = false;
+					hex_char = 0;
+					hex_char_len = 0;
 				},
 				usePrototype(className, protoType) {
 					protoTypes[className] = protoType;
@@ -3911,7 +4019,7 @@ cacheWillUpdate: async ({ response }) => {
 					if (typeof msg !== "string" && typeof msg !== "undefined") msg = String(msg);
 					if (!status) throw new Error("Parser is still in an error state, please reset before resuming");
 					for (retcode = this._write(msg, false); retcode > 0; retcode = this._write()) {
-						if (typeof reviver === "function") (function walk(holder, key) {
+						const res = typeof reviver === "function" ? function walk(holder, key) {
 							let k, v, value = holder[key];
 							if (value && typeof value === "object") {
 								for (k in value) if (Object.prototype.hasOwnProperty.call(value, k)) {
@@ -3921,8 +4029,9 @@ cacheWillUpdate: async ({ response }) => {
 								}
 							}
 							return reviver.call(holder, key, value);
-						})({ "": result }, "");
-						result = cb(result);
+						}({ "": result }, "") : result;
+						result = null;
+						cb(res);
 						if (retcode < 2) break;
 					}
 				},
@@ -3939,9 +4048,9 @@ cacheWillUpdate: async ({ response }) => {
 					const writeResult = this._write(msg, true);
 					if (writeResult > 0) {
 						if (writeResult > 1) {}
-						let result = this.value();
-						if ("undefined" === typeof result && writeResult > 1) throw new Error("Pending value could not complete");
-						result = typeof reviver === "function" ? function walk(holder, key) {
+						let res = this.value();
+						if ("undefined" === typeof res && writeResult > 1) throw new Error("Pending value could not complete");
+						res = typeof reviver === "function" ? function walk(holder, key) {
 							let k, v, value = holder[key];
 							if (value && typeof value === "object") {
 								for (k in value) if (Object.prototype.hasOwnProperty.call(value, k)) {
@@ -3951,8 +4060,9 @@ cacheWillUpdate: async ({ response }) => {
 								}
 							}
 							return reviver.call(holder, key, value);
-						}({ "": result }, "") : result;
-						return result;
+						}({ "": res }, "") : res;
+						result = null;
+						return res;
 					}
 					this.finalError();
 				},
@@ -3965,19 +4075,17 @@ cacheWillUpdate: async ({ response }) => {
 						throw new Error(`${leader} '${String.fromCodePoint(c)}' unexpected at ${n} (near '${buf.substr(n > 4 ? n - 4 : 0, n > 4 ? 3 : n - 1)}[${String.fromCodePoint(c)}]${buf.substr(n, 10)}') [${pos.line}:${pos.col}]`);
 					}
 					function RESET_VAL() {
-						val.value_type = VALUE_UNSET;
+						val.value_type = VALUE_UNSET$1;
 						val.string = "";
 						val.contains = null;
 					}
 					function convertValue() {
 						let fp = null;
 						switch (val.value_type) {
-							case VALUE_NUMBER:
+							case VALUE_NUMBER$1:
 								if ((val.string.length > 13 || val.string.length == 13 && val[0] > "2") && !date_format && !exponent_digit && !exponent_sign && !decimal) isBigInt = true;
-								if (isBigInt) {
-									if (hasBigInt) return BigInt(val.string);
-									else throw new Error("no builtin BigInt()", 0);
-								}
+								if (isBigInt) if (hasBigInt$1) return BigInt(val.string);
+								else throw new Error("no builtin BigInt()", 0);
 								if (date_format) {
 									const r = val.string.match(/\.(\d\d\d\d*)/);
 									const frac = r ? r[1] : null;
@@ -3988,87 +4096,99 @@ cacheWillUpdate: async ({ response }) => {
 									} else {
 										let ns = frac.substr(3);
 										while (ns.length < 6) ns = ns + "0";
-										const r = new DateNS(val.string, Number(ns));
+										const r = new DateNS$1(val.string, Number(ns));
 										if (isNaN(r.getTime())) throwError("Bad DateNS format" + r + r.getTime(), cInt);
 										return r;
 									}
 								}
 								return (negative ? -1 : 1) * Number(val.string);
-							case VALUE_STRING:
+							case VALUE_STRING$1:
 								if (val.className) {
 									fp = localFromProtoTypes.get(val.className);
-									if (!fp) fp = fromProtoTypes.get(val.className);
-									if (fp && fp.cb) {
-										val.className = null;
-										return fp.cb.call(val.string);
-									} else throw new Error("Double string error, no constructor for: new " + val.className + "(" + val.string + ")");
+									if (!fp) fp = fromProtoTypes$1.get(val.className);
+									val.className = null;
+									if (fp && (fp.cb || !fp.synthetic)) {
+										const inst = fp.protoCon ? new fp.protoCon(val.string) : val.string;
+										if (fp.cb) {
+											const r = fp.cb.call(inst, void 0, val.string);
+											return r === void 0 ? inst : r;
+										}
+										return inst;
+									}
+									return val.string;
 								}
 								return val.string;
-							case VALUE_TRUE: return true;
-							case VALUE_FALSE: return false;
-							case VALUE_NEG_NAN: return NaN;
-							case VALUE_NAN: return NaN;
-							case VALUE_NEG_INFINITY: return -Infinity;
-							case VALUE_INFINITY: return Infinity;
-							case VALUE_NULL: return null;
-							case VALUE_UNDEFINED: return;
-							case VALUE_EMPTY: return;
-							case VALUE_OBJECT:
+							case VALUE_TRUE$1: return true;
+							case VALUE_FALSE$1: return false;
+							case VALUE_NEG_NAN$1: return NaN;
+							case VALUE_NAN$1: return NaN;
+							case VALUE_NEG_INFINITY$1: return -Infinity;
+							case VALUE_INFINITY$1: return Infinity;
+							case VALUE_NULL$1: return null;
+							case VALUE_UNDEFINED$1: return;
+							case VALUE_EMPTY$1: return;
+							case VALUE_OBJECT$1:
 								if (val.className) {
 									fp = localFromProtoTypes.get(val.className);
-									if (!fp) fp = fromProtoTypes.get(val.className);
+									if (!fp) fp = fromProtoTypes$1.get(val.className);
 									val.className = null;
 									if (fp && fp.cb) return val.contains = fp.cb.call(val.contains);
 								}
 								return val.contains;
-							case VALUE_ARRAY:
+							case VALUE_ARRAY$1:
 								if (arrayType >= 0) {
 									let ab;
-									if (val.contains.length) ab = DecodeBase64(val.contains[0]);
-									else ab = DecodeBase64(val.string);
+									val.className = null;
+									if (val.contains.length) {
+										if ("string" !== typeof val.contains[0]) throw new Error("Invalid base64 payload in " + knownArrayTypeNames$1[arrayType] + "[...]; a payload starting with a digit must be quoted");
+										ab = DecodeBase64$1(val.contains[0]);
+									} else ab = DecodeBase64$1(val.string);
 									if (arrayType === 0) {
 										arrayType = -1;
 										return ab;
 									} else {
-										const newab = new knownArrayTypes[arrayType](ab);
+										const per = knownArrayTypes$1[arrayType].BYTES_PER_ELEMENT;
+										if (ab.byteLength % per) throw new Error("bad encoding for typed array data in " + knownArrayTypeNames$1[arrayType] + "[...]; " + ab.byteLength + " bytes is not a multiple of " + per);
+										const newab = new knownArrayTypes$1[arrayType](ab);
 										arrayType = -1;
 										return newab;
 									}
 								} else if (arrayType === -2) {
-									let obj = rootObject;
-									let lvl;
-									const pathlen = val.contains.length;
-									for (lvl = 0; lvl < pathlen; lvl++) {
-										const idx = val.contains[lvl];
-										let nextObj = obj[idx];
-										if (!nextObj) {
-											let ctx = context_stack.first;
-											let p = 0;
-											while (ctx && p < pathlen && p < context_stack.length) {
-												const thisKey = val.contains[p];
-												if (!ctx.next || thisKey !== ctx.next.node.name) break;
-												if (ctx.next) {
-													if ("number" === typeof thisKey) {
+									const deferPath = val.contains.slice();
+									try {
+										let obj = rootObject;
+										let lvl;
+										let lastResume = -1;
+										val.className = null;
+										const pathlen = val.contains.length;
+										for (lvl = 0; lvl < pathlen; lvl++) {
+											const idx = val.contains[lvl];
+											let nextObj = obj[idx];
+											if (!nextObj) {
+												let ctx = context_stack.first;
+												let p = 0;
+												while (ctx && p < pathlen && p < context_stack.length) {
+													const thisKey = val.contains[p];
+													if (!ctx.next || thisKey !== ctx.next.node.name) break;
+													if (ctx.next) if ("number" === typeof thisKey) {
 														const actualObject = ctx.next.node.elements;
-														if (actualObject && thisKey >= actualObject.length) {
-															if (p === context_stack.length - 1) {
-																console.log("This is actually at the current object so use that", p, val.contains, elements);
-																nextObj = elements;
-																p++;
+														if (actualObject && thisKey >= actualObject.length) if (p === context_stack.length - 1) {
+															console.log("This is actually at the current object so use that", p, val.contains, elements);
+															nextObj = elements;
+															p++;
+															ctx = ctx.next;
+															break;
+														} else {
+															if (ctx.next.next && thisKey === actualObject.length) {
+																nextObj = ctx.next.next.node.elements;
 																ctx = ctx.next;
-																break;
-															} else {
-																if (ctx.next.next && thisKey === actualObject.length) {
-																	nextObj = ctx.next.next.node.elements;
-																	ctx = ctx.next;
-																	p++;
-																	obj = nextObj;
-																	continue;
-																}
-																nextObj = elements;
 																p++;
-																break;
+																obj = nextObj;
+																continue;
 															}
+															nextObj = elements;
+															p++;
+															break;
 														}
 													} else if (thisKey !== ctx.next.node.name) {
 														nextObj = ctx.next.node.elements[thisKey];
@@ -4076,194 +4196,268 @@ cacheWillUpdate: async ({ response }) => {
 														break;
 													} else if (ctx.next.next) nextObj = ctx.next.next.node.elements;
 													else nextObj = elements;
-												} else nextObj = nextObj[thisKey];
-												ctx = ctx.next;
-												p++;
+													else nextObj = nextObj[thisKey];
+													ctx = ctx.next;
+													p++;
+												}
+												if (p <= lastResume) throw new Error("Path did not resolve properly:" + val.contains + " stalled at " + p + " (no progress)");
+												lastResume = p;
+												if (p < pathlen) lvl = p - 1;
+												else lvl = p;
 											}
-											if (p < pathlen) lvl = p - 1;
-											else lvl = p;
+											if (nextObj === void 0 || nextObj === null) throw new Error("Path did not resolve properly:" + val.contains + " at " + idx + "(" + lvl + ")");
+											if (nextObj === val.contains) throw new Error("Reference points at the slot holding it: ref[" + val.contains + "]");
+											obj = nextObj;
 										}
-										if ("object" === typeof nextObj && !nextObj) throw new Error("Path did not resolve properly:" + val.contains + " at " + idx + "(" + lvl + ")");
-										obj = nextObj;
+										arrayType = -3;
+										if (isStillOpen(obj)) {
+											const placeholder = new DeferredRef(deferPath, null);
+											placeholder.owner = elements;
+											if (!deferredRefs) deferredRefs = [];
+											deferredRefs.push(placeholder);
+											return placeholder;
+										}
+										return obj;
+									} catch (err) {
+										arrayType = -3;
+										const placeholder = new DeferredRef(deferPath, err);
+										placeholder.owner = elements;
+										if (!deferredRefs) deferredRefs = [];
+										deferredRefs.push(placeholder);
+										return placeholder;
 									}
-									arrayType = -3;
-									return obj;
 								}
 								if (val.className) {
 									fp = localFromProtoTypes.get(val.className);
-									if (!fp) fp = fromProtoTypes.get(val.className);
+									if (!fp) fp = fromProtoTypes$1.get(val.className);
 									val.className = null;
 									if (fp && fp.cb) return fp.cb.call(val.contains);
 								}
 								return val.contains;
-							default: console.log("Unhandled value conversion.", val);
+							default:
+								console.log("Unhandled value conversion.", val);
+								break;
 						}
+					}
+					function noteDeferred(ref, container, key) {
+						if (!deferredFixups) deferredFixups = [];
+						deferredFixups.push({
+							ref,
+							container,
+							key
+						});
+					}
+					function isStillOpen(obj) {
+						if (!obj || "object" !== typeof obj) return false;
+						if (obj === elements) return true;
+						for (let ctx = context_stack.first; ctx; ctx = ctx.next) if (ctx.node && ctx.node.elements === obj) return true;
+						return false;
+					}
+					function reviveTaggedArray() {
+						if (!val.className) return void 0;
+						let fp = localFromProtoTypes.get(val.className);
+						if (!fp) fp = fromProtoTypes$1.get(val.className);
+						val.className = null;
+						if (fp && fp.cb) return fp.cb.call(val.contains);
 					}
 					function arrayPush() {
 						if (arrayType == -3) {
-							if (val.value_type === VALUE_OBJECT) elements.push(val.contains);
+							if (val.value_type === VALUE_OBJECT$1) elements.push(val.contains);
+							else if (val.value_type === VALUE_ARRAY$1) {
+								const revived = reviveTaggedArray();
+								if (revived !== void 0) {
+									const idx = elements.lastIndexOf(val.contains);
+									if (idx >= 0) elements[idx] = revived;
+								}
+							}
 							arrayType = -1;
 							return;
 						}
 						switch (val.value_type) {
-							case VALUE_EMPTY:
+							case VALUE_EMPTY$1:
 								elements.push(void 0);
 								delete elements[elements.length - 1];
 								break;
-							default: elements.push(convertValue());
+							default: {
+								const pushed = convertValue();
+								elements.push(pushed);
+								if (pushed instanceof DeferredRef) noteDeferred(pushed, elements, elements.length - 1);
+								if (arrayType === -3) arrayType = -1;
+								break;
+							}
 						}
 						RESET_VAL();
 					}
+					function nextClassField() {
+						if (elements && Object.keys(elements).length > current_class_field) throwError("class body mixes named and positional values; fault while parsing;", cInt);
+						const name = current_class.fields[current_class_field++];
+						if (void 0 === name) throwError("class field has no matching field definitions;", cInt);
+						return name;
+					}
 					function objectPush() {
-						if (arrayType === -3 && val.value_type === VALUE_ARRAY) {
+						if (arrayType === -3 && val.value_type === VALUE_ARRAY$1) {
+							const revived = reviveTaggedArray();
+							if (revived !== void 0 && elements[val.name] === val.contains) elements[val.name] = revived;
 							RESET_VAL();
 							arrayType = -1;
 							return;
 						}
-						if (val.value_type === VALUE_EMPTY) return;
-						if (!val.name && current_class) val.name = current_class.fields[current_class_field++];
+						if (val.value_type === VALUE_EMPTY$1) return;
+						if (!val.name && current_class) val.name = nextClassField();
 						let value = convertValue();
 						if (current_proto && current_proto.protoDef && current_proto.protoDef.cb) {
 							value = current_proto.protoDef.cb.call(elements, val.name, value);
-							if (value) elements[val.name] = value;
+							if (value !== void 0) elements[val.name] = value;
 						} else elements[val.name] = value;
+						if (elements[val.name] instanceof DeferredRef) noteDeferred(elements[val.name], elements, val.name);
 						RESET_VAL();
 					}
 					function recoverIdent(cInt) {
-						if (word !== WORD_POS_RESET) {
-							if (negative) throwError("Negative outside of quotes, being converted to a string (would lose count of leading '-' characters)", cInt);
+						if (word !== WORD_POS_RESET$1) {
+							if (negative) throwError("fault while parsing number;", cInt);
 							switch (word) {
-								case WORD_POS_END:
+								case WORD_POS_END$1:
 									switch (val.value_type) {
-										case VALUE_TRUE:
+										case VALUE_TRUE$1:
 											val.string += "true";
 											break;
-										case VALUE_FALSE:
+										case VALUE_FALSE$1:
 											val.string += "false";
 											break;
-										case VALUE_NULL:
+										case VALUE_NULL$1:
 											val.string += "null";
 											break;
-										case VALUE_INFINITY:
+										case VALUE_INFINITY$1:
 											val.string += "Infinity";
 											break;
-										case VALUE_NEG_INFINITY:
-											val.string += "-Infinity";
-											throwError("Negative outside of quotes, being converted to a string", cInt);
+										case VALUE_NEG_INFINITY$1:
+											throwError("fault while parsing number;", cInt);
 											break;
-										case VALUE_NAN:
+										case VALUE_NAN$1:
 											val.string += "NaN";
 											break;
-										case VALUE_NEG_NAN:
-											val.string += "-NaN";
-											throwError("Negative outside of quotes, being converted to a string", cInt);
+										case VALUE_NEG_NAN$1:
+											throwError("fault while parsing number;", cInt);
 											break;
-										case VALUE_UNDEFINED:
+										case VALUE_UNDEFINED$1:
 											val.string += "undefined";
 											break;
-										case VALUE_STRING: break;
-										case VALUE_UNSET: break;
+										case VALUE_STRING$1: break;
+										case VALUE_UNSET$1: break;
 										default: console.log("Value of type " + val.value_type + " is not restored...");
 									}
 									break;
-								case WORD_POS_TRUE_1:
+								case WORD_POS_TRUE_1$1:
 									val.string += "t";
 									break;
-								case WORD_POS_TRUE_2:
+								case WORD_POS_TRUE_2$1:
 									val.string += "tr";
 									break;
-								case WORD_POS_TRUE_3:
+								case WORD_POS_TRUE_3$1:
 									val.string += "tru";
 									break;
-								case WORD_POS_FALSE_1:
+								case WORD_POS_FALSE_1$1:
 									val.string += "f";
 									break;
-								case WORD_POS_FALSE_2:
+								case WORD_POS_FALSE_2$1:
 									val.string += "fa";
 									break;
-								case WORD_POS_FALSE_3:
+								case WORD_POS_FALSE_3$1:
 									val.string += "fal";
 									break;
-								case WORD_POS_FALSE_4:
+								case WORD_POS_FALSE_4$1:
 									val.string += "fals";
 									break;
-								case WORD_POS_NULL_1:
+								case WORD_POS_NULL_1$1:
 									val.string += "n";
 									break;
-								case WORD_POS_NULL_2:
+								case WORD_POS_NULL_2$1:
 									val.string += "nu";
 									break;
-								case WORD_POS_NULL_3:
+								case WORD_POS_NULL_3$1:
 									val.string += "nul";
 									break;
-								case WORD_POS_UNDEFINED_1:
+								case WORD_POS_UNDEFINED_1$1:
 									val.string += "u";
 									break;
-								case WORD_POS_UNDEFINED_2:
+								case WORD_POS_UNDEFINED_2$1:
 									val.string += "un";
 									break;
-								case WORD_POS_UNDEFINED_3:
+								case WORD_POS_UNDEFINED_3$1:
 									val.string += "und";
 									break;
-								case WORD_POS_UNDEFINED_4:
+								case WORD_POS_UNDEFINED_4$1:
 									val.string += "unde";
 									break;
-								case WORD_POS_UNDEFINED_5:
+								case WORD_POS_UNDEFINED_5$1:
 									val.string += "undef";
 									break;
-								case WORD_POS_UNDEFINED_6:
+								case WORD_POS_UNDEFINED_6$1:
 									val.string += "undefi";
 									break;
-								case WORD_POS_UNDEFINED_7:
+								case WORD_POS_UNDEFINED_7$1:
 									val.string += "undefin";
 									break;
-								case WORD_POS_UNDEFINED_8:
+								case WORD_POS_UNDEFINED_8$1:
 									val.string += "undefine";
 									break;
-								case WORD_POS_NAN_1:
+								case WORD_POS_NAN_1$1:
 									val.string += "N";
 									break;
-								case WORD_POS_NAN_2:
+								case WORD_POS_NAN_2$1:
 									val.string += "Na";
 									break;
-								case WORD_POS_INFINITY_1:
+								case WORD_POS_INFINITY_1$1:
 									val.string += "I";
 									break;
-								case WORD_POS_INFINITY_2:
+								case WORD_POS_INFINITY_2$1:
 									val.string += "In";
 									break;
-								case WORD_POS_INFINITY_3:
+								case WORD_POS_INFINITY_3$1:
 									val.string += "Inf";
 									break;
-								case WORD_POS_INFINITY_4:
+								case WORD_POS_INFINITY_4$1:
 									val.string += "Infi";
 									break;
-								case WORD_POS_INFINITY_5:
+								case WORD_POS_INFINITY_5$1:
 									val.string += "Infin";
 									break;
-								case WORD_POS_INFINITY_6:
+								case WORD_POS_INFINITY_6$1:
 									val.string += "Infini";
 									break;
-								case WORD_POS_INFINITY_7:
+								case WORD_POS_INFINITY_7$1:
 									val.string += "Infinit";
 									break;
-								case WORD_POS_RESET: break;
-								case WORD_POS_FIELD: break;
-								case WORD_POS_AFTER_FIELD: break;
-								case WORD_POS_AFTER_FIELD_VALUE: throwError("String-keyword recovery fail (after whitespace)", cInt);
+								case WORD_POS_RESET$1: break;
+								case WORD_POS_FIELD$1: break;
+								case WORD_POS_AFTER_FIELD$1: break;
+								case WORD_POS_AFTER_FIELD_VALUE$1: break;
+								default:
 							}
-							val.value_type = VALUE_STRING;
-							if (word < WORD_POS_FIELD) word = WORD_POS_END;
+							val.value_type = VALUE_STRING$1;
+							if (word < WORD_POS_FIELD$1) word = WORD_POS_END$1;
 						} else {
-							word = WORD_POS_END;
-							val.value_type = VALUE_STRING;
+							word = WORD_POS_END$1;
+							val.value_type = VALUE_STRING$1;
 						}
 						if (cInt == 123) openObject();
 						else if (cInt == 91) openArray();
 						else if (cInt == 44) {} else {
 							if (cInt == 32 || cInt == 13 || cInt == 10 || cInt == 9 || cInt == 65279 || cInt == 8232 || cInt == 8233) return;
 							if (cInt == 44 || cInt == 125 || cInt == 93 || cInt == 58);
-							else val.string += str;
+							else {
+								if (word === WORD_POS_AFTER_FIELD$1 || word === WORD_POS_AFTER_FIELD_VALUE$1) {
+									if (val.className) {
+										status = false;
+										throwError("too many strings in a row; fault while parsing;", cInt);
+									}
+									getProto();
+									if (!val.className) val.className = val.string;
+									val.string = "";
+									word = WORD_POS_END$1;
+								}
+								val.string += str;
+							}
 						}
 					}
 					function gatherString(start_c) {
@@ -4276,18 +4470,17 @@ cacheWillUpdate: async ({ response }) => {
 								n++;
 							}
 							pos.col++;
-							if (cInt == start_c) {
-								if (stringEscape) {
-									if (stringHex) throwError("Incomplete hexidecimal sequence", cInt);
-									else if (stringUnicode) throwError("Incomplete long unicode sequence", cInt);
-									else if (unicodeWide) throwError("Incomplete unicode sequence", cInt);
-									if (cr_escaped) {
-										cr_escaped = false;
-										retval = 1;
-									} else val.string += str;
-									stringEscape = false;
-								} else retval = 1;
-							} else if (stringEscape) {
+							if (cInt == start_c) if (stringEscape) {
+								if (stringHex) throwError("Incomplete hexidecimal sequence", cInt);
+								else if (stringUnicode) throwError("Incomplete long unicode sequence", cInt);
+								else if (unicodeWide) throwError("Incomplete unicode sequence", cInt);
+								if (cr_escaped) {
+									cr_escaped = false;
+									retval = 1;
+								} else val.string += str;
+								stringEscape = false;
+							} else retval = 1;
+							else if (stringEscape) {
 								if (unicodeWide) {
 									if (cInt == 125) {
 										val.string += String.fromCodePoint(hex_char);
@@ -4383,19 +4576,20 @@ cacheWillUpdate: async ({ response }) => {
 										hex_char_len = 0;
 										hex_char = 0;
 										continue;
-									default: val.string += str;
+									default:
+										val.string += str;
+										break;
 								}
 								stringEscape = false;
-							} else if (cInt === 92) {
-								if (stringEscape) {
-									val.string += "\\";
-									stringEscape = false;
-								} else {
-									stringEscape = true;
-									hex_char = 0;
-									hex_char_len = 0;
-								}
+							} else if (cInt === 92) if (stringEscape) {
+								val.string += "\\";
+								stringEscape = false;
 							} else {
+								stringEscape = true;
+								hex_char = 0;
+								hex_char_len = 0;
+							}
+							else {
 								if (cr_escaped) {
 									cr_escaped = false;
 									pos.line++;
@@ -4419,33 +4613,37 @@ cacheWillUpdate: async ({ response }) => {
 								if (cInt == 95) continue;
 								pos.col++;
 								if (cInt >= 48 && cInt <= 57) {
+									if (fromHex && ((val.string[1] === "b" || val.string[1] === "B") && cInt > 49 || (val.string[1] === "o" || val.string[1] === "O") && cInt > 55)) {
+										status = false;
+										throwError("fault while parsing number;", cInt);
+										break;
+									}
 									if (exponent) exponent_digit = true;
 									val.string += str;
-								} else if (cInt == 45 || cInt == 43) {
-									if (val.string.length == 0 || exponent && !exponent_sign && !exponent_digit) {
-										if (cInt == 45 && !exponent) negative = !negative;
-										val.string += str;
-										exponent_sign = true;
-									} else {
-										if (negative) {
-											val.string = "-" + val.string;
-											negative = false;
-										}
-										val.string += str;
-										date_format = true;
+								} else if (cInt == 45 || cInt == 43) if (val.string.length == 0 || exponent && !exponent_sign && !exponent_digit) {
+									if (cInt == 45 && !exponent) negative = !negative;
+									val.string += str;
+									exponent_sign = true;
+								} else {
+									if (negative) {
+										val.string = "-" + val.string;
+										negative = false;
 									}
-								} else if (cInt == 78) {
-									if (word == WORD_POS_RESET) {
+									val.string += str;
+									date_format = true;
+								}
+								else if (cInt == 78) {
+									if (word == WORD_POS_RESET$1) {
 										gatheringNumber = false;
-										word = WORD_POS_NAN_1;
+										word = WORD_POS_NAN_1$1;
 										return;
 									}
 									throwError("fault while parsing number;", cInt);
 									break;
 								} else if (cInt == 73) {
-									if (word == WORD_POS_RESET) {
+									if (word == WORD_POS_RESET$1) {
 										gatheringNumber = false;
-										word = WORD_POS_INFINITY_1;
+										word = WORD_POS_INFINITY_1$1;
 										return;
 									}
 									throwError("fault while parsing number;", cInt);
@@ -4471,121 +4669,120 @@ cacheWillUpdate: async ({ response }) => {
 									}
 									val.string += str;
 									date_format = true;
-								} else if (cInt == 46) {
-									if (!decimal && !fromHex && !exponent) {
-										val.string += str;
-										decimal = true;
-									} else {
-										status = false;
-										throwError("fault while parsing number;", cInt);
-										break;
-									}
-								} else if (cInt == 110) {
+								} else if (cInt == 46) if (!decimal && !fromHex && !exponent) {
+									val.string += str;
+									decimal = true;
+								} else {
+									status = false;
+									throwError("fault while parsing number;", cInt);
+									break;
+								}
+								else if (cInt == 110) {
 									isBigInt = true;
 									break;
-								} else if (fromHex && (cInt >= 95 && cInt <= 102 || cInt >= 65 && cInt <= 70)) val.string += str;
-								else if (cInt == 120 || cInt == 98 || cInt == 111 || cInt == 88 || cInt == 66 || cInt == 79) {
-									if (!fromHex && val.string == "0") {
-										fromHex = true;
-										val.string += str;
-									} else {
-										status = false;
-										throwError("fault while parsing number;", cInt);
-										break;
-									}
-								} else if (cInt == 101 || cInt == 69) {
-									if (!exponent) {
-										val.string += str;
-										exponent = true;
-									} else {
-										status = false;
-										throwError("fault while parsing number;", cInt);
-										break;
-									}
-								} else if (cInt == 32 || cInt == 13 || cInt == 10 || cInt == 9 || cInt == 47 || cInt == 35 || cInt == 44 || cInt == 125 || cInt == 93 || cInt == 123 || cInt == 91 || cInt == 34 || cInt == 39 || cInt == 96 || cInt == 58) {
-									pos.col -= n - _n;
-									n = _n;
-									break;
+								} else if (fromHex && (val.string[1] === "x" || val.string[1] === "X") && (cInt >= 97 && cInt <= 102 || cInt >= 65 && cInt <= 70)) val.string += str;
+								else if (cInt == 120 || cInt == 98 || cInt == 111 || cInt == 88 || cInt == 66 || cInt == 79) if (!fromHex && val.string == "0") {
+									fromHex = true;
+									val.string += str;
 								} else {
-									if (complete_at_end) {
-										status = false;
-										throwError("fault while parsing number;", cInt);
-									}
+									status = false;
+									throwError("fault while parsing number;", cInt);
 									break;
+								}
+								else if (cInt == 101 || cInt == 69) if (!exponent) {
+									val.string += str;
+									exponent = true;
+								} else {
+									status = false;
+									throwError("fault while parsing number;", cInt);
+									break;
+								}
+								else {
+									if (cInt == 160) break;
+									if (cInt == 32 || cInt == 13 || cInt == 10 || cInt == 9 || cInt == 47 || cInt == 35 || cInt == 44 || cInt == 125 || cInt == 93 || cInt == 123 || cInt == 91 || cInt == 34 || cInt == 39 || cInt == 96 || cInt == 58) {
+										pos.col -= n - _n;
+										n = _n;
+										break;
+									} else {
+										if (complete_at_end) {
+											status = false;
+											throwError("fault while parsing number;", cInt);
+										}
+										break;
+									}
 								}
 							}
 						}
 						if (!complete_at_end && n == buf.length) gatheringNumber = true;
 						else {
 							gatheringNumber = false;
-							val.value_type = VALUE_NUMBER;
-							if (parse_context == CONTEXT_UNKNOWN) completed = true;
+							val.value_type = VALUE_NUMBER$1;
+							if (parse_context == CONTEXT_UNKNOWN$1) completed = true;
 						}
 					}
 					function openObject() {
-						let nextMode = CONTEXT_OBJECT_FIELD;
+						let nextMode = CONTEXT_OBJECT_FIELD$1;
 						let cls = null;
 						let tmpobj = {};
-						if (word > WORD_POS_RESET && word < WORD_POS_FIELD) recoverIdent(123);
+						if (word > WORD_POS_RESET$1 && word < WORD_POS_FIELD$1) recoverIdent(123);
 						let protoDef;
 						protoDef = getProto();
-						if (parse_context == CONTEXT_UNKNOWN) {
-							if (word == WORD_POS_FIELD || word == WORD_POS_END && (protoDef || val.string.length)) {
-								if (protoDef && protoDef.protoDef && protoDef.protoDef.protoCon) tmpobj = new protoDef.protoDef.protoCon();
-								if (!protoDef || !protoDef.protoDef && val.string) {
-									cls = classes.find((cls) => cls.name === val.string);
-									if (!cls) {
-										function privateProto() {}
-										classes.push(cls = {
-											name: val.string,
-											protoCon: protoDef && protoDef.protoDef && protoDef.protoDef.protoCon || privateProto.constructor,
-											fields: []
-										});
-										nextMode = CONTEXT_CLASS_FIELD;
-									} else if (redefineClass) {
-										cls.fields.length = 0;
-										nextMode = CONTEXT_CLASS_FIELD;
-									} else {
-										tmpobj = new cls.protoCon();
-										nextMode = CONTEXT_CLASS_VALUE;
-									}
-									redefineClass = false;
+						if (parse_context == CONTEXT_UNKNOWN$1) if (word == WORD_POS_FIELD$1 || word == WORD_POS_END$1 && (protoDef || val.string.length)) {
+							if (protoDef && protoDef.protoDef && protoDef.protoDef.protoCon) tmpobj = new protoDef.protoDef.protoCon();
+							if (!protoDef || !protoDef.protoDef && val.string) {
+								cls = classes.find((cls) => cls.name === val.string);
+								if (!cls) {
+									function privateProto() {}
+									classes.push(cls = {
+										name: val.string,
+										protoCon: protoDef && protoDef.protoDef && protoDef.protoDef.protoCon || privateProto.prototype.constructor,
+										fields: []
+									});
+									nextMode = CONTEXT_CLASS_FIELD$1;
+								} else if (redefineClass) {
+									cls.fields.length = 0;
+									nextMode = CONTEXT_CLASS_FIELD$1;
+								} else {
+									tmpobj = new cls.protoCon();
+									nextMode = CONTEXT_CLASS_VALUE$1;
 								}
-								current_class = cls;
-								word = WORD_POS_RESET;
-							} else word = WORD_POS_FIELD;
-						} else if (word == WORD_POS_FIELD || parse_context === CONTEXT_IN_ARRAY || parse_context === CONTEXT_OBJECT_FIELD_VALUE || parse_context == CONTEXT_CLASS_VALUE) {
-							if (word != WORD_POS_RESET || val.value_type == VALUE_STRING) {
-								if (protoDef && protoDef.protoDef) tmpobj = new protoDef.protoDef.protoCon();
-								else {
-									cls = classes.find((cls) => cls.name === val.string);
-									if (!cls) {
-										function privateProto() {}
-										localFromProtoTypes.set(val.string, {
-											protoCon: privateProto.prototype.constructor,
-											cb: null
-										});
-										tmpobj = new privateProto();
-									} else {
-										nextMode = CONTEXT_CLASS_VALUE;
-										tmpobj = {};
-									}
+								redefineClass = false;
+							}
+							current_class = cls;
+							word = WORD_POS_RESET$1;
+						} else word = WORD_POS_FIELD$1;
+						else if (word == WORD_POS_FIELD$1 || parse_context === CONTEXT_IN_ARRAY$1 || parse_context === CONTEXT_OBJECT_FIELD_VALUE$1 || parse_context == CONTEXT_CLASS_VALUE$1) if (word != WORD_POS_RESET$1 || val.value_type == VALUE_STRING$1) {
+							if (protoDef && protoDef.protoDef) tmpobj = new protoDef.protoDef.protoCon();
+							else {
+								cls = classes.find((cls) => cls.name === val.string);
+								if (!cls) {
+									function privateProto() {}
+									localFromProtoTypes.set(val.string, {
+										protoCon: privateProto.prototype.constructor,
+										cb: null,
+										synthetic: true
+									});
+									tmpobj = new privateProto();
+								} else {
+									nextMode = CONTEXT_CLASS_VALUE$1;
+									tmpobj = new cls.protoCon();
 								}
-								word = WORD_POS_RESET;
-							} else word = WORD_POS_RESET;
-						} else if (parse_context == CONTEXT_OBJECT_FIELD && word == WORD_POS_RESET) {
+							}
+							word = WORD_POS_RESET$1;
+						} else word = WORD_POS_RESET$1;
+						else if (parse_context == CONTEXT_OBJECT_FIELD$1 && word == WORD_POS_RESET$1) {
 							throwError("fault while parsing; getting field name unexpected ", cInt);
 							status = false;
 							return false;
 						}
-						let old_context = getContext();
-						val.value_type = VALUE_OBJECT;
-						if (parse_context === CONTEXT_UNKNOWN) elements = tmpobj;
-						else if (parse_context == CONTEXT_IN_ARRAY) {
+						let old_context = getContext$1();
+						val.value_type = VALUE_OBJECT$1;
+						if (parse_context === CONTEXT_UNKNOWN$1) elements = tmpobj;
+						else if (parse_context == CONTEXT_IN_ARRAY$1) {
 							if (arrayType == -1) {}
 							val.name = elements.length;
-						} else if (parse_context == CONTEXT_OBJECT_FIELD_VALUE || parse_context == CONTEXT_CLASS_VALUE) {
-							if (!val.name && current_class) val.name = current_class.fields[current_class_field++];
+						} else if (parse_context == CONTEXT_OBJECT_FIELD_VALUE$1 || parse_context == CONTEXT_CLASS_VALUE$1) {
+							if (!val.name && current_class) val.name = nextClassField();
 							elements[val.name] = tmpobj;
 						}
 						old_context.context = parse_context;
@@ -4610,10 +4807,10 @@ cacheWillUpdate: async ({ response }) => {
 						return true;
 					}
 					function openArray() {
-						if (word > WORD_POS_RESET && word < WORD_POS_FIELD) recoverIdent(91);
-						if (word == WORD_POS_END && val.string.length) {
-							let typeIndex = knownArrayTypeNames.findIndex((type) => type === val.string);
-							word = WORD_POS_RESET;
+						if (word > WORD_POS_RESET$1 && word < WORD_POS_FIELD$1) recoverIdent(91);
+						if ((word == WORD_POS_END$1 || parse_context !== CONTEXT_UNKNOWN$1 && (word == WORD_POS_AFTER_FIELD$1 || word == WORD_POS_AFTER_FIELD_VALUE$1) || parse_context == CONTEXT_UNKNOWN$1 && word == WORD_POS_FIELD$1) && val.string.length) {
+							let typeIndex = knownArrayTypeNames$1.findIndex((type) => type === val.string);
+							word = WORD_POS_RESET$1;
 							if (typeIndex >= 0) {
 								arrayType = typeIndex;
 								val.className = val.string;
@@ -4622,32 +4819,31 @@ cacheWillUpdate: async ({ response }) => {
 								val.className = null;
 								arrayType = -2;
 							} else if (localFromProtoTypes.get(val.string)) val.className = val.string;
-							else if (fromProtoTypes.get(val.string)) val.className = val.string;
-							else throwError(`Unknown type '${val.string}' specified for array`, cInt);
-						} else if (parse_context == CONTEXT_OBJECT_FIELD || word == WORD_POS_FIELD || word == WORD_POS_AFTER_FIELD) {
+							else if (fromProtoTypes$1.get(val.string)) val.className = val.string;
+							else val.className = null;
+						} else if (parse_context == CONTEXT_OBJECT_FIELD$1 || word == WORD_POS_FIELD$1 || word == WORD_POS_AFTER_FIELD$1) {
 							throwError("Fault while parsing; while getting field name unexpected", cInt);
 							status = false;
 							return false;
 						}
 						{
-							let old_context = getContext();
-							val.value_type = VALUE_ARRAY;
+							let old_context = getContext$1();
+							val.value_type = VALUE_ARRAY$1;
 							let tmparr = [];
-							if (parse_context == CONTEXT_UNKNOWN) elements = tmparr;
-							else if (parse_context == CONTEXT_IN_ARRAY) {
+							if (parse_context == CONTEXT_UNKNOWN$1) elements = tmparr;
+							else if (parse_context == CONTEXT_IN_ARRAY$1) {
 								if (arrayType == -1) elements.push(tmparr);
 								val.name = elements.length;
-							} else if (parse_context == CONTEXT_OBJECT_FIELD_VALUE) {
+							} else if (parse_context == CONTEXT_OBJECT_FIELD_VALUE$1) {
 								if (!val.name) {
 									console.log("This says it's resolved.......");
 									arrayType = -3;
 								}
-								if (current_proto && current_proto.protoDef) {
-									if (current_proto.protoDef.cb) {
-										const newarr = current_proto.protoDef.cb.call(elements, val.name, tmparr);
-										if (newarr !== void 0) tmparr = elements[val.name] = newarr;
-									} else elements[val.name] = tmparr;
+								if (current_proto && current_proto.protoDef) if (current_proto.protoDef.cb) {
+									const newarr = current_proto.protoDef.cb.call(elements, val.name, tmparr);
+									if (newarr !== void 0) tmparr = elements[val.name] = newarr;
 								} else elements[val.name] = tmparr;
+								else elements[val.name] = tmparr;
 							}
 							old_context.context = parse_context;
 							old_context.elements = elements;
@@ -4668,45 +4864,45 @@ cacheWillUpdate: async ({ response }) => {
 							if (!rootObject) rootObject = tmparr;
 							context_stack.push(old_context);
 							RESET_VAL();
-							parse_context = CONTEXT_IN_ARRAY;
+							parse_context = CONTEXT_IN_ARRAY$1;
 						}
 						return true;
 					}
 					function getProto() {
-						const result = {
+						const rv = {
 							protoDef: null,
 							cls: null
 						};
-						if (result.protoDef = localFromProtoTypes.get(val.string)) {
+						if (rv.protoDef = localFromProtoTypes.get(val.string)) {
 							if (!val.className) {
 								val.className = val.string;
 								val.string = null;
 							}
-						} else if (result.protoDef = fromProtoTypes.get(val.string)) {
+						} else if (rv.protoDef = fromProtoTypes$1.get(val.string)) {
 							if (!val.className) {
 								val.className = val.string;
 								val.string = null;
 							}
 						}
 						if (val.string) {
-							result.cls = classes.find((cls) => cls.name === val.string);
-							if (!result.protoDef && !result.cls) {}
+							rv.cls = classes.find((cls) => cls.name === val.string);
+							if (!rv.protoDef && !rv.cls) {}
 						}
-						return result.protoDef || result.cls ? result : null;
+						return rv.protoDef || rv.cls ? rv : null;
 					}
 					if (!status) return -1;
 					if (msg && msg.length) {
-						input = getBuffer();
+						input = getBuffer$1();
 						input.buf = msg;
 						inQueue.push(input);
 					} else {
 						if (gatheringNumber) {
 							gatheringNumber = false;
-							val.value_type = VALUE_NUMBER;
-							if (parse_context == CONTEXT_UNKNOWN) completed = true;
+							val.value_type = VALUE_NUMBER$1;
+							if (parse_context == CONTEXT_UNKNOWN$1) completed = true;
 							retval = 1;
 						}
-						if (parse_context !== CONTEXT_UNKNOWN) throwError("Unclosed object at end of stream.", cInt);
+						if (parse_context !== CONTEXT_UNKNOWN$1) throwError("Unclosed object at end of stream.", cInt);
 					}
 					while (status && (input = inQueue.shift())) {
 						n = input.n;
@@ -4716,7 +4912,7 @@ cacheWillUpdate: async ({ response }) => {
 							if (string_status < 0) status = false;
 							else if (string_status > 0) {
 								gatheringString = false;
-								if (status) val.value_type = VALUE_STRING;
+								if (status) val.value_type = VALUE_STRING$1;
 							}
 						}
 						if (gatheringNumber) collectNumber();
@@ -4727,19 +4923,31 @@ cacheWillUpdate: async ({ response }) => {
 								str += buf.charAt(n);
 								n++;
 							}
+							const sawSignPending = signPending;
+							signPending = false;
+							if (sawSignPending && !(cInt >= 48 && cInt <= 57 || cInt == 46 || cInt == 73 || cInt == 78)) return throwError("extra data after token; sign is not followed by a number;", cInt);
 							pos.col++;
 							if (comment) {
-								if (comment == 1) {
-									if (cInt == 42) comment = 3;
-									else if (cInt != 47) return throwError("fault while parsing;", cInt);
-									else comment = 2;
-								} else if (comment == 2) {
-									if (cInt == 10 || cInt == 13) comment = 0;
+								let loneSolidus = false;
+								if (comment == 1) if (cInt == 42) comment = 3;
+								else if (cInt == 47) comment = 2;
+								else {
+									comment = 0;
+									loneSolidus = true;
+								}
+								else if (comment == 2) {
+									if (isLineTerminator(cInt)) comment = 0;
 								} else if (comment == 3) {
 									if (cInt == 42) comment = 4;
 								} else if (cInt == 47) comment = 0;
 								else comment = 3;
-								continue;
+								if (!loneSolidus) continue;
+								{
+									const held = str;
+									str = "/";
+									recoverIdent(47);
+									str = held;
+								}
 							}
 							switch (cInt) {
 								case 35:
@@ -4749,78 +4957,87 @@ cacheWillUpdate: async ({ response }) => {
 									comment = 1;
 									break;
 								case 123:
-									openObject();
-									break;
 								case 91:
-									openArray();
+									if (parse_context !== CONTEXT_UNKNOWN$1 && !canTagOrBeTagged(val.value_type)) {
+										status = false;
+										throwError("fault while parsing; two values with no separator between them;", cInt);
+									}
+									if (cInt === 123) openObject();
+									else openArray();
 									break;
 								case 58:
-									if (parse_context == CONTEXT_CLASS_VALUE) {
-										word = WORD_POS_RESET;
+									if (parse_context == CONTEXT_CLASS_VALUE$1) {
+										if (current_class_field > 0) {
+											status = false;
+											throwError("class body mixes named and positional values; fault while parsing;", cInt);
+										}
+										word = WORD_POS_RESET$1;
 										val.name = val.string;
 										val.string = "";
-										val.value_type = VALUE_UNSET;
-									} else if (parse_context == CONTEXT_OBJECT_FIELD || parse_context == CONTEXT_CLASS_FIELD) {
-										if (parse_context == CONTEXT_CLASS_FIELD) {
-											if (!Object.keys(elements).length) {
-												console.log("This is a full object, not a class def...", val.className);
-												const privateProto = () => {};
-												localFromProtoTypes.set(context_stack.last.node.current_class.name, {
-													protoCon: privateProto.prototype.constructor,
-													cb: null
-												});
-												elements = new privateProto();
-												parse_context = CONTEXT_OBJECT_FIELD_VALUE;
-												val.name = val.string;
-												word = WORD_POS_RESET;
-												val.string = "";
-												val.value_type = VALUE_UNSET;
-												console.log("don't do default;s do a revive...");
-											}
-										} else {
-											if (word != WORD_POS_RESET && word != WORD_POS_END && word != WORD_POS_FIELD && word != WORD_POS_AFTER_FIELD) recoverIdent(32);
-											word = WORD_POS_RESET;
-											val.name = val.string;
-											val.string = "";
-											parse_context = parse_context === CONTEXT_OBJECT_FIELD ? CONTEXT_OBJECT_FIELD_VALUE : CONTEXT_CLASS_FIELD_VALUE;
-											val.value_type = VALUE_UNSET;
+										val.value_type = VALUE_UNSET$1;
+									} else if (parse_context == CONTEXT_OBJECT_FIELD$1 || parse_context == CONTEXT_CLASS_FIELD$1) if (parse_context == CONTEXT_CLASS_FIELD$1) {
+										if (current_class && current_class.fields.length) {
+											status = false;
+											throwError("class body mixes named and positional values; fault while parsing;", cInt);
 										}
-									} else if (parse_context == CONTEXT_UNKNOWN) {
+										if (!Object.keys(elements).length) {
+											function privateProto() {}
+											localFromProtoTypes.set(context_stack.last.node.current_class.name, {
+												protoCon: privateProto.prototype.constructor,
+												cb: null,
+												synthetic: true
+											});
+											elements = new privateProto();
+											parse_context = CONTEXT_OBJECT_FIELD_VALUE$1;
+											val.name = val.string;
+											word = WORD_POS_RESET$1;
+											val.string = "";
+											val.value_type = VALUE_UNSET$1;
+										}
+									} else {
+										if (word != WORD_POS_RESET$1 && word != WORD_POS_END$1 && word != WORD_POS_FIELD$1 && word != WORD_POS_AFTER_FIELD$1) recoverIdent(32);
+										word = WORD_POS_RESET$1;
+										val.name = val.string;
+										val.string = "";
+										parse_context = parse_context === CONTEXT_OBJECT_FIELD$1 ? CONTEXT_OBJECT_FIELD_VALUE$1 : CONTEXT_CLASS_FIELD_VALUE$1;
+										val.value_type = VALUE_UNSET$1;
+									}
+									else if (parse_context == CONTEXT_UNKNOWN$1) {
 										console.log("Override colon found, allow class redefinition", parse_context);
 										redefineClass = true;
 										break;
 									} else {
-										if (parse_context == CONTEXT_IN_ARRAY) throwError("(in array, got colon out of string):parsing fault;", cInt);
-										else if (parse_context == CONTEXT_OBJECT_FIELD_VALUE) throwError("String unexpected", cInt);
+										if (parse_context == CONTEXT_IN_ARRAY$1) throwError("(in array, got colon out of string):parsing fault;", cInt);
+										else if (parse_context == CONTEXT_OBJECT_FIELD_VALUE$1) throwError("String unexpected", cInt);
 										else throwError("(outside any object, got colon out of string):parsing fault;", cInt);
 										status = false;
 									}
 									break;
 								case 125:
-									if (word == WORD_POS_END) word = WORD_POS_RESET;
-									if (parse_context == CONTEXT_CLASS_FIELD) {
-										if (current_class) {
-											if (val.string) current_class.fields.push(val.string);
-											RESET_VAL();
-											let old_context = context_stack.pop();
-											parse_context = CONTEXT_UNKNOWN;
-											word = WORD_POS_RESET;
-											val.name = old_context.name;
-											elements = old_context.elements;
-											current_class = old_context.current_class;
-											current_class_field = old_context.current_class_field;
-											arrayType = old_context.arrayType;
-											val.value_type = old_context.valueType;
-											val.className = old_context.className;
-											rootObject = null;
-											dropContext(old_context);
-										} else throwError("State error; gathering class fields, and lost the class", cInt);
-									} else if (parse_context == CONTEXT_OBJECT_FIELD || parse_context == CONTEXT_CLASS_VALUE) {
-										if (val.value_type != VALUE_UNSET) {
-											if (current_class) val.name = current_class.fields[current_class_field++];
+									if (word == WORD_POS_END$1) word = WORD_POS_RESET$1;
+									if (parse_context == CONTEXT_CLASS_FIELD$1) if (current_class) {
+										if (val.string) current_class.fields.push(val.string);
+										RESET_VAL();
+										let old_context = context_stack.pop();
+										parse_context = CONTEXT_UNKNOWN$1;
+										word = WORD_POS_RESET$1;
+										val.name = old_context.name;
+										elements = old_context.elements;
+										current_class = old_context.current_class;
+										current_class_field = old_context.current_class_field;
+										arrayType = old_context.arrayType;
+										val.value_type = old_context.valueType;
+										val.className = old_context.className;
+										val.value_type = VALUE_UNSET$1;
+										rootObject = null;
+										dropContext$1(old_context);
+									} else throwError("State error; gathering class fields, and lost the class", cInt);
+									else if (parse_context == CONTEXT_OBJECT_FIELD$1 || parse_context == CONTEXT_CLASS_VALUE$1) {
+										if (val.value_type != VALUE_UNSET$1) {
+											if (current_class && !val.name) val.name = nextClassField();
 											objectPush();
 										}
-										val.value_type = VALUE_OBJECT;
+										val.value_type = VALUE_OBJECT$1;
 										if (current_proto && current_proto.protoDef) {
 											console.log("SOMETHING SHOULD AHVE BEEN REPLACED HERE??", current_proto);
 											console.log("The other version only revives on init");
@@ -4838,17 +5055,15 @@ cacheWillUpdate: async ({ response }) => {
 										arrayType = old_context.arrayType;
 										val.value_type = old_context.valueType;
 										val.className = old_context.className;
-										dropContext(old_context);
-										if (parse_context == CONTEXT_UNKNOWN) completed = true;
-									} else if (parse_context == CONTEXT_OBJECT_FIELD_VALUE) {
-										if (val.value_type === VALUE_UNSET) {
-											if (word == WORD_POS_RESET) throwError("Fault while parsing; unexpected", cInt);
-											else recoverIdent(cInt);
-										}
+										dropContext$1(old_context);
+										if (parse_context == CONTEXT_UNKNOWN$1) completed = true;
+									} else if (parse_context == CONTEXT_OBJECT_FIELD_VALUE$1) {
+										if (val.value_type === VALUE_UNSET$1) if (word == WORD_POS_RESET$1) throwError("Fault while parsing; unexpected", cInt);
+										else recoverIdent(cInt);
 										objectPush();
-										val.value_type = VALUE_OBJECT;
+										val.value_type = VALUE_OBJECT$1;
 										val.contains = elements;
-										word = WORD_POS_RESET;
+										word = WORD_POS_RESET$1;
 										let old_context = context_stack.pop();
 										parse_context = old_context.context;
 										val.name = old_context.name;
@@ -4859,8 +5074,8 @@ cacheWillUpdate: async ({ response }) => {
 										arrayType = old_context.arrayType;
 										val.value_type = old_context.valueType;
 										val.className = old_context.className;
-										dropContext(old_context);
-										if (parse_context == CONTEXT_UNKNOWN) completed = true;
+										dropContext$1(old_context);
+										if (parse_context == CONTEXT_UNKNOWN$1) completed = true;
 									} else {
 										throwError("Fault while parsing; unexpected", cInt);
 										status = false;
@@ -4868,10 +5083,10 @@ cacheWillUpdate: async ({ response }) => {
 									negative = false;
 									break;
 								case 93:
-									if (word >= WORD_POS_AFTER_FIELD) word = WORD_POS_RESET;
-									if (parse_context == CONTEXT_IN_ARRAY) {
-										if (val.value_type != VALUE_UNSET) arrayPush();
-										else if (word !== WORD_POS_RESET) {
+									if (word >= WORD_POS_AFTER_FIELD$1) word = WORD_POS_RESET$1;
+									if (parse_context == CONTEXT_IN_ARRAY$1) {
+										if (val.value_type != VALUE_UNSET$1) arrayPush();
+										else if (word !== WORD_POS_RESET$1) {
 											recoverIdent(cInt);
 											arrayPush();
 										}
@@ -4887,10 +5102,10 @@ cacheWillUpdate: async ({ response }) => {
 											current_class_field = old_context.current_class_field;
 											arrayType = old_context.arrayType;
 											val.value_type = old_context.valueType;
-											dropContext(old_context);
+											dropContext$1(old_context);
 										}
-										val.value_type = VALUE_ARRAY;
-										if (parse_context == CONTEXT_UNKNOWN) completed = true;
+										val.value_type = VALUE_ARRAY$1;
+										if (parse_context == CONTEXT_UNKNOWN$1) completed = true;
 									} else {
 										throwError(`bad context ${parse_context}; fault while parsing`, cInt);
 										status = false;
@@ -4898,103 +5113,158 @@ cacheWillUpdate: async ({ response }) => {
 									negative = false;
 									break;
 								case 44:
-									if (word < WORD_POS_AFTER_FIELD && word != WORD_POS_RESET) recoverIdent(cInt);
-									if (word == WORD_POS_END || word == WORD_POS_FIELD) word = WORD_POS_RESET;
-									if (parse_context == CONTEXT_CLASS_FIELD) {
+									if (word < WORD_POS_AFTER_FIELD$1 && word != WORD_POS_RESET$1) recoverIdent(cInt);
+									if (word == WORD_POS_END$1 || word == WORD_POS_FIELD$1) word = WORD_POS_RESET$1;
+									if (parse_context == CONTEXT_CLASS_FIELD$1) if (current_class) {
+										current_class.fields.push(val.string);
+										val.string = "";
+										word = WORD_POS_FIELD$1;
+									} else throwError("State error; gathering class fields, and lost the class", cInt);
+									else if (parse_context == CONTEXT_OBJECT_FIELD$1) {
 										if (current_class) {
-											current_class.fields.push(val.string);
-											val.string = "";
-											word = WORD_POS_FIELD;
-										} else throwError("State error; gathering class fields, and lost the class", cInt);
-									} else if (parse_context == CONTEXT_OBJECT_FIELD) {
-										if (current_class) {
-											val.name = current_class.fields[current_class_field++];
-											if (val.value_type != VALUE_UNSET) {
+											val.name = nextClassField();
+											if (val.value_type != VALUE_UNSET$1) {
 												objectPush();
 												RESET_VAL();
 											}
 										} else if (val.string || val.value_type) throwError("State error; comma in field name and/or lost the class", cInt);
-									} else if (parse_context == CONTEXT_CLASS_VALUE) {
+									} else if (parse_context == CONTEXT_CLASS_VALUE$1) {
 										if (current_class) {
-											if (arrayType != -3 && !val.name) val.name = current_class.fields[current_class_field++];
-											if (val.value_type != VALUE_UNSET) {
+											if (arrayType != -3 && !val.name) val.name = nextClassField();
+											if (val.value_type != VALUE_UNSET$1) {
 												if (arrayType != -3) objectPush();
 												RESET_VAL();
 											}
-										} else if (val.value_type != VALUE_UNSET) {
+										} else if (val.value_type != VALUE_UNSET$1) {
 											objectPush();
 											RESET_VAL();
 										}
 										val.name = null;
-									} else if (parse_context == CONTEXT_IN_ARRAY) {
-										if (val.value_type == VALUE_UNSET) val.value_type = VALUE_EMPTY;
+									} else if (parse_context == CONTEXT_IN_ARRAY$1) {
+										if (val.value_type == VALUE_UNSET$1) val.value_type = VALUE_EMPTY$1;
 										arrayPush();
 										RESET_VAL();
-										word = WORD_POS_RESET;
-									} else if (parse_context == CONTEXT_OBJECT_FIELD_VALUE && val.value_type != VALUE_UNSET) {
-										parse_context = CONTEXT_OBJECT_FIELD;
-										if (val.value_type != VALUE_UNSET) {
+										word = WORD_POS_RESET$1;
+									} else if (parse_context == CONTEXT_OBJECT_FIELD_VALUE$1 && val.value_type != VALUE_UNSET$1) {
+										parse_context = CONTEXT_OBJECT_FIELD$1;
+										if (val.value_type != VALUE_UNSET$1) {
 											objectPush();
 											RESET_VAL();
 										}
-										word = WORD_POS_RESET;
+										word = WORD_POS_RESET$1;
 									} else {
 										status = false;
 										throwError("bad context; excessive commas while parsing;", cInt);
 									}
 									negative = false;
 									break;
-								default: switch (cInt) {
-									default:
-										if (parse_context == CONTEXT_UNKNOWN || parse_context == CONTEXT_OBJECT_FIELD_VALUE && word == WORD_POS_FIELD || parse_context == CONTEXT_OBJECT_FIELD || word == WORD_POS_FIELD || parse_context == CONTEXT_CLASS_FIELD) switch (cInt) {
-											case 96:
-											case 34:
-											case 39:
-												if (word == WORD_POS_RESET || word == WORD_POS_FIELD) {
-													if (val.string.length) {
-														console.log("IN ARRAY AND FIXING?");
-														val.className = val.string;
-														val.string = "";
-													}
-													if (gatherString(cInt)) val.value_type = VALUE_STRING;
-													else {
-														gatheringStringFirstChar = cInt;
-														gatheringString = true;
-													}
-												} else throwError("fault while parsing; quote not at start of field name", cInt);
-												break;
-											case 10:
-												pos.line++;
-												pos.col = 1;
-											case 13:
-											case 32:
-											case 8232:
-											case 8233:
-											case 9:
-											case 65279:
-												if (parse_context === CONTEXT_UNKNOWN && word === WORD_POS_END) {
-													word = WORD_POS_RESET;
-													if (parse_context === CONTEXT_UNKNOWN) completed = true;
+								default:
+									if (parse_context !== CONTEXT_UNKNOWN$1 && (word === WORD_POS_RESET$1 || word === WORD_POS_AFTER_FIELD$1 || word === WORD_POS_AFTER_FIELD_VALUE$1) && !canTagOrBeTagged(val.value_type) && !isWhitespace(cInt)) {
+										status = false;
+										throwError("fault while parsing; two values with no separator between them;", cInt);
+									}
+									switch (cInt) {
+										default:
+											if (parse_context == CONTEXT_UNKNOWN$1 || parse_context == CONTEXT_OBJECT_FIELD_VALUE$1 && word == WORD_POS_FIELD$1 || parse_context == CONTEXT_OBJECT_FIELD$1 || word == WORD_POS_FIELD$1 || parse_context == CONTEXT_CLASS_FIELD$1) switch (cInt) {
+												case 96:
+												case 34:
+												case 39:
+													if (word == WORD_POS_RESET$1 || word == WORD_POS_FIELD$1) {
+														if (val.string.length) {
+															console.log("IN ARRAY AND FIXING?");
+															val.className = val.string;
+															val.string = "";
+														}
+														if (gatherString(cInt)) val.value_type = VALUE_STRING$1;
+														else {
+															gatheringStringFirstChar = cInt;
+															gatheringString = true;
+														}
+													} else throwError("fault while parsing; quote not at start of field name", cInt);
 													break;
-												}
-												if (word === WORD_POS_RESET || word === WORD_POS_AFTER_FIELD) {
-													if (parse_context == CONTEXT_UNKNOWN && val.value_type) completed = true;
-													break;
-												} else if (word === WORD_POS_FIELD) {
-													if (parse_context === CONTEXT_UNKNOWN) {
-														word = WORD_POS_RESET;
-														completed = true;
+												case 10:
+													pos.line++;
+													pos.col = 1;
+												case 13:
+												case 32:
+												case 8232:
+												case 8233:
+												case 9:
+												case 65279:
+													if (parse_context === CONTEXT_UNKNOWN$1 && word === WORD_POS_END$1) {
+														word = WORD_POS_RESET$1;
+														if (parse_context === CONTEXT_UNKNOWN$1) completed = true;
 														break;
 													}
-													if (val.string.length) console.log("STEP TO NEXT TOKEN.");
-													word = WORD_POS_AFTER_FIELD;
-												} else {
-													status = false;
-													throwError("fault while parsing; whitepsace unexpected", cInt);
-												}
-												break;
-											default:
-												if (word == WORD_POS_RESET && (cInt >= 48 && cInt <= 57 || cInt == 43 || cInt == 46 || cInt == 45)) {
+													if (word === WORD_POS_RESET$1 || word === WORD_POS_AFTER_FIELD$1) {
+														if (parse_context == CONTEXT_UNKNOWN$1 && val.value_type) completed = true;
+														break;
+													} else if (word === WORD_POS_FIELD$1) {
+														if (parse_context === CONTEXT_UNKNOWN$1) {
+															word = WORD_POS_RESET$1;
+															completed = true;
+															break;
+														}
+														if (val.string.length) console.log("STEP TO NEXT TOKEN.");
+														word = WORD_POS_AFTER_FIELD$1;
+													} else {
+														status = false;
+														throwError("fault while parsing; whitepsace unexpected", cInt);
+													}
+													break;
+												default:
+													if (word == WORD_POS_RESET$1 && (cInt >= 48 && cInt <= 57 || cInt == 43 || cInt == 46 || cInt == 45)) {
+														if (parse_context !== CONTEXT_UNKNOWN$1 && val.value_type !== VALUE_UNSET$1) {
+															status = false;
+															throwError("fault while parsing; two values with no separator between them;", cInt);
+														}
+														fromHex = false;
+														exponent = false;
+														date_format = false;
+														isBigInt = false;
+														exponent_sign = false;
+														exponent_digit = false;
+														decimal = false;
+														val.string = str;
+														input.n = n;
+														collectNumber();
+														break;
+													}
+													if (word === WORD_POS_AFTER_FIELD$1) {
+														status = false;
+														throwError("fault while parsing; character unexpected", cInt);
+													}
+													if (word === WORD_POS_RESET$1) {
+														word = WORD_POS_FIELD$1;
+														val.value_type = VALUE_STRING$1;
+														val.string += str;
+														break;
+													}
+													if (val.value_type == VALUE_UNSET$1) {
+														if (word !== WORD_POS_RESET$1 && word !== WORD_POS_END$1) recoverIdent(cInt);
+													} else {
+														if (word === WORD_POS_END$1 || word === WORD_POS_FIELD$1) {
+															if (isKeywordValue(val.value_type)) recoverIdent(cInt);
+															else val.string += str;
+															break;
+														}
+														if (parse_context == CONTEXT_OBJECT_FIELD$1) {
+															if (word == WORD_POS_FIELD$1) {
+																val.string += str;
+																break;
+															}
+															throwError("Multiple values found in field name", cInt);
+														}
+														if (parse_context == CONTEXT_OBJECT_FIELD_VALUE$1) throwError("String unexpected", cInt);
+													}
+													break;
+											}
+											else {
+												if (word == WORD_POS_RESET$1 && (cInt >= 48 && cInt <= 57 || cInt == 43 || cInt == 46 || cInt == 45)) {
+													if (parse_context !== CONTEXT_UNKNOWN$1 && val.value_type !== VALUE_UNSET$1) {
+														status = false;
+														throwError("fault while parsing; two values with no separator between them;", cInt);
+													}
 													fromHex = false;
 													exponent = false;
 													date_format = false;
@@ -5005,227 +5275,216 @@ cacheWillUpdate: async ({ response }) => {
 													val.string = str;
 													input.n = n;
 													collectNumber();
-													break;
-												}
-												if (word === WORD_POS_AFTER_FIELD) {
-													status = false;
-													throwError("fault while parsing; character unexpected", cInt);
-												}
-												if (word === WORD_POS_RESET) {
-													word = WORD_POS_FIELD;
-													val.value_type = VALUE_STRING;
+												} else if (val.value_type == VALUE_UNSET$1) if (word != WORD_POS_RESET$1) recoverIdent(cInt);
+												else {
+													word = WORD_POS_END$1;
 													val.string += str;
-													break;
+													val.value_type = VALUE_STRING$1;
 												}
-												if (val.value_type == VALUE_UNSET) {
-													if (word !== WORD_POS_RESET && word !== WORD_POS_END) recoverIdent(cInt);
-												} else {
-													if (word === WORD_POS_END || word === WORD_POS_FIELD) {
-														val.string += str;
+												else if (parse_context == CONTEXT_OBJECT_FIELD$1) throwError("Multiple values found in field name", cInt);
+												else if (parse_context == CONTEXT_OBJECT_FIELD_VALUE$1) {
+													if (val.value_type != VALUE_STRING$1) {
+														if (val.value_type == VALUE_OBJECT$1 || val.value_type == VALUE_ARRAY$1) throwError("String unexpected", cInt);
+														recoverIdent(cInt);
 														break;
 													}
-													if (parse_context == CONTEXT_OBJECT_FIELD) {
-														if (word == WORD_POS_FIELD) {
-															val.string += str;
-															break;
+													if (word == WORD_POS_AFTER_FIELD$1 || word == WORD_POS_AFTER_FIELD_VALUE$1) {
+														if (val.className) {
+															status = false;
+															throwError("too many strings in a row; fault while parsing;", cInt);
 														}
-														throwError("Multiple values found in field name", cInt);
-													}
-													if (parse_context == CONTEXT_OBJECT_FIELD_VALUE) throwError("String unexpected", cInt);
-												}
-										}
-										else {
-											if (word == WORD_POS_RESET && (cInt >= 48 && cInt <= 57 || cInt == 43 || cInt == 46 || cInt == 45)) {
-												fromHex = false;
-												exponent = false;
-												date_format = false;
-												isBigInt = false;
-												exponent_sign = false;
-												exponent_digit = false;
-												decimal = false;
-												val.string = str;
-												input.n = n;
-												collectNumber();
-											} else if (val.value_type == VALUE_UNSET) {
-												if (word != WORD_POS_RESET) recoverIdent(cInt);
-												else {
-													word = WORD_POS_END;
-													val.string += str;
-													val.value_type = VALUE_STRING;
-												}
-											} else if (parse_context == CONTEXT_OBJECT_FIELD) throwError("Multiple values found in field name", cInt);
-											else if (parse_context == CONTEXT_OBJECT_FIELD_VALUE) {
-												if (val.value_type != VALUE_STRING) {
-													if (val.value_type == VALUE_OBJECT || val.value_type == VALUE_ARRAY) throwError("String unexpected", cInt);
-													recoverIdent(cInt);
-												}
-												if (word == WORD_POS_AFTER_FIELD) {
-													if (getProto()) val.string = str;
+														getProto();
+														if (!val.className) val.className = val.string;
+														val.string = str;
+														word = WORD_POS_END$1;
+														break;
+													} else if (word == WORD_POS_END$1) val.string += str;
 													else throwError("String unexpected", cInt);
-												} else if (word == WORD_POS_END) val.string += str;
-												else throwError("String unexpected", cInt);
-											} else if (parse_context == CONTEXT_IN_ARRAY) {
-												if (word == WORD_POS_AFTER_FIELD) {
-													if (!val.className) {
-														val.className = val.string;
-														val.string = "";
-													}
-													val.string += str;
-													break;
-												} else if (word == WORD_POS_END) val.string += str;
+												} else if (parse_context == CONTEXT_IN_ARRAY$1) {
+													if (word == WORD_POS_AFTER_FIELD$1) {
+														if (val.className) {
+															status = false;
+															throwError("too many strings in a row; fault while parsing;", cInt);
+														}
+														if (!val.className) {
+															val.className = val.string;
+															val.string = "";
+															word = WORD_POS_END$1;
+														}
+														val.string += str;
+														break;
+													} else if (word == WORD_POS_END$1) if (isKeywordValue(val.value_type)) recoverIdent(cInt);
+													else val.string += str;
+												} else if (parse_context == CONTEXT_CLASS_VALUE$1) {
+													if (word == WORD_POS_END$1) if (isKeywordValue(val.value_type)) recoverIdent(cInt);
+													else val.string += str;
+												}
+												break;
 											}
 											break;
-										}
-										break;
-									case 96:
-									case 34:
-									case 39:
-										if (val.string) val.className = val.string;
-										val.string = "";
-										if (gatherString(cInt)) {
-											val.value_type = VALUE_STRING;
-											word = WORD_POS_END;
-										} else {
-											gatheringStringFirstChar = cInt;
-											gatheringString = true;
-										}
-										break;
-									case 10:
-										pos.line++;
-										pos.col = 1;
-									case 32:
-									case 9:
-									case 13:
-									case 8232:
-									case 8233:
-									case 65279:
-										if (word == WORD_POS_END) {
-											if (parse_context == CONTEXT_UNKNOWN) {
-												word = WORD_POS_RESET;
-												completed = true;
-												break;
-											} else if (parse_context == CONTEXT_OBJECT_FIELD_VALUE) {
-												word = WORD_POS_AFTER_FIELD_VALUE;
-												break;
-											} else if (parse_context == CONTEXT_OBJECT_FIELD) {
-												word = WORD_POS_AFTER_FIELD;
-												break;
-											} else if (parse_context == CONTEXT_IN_ARRAY) {
-												word = WORD_POS_AFTER_FIELD;
-												break;
+										case 96:
+										case 34:
+										case 39:
+											if (parse_context !== CONTEXT_UNKNOWN$1 && !canTagOrBeTagged(val.value_type)) {
+												status = false;
+												throwError("fault while parsing; two values with no separator between them;", cInt);
 											}
-										}
-										if (word == WORD_POS_RESET || word == WORD_POS_AFTER_FIELD) break;
-										else if (word == WORD_POS_FIELD) {
-											if (val.string.length) word = WORD_POS_AFTER_FIELD;
-										} else if (word < WORD_POS_END) recoverIdent(cInt);
-										break;
-									case 116:
-										if (word == WORD_POS_RESET) word = WORD_POS_TRUE_1;
-										else if (word == WORD_POS_INFINITY_6) word = WORD_POS_INFINITY_7;
-										else recoverIdent(cInt);
-										break;
-									case 114:
-										if (word == WORD_POS_TRUE_1) word = WORD_POS_TRUE_2;
-										else recoverIdent(cInt);
-										break;
-									case 117:
-										if (word == WORD_POS_TRUE_2) word = WORD_POS_TRUE_3;
-										else if (word == WORD_POS_NULL_1) word = WORD_POS_NULL_2;
-										else if (word == WORD_POS_RESET) word = WORD_POS_UNDEFINED_1;
-										else recoverIdent(cInt);
-										break;
-									case 101:
-										if (word == WORD_POS_TRUE_3) {
-											val.value_type = VALUE_TRUE;
-											word = WORD_POS_END;
-										} else if (word == WORD_POS_FALSE_4) {
-											val.value_type = VALUE_FALSE;
-											word = WORD_POS_END;
-										} else if (word == WORD_POS_UNDEFINED_3) word = WORD_POS_UNDEFINED_4;
-										else if (word == WORD_POS_UNDEFINED_7) word = WORD_POS_UNDEFINED_8;
-										else recoverIdent(cInt);
-										break;
-									case 110:
-										if (word == WORD_POS_RESET) word = WORD_POS_NULL_1;
-										else if (word == WORD_POS_UNDEFINED_1) word = WORD_POS_UNDEFINED_2;
-										else if (word == WORD_POS_UNDEFINED_6) word = WORD_POS_UNDEFINED_7;
-										else if (word == WORD_POS_INFINITY_1) word = WORD_POS_INFINITY_2;
-										else if (word == WORD_POS_INFINITY_4) word = WORD_POS_INFINITY_5;
-										else recoverIdent(cInt);
-										break;
-									case 100:
-										if (word == WORD_POS_UNDEFINED_2) word = WORD_POS_UNDEFINED_3;
-										else if (word == WORD_POS_UNDEFINED_8) {
-											val.value_type = VALUE_UNDEFINED;
-											word = WORD_POS_END;
-										} else recoverIdent(cInt);
-										break;
-									case 105:
-										if (word == WORD_POS_UNDEFINED_5) word = WORD_POS_UNDEFINED_6;
-										else if (word == WORD_POS_INFINITY_3) word = WORD_POS_INFINITY_4;
-										else if (word == WORD_POS_INFINITY_5) word = WORD_POS_INFINITY_6;
-										else recoverIdent(cInt);
-										break;
-									case 108:
-										if (word == WORD_POS_NULL_2) word = WORD_POS_NULL_3;
-										else if (word == WORD_POS_NULL_3) {
-											val.value_type = VALUE_NULL;
-											word = WORD_POS_END;
-										} else if (word == WORD_POS_FALSE_2) word = WORD_POS_FALSE_3;
-										else recoverIdent(cInt);
-										break;
-									case 102:
-										if (word == WORD_POS_RESET) word = WORD_POS_FALSE_1;
-										else if (word == WORD_POS_UNDEFINED_4) word = WORD_POS_UNDEFINED_5;
-										else if (word == WORD_POS_INFINITY_2) word = WORD_POS_INFINITY_3;
-										else recoverIdent(cInt);
-										break;
-									case 97:
-										if (word == WORD_POS_FALSE_1) word = WORD_POS_FALSE_2;
-										else if (word == WORD_POS_NAN_1) word = WORD_POS_NAN_2;
-										else recoverIdent(cInt);
-										break;
-									case 115:
-										if (word == WORD_POS_FALSE_3) word = WORD_POS_FALSE_4;
-										else recoverIdent(cInt);
-										break;
-									case 73:
-										if (word == WORD_POS_RESET) word = WORD_POS_INFINITY_1;
-										else recoverIdent(cInt);
-										break;
-									case 78:
-										if (word == WORD_POS_RESET) word = WORD_POS_NAN_1;
-										else if (word == WORD_POS_NAN_2) {
-											val.value_type = negative ? VALUE_NEG_NAN : VALUE_NAN;
-											negative = false;
-											word = WORD_POS_END;
-										} else recoverIdent(cInt);
-										break;
-									case 121:
-										if (word == WORD_POS_INFINITY_7) {
-											val.value_type = negative ? VALUE_NEG_INFINITY : VALUE_INFINITY;
-											negative = false;
-											word = WORD_POS_END;
-										} else recoverIdent(cInt);
-										break;
-									case 45:
-										if (word == WORD_POS_RESET) negative = !negative;
-										else recoverIdent(cInt);
-										break;
-									case 43: if (word !== WORD_POS_RESET) recoverIdent(cInt);
-								}
+											if (val.className) {
+												status = false;
+												throwError("too many strings in a row; fault while parsing;", cInt);
+											}
+											if (val.string) val.className = val.string;
+											val.string = "";
+											if (gatherString(cInt)) {
+												val.value_type = VALUE_STRING$1;
+												word = WORD_POS_END$1;
+											} else {
+												gatheringStringFirstChar = cInt;
+												gatheringString = true;
+											}
+											break;
+										case 10:
+											pos.line++;
+											pos.col = 1;
+										case 32:
+										case 9:
+										case 13:
+										case 8232:
+										case 8233:
+										case 65279:
+											if (word == WORD_POS_END$1) {
+												if (parse_context == CONTEXT_UNKNOWN$1) {
+													word = WORD_POS_RESET$1;
+													completed = true;
+													break;
+												} else if (parse_context == CONTEXT_OBJECT_FIELD_VALUE$1) {
+													word = WORD_POS_AFTER_FIELD_VALUE$1;
+													break;
+												} else if (parse_context == CONTEXT_OBJECT_FIELD$1) {
+													word = WORD_POS_AFTER_FIELD$1;
+													break;
+												} else if (parse_context == CONTEXT_IN_ARRAY$1) {
+													word = WORD_POS_AFTER_FIELD$1;
+													break;
+												}
+											}
+											if (word == WORD_POS_RESET$1 || word == WORD_POS_AFTER_FIELD$1) break;
+											else if (word == WORD_POS_FIELD$1) {
+												if (val.string.length) word = WORD_POS_AFTER_FIELD$1;
+											} else if (word < WORD_POS_END$1) recoverIdent(cInt);
+											break;
+										case 116:
+											if (word == WORD_POS_RESET$1) word = WORD_POS_TRUE_1$1;
+											else if (word == WORD_POS_INFINITY_6$1) word = WORD_POS_INFINITY_7$1;
+											else recoverIdent(cInt);
+											break;
+										case 114:
+											if (word == WORD_POS_TRUE_1$1) word = WORD_POS_TRUE_2$1;
+											else recoverIdent(cInt);
+											break;
+										case 117:
+											if (word == WORD_POS_TRUE_2$1) word = WORD_POS_TRUE_3$1;
+											else if (word == WORD_POS_NULL_1$1) word = WORD_POS_NULL_2$1;
+											else if (word == WORD_POS_RESET$1) word = WORD_POS_UNDEFINED_1$1;
+											else recoverIdent(cInt);
+											break;
+										case 101:
+											if (word == WORD_POS_TRUE_3$1) {
+												val.value_type = VALUE_TRUE$1;
+												word = WORD_POS_END$1;
+											} else if (word == WORD_POS_FALSE_4$1) {
+												val.value_type = VALUE_FALSE$1;
+												word = WORD_POS_END$1;
+											} else if (word == WORD_POS_UNDEFINED_3$1) word = WORD_POS_UNDEFINED_4$1;
+											else if (word == WORD_POS_UNDEFINED_7$1) word = WORD_POS_UNDEFINED_8$1;
+											else recoverIdent(cInt);
+											break;
+										case 110:
+											if (word == WORD_POS_RESET$1) word = WORD_POS_NULL_1$1;
+											else if (word == WORD_POS_UNDEFINED_1$1) word = WORD_POS_UNDEFINED_2$1;
+											else if (word == WORD_POS_UNDEFINED_6$1) word = WORD_POS_UNDEFINED_7$1;
+											else if (word == WORD_POS_INFINITY_1$1) word = WORD_POS_INFINITY_2$1;
+											else if (word == WORD_POS_INFINITY_4$1) word = WORD_POS_INFINITY_5$1;
+											else recoverIdent(cInt);
+											break;
+										case 100:
+											if (word == WORD_POS_UNDEFINED_2$1) word = WORD_POS_UNDEFINED_3$1;
+											else if (word == WORD_POS_UNDEFINED_8$1) {
+												val.value_type = VALUE_UNDEFINED$1;
+												word = WORD_POS_END$1;
+											} else recoverIdent(cInt);
+											break;
+										case 105:
+											if (word == WORD_POS_UNDEFINED_5$1) word = WORD_POS_UNDEFINED_6$1;
+											else if (word == WORD_POS_INFINITY_3$1) word = WORD_POS_INFINITY_4$1;
+											else if (word == WORD_POS_INFINITY_5$1) word = WORD_POS_INFINITY_6$1;
+											else recoverIdent(cInt);
+											break;
+										case 108:
+											if (word == WORD_POS_NULL_2$1) word = WORD_POS_NULL_3$1;
+											else if (word == WORD_POS_NULL_3$1) {
+												val.value_type = VALUE_NULL$1;
+												word = WORD_POS_END$1;
+											} else if (word == WORD_POS_FALSE_2$1) word = WORD_POS_FALSE_3$1;
+											else recoverIdent(cInt);
+											break;
+										case 102:
+											if (word == WORD_POS_RESET$1) word = WORD_POS_FALSE_1$1;
+											else if (word == WORD_POS_UNDEFINED_4$1) word = WORD_POS_UNDEFINED_5$1;
+											else if (word == WORD_POS_INFINITY_2$1) word = WORD_POS_INFINITY_3$1;
+											else recoverIdent(cInt);
+											break;
+										case 97:
+											if (word == WORD_POS_FALSE_1$1) word = WORD_POS_FALSE_2$1;
+											else if (word == WORD_POS_NAN_1$1) word = WORD_POS_NAN_2$1;
+											else recoverIdent(cInt);
+											break;
+										case 115:
+											if (word == WORD_POS_FALSE_3$1) word = WORD_POS_FALSE_4$1;
+											else recoverIdent(cInt);
+											break;
+										case 73:
+											if (word == WORD_POS_RESET$1) word = WORD_POS_INFINITY_1$1;
+											else recoverIdent(cInt);
+											break;
+										case 78:
+											if (word == WORD_POS_RESET$1) word = WORD_POS_NAN_1$1;
+											else if (word == WORD_POS_NAN_2$1) {
+												val.value_type = negative ? VALUE_NEG_NAN$1 : VALUE_NAN$1;
+												negative = false;
+												word = WORD_POS_END$1;
+											} else recoverIdent(cInt);
+											break;
+										case 121:
+											if (word == WORD_POS_INFINITY_7$1) {
+												val.value_type = negative ? VALUE_NEG_INFINITY$1 : VALUE_INFINITY$1;
+												negative = false;
+												word = WORD_POS_END$1;
+											} else recoverIdent(cInt);
+											break;
+										case 45:
+											if (word == WORD_POS_RESET$1) {
+												negative = !negative;
+												signPending = true;
+											} else recoverIdent(cInt);
+											break;
+										case 43:
+											if (word !== WORD_POS_RESET$1) recoverIdent(cInt);
+											else signPending = true;
+											break;
+									}
+									break;
 							}
 							if (completed) {
-								if (word == WORD_POS_END) word = WORD_POS_RESET;
+								if (word == WORD_POS_END$1) word = WORD_POS_RESET$1;
 								break;
 							}
 						}
 						if (n == buf.length) {
-							dropBuffer(input);
-							if (val.value_type == VALUE_UNSET && complete_at_end && word != WORD_POS_RESET) recoverIdent(32);
-							if (gatheringString || gatheringNumber || parse_context == CONTEXT_OBJECT_FIELD) retval = 0;
-							else if (parse_context == CONTEXT_UNKNOWN && (val.value_type != VALUE_UNSET || result)) {
+							dropBuffer$1(input);
+							if (val.value_type == VALUE_UNSET$1 && complete_at_end && word != WORD_POS_RESET$1) recoverIdent(32);
+							if (gatheringString || gatheringNumber || parse_context == CONTEXT_OBJECT_FIELD$1) retval = 0;
+							else if (parse_context == CONTEXT_UNKNOWN$1 && (val.value_type != VALUE_UNSET$1 || result)) {
 								completed = true;
 								retval = 1;
 							}
@@ -5240,20 +5499,26 @@ cacheWillUpdate: async ({ response }) => {
 						}
 					}
 					if (!status) return -1;
-					if (completed && val.value_type != VALUE_UNSET) {
-						word = WORD_POS_RESET;
+					if (completed && val.value_type != VALUE_UNSET$1) {
+						word = WORD_POS_RESET$1;
 						result = convertValue();
+						if (deferredRefs) {
+							const refs = deferredRefs, fixups = deferredFixups;
+							deferredRefs = null;
+							deferredFixups = null;
+							result = resolveDeferredRefs(result, refs, fixups);
+						}
 						negative = false;
 						val.string = "";
-						val.value_type = VALUE_UNSET;
+						val.value_type = VALUE_UNSET$1;
 					}
 					completed = false;
 					return retval;
 				}
 			};
 		};
-		_parser = [Object.freeze(JSOX.begin())];
-		_parse_level = 0;
+		_parser$1 = [Object.freeze(JSOX$1.begin())];
+		_parse_level$1 = 0;
 		/**
 		* parse a string resulting with one value from it.
 		*
@@ -5262,19 +5527,19 @@ cacheWillUpdate: async ({ response }) => {
 		* @param {(this: any, key: string, value: any) => any} [reviver] 
 		* @returns {T}
 		*/
-		JSOX.parse = function(msg, reviver) {
-			let parse_level = _parse_level++;
+		JSOX$1.parse = function(msg, reviver) {
+			let parse_level = _parse_level$1++;
 			let parser;
-			if (_parser.length <= parse_level) _parser.push(Object.freeze(JSOX.begin()));
-			parser = _parser[parse_level];
+			if (_parser$1.length <= parse_level) _parser$1.push(Object.freeze(JSOX$1.begin()));
+			parser = _parser$1[parse_level];
 			if (typeof msg !== "string") msg = String(msg);
 			parser.reset();
 			const writeResult = parser._write(msg, true);
 			if (writeResult > 0) {
 				if (writeResult > 1) {}
-				let result = parser.value();
-				if ("undefined" === typeof result && writeResult > 1) throw new Error("Pending value could not complete");
-				result = typeof reviver === "function" ? function walk(holder, key) {
+				let value = parser.value();
+				if ("undefined" === typeof value && writeResult > 1) throw new Error("Pending value could not complete");
+				value = typeof reviver === "function" ? function walk(holder, key) {
 					let k, v, value = holder[key];
 					if (value && typeof value === "object") {
 						for (k in value) if (Object.prototype.hasOwnProperty.call(value, k)) {
@@ -5284,9 +5549,9 @@ cacheWillUpdate: async ({ response }) => {
 						}
 					}
 					return reviver.call(holder, key, value);
-				}({ "": result }, "") : result;
-				_parse_level--;
-				return result;
+				}({ "": value }, "") : value;
+				_parse_level$1--;
+				return value;
 			}
 			parser.finalError();
 		};
@@ -5295,7 +5560,7 @@ cacheWillUpdate: async ({ response }) => {
 		* @param {string} name 
 		* @param {object} obj 
 		*/
-		JSOX.defineClass = function(name, obj) {
+		JSOX$1.defineClass = function(name, obj) {
 			let cls;
 			let denormKeys = Object.keys(obj);
 			for (let i = 1; i < denormKeys.length; i++) {
@@ -5307,7 +5572,7 @@ cacheWillUpdate: async ({ response }) => {
 					else i--;
 				}
 			}
-			commonClasses.push(cls = {
+			commonClasses$1.push(cls = {
 				name,
 				tag: denormKeys.toString(),
 				proto: Object.getPrototypeOf(obj),
@@ -5328,7 +5593,7 @@ cacheWillUpdate: async ({ response }) => {
 		* @param {class} ptype
 		* @param {(any)=>any} f
 		*/
-		JSOX.registerToJSOX = function(name, ptype, f) {
+		JSOX$1.registerToJSOX = function(name, ptype, f) {
 			throw new Error("registerToJSOX deprecated; please use toJSOX:" + prototypeName + prototype.toString());
 		};
 		/**
@@ -5338,18 +5603,18 @@ cacheWillUpdate: async ({ response }) => {
 		* @param {class} ptype
 		* @param {(any)=>any} f
 		*/
-		JSOX.toJSOX = function(name, ptype, f) {
+		JSOX$1.toJSOX = function(name, ptype, f) {
 			if (!ptype.prototype || ptype.prototype !== Object.prototype) {
-				if (toProtoTypes.get(ptype.prototype)) throw new Error("Existing toJSOX has been registered for prototype");
-				toProtoTypes.set(ptype.prototype, {
+				if (toProtoTypes$1.get(ptype.prototype)) throw new Error("Existing toJSOX has been registered for prototype " + name + " " + ptype?.name);
+				toProtoTypes$1.set(ptype.prototype, {
 					external: true,
 					name: name || f.constructor.name,
 					cb: f
 				});
 			} else {
 				let key = Object.keys(ptype).toString();
-				if (toObjectTypes.get(key)) throw new Error("Existing toJSOX has been registered for object type");
-				toObjectTypes.set(key, {
+				if (toObjectTypes$1.get(key)) throw new Error("Existing toJSOX has been registered for object type");
+				toObjectTypes$1.set(key, {
 					external: true,
 					name,
 					cb: f
@@ -5362,12 +5627,12 @@ cacheWillUpdate: async ({ response }) => {
 		* @param {class} o 
 		* @param {(any)=>any} f 
 		*/
-		JSOX.fromJSOX = function(prototypeName, o, f) {
+		JSOX$1.fromJSOX = function(prototypeName, o, f) {
 			function privateProto() {}
 			if (!o) o = privateProto.prototype;
-			if (fromProtoTypes.get(prototypeName)) throw new Error("Existing fromJSOX has been registered for prototype");
+			if (fromProtoTypes$1.get(prototypeName)) throw new Error("Existing fromJSOX has been registered for prototype");
 			if (o && !("constructor" in o)) throw new Error("Please pass a prototype like thing...");
-			fromProtoTypes.set(prototypeName, {
+			fromProtoTypes$1.set(prototypeName, {
 				protoCon: o.prototype.constructor,
 				cb: f
 			});
@@ -5375,7 +5640,7 @@ cacheWillUpdate: async ({ response }) => {
 		/**
 		* deprecated; use fromJSOX instead
 		*/
-		JSOX.registerFromJSOX = function(prototypeName, o) {
+		JSOX$1.registerFromJSOX = function(prototypeName, o) {
 			throw new Error("deprecated; please adjust code to use fromJSOX:" + prototypeName + o.toString());
 		};
 		/**
@@ -5387,21 +5652,23 @@ cacheWillUpdate: async ({ response }) => {
 		* @param {(stringifier:JSOXStringifier)=>{string}} to - `this` is the value to convert; function to call to encode JSOX from an object
 		* @param {(field:string,val:any)=>{any}} from - handle storing revived value in class
 		*/
-		JSOX.addType = function(prototypeName, prototype, to, from) {
-			JSOX.toJSOX(prototypeName, prototype, to);
-			JSOX.fromJSOX(prototypeName, prototype, from);
+		JSOX$1.addType = function(prototypeName, prototype, to, from) {
+			JSOX$1.toJSOX(prototypeName, prototype, to);
+			JSOX$1.fromJSOX(prototypeName, prototype, from);
 		};
-		JSOX.registerToFrom = function(prototypeName, prototype) {
+		JSOX$1.registerToFrom = function(prototypeName, prototype) {
 			throw new Error("registerToFrom deprecated; please use addType:" + prototypeName + prototype.toString());
 		};
 		/**
 		* Create a stringifier to convert objects to JSOX text.  Allows defining custom serialization for objects.
 		* @returns {JSOXStringifier}
 		*/
-		JSOX.stringifier = function() {
+		JSOX$1.stringifier = function() {
 			let classes = [];
 			let useQuote = "\"";
 			let fieldMap = /* @__PURE__ */ new WeakMap();
+			let sortFields = true;
+			let depth = 0;
 			const path = [];
 			let encoding = [];
 			const localToProtoTypes = /* @__PURE__ */ new WeakMap();
@@ -5416,16 +5683,16 @@ cacheWillUpdate: async ({ response }) => {
 					s.toString(),
 					"'"
 				].join("");
-				if (s.includes("﻿")) return useQuote + JSOX.escape(s) + useQuote;
-				return s in keywords || /[0-9\-]/.test(s[0]) || /[\n\r\t #\[\]{}()<>\~!+*/.:,\-"'`]/.test(s) ? useQuote + JSOX.escape(s) + useQuote : s;
+				if (s.includes("﻿")) return useQuote + JSOX$1.escape(s) + useQuote;
+				return s in keywords$1 || /[0-9\-]/.test(s[0]) || /[\n\r\t #\[\]{}()<>\~!+*/.:,\-"'`]/.test(s) ? useQuote + JSOX$1.escape(s) + useQuote : s;
 			}
-			if (!toProtoTypes.get(Object.prototype)) {
-				toProtoTypes.set(Object.prototype, {
+			if (!toProtoTypes$1.get(Object.prototype)) {
+				toProtoTypes$1.set(Object.prototype, {
 					external: false,
 					name: Object.prototype.constructor.name,
 					cb: null
 				});
-				toProtoTypes.set(Date.prototype, {
+				toProtoTypes$1.set(Date.prototype, {
 					external: false,
 					name: "Date",
 					cb: function() {
@@ -5456,7 +5723,7 @@ cacheWillUpdate: async ({ response }) => {
 						].join("");
 					}
 				});
-				toProtoTypes.set(DateNS.prototype, {
+				toProtoTypes$1.set(DateNS$1.prototype, {
 					external: false,
 					name: "DateNS",
 					cb: function() {
@@ -5489,12 +5756,12 @@ cacheWillUpdate: async ({ response }) => {
 						].join("");
 					}
 				});
-				toProtoTypes.set(Boolean.prototype, {
+				toProtoTypes$1.set(Boolean.prototype, {
 					external: false,
 					name: "Boolean",
-					cb: this_value
+					cb: this_value$1
 				});
-				toProtoTypes.set(Number.prototype, {
+				toProtoTypes$1.set(Number.prototype, {
 					external: false,
 					name: "Number",
 					cb: function() {
@@ -5502,116 +5769,116 @@ cacheWillUpdate: async ({ response }) => {
 						return isFinite(this) ? String(this) : this < 0 ? "-Infinity" : "Infinity";
 					}
 				});
-				toProtoTypes.set(String.prototype, {
+				toProtoTypes$1.set(String.prototype, {
 					external: false,
 					name: "String",
 					cb: function() {
-						return "\"" + JSOX.escape(this_value.apply(this)) + "\"";
+						return "\"" + JSOX$1.escape(this_value$1.apply(this)) + "\"";
 					}
 				});
-				if (typeof BigInt === "function") toProtoTypes.set(BigInt.prototype, {
+				if (typeof BigInt === "function") toProtoTypes$1.set(BigInt.prototype, {
 					external: false,
 					name: "BigInt",
 					cb: function() {
 						return this + "n";
 					}
 				});
-				toProtoTypes.set(ArrayBuffer.prototype, {
+				toProtoTypes$1.set(ArrayBuffer.prototype, {
 					external: true,
 					name: "ab",
 					cb: function() {
-						return "[" + getIdentifier(base64ArrayBuffer(this)) + "]";
+						return "[" + getIdentifier(base64ArrayBuffer$1(this)) + "]";
 					}
 				});
-				toProtoTypes.set(Uint8Array.prototype, {
+				toProtoTypes$1.set(Uint8Array.prototype, {
 					external: true,
 					name: "u8",
 					cb: function() {
-						return "[" + getIdentifier(base64ArrayBuffer(this.buffer)) + "]";
+						return "[" + getIdentifier(base64ArrayBuffer$1(this.buffer)) + "]";
 					}
 				});
-				toProtoTypes.set(Uint8ClampedArray.prototype, {
+				toProtoTypes$1.set(Uint8ClampedArray.prototype, {
 					external: true,
-					name: "uc8",
+					name: "cu8",
 					cb: function() {
-						return "[" + getIdentifier(base64ArrayBuffer(this.buffer)) + "]";
+						return "[" + getIdentifier(base64ArrayBuffer$1(this.buffer)) + "]";
 					}
 				});
-				toProtoTypes.set(Int8Array.prototype, {
+				toProtoTypes$1.set(Int8Array.prototype, {
 					external: true,
 					name: "s8",
 					cb: function() {
-						return "[" + getIdentifier(base64ArrayBuffer(this.buffer)) + "]";
+						return "[" + getIdentifier(base64ArrayBuffer$1(this.buffer)) + "]";
 					}
 				});
-				toProtoTypes.set(Uint16Array.prototype, {
+				toProtoTypes$1.set(Uint16Array.prototype, {
 					external: true,
 					name: "u16",
 					cb: function() {
-						return "[" + getIdentifier(base64ArrayBuffer(this.buffer)) + "]";
+						return "[" + getIdentifier(base64ArrayBuffer$1(this.buffer)) + "]";
 					}
 				});
-				toProtoTypes.set(Int16Array.prototype, {
+				toProtoTypes$1.set(Int16Array.prototype, {
 					external: true,
 					name: "s16",
 					cb: function() {
-						return "[" + getIdentifier(base64ArrayBuffer(this.buffer)) + "]";
+						return "[" + getIdentifier(base64ArrayBuffer$1(this.buffer)) + "]";
 					}
 				});
-				toProtoTypes.set(Uint32Array.prototype, {
+				toProtoTypes$1.set(Uint32Array.prototype, {
 					external: true,
 					name: "u32",
 					cb: function() {
-						return "[" + getIdentifier(base64ArrayBuffer(this.buffer)) + "]";
+						return "[" + getIdentifier(base64ArrayBuffer$1(this.buffer)) + "]";
 					}
 				});
-				toProtoTypes.set(Int32Array.prototype, {
+				toProtoTypes$1.set(Int32Array.prototype, {
 					external: true,
 					name: "s32",
 					cb: function() {
-						return "[" + getIdentifier(base64ArrayBuffer(this.buffer)) + "]";
+						return "[" + getIdentifier(base64ArrayBuffer$1(this.buffer)) + "]";
 					}
 				});
-				toProtoTypes.set(Float32Array.prototype, {
+				toProtoTypes$1.set(Float32Array.prototype, {
 					external: true,
 					name: "f32",
 					cb: function() {
-						return "[" + getIdentifier(base64ArrayBuffer(this.buffer)) + "]";
+						return "[" + getIdentifier(base64ArrayBuffer$1(this.buffer)) + "]";
 					}
 				});
-				toProtoTypes.set(Float64Array.prototype, {
+				toProtoTypes$1.set(Float64Array.prototype, {
 					external: true,
 					name: "f64",
 					cb: function() {
-						return "[" + getIdentifier(base64ArrayBuffer(this.buffer)) + "]";
+						return "[" + getIdentifier(base64ArrayBuffer$1(this.buffer)) + "]";
 					}
 				});
-				toProtoTypes.set(Float64Array.prototype, {
+				toProtoTypes$1.set(Float64Array.prototype, {
 					external: true,
 					name: "f64",
 					cb: function() {
-						return "[" + getIdentifier(base64ArrayBuffer(this.buffer)) + "]";
+						return "[" + getIdentifier(base64ArrayBuffer$1(this.buffer)) + "]";
 					}
 				});
-				toProtoTypes.set(RegExp.prototype, mapToJSOX = {
+				toProtoTypes$1.set(RegExp.prototype, mapToJSOX$1 = {
 					external: true,
 					name: "regex",
 					cb: function(o, stringifier) {
 						return "'" + escape(this.source) + "'";
 					}
 				});
-				fromProtoTypes.set("regex", {
+				fromProtoTypes$1.set("regex", {
 					protoCon: RegExp,
 					cb: function(field, val) {
 						return new RegExp(this);
 					}
 				});
-				toProtoTypes.set(Map.prototype, mapToJSOX = {
+				toProtoTypes$1.set(Map.prototype, mapToJSOX$1 = {
 					external: true,
 					name: "map",
 					cb: null
 				});
-				fromProtoTypes.set("map", {
+				fromProtoTypes$1.set("map", {
 					protoCon: Map,
 					cb: function(field, val) {
 						if (field) {
@@ -5621,7 +5888,7 @@ cacheWillUpdate: async ({ response }) => {
 						return this;
 					}
 				});
-				toProtoTypes.set(Array.prototype, arrayToJSOX = {
+				toProtoTypes$1.set(Array.prototype, arrayToJSOX$1 = {
 					external: false,
 					name: Array.prototype.constructor.name,
 					cb: null
@@ -5667,7 +5934,20 @@ cacheWillUpdate: async ({ response }) => {
 				stringify(o, r, s) {
 					return stringify(o, r, s);
 				},
+				get sort() {
+					return sortFields;
+				},
+				set sort(v) {
+					sortFields = !!v;
+				},
+				get quote() {
+					return useQuote;
+				},
+				set quote(q) {
+					useQuote = q;
+				},
 				setQuote(q) {
+					console.log("JSOX: setQuote() is deprecated, use `stringifier.quote = ...` instead.");
 					useQuote = q;
 				},
 				registerToJSOX(n, p, f) {
@@ -5708,7 +5988,7 @@ cacheWillUpdate: async ({ response }) => {
 				if (here === null) return void 0;
 				let field = fieldMap.get(here);
 				if (!field) {
-					fieldMap.set(here, _JSON.stringify(path));
+					fieldMap.set(here, _JSON$1.stringify(path));
 					return;
 				}
 				return "ref" + field;
@@ -5727,7 +6007,7 @@ cacheWillUpdate: async ({ response }) => {
 					if (cls.proto && cls.proto === prt) return true;
 				});
 				if (cls) return cls;
-				if (classes.length || commonClasses.length) {
+				if (classes.length || commonClasses$1.length) {
 					if (useK) {
 						useK = useK.map((v) => {
 							if (typeof v === "string") return v;
@@ -5750,7 +6030,7 @@ cacheWillUpdate: async ({ response }) => {
 					cls = classes.find((cls) => {
 						if (cls.tag === k) return true;
 					});
-					if (!cls) cls = commonClasses.find((cls) => {
+					if (!cls) cls = commonClasses$1.find((cls) => {
 						if (cls.tag === k) return true;
 					});
 				}
@@ -5766,6 +6046,21 @@ cacheWillUpdate: async ({ response }) => {
 			function stringify(object, replacer, space) {
 				if (object === void 0) return "undefined";
 				if (object === null) return;
+				let restoreSort;
+				let restoreQuote;
+				if (replacer && "object" === typeof replacer && !Array.isArray(replacer)) {
+					const opts = replacer;
+					replacer = opts.replacer;
+					if (space === void 0) space = opts.pretty !== void 0 ? opts.pretty : opts.space;
+					if (opts.sort !== void 0) {
+						restoreSort = sortFields;
+						sortFields = !!opts.sort;
+					}
+					if (opts.quote !== void 0) {
+						restoreQuote = useQuote;
+						useQuote = opts.quote;
+					}
+				}
 				let gap;
 				let indent;
 				let rep;
@@ -5778,20 +6073,28 @@ cacheWillUpdate: async ({ response }) => {
 				else if (spaceType === "string") indent = space;
 				rep = replacer;
 				if (replacer && repType !== "function" && (repType !== "object" || typeof replacer.length !== "number")) throw new Error("JSOX.stringify");
-				path.length = 0;
-				fieldMap = /* @__PURE__ */ new WeakMap();
-				const finalResult = str("", { "": object });
-				commonClasses.length = 0;
-				return finalResult;
+				if (!depth) {
+					path.length = 0;
+					fieldMap = /* @__PURE__ */ new WeakMap();
+				}
+				depth++;
+				try {
+					return str("", { "": object });
+				} finally {
+					depth--;
+					if (!depth) commonClasses$1.length = 0;
+					if (restoreSort !== void 0) sortFields = restoreSort;
+					if (restoreQuote !== void 0) useQuote = restoreQuote;
+				}
 				function str(key, holder) {
 					var mind = gap;
-					const doArrayToJSOX_ = arrayToJSOX.cb;
-					const mapToObject_ = mapToJSOX.cb;
-					arrayToJSOX.cb = doArrayToJSOX;
-					mapToJSOX.cb = mapToObject;
+					const doArrayToJSOX_ = arrayToJSOX$1.cb;
+					const mapToObject_ = mapToJSOX$1.cb;
+					arrayToJSOX$1.cb = doArrayToJSOX;
+					mapToJSOX$1.cb = mapToObject;
 					const v = str_(key, holder);
-					arrayToJSOX.cb = doArrayToJSOX_;
-					mapToJSOX.cb = mapToObject_;
+					arrayToJSOX$1.cb = doArrayToJSOX_;
+					mapToJSOX$1.cb = mapToObject_;
 					return v;
 					function doArrayToJSOX() {
 						let v;
@@ -5855,30 +6158,29 @@ cacheWillUpdate: async ({ response }) => {
 							}
 						}
 						const objType = value !== void 0 && value !== null && Object.getPrototypeOf(value);
-						let protoConverter = objType && (localToProtoTypes.get(objType) || toProtoTypes.get(objType) || null);
-						let objectConverter = !protoConverter && value !== void 0 && value !== null && (localToObjectTypes.get(Object.keys(value).toString()) || toObjectTypes.get(Object.keys(value).toString()) || null);
+						let protoConverter = objType && (localToProtoTypes.get(objType) || toProtoTypes$1.get(objType) || null);
+						let objectConverter = !protoConverter && value !== void 0 && value !== null && (localToObjectTypes.get(Object.keys(value).toString()) || toObjectTypes$1.get(Object.keys(value).toString()) || null);
 						if (typeof rep === "function") {
 							isValue = false;
 							value = rep.call(holder, key, value);
 						}
 						let toJSOX = protoConverter && protoConverter.cb || objectConverter && objectConverter.cb;
-						if (value !== void 0 && value !== null && typeof value === "object" && typeof toJSOX === "function") {
-							if (!stringifying.find((val) => val === value)) {
-								if (typeof value === "object") {
-									v = getReference(value);
-									if (v) return v;
-								}
-								stringifying.push(value);
-								encoding[thisNodeNameIndex] = value;
-								value = toJSOX.call(value, stringifier);
-								isValue = false;
-								stringifying.pop();
-								if (protoConverter && protoConverter.name) {
-									if ("string" === typeof value && value[0] !== "-" && (value[0] < "0" || value[0] > "9") && value[0] !== "\"" && value[0] !== "'" && value[0] !== "`" && value[0] !== "[" && value[0] !== "{") value = " " + value;
-								}
-								encoding.length = thisNodeNameIndex;
-							} else v = getReference(value);
-						} else if (typeof value === "object") {
+						if (value !== void 0 && value !== null && typeof value === "object" && typeof toJSOX === "function") if (!stringifying.find((val) => val === value)) {
+							if (typeof value === "object") {
+								v = getReference(value);
+								if (v) return v;
+							}
+							stringifying.push(value);
+							encoding[thisNodeNameIndex] = value;
+							value = toJSOX.call(value, stringifier);
+							isValue = false;
+							stringifying.pop();
+							if (protoConverter && protoConverter.name) {
+								if ("string" === typeof value && value[0] !== "-" && (value[0] < "0" || value[0] > "9") && value[0] !== "\"" && value[0] !== "'" && value[0] !== "`" && value[0] !== "[" && value[0] !== "{") value = " " + value;
+							}
+							encoding.length = thisNodeNameIndex;
+						} else v = getReference(value);
+						else if (typeof value === "object") {
 							v = getReference(value);
 							if (v) return v;
 						}
@@ -5887,7 +6189,7 @@ cacheWillUpdate: async ({ response }) => {
 							case "string": {
 								value = isValue ? getIdentifier(value) : value;
 								let c = "";
-								if (key === "") c = classes.map((cls) => cls.name + "{" + cls.fields.join(",") + "}").join(gap ? "\n" : "") + commonClasses.map((cls) => cls.name + "{" + cls.fields.join(",") + "}").join(gap ? "\n" : "") + (gap ? "\n" : "");
+								if (key === "") c = classes.map((cls) => cls.name + "{" + cls.fields.join(",") + "}").join(gap ? "\n" : "") + commonClasses$1.map((cls) => cls.name + "{" + cls.fields.join(",") + "}").join(gap ? "\n" : "") + (gap ? "\n" : "");
 								if (protoConverter && protoConverter.external) return c + protoConverter.name + value;
 								if (objectConverter && objectConverter.external) return c + objectConverter.name + value;
 								return c + value;
@@ -5908,10 +6210,8 @@ cacheWillUpdate: async ({ response }) => {
 										k = rep[i];
 										path[thisNodeNameIndex] = k;
 										v = str(k, value);
-										if (v !== void 0) {
-											if (partialClass) partial.push(v);
-											else partial.push(getIdentifier(k) + (gap ? ": " : ":") + v);
-										}
+										if (v !== void 0) if (partialClass) partial.push(v);
+										else partial.push(getIdentifier(k) + (gap ? ": " : ":") + v);
 									}
 									path.splice(thisNodeNameIndex, 1);
 								} else {
@@ -5922,6 +6222,10 @@ cacheWillUpdate: async ({ response }) => {
 											if (!Object.prototype.propertyIsEnumerable.call(value, k)) continue;
 										}
 										if (Object.prototype.hasOwnProperty.call(value, k)) {
+											if (!sortFields && !partialClass) {
+												keys.push(k);
+												continue;
+											}
 											let n;
 											for (n = 0; n < keys.length; n++) if (keys[n] > k) {
 												keys.splice(n, 0, k);
@@ -5935,15 +6239,13 @@ cacheWillUpdate: async ({ response }) => {
 										if (Object.prototype.hasOwnProperty.call(value, k)) {
 											path[thisNodeNameIndex] = k;
 											v = str(k, value);
-											if (v !== void 0) {
-												if (partialClass) partial.push(v);
-												else partial.push(getIdentifier(k) + (gap ? ": " : ":") + v);
-											}
+											if (v !== void 0) if (partialClass) partial.push(v);
+											else partial.push(getIdentifier(k) + (gap ? ": " : ":") + v);
 										}
 									}
 									path.splice(thisNodeNameIndex, 1);
 								}
-								if (key === "") c = (classes.map((cls) => cls.name + "{" + cls.fields.join(",") + "}").join(gap ? "\n" : "") || commonClasses.map((cls) => cls.name + "{" + cls.fields.join(",") + "}").join(gap ? "\n" : "")) + (gap ? "\n" : "");
+								if (key === "") c = (classes.map((cls) => cls.name + "{" + cls.fields.join(",") + "}").join(gap ? "\n" : "") || commonClasses$1.map((cls) => cls.name + "{" + cls.fields.join(",") + "}").join(gap ? "\n" : "")) + (gap ? "\n" : "");
 								else c = "";
 								if (protoConverter && protoConverter.external) c = c + getIdentifier(protoConverter.name);
 								let ident = null;
@@ -5956,8 +6258,8 @@ cacheWillUpdate: async ({ response }) => {
 				}
 			}
 		};
-		encodings = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789$_";
-		decodings = {
+		encodings$1 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789$_";
+		decodings$1 = {
 			"~": -1,
 			"=": -1,
 			"$": 62,
@@ -5968,16 +6270,20 @@ cacheWillUpdate: async ({ response }) => {
 			"/": 63,
 			",": 63
 		};
-		for (let x = 0; x < 64; x++) decodings[encodings[x]] = x;
-		Object.freeze(decodings);
+		for (let x = 0; x < 64; x++) decodings$1[encodings$1[x]] = x;
+		Object.freeze(decodings$1);
 		/**
-		* @param {unknown} object 
-		* @param {(this: unknown, key: string, value: unknown)} [replacer] 
-		* @param {string | number} [space] 
+		* @param {unknown} object
+		* @param {((this: unknown, key: string, value: unknown)=>any)|string[]|{replacer?:(this: unknown, key: string, value: unknown)=>any,pretty?:string|number,space?:string|number,sort?:boolean,quote?:string}} [replacer]
+		*        a replacer function, a field-name array, or an options object; the options
+		*        object may carry `pretty`/`space` (indent), `sort` (false emits fields in
+		*        insertion order) and `quote` (the quote to prefer, default `"`), each
+		*        applying only to this call.
+		* @param {string | number} [space]
 		* @returns {string}
 		*/
-		JSOX.stringify = function(object, replacer, space) {
-			return JSOX.stringifier().stringify(object, replacer, space);
+		JSOX$1.stringify = function(object, replacer, space) {
+			return JSOX$1.stringifier().stringify(object, replacer, space);
 		};
 		[[
 			0,
@@ -6071,10 +6377,9 @@ cacheWillUpdate: async ({ response }) => {
 					var _a, _b;
 					if (pluginHeader) {
 						const methodHeader = pluginHeader === null || pluginHeader === void 0 ? void 0 : pluginHeader.methods.find((m) => prop === m.name);
-						if (methodHeader) {
-							if (methodHeader.rtype === "promise") return (options) => cap.nativePromise(pluginName, prop.toString(), options);
-							else return (options, callback) => cap.nativeCallback(pluginName, prop.toString(), options, callback);
-						} else if (impl) return (_a = impl[prop]) === null || _a === void 0 ? void 0 : _a.bind(impl);
+						if (methodHeader) if (methodHeader.rtype === "promise") return (options) => cap.nativePromise(pluginName, prop.toString(), options);
+						else return (options, callback) => cap.nativeCallback(pluginName, prop.toString(), options, callback);
+						else if (impl) return (_a = impl[prop]) === null || _a === void 0 ? void 0 : _a.bind(impl);
 					} else if (impl) return (_b = impl[prop]) === null || _b === void 0 ? void 0 : _b.bind(impl);
 					else throw new CapacitorException(`"${pluginName}" plugin is not implemented on ${platform}`, ExceptionCode.Unimplemented);
 				};
@@ -6210,7 +6515,7 @@ cacheWillUpdate: async ({ response }) => {
 				const listeners = this.listeners[eventName];
 				if (!listeners) return;
 				const index = listeners.indexOf(listenerFunc);
-				this.listeners[eventName].splice(index, 1);
+				if (index !== -1) this.listeners[eventName].splice(index, 1);
 				if (!this.listeners[eventName].length) this.removeWindowListener(this.windowListeners[eventName]);
 			}
 			addWindowListener(handle) {
@@ -6659,10 +6964,12 @@ cacheWillUpdate: async ({ response }) => {
 		potentiallyAsync = (promise, cb) => {
 			if (promise instanceof Promise || typeof promise?.then == "function") return promise?.then?.(cb);
 			else return cb?.(promise);
+			return promise;
 		};
 		potentiallyAsyncMap = (promise, cb) => {
 			if (promise instanceof Promise || typeof promise?.then == "function") return promise?.then?.(cb);
 			else return cb?.(promise);
+			return promise;
 		};
 		makeTriggerLess = function(self) {
 			return (cb) => {
@@ -7010,12 +7317,10 @@ cacheWillUpdate: async ({ response }) => {
 					this.#reject = null;
 					return result;
 				};
-				if (prop == "then" || prop == "catch" || prop == "finally") {
-					if (target instanceof Promise) return target?.[prop]?.bind?.(target);
-					else {
-						const $tmp = Promise.try(() => target);
-						return $tmp?.[prop]?.bind?.($tmp);
-					}
+				if (prop == "then" || prop == "catch" || prop == "finally") if (target instanceof Promise) return target?.[prop]?.bind?.(target);
+				else {
+					const $tmp = Promise.try(() => target);
+					return $tmp?.[prop]?.bind?.($tmp);
 				}
 				let result = void 0;
 				if (resolvedMap?.has?.(target) && (result = resolvedMap?.get?.(target))?.[prop] != null) result = resolvedMap?.get?.(target)?.[prop];
@@ -8172,7 +8477,9 @@ cacheWillUpdate: async ({ response }) => {
 						this._handleResponse(data);
 						break;
 					case "event": break;
-					case "signal": this._handleSignal(data);
+					case "signal":
+						this._handleSignal(data);
+						break;
 				}
 			}
 			_handleResponse(data) {
@@ -8719,10 +9026,14 @@ cacheWillUpdate: async ({ response }) => {
 		removeByPath = (path) => {
 			if (path != null && !Array.isArray(path)) path = [path];
 			if (path == null || path?.length < 1) return false;
-			if (!(storedData?.get?.(path?.[0]) ?? null) && path?.length <= 1) {
+			const root = storedData?.get?.(path?.[0]) ?? null;
+			if (!root && path?.length <= 1) {
 				storedData?.delete?.(path?.[0]);
 				return true;
 			} else return false;
+			delete traverseByPath(root, path?.slice?.(1, -1))[path?.[path?.length - 1]];
+			if ((typeof root == "object" || typeof root == "function") && path?.length <= 1) registeredInPath?.delete?.(root);
+			return true;
 		};
 		removeByData = (data) => {
 			const $desc = data?.[$descriptor] ?? (data?.$isDescriptor ? data : null);
@@ -8845,7 +9156,9 @@ cacheWillUpdate: async ({ response }) => {
 				result = reflect.isExtensible?.(obj) ?? (isObject(obj) ? Object.isExtensible(obj) : true);
 				break;
 			case "preventextensions":
-			case WReflectAction.PREVENT_EXTENSIONS: result = reflect.preventExtensions?.(obj) ?? (isObject(obj) ? Object.preventExtensions(obj) : false);
+			case WReflectAction.PREVENT_EXTENSIONS:
+				result = reflect.preventExtensions?.(obj) ?? (isObject(obj) ? Object.preventExtensions(obj) : false);
+				break;
 		}
 		return {
 			result,
@@ -8860,12 +9173,10 @@ cacheWillUpdate: async ({ response }) => {
 		const result = await rawResult;
 		const canBeReturn = isCanTransfer(result) && toTransfer.includes(result) || isCanJustReturn(result);
 		let finalPath = path;
-		if (!canBeReturn && action !== "get" && action !== WReflectAction.GET && (typeof result === "object" || typeof result === "function")) {
-			if (hasNoPath(result)) {
-				finalPath = [UUIDv4()];
-				writeByPath(finalPath, result);
-			} else finalPath = registeredInPath.get(result) ?? [];
-		}
+		if (!canBeReturn && action !== "get" && action !== WReflectAction.GET && (typeof result === "object" || typeof result === "function")) if (hasNoPath(result)) {
+			finalPath = [UUIDv4()];
+			writeByPath(finalPath, result);
+		} else finalPath = registeredInPath.get(result) ?? [];
 		const ctx = readByPath(finalPath);
 		const ctxKey = action === "get" || action === WReflectAction.GET ? finalPath?.at(-1) : void 0;
 		const obj = readByPath(path);
@@ -9676,15 +9987,17 @@ cacheWillUpdate: async ({ response }) => {
 							case "delete":
 								if (op.key !== void 0) store.delete(op.key);
 								break;
-							case "update": if (op.key !== void 0) {
-								const getReq = store.get(op.key);
-								getReq.onsuccess = () => {
-									if (getReq.result && op.value) store.put({
-										...getReq.result,
-										...op.value
-									});
-								};
-							}
+							case "update":
+								if (op.key !== void 0) {
+									const getReq = store.get(op.key);
+									getReq.onsuccess = () => {
+										if (getReq.result && op.value) store.put({
+											...getReq.result,
+											...op.value
+										});
+									};
+								}
+								break;
 						}
 					}
 					tx.oncomplete = () => resolve();
@@ -12784,41 +13097,39 @@ cacheWillUpdate: async ({ response }) => {
 		bridgeInitDone = false;
 		normalizeBridgeEnvelope = (channel, payload, envelope) => {
 			if (envelope && isProtocolEnvelope(envelope)) return normalizeProtocolEnvelope(envelope);
-			const interop = createInteropEnvelope({
-				purpose: "invoke",
-				protocol: "service",
-				transport: "service-worker",
-				type: "invoke",
-				op: "invoke",
-				source: "webview",
-				destination: "native",
-				srcChannel: "webview",
-				dstChannel: "native",
-				payload: payload ?? {},
-				data: payload ?? {}
-			});
 			return createProtocolEnvelope({
-				...interop,
+				...createInteropEnvelope({
+					purpose: "invoke",
+					protocol: "service",
+					transport: "service-worker",
+					type: "invoke",
+					op: "invoke",
+					source: "webview",
+					destination: "native",
+					srcChannel: "webview",
+					dstChannel: "native",
+					payload: payload ?? {},
+					data: payload ?? {}
+				}),
 				path: ["cws-bridge", channel]
 			});
 		};
 		normalizeInvokeResultEnvelope = (channel, payload, result) => {
 			if (result?.envelope && isProtocolEnvelope(result.envelope)) return normalizeProtocolEnvelope(result.envelope);
-			const interop = createInteropEnvelope({
-				purpose: "invoke",
-				protocol: "service",
-				transport: "service-worker",
-				type: result.ok ? "response" : "ack",
-				op: "invoke",
-				source: "native",
-				destination: "webview",
-				srcChannel: "native",
-				dstChannel: "webview",
-				payload,
-				data: payload
-			});
 			return createProtocolEnvelope({
-				...interop,
+				...createInteropEnvelope({
+					purpose: "invoke",
+					protocol: "service",
+					transport: "service-worker",
+					type: result.ok ? "response" : "ack",
+					op: "invoke",
+					source: "native",
+					destination: "webview",
+					srcChannel: "native",
+					dstChannel: "webview",
+					payload,
+					data: payload
+				}),
 				path: ["cws-bridge", channel]
 			});
 		};
@@ -13285,17 +13596,15 @@ cacheWillUpdate: async ({ response }) => {
 			}
 		};
 		setChecked = (input, value, ev) => {
-			if (value != null && input.checked != value) {
-				if (input?.["type"] == "checkbox" || input?.["type"] == "radio" && !input?.checked) {
-					input?.click?.();
-					ev?.preventDefault?.();
-				} else {
-					input.checked = !!value;
-					input?.dispatchEvent?.(new Event("change", {
-						bubbles: true,
-						cancelable: true
-					}));
-				}
+			if (value != null && input.checked != value) if (input?.["type"] == "checkbox" || input?.["type"] == "radio" && !input?.checked) {
+				input?.click?.();
+				ev?.preventDefault?.();
+			} else {
+				input.checked = !!value;
+				input?.dispatchEvent?.(new Event("change", {
+					bubbles: true,
+					cancelable: true
+				}));
 			}
 		};
 		isValidParent$1 = (parent) => {
@@ -13405,17 +13714,14 @@ cacheWillUpdate: async ({ response }) => {
 			const isHovered = element.matches(":hover");
 			if (!isFocused && !isHovered && !selectorOrElement) return false;
 			if (selectorOrElement) {
-				if (typeof selectorOrElement === "string") {
-					if (dir === "parent") return !!MOCElement(element, selectorOrElement);
-					else {
-						const target = isFocused ? active : element.querySelector(":hover") || element;
-						const altCnd = !!MOCElement(target, selectorOrElement);
-						return element?.querySelector?.(selectorOrElement) != null || element?.matches?.(selectorOrElement) || altCnd;
-					}
-				} else if (selectorOrElement instanceof HTMLElement) {
-					if (dir === "parent") return hasParent(element, selectorOrElement) || false;
-					else return hasParent(selectorOrElement, element) || false;
+				if (typeof selectorOrElement === "string") if (dir === "parent") return !!MOCElement(element, selectorOrElement);
+				else {
+					const target = isFocused ? active : element.querySelector(":hover") || element;
+					const altCnd = !!MOCElement(target, selectorOrElement);
+					return element?.querySelector?.(selectorOrElement) != null || element?.matches?.(selectorOrElement) || altCnd;
 				}
+				else if (selectorOrElement instanceof HTMLElement) if (dir === "parent") return hasParent(element, selectorOrElement) || false;
+				else return hasParent(selectorOrElement, element) || false;
 			}
 			return true;
 		};
@@ -14423,17 +14729,15 @@ cacheWillUpdate: async ({ response }) => {
 				styleMapRef.set(kebab, val);
 				return element;
 			}
-			if (typeof val === "number") {
-				if (CSS?.number && !kebab.startsWith("--")) {
-					const newVal = CSS.number(val);
-					const old = styleMapRef.get(kebab);
-					if (isUnitValue(old) && old.value === newVal.value && old.unit === newVal.unit) return element;
-					styleMapRef.set(kebab, newVal);
-					return element;
-				} else {
-					setPropertyIfNotEqual(styleRef, kebab, String(val), importance);
-					return element;
-				}
+			if (typeof val === "number") if (CSS?.number && !kebab.startsWith("--")) {
+				const newVal = CSS.number(val);
+				const old = styleMapRef.get(kebab);
+				if (isUnitValue(old) && old.value === newVal.value && old.unit === newVal.unit) return element;
+				styleMapRef.set(kebab, newVal);
+				return element;
+			} else {
+				setPropertyIfNotEqual(styleRef, kebab, String(val), importance);
+				return element;
 			}
 			if (typeof val === "string") {
 				if (/\b(calc|min|max|clamp)\s*\(/.test(val)) {
@@ -14760,8 +15064,7 @@ cacheWillUpdate: async ({ response }) => {
 			return new DOMMatrix();
 		};
 		getTransformOrigin = (el) => {
-			const cssOrigin = getComputedStyle(el)?.getPropertyValue?.("transform-origin") || `50% 50%`;
-			return parseOrigin(cssOrigin, el);
+			return parseOrigin(getComputedStyle(el)?.getPropertyValue?.("transform-origin") || `50% 50%`, el);
 		};
 		getPropertyValue = (src, name) => {
 			if ("computedStyleMap" in src) {
@@ -14987,16 +15290,14 @@ cacheWillUpdate: async ({ response }) => {
 				} else layerRule = adoptedLayerMap.get(layerName);
 				if (!layerRule) {
 					layerRule = getOrCreateLayerRule(sheet, layerName);
-					if (layerRule) {
-						if (inShadow) {
-							let shadowLayerMap = adoptedShadowLayerMap.get(root);
-							if (!shadowLayerMap) {
-								shadowLayerMap = /* @__PURE__ */ new Map();
-								adoptedShadowLayerMap.set(root, shadowLayerMap);
-							}
-							shadowLayerMap.set(layerName, layerRule);
-						} else adoptedLayerMap.set(layerName, layerRule);
-					}
+					if (layerRule) if (inShadow) {
+						let shadowLayerMap = adoptedShadowLayerMap.get(root);
+						if (!shadowLayerMap) {
+							shadowLayerMap = /* @__PURE__ */ new Map();
+							adoptedShadowLayerMap.set(root, shadowLayerMap);
+						}
+						shadowLayerMap.set(layerName, layerRule);
+					} else adoptedLayerMap.set(layerName, layerRule);
 				}
 				if (layerRule) {
 					let layerRuleIndex = Array.from(layerRule.cssRules || []).findIndex((r) => r instanceof CSSStyleRule && r.selectorText?.trim?.() === selector?.trim?.());
@@ -15616,13 +15917,11 @@ cacheWillUpdate: async ({ response }) => {
 				let styles = ``;
 				let props = [];
 				if (typeof resolvedSrc == "string") styles = resolvedSrc || "";
-				else if (typeof resolvedSrc == "object" && resolvedSrc != null) {
-					if (resolvedSrc instanceof HTMLStyleElement) styleElement = resolvedSrc;
-					else {
-						styles = typeof resolvedSrc.css == "string" ? resolvedSrc.css : typeof resolvedSrc == "string" ? resolvedSrc : String(resolvedSrc);
-						props = resolvedSrc?.props ?? props;
-						vars = resolvedSrc?.vars ?? vars;
-					}
+				else if (typeof resolvedSrc == "object" && resolvedSrc != null) if (resolvedSrc instanceof HTMLStyleElement) styleElement = resolvedSrc;
+				else {
+					styles = typeof resolvedSrc.css == "string" ? resolvedSrc.css : typeof resolvedSrc == "string" ? resolvedSrc : String(resolvedSrc);
+					props = resolvedSrc?.props ?? props;
+					vars = resolvedSrc?.vars ?? vars;
 				}
 				if (!styleElement && styles) styleElement = loadInlineStyle(styles, bTo, "ux-layer");
 				source.set(src, {
@@ -16360,6 +16659,7 @@ cacheWillUpdate: async ({ response }) => {
 							oldState?.[idx],
 							idx in oldState
 						]);
+						break;
 				}
 				const reg = subscriptRegistry.get(this.#self);
 				if (added?.length == 1) reg?.trigger?.(idx, added[0], null, "add");
@@ -17306,12 +17606,11 @@ cacheWillUpdate: async ({ response }) => {
 			else if (checkValidObj(obj)) {
 				const wrapped = obj;
 				if (specializedSubscribe?.has?.(obj = obj?.[$extractKey$] ?? obj)) return specializedSubscribe?.get?.(obj)?.(wrapped, prop, cb, options);
-				if (isObservable(wrapped) || checkIsPaired(obj) && isObservable(obj?.[0])) {
-					if (isThenable(obj)) return specializedSubscribe?.getOrInsert?.(obj, subscribeThenable)?.(obj, prop, cb, options);
-					else if (checkIsPaired(obj)) return specializedSubscribe?.getOrInsert?.(obj, subscribePaired)?.(obj, prop, cb, options);
-					else if (typeof HTMLInputElement != "undefined" && obj instanceof HTMLInputElement) return specializedSubscribe?.getOrInsert?.(obj, subscribeInput)?.(obj, prop, cb, options);
-					else return specializedSubscribe?.getOrInsert?.(obj, subscribeDirectly)?.(wrapped, prop, cb, options);
-				} else {
+				if (isObservable(wrapped) || checkIsPaired(obj) && isObservable(obj?.[0])) if (isThenable(obj)) return specializedSubscribe?.getOrInsert?.(obj, subscribeThenable)?.(obj, prop, cb, options);
+				else if (checkIsPaired(obj)) return specializedSubscribe?.getOrInsert?.(obj, subscribePaired)?.(obj, prop, cb, options);
+				else if (typeof HTMLInputElement != "undefined" && obj instanceof HTMLInputElement) return specializedSubscribe?.getOrInsert?.(obj, subscribeInput)?.(obj, prop, cb, options);
+				else return specializedSubscribe?.getOrInsert?.(obj, subscribeDirectly)?.(wrapped, prop, cb, options);
+				else {
 					const initialCb = withTrigger(cb, options, initialTrigger);
 					if (!initialCb) return;
 					return Promised(globalThis?.Promise?.try?.(() => {
@@ -17452,15 +17751,13 @@ cacheWillUpdate: async ({ response }) => {
 			const obs = observe([]);
 			obs.push(...Array.from(set?.values?.() || []));
 			addToCallChain(obs, Symbol.dispose, affected(set, (value, _, old) => {
-				if (isNotEqual(value, old)) {
-					if (old == null && value != null) obs.push(value);
-					else if (old != null && value == null) {
-						const idx = obs.indexOf(old);
-						if (idx >= 0) obs.splice(idx, 1);
-					} else {
-						const idx = obs.indexOf(old);
-						if (idx >= 0 && isNotEqual(obs[idx], value)) obs[idx] = value;
-					}
+				if (isNotEqual(value, old)) if (old == null && value != null) obs.push(value);
+				else if (old != null && value == null) {
+					const idx = obs.indexOf(old);
+					if (idx >= 0) obs.splice(idx, 1);
+				} else {
+					const idx = obs.indexOf(old);
+					if (idx >= 0 && isNotEqual(obs[idx], value)) obs[idx] = value;
 				}
 			}));
 			return obs;
@@ -17558,8 +17855,7 @@ cacheWillUpdate: async ({ response }) => {
 			const wv = toRef$1(value);
 			const un = affected?.([value, "value"], (curr) => {
 				const elementRef = deref$1(wel);
-				const valueRef = deref$1(wv);
-				const v = $getValue(valueRef) ?? $getValue(curr);
+				const v = $getValue(deref$1(wv)) ?? $getValue(curr);
 				handler?.(elementRef, prop, v);
 			});
 			const unsub = () => {
@@ -18503,8 +18799,7 @@ cacheWillUpdate: async ({ response }) => {
 				parts.push(strings[index].slice(consumed[index]));
 				if (index >= values.length) continue;
 				const value = values[index];
-				const nextText = strings[index + 1] ?? "";
-				const attachedUnit = readAttachedCSSUnit(nextText);
+				const attachedUnit = readAttachedCSSUnit(strings[index + 1] ?? "");
 				if (isNativeCSSStyleValue(value)) {
 					const marker = `--fest-typed-${templateId}-${typedSlots.length}`;
 					typedSlots.push({
@@ -18997,8 +19292,7 @@ cacheWillUpdate: async ({ response }) => {
 				};
 			}
 			if (isScrollDriven(trigger) || isViewDriven(trigger)) {
-				const kind = isViewDriven(trigger) ? "view" : "scroll";
-				properties["timeline-trigger"] = `${ANIM_TRIGGER_NAME} ${kind}`;
+				properties["timeline-trigger"] = `${ANIM_TRIGGER_NAME} ${isViewDriven(trigger) ? "view" : "scroll"}`;
 				if (trigger.rangeStart) properties["animation-range-start"] = trigger.rangeStart;
 				if (trigger.rangeEnd) properties["animation-range-end"] = trigger.rangeEnd;
 				return {
@@ -20558,18 +20852,16 @@ cacheWillUpdate: async ({ response }) => {
 				const setRef = deref$1(set);
 				const elementRef = deref$1(wel);
 				const v = $getValue(valueRef) ?? $getValue(curr);
-				if (!setRef || setRef?.[prop] == valueRef) {
-					if (typeof valueRef?.[$behavior] == "function") valueRef?.[$behavior]?.((_val = curr) => handler(elementRef, prop, v), [
-						curr,
-						prop,
-						old
-					], [
-						controller?.signal,
-						prop,
-						wel
-					]);
-					else handler(elementRef, prop, v);
-				}
+				if (!setRef || setRef?.[prop] == valueRef) if (typeof valueRef?.[$behavior] == "function") valueRef?.[$behavior]?.((_val = curr) => handler(elementRef, prop, v), [
+					curr,
+					prop,
+					old
+				], [
+					controller?.signal,
+					prop,
+					wel
+				]);
+				else handler(elementRef, prop, v);
 			});
 			let obs = null;
 			if (typeof withObserver == "boolean" && withObserver) {
@@ -20821,8 +21113,7 @@ cacheWillUpdate: async ({ response }) => {
 				const $requestor = isValidParent$1(boundParent) ?? isValidParent$1(defaultParent);
 				const newNode = getNode(newEl, mapper, idx, $requestor);
 				const oldNode = getNode(oldEl, mapper, idx, $requestor);
-				let doubtfulParent = newNode?.parentElement ?? oldNode?.parentElement;
-				let element = isValidParent$1(doubtfulParent) ?? $requestor;
+				let element = isValidParent$1(newNode?.parentElement ?? oldNode?.parentElement) ?? $requestor;
 				if (!element) return;
 				if (defaultParent != element) defaultParent = element;
 				const oldIdx = indexOf(element, oldNode);
@@ -20962,21 +21253,19 @@ cacheWillUpdate: async ({ response }) => {
 				Promise.try(() => {
 					const element = this.$getNode(requestor);
 					if (!element || !requestor || element?.contains?.(requestor) || requestor == element) return;
-					if (requestor instanceof HTMLElement && isValidParent$1(requestor)) {
-						if (Array.from(requestor?.children).find((node) => node === element)) this.boundParent = requestor;
-						else {
-							const observer = new MutationObserver((records) => {
-								for (const record of records) if (record.type === "childList") {
-									if (record.addedNodes.length > 0) {
-										if (Array.from(record.addedNodes || []).find((node) => node === element)) {
-											this.boundParent = requestor;
-											observer.disconnect();
-										}
+					if (requestor instanceof HTMLElement && isValidParent$1(requestor)) if (Array.from(requestor?.children).find((node) => node === element)) this.boundParent = requestor;
+					else {
+						const observer = new MutationObserver((records) => {
+							for (const record of records) if (record.type === "childList") {
+								if (record.addedNodes.length > 0) {
+									if (Array.from(record.addedNodes || []).find((node) => node === element)) {
+										this.boundParent = requestor;
+										observer.disconnect();
 									}
 								}
-							});
-							observer.observe(requestor, { childList: true });
-						}
+							}
+						});
+						observer.observe(requestor, { childList: true });
 					}
 				})?.catch?.(console.warn.bind(console));
 				return this.element;
@@ -21134,10 +21423,8 @@ cacheWillUpdate: async ({ response }) => {
 			return result;
 		};
 		appendOrEmplaceByIndex = (parent, child, index = -1) => {
-			if (isElement(child) && child != null && child?.parentNode != parent) {
-				if (Number.isInteger(index) && index >= 0 && index < parent?.childNodes?.length) parent?.insertBefore?.(child, parent?.childNodes?.[index]);
-				else parent?.append?.(child);
-			}
+			if (isElement(child) && child != null && child?.parentNode != parent) if (Number.isInteger(index) && index >= 0 && index < parent?.childNodes?.length) parent?.insertBefore?.(child, parent?.childNodes?.[index]);
+			else parent?.append?.(child);
 		};
 		appendFix = (parent, child, index = -1) => {
 			if (!isElement(child) || parent == child || child?.parentNode == parent) return;
@@ -21182,18 +21469,16 @@ cacheWillUpdate: async ({ response }) => {
 			return node;
 		};
 		replaceOrSwap = (parent, oldEl, newEl) => {
-			if (oldEl?.parentNode) {
-				if (oldEl?.parentNode == newEl?.parentNode) {
-					parent = oldEl?.parentNode ?? parent;
-					if (oldEl.nextSibling === newEl) parent.insertBefore(newEl, oldEl);
-					else if (newEl.nextSibling === oldEl) parent.insertBefore(oldEl, newEl);
-					else {
-						const nextSiblingOfElement1 = oldEl.nextSibling;
-						parent.replaceChild(newEl, oldEl);
-						parent.insertBefore(oldEl, nextSiblingOfElement1);
-					}
-				} else oldEl?.replaceWith?.(newEl);
-			}
+			if (oldEl?.parentNode) if (oldEl?.parentNode == newEl?.parentNode) {
+				parent = oldEl?.parentNode ?? parent;
+				if (oldEl.nextSibling === newEl) parent.insertBefore(newEl, oldEl);
+				else if (newEl.nextSibling === oldEl) parent.insertBefore(oldEl, newEl);
+				else {
+					const nextSiblingOfElement1 = oldEl.nextSibling;
+					parent.replaceChild(newEl, oldEl);
+					parent.insertBefore(oldEl, nextSiblingOfElement1);
+				}
+			} else oldEl?.replaceWith?.(newEl);
 		};
 		replaceChildren = async (element, cp, mapper, index = -1, old, lifecycle) => {
 			if (mapper != null) cp = mapper?.(cp, index);
@@ -21383,9 +21668,7 @@ cacheWillUpdate: async ({ response }) => {
 			getRule() {
 				const element = this.activateStyleTarget();
 				if (!element) return void 0;
-				const selector = `.${this.token}${this.suffix}`;
-				const root = pseudoStyleRoot(element);
-				return getAdoptedStyleRule(selector, "ux-query-pseudo", root);
+				return getAdoptedStyleRule(`.${this.token}${this.suffix}`, "ux-query-pseudo", pseudoStyleRoot(element));
 			}
 			getStyle() {
 				return this.getRule()?.style;
@@ -21902,10 +22185,9 @@ cacheWillUpdate: async ({ response }) => {
 				if ((name == "valueRef" || name == "checkedRef") && isInputLike(this.selector)) return () => {
 					const prop = name == "checkedRef" ? "checked" : "value";
 					const ref = observe({ value: this._readInputState(target)[prop] });
-					const unsub = this._subscribeInput(target, (v, p) => {
+					ref[Symbol.dispose] = this._subscribeInput(target, (v, p) => {
 						if (p == prop) ref.value = v;
 					});
-					ref[Symbol.dispose] = unsub;
 					return ref;
 				};
 				if (name == "deref" && (typeof selected == "object" || typeof selected == "function") && selected != null) {
@@ -22117,10 +22399,8 @@ cacheWillUpdate: async ({ response }) => {
 			});
 			makeDisposable([properties, element], affected(properties, (value, prop) => {
 				const el = wel.deref();
-				if (el) {
-					if (prop == "checked") setChecked(el, value);
-					else return bindWith(el, prop, value, handleProperty, weak?.deref?.(), true);
-				}
+				if (el) if (prop == "checked") setChecked(el, value);
+				else return bindWith(el, prop, value, handleProperty, weak?.deref?.(), true);
 				return null;
 			}));
 			element.addEventListener("change", onChange);
@@ -22243,12 +22523,10 @@ cacheWillUpdate: async ({ response }) => {
 					if (firstExisting) parent.insertBefore(this.#stub, firstExisting);
 					else parent.appendChild(this.#stub);
 				}
-				for (const oldNode of this.#renderedNodes) if (!desired.has(oldNode) && oldNode.parentNode === parent) {
-					if (lifecycle.disappear) {
-						await removeChild(parent, oldNode, null, -1, lifecycle);
-						if (this.#disposed || this.#boundParent !== parent) return;
-					} else oldNode.parentNode.removeChild(oldNode);
-				}
+				for (const oldNode of this.#renderedNodes) if (!desired.has(oldNode) && oldNode.parentNode === parent) if (lifecycle.disappear) {
+					await removeChild(parent, oldNode, null, -1, lifecycle);
+					if (this.#disposed || this.#boundParent !== parent) return;
+				} else oldNode.parentNode.removeChild(oldNode);
 				let anchor = this.#stub.nextSibling;
 				for (const node of desiredNodes) {
 					const wasInParent = node.parentNode === parent;
@@ -22353,24 +22631,22 @@ cacheWillUpdate: async ({ response }) => {
 					}
 					const element = getNode(this.#collection()?.[0], this.mapper.bind(this), 0);
 					if (!requestor || element?.contains?.(requestor) || requestor == element) return;
-					if (isElementParent(requestor)) {
-						if (!element) this.boundParent = requestor;
-						else if (Array.from(requestor?.children).find((node) => node === element)) this.boundParent = requestor;
-						else {
-							this.#disconnectParentObserver();
-							const observer = new MutationObserver((records) => {
-								for (const record of records) if (record.type === "childList") {
-									if (record.addedNodes.length > 0) {
-										if (Array.from(record.addedNodes || []).find((node) => node === element)) {
-											this.boundParent = requestor;
-											observer.disconnect();
-										}
+					if (isElementParent(requestor)) if (!element) this.boundParent = requestor;
+					else if (Array.from(requestor?.children).find((node) => node === element)) this.boundParent = requestor;
+					else {
+						this.#disconnectParentObserver();
+						const observer = new MutationObserver((records) => {
+							for (const record of records) if (record.type === "childList") {
+								if (record.addedNodes.length > 0) {
+									if (Array.from(record.addedNodes || []).find((node) => node === element)) {
+										this.boundParent = requestor;
+										observer.disconnect();
 									}
 								}
-							});
-							this.#parentObserver = observer;
-							observer.observe(requestor, { childList: true });
-						}
+							}
+						});
+						this.#parentObserver = observer;
+						observer.observe(requestor, { childList: true });
 					}
 				} catch (error) {
 					console.warn(error);
@@ -22425,10 +22701,8 @@ cacheWillUpdate: async ({ response }) => {
 					if ((args?.[1] == null || args?.[1] < 0 || typeof args?.[1] != "number" || !canBeInteger(args?.[1])) && (Array.isArray(source) || source instanceof Set)) return;
 					if (args?.[0] != null && (typeof args?.[0] == "object" || typeof args?.[0] == "function" || typeof args?.[0] == "symbol")) return this.#reMap.getOrInsertComputed(args?.[0], () => rememberFragmentKids(this.#mapCb(...args)));
 					if (args?.[0] != null && source instanceof Set) return this.#pmMap.getOrInsertComputed(args?.[0], () => rememberFragmentKids(this.#mapCb(...args)));
-					if (args?.[0] != null) {
-						if (this.#options?.uniquePrimitives && isPrimitive(args?.[0])) return this.#pmMap.getOrInsertComputed(args?.[0], () => rememberFragmentKids(this.#mapCb(...args)));
-						else return rememberFragmentKids(this.#mapCb(...args));
-					}
+					if (args?.[0] != null) if (this.#options?.uniquePrimitives && isPrimitive(args?.[0])) return this.#pmMap.getOrInsertComputed(args?.[0], () => rememberFragmentKids(this.#mapCb(...args)));
+					else return rememberFragmentKids(this.#mapCb(...args));
 				};
 			}
 			_onUpdate(newEl, idx, oldEl, op = "") {
@@ -22696,14 +22970,13 @@ cacheWillUpdate: async ({ response }) => {
 					const newNode = getFromMapped(this.mapped, idx ?? -1, parent) ?? this.#stub;
 					const oldNode = getFromMapped(this.mapped, old ?? -1, parent);
 					if (isElement(parent)) {
-						if (isElement(newNode)) {
-							if (isElement(oldNode)) try {
-								replaceOrSwap(parent, oldNode, newNode);
-							} catch (e) {
-								console.warn(e);
-							}
-							else appendFix(parent, newNode);
-						} else if (oldNode && !newNode) removeChild(parent, oldNode);
+						if (isElement(newNode)) if (isElement(oldNode)) try {
+							replaceOrSwap(parent, oldNode, newNode);
+						} catch (e) {
+							console.warn(e);
+						}
+						else appendFix(parent, newNode);
+						else if (oldNode && !newNode) removeChild(parent, oldNode);
 					}
 				}
 			}
@@ -22810,10 +23083,8 @@ cacheWillUpdate: async ({ response }) => {
 			const element = E(type, normalized, $children);
 			if (!element) return element;
 			Promise.try(() => {
-				if (ref) {
-					if (typeof ref == "function") ref?.(element);
-					else ref.value = element;
-				}
+				if (ref) if (typeof ref == "function") ref?.(element);
+				else ref.value = element;
 			})?.catch?.(console.warn.bind(console));
 			return element;
 		};
@@ -24803,10 +25074,9 @@ cacheWillUpdate: async ({ response }) => {
 				const targetRatio = aspectRatio.value;
 				let newWidth = rect.size.x.value;
 				let newHeight = rect.size.y.value;
-				if (mode === "fit") {
-					if (currentRatio > targetRatio) newHeight = newWidth / targetRatio;
-					else newWidth = newHeight * targetRatio;
-				} else if (currentRatio > targetRatio) newWidth = newHeight * targetRatio;
+				if (mode === "fit") if (currentRatio > targetRatio) newHeight = newWidth / targetRatio;
+				else newWidth = newHeight * targetRatio;
+				else if (currentRatio > targetRatio) newWidth = newHeight * targetRatio;
 				else newHeight = newWidth / targetRatio;
 				return {
 					position: rect.position,
@@ -25532,29 +25802,27 @@ cacheWillUpdate: async ({ response }) => {
 			const psh = [], atb = [];
 			for (let i = 0; i < strings.length; i++) {
 				parts.push(strings?.[i] || "");
-				if (i < values.length) {
-					if (strings[i]?.trim()?.endsWith?.("<")) {
-						const dat = parseTag(values?.[i]);
-						parts.push(dat.tag || "div");
-						if (dat.id) parts.push(` id="${dat.id}"`);
-						if (dat.className) parts.push(` class="${dat.className}"`);
-					} else {
-						const $inTagOpen = checkInsideTagBlock(strings, strings?.[i] || "", strings?.[i + 1] || "");
-						const $afterEquals = /[\w:\-\.\]]\s*=\s*$/.test(strings[i]?.trim?.() ?? "") || strings[i]?.trim?.()?.endsWith?.("=");
-						const $isQuoteBegin = strings[i]?.trim?.()?.match?.(/['"]$/);
-						const $isQuoteEnd = strings[i + 1]?.trim?.()?.match?.(/^['"]/) ?? $isQuoteBegin;
-						const $betweenQuotes = $isQuoteBegin && $isQuoteEnd;
-						const $attributePattern = $afterEquals;
-						if (($attributePattern || $betweenQuotes) && $inTagOpen) {
-							const $needsToQuoteWrap = $attributePattern && !$betweenQuotes;
-							const ati = atb.length;
-							parts.push((typeof values?.[i] == "string" ? values?.[i]?.trim?.() != "" : values?.[i] != null) ? $needsToQuoteWrap ? `"#{${ati}}"` : `#{${ati}}` : "");
-							atb.push(values?.[i]);
-						} else if (!$inTagOpen) {
-							const psi = psh.length;
-							parts.push((typeof values?.[i] == "string" ? values?.[i]?.trim?.() != "" : values?.[i] != null) ? isPrimitive(values?.[i]) ? String(values?.[i])?.trim?.() : `<!--o:${psi}-->` : "");
-							psh.push(values?.[i]);
-						}
+				if (i < values.length) if (strings[i]?.trim()?.endsWith?.("<")) {
+					const dat = parseTag(values?.[i]);
+					parts.push(dat.tag || "div");
+					if (dat.id) parts.push(` id="${dat.id}"`);
+					if (dat.className) parts.push(` class="${dat.className}"`);
+				} else {
+					const $inTagOpen = checkInsideTagBlock(strings, strings?.[i] || "", strings?.[i + 1] || "");
+					const $afterEquals = /[\w:\-\.\]]\s*=\s*$/.test(strings[i]?.trim?.() ?? "") || strings[i]?.trim?.()?.endsWith?.("=");
+					const $isQuoteBegin = strings[i]?.trim?.()?.match?.(/['"]$/);
+					const $isQuoteEnd = strings[i + 1]?.trim?.()?.match?.(/^['"]/) ?? $isQuoteBegin;
+					const $betweenQuotes = $isQuoteBegin && $isQuoteEnd;
+					const $attributePattern = $afterEquals;
+					if (($attributePattern || $betweenQuotes) && $inTagOpen) {
+						const $needsToQuoteWrap = $attributePattern && !$betweenQuotes;
+						const ati = atb.length;
+						parts.push((typeof values?.[i] == "string" ? values?.[i]?.trim?.() != "" : values?.[i] != null) ? $needsToQuoteWrap ? `"#{${ati}}"` : `#{${ati}}` : "");
+						atb.push(values?.[i]);
+					} else if (!$inTagOpen) {
+						const psi = psh.length;
+						parts.push((typeof values?.[i] == "string" ? values?.[i]?.trim?.() != "" : values?.[i] != null) ? isPrimitive(values?.[i]) ? String(values?.[i])?.trim?.() : `<!--o:${psi}-->` : "");
+						psh.push(values?.[i]);
 					}
 				}
 			}
@@ -26158,6 +26426,269 @@ cacheWillUpdate: async ({ response }) => {
 		customElement = defineElement;
 	}));
 	//#endregion
+	//#region ../../modules/projects/lur.e/src/lure/misc/CodeOverlay.ts
+	var CODE_SELECTION_HIGHLIGHT, METRIC_PROPS, hostPaint, selectionBound, supportsAnchorPositioning, makeAnchorName, placeCodeOverlay, watchHostRemoval, highlightsRegistry, collectTextNodes, rangeOffsetsIn, pointAtOffset, hostSelectionOffsets, syncCodeSelectionHighlight, ensureSelectionMirror, copyCodeMetrics, attachCodeOverlay;
+	var init_CodeOverlay = __esmMin((() => {
+		CODE_SELECTION_HIGHLIGHT = "code-selection";
+		METRIC_PROPS = [
+			"font-family",
+			"font-size",
+			"font-weight",
+			"font-style",
+			"font-stretch",
+			"font-variant",
+			"font-variant-ligatures",
+			"font-variant-numeric",
+			"font-variant-caps",
+			"font-variant-east-asian",
+			"font-feature-settings",
+			"font-kerning",
+			"font-optical-sizing",
+			"font-variation-settings",
+			"font-size-adjust",
+			"font-language-override",
+			"line-height",
+			"letter-spacing",
+			"word-spacing",
+			"tab-size",
+			"white-space",
+			"white-space-collapse",
+			"word-break",
+			"overflow-wrap",
+			"line-break",
+			"hyphens",
+			"text-align",
+			"text-indent",
+			"text-transform",
+			"text-rendering",
+			"text-wrap",
+			"text-wrap-mode",
+			"direction",
+			"unicode-bidi",
+			"-webkit-font-smoothing",
+			"-moz-osx-font-smoothing"
+		];
+		hostPaint = /* @__PURE__ */ new Map();
+		selectionBound = false;
+		supportsAnchorPositioning = () => {
+			try {
+				return typeof CSS !== "undefined" && CSS.supports?.("anchor-name: --x") === true;
+			} catch {
+				return false;
+			}
+		};
+		makeAnchorName = () => `--hl${Math.random().toString(36).slice(2, 10).replace(/[0-9]/g, "x")}`;
+		placeCodeOverlay = (host, overlay) => {
+			overlay.style.pointerEvents = "none";
+			overlay.style.userSelect = "none";
+			overlay.style.position = "absolute";
+			overlay.style.inset = "0";
+			overlay.style.zIndex = "1";
+			overlay.style.margin = "0";
+			const parent = host.parentElement;
+			if (parent && getComputedStyle(parent).position === "static") parent.style.position = "relative";
+			if (supportsAnchorPositioning()) {
+				const name = makeAnchorName();
+				host.style.setProperty("anchor-name", name);
+				overlay.style.setProperty("position-anchor", name);
+				overlay.style.setProperty("position-area", "span-all");
+				overlay.style.setProperty("inset-block-start", "anchor(start)");
+				overlay.style.setProperty("inset-inline-start", "anchor(start)");
+				overlay.style.setProperty("inset-block-end", "anchor(end)");
+				overlay.style.setProperty("inset-inline-end", "anchor(end)");
+				overlay.style.setProperty("inline-size", "anchor-size(inline)");
+				overlay.style.setProperty("block-size", "anchor-size(block)");
+			}
+			host.after(overlay);
+		};
+		watchHostRemoval = (host, onGone) => {
+			let observer = null;
+			const bind = () => {
+				if (observer || !host.isConnected) return;
+				observer = new MutationObserver(() => {
+					if (host.isConnected) return;
+					observer?.disconnect();
+					observer = null;
+					onGone();
+				});
+				observer.observe(host.parentElement ?? document.documentElement, {
+					childList: true,
+					subtree: true
+				});
+			};
+			if (host.isConnected) bind();
+			else {
+				queueMicrotask(bind);
+				requestAnimationFrame(bind);
+			}
+			return () => observer?.disconnect();
+		};
+		highlightsRegistry = () => {
+			return globalThis.CSS?.highlights ?? null;
+		};
+		collectTextNodes = (root) => {
+			const nodes = [];
+			const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+			let current = walker.nextNode();
+			while (current) {
+				nodes.push(current);
+				current = walker.nextNode();
+			}
+			return nodes;
+		};
+		rangeOffsetsIn = (root, range) => {
+			if (!root.contains(range.commonAncestorContainer) && range.commonAncestorContainer !== root) return null;
+			const prefix = document.createRange();
+			prefix.selectNodeContents(root);
+			prefix.setEnd(range.startContainer, range.startOffset);
+			const start = prefix.toString().length;
+			return {
+				start,
+				end: start + range.toString().length
+			};
+		};
+		pointAtOffset = (nodes, offset) => {
+			let remaining = Math.max(0, offset);
+			for (const node of nodes) {
+				const length = node.data.length;
+				if (remaining <= length) return {
+					node,
+					offset: remaining
+				};
+				remaining -= length;
+			}
+			const last = nodes.at(-1);
+			return last ? {
+				node: last,
+				offset: last.data.length
+			} : null;
+		};
+		hostSelectionOffsets = (host) => {
+			if (host instanceof HTMLTextAreaElement) {
+				if (document.activeElement !== host) return null;
+				const start = host.selectionStart ?? 0;
+				const end = host.selectionEnd ?? start;
+				return start === end ? null : {
+					start,
+					end
+				};
+			}
+			const selection = document.getSelection();
+			if (!selection || selection.rangeCount === 0 || selection.isCollapsed) return null;
+			return rangeOffsetsIn(host, selection.getRangeAt(0));
+		};
+		syncCodeSelectionHighlight = () => {
+			const registry = highlightsRegistry();
+			const HighlightCtor = globalThis.Highlight;
+			if (!registry || typeof HighlightCtor !== "function") return;
+			const ranges = [];
+			for (const [host, paint] of hostPaint) {
+				if (!host.isConnected || !paint.isConnected) continue;
+				const offsets = hostSelectionOffsets(host);
+				if (!offsets) continue;
+				const nodes = collectTextNodes(paint);
+				const start = pointAtOffset(nodes, offsets.start);
+				const end = pointAtOffset(nodes, offsets.end);
+				if (!start || !end) continue;
+				const range = document.createRange();
+				range.setStart(start.node, start.offset);
+				range.setEnd(end.node, end.offset);
+				ranges.push(range);
+			}
+			if (!ranges.length) {
+				registry.delete(CODE_SELECTION_HIGHLIGHT);
+				return;
+			}
+			registry.set(CODE_SELECTION_HIGHLIGHT, new HighlightCtor(...ranges));
+		};
+		ensureSelectionMirror = () => {
+			if (selectionBound || typeof document === "undefined" || !highlightsRegistry()) return;
+			selectionBound = true;
+			document.addEventListener("selectionchange", syncCodeSelectionHighlight, { passive: true });
+		};
+		copyCodeMetrics = (source, target, box = false) => {
+			const style = getComputedStyle(source);
+			const font = style.font;
+			if (font) target.style.font = font;
+			for (const property of METRIC_PROPS) {
+				const value = style.getPropertyValue(property);
+				if (value) target.style.setProperty(property, value);
+			}
+			const lineHeight = style.lineHeight;
+			if (source.style.lineHeight !== lineHeight) source.style.lineHeight = lineHeight;
+			target.style.setProperty("line-height", lineHeight);
+			(source.parentElement ?? source).style.setProperty("--code-line-height", lineHeight);
+			target.style.setProperty("font-synthesis", "none");
+			target.style.setProperty("font-kerning", "none");
+			target.style.setProperty("font-variant-ligatures", "none");
+			target.style.setProperty("font-feature-settings", "\"liga\" 0, \"clig\" 0, \"calt\" 0, \"dlig\" 0");
+			target.style.setProperty("-webkit-text-fill-color", "currentColor");
+			if (box) {
+				target.style.boxSizing = style.boxSizing;
+				target.style.paddingTop = style.paddingTop;
+				target.style.paddingRight = style.paddingRight;
+				target.style.paddingBottom = style.paddingBottom;
+				target.style.paddingLeft = style.paddingLeft;
+			}
+		};
+		attachCodeOverlay = (host, overlay, options = {}) => {
+			const paint = options.paint ?? overlay;
+			const scroller = options.scroller ?? host.closest("pre") ?? host;
+			overlay.classList.add("code-highlight-overlay");
+			overlay.setAttribute("aria-hidden", "true");
+			overlay.style.pointerEvents = "none";
+			overlay.style.userSelect = "none";
+			const updateMetrics = () => {
+				copyCodeMetrics(host, overlay, true);
+				if (paint !== overlay) copyCodeMetrics(host, paint, false);
+			};
+			updateMetrics();
+			document.fonts?.ready?.then(() => {
+				if (host.isConnected) updateMetrics();
+			});
+			const resize = typeof ResizeObserver === "function" ? new ResizeObserver(() => updateMetrics()) : null;
+			resize?.observe(host);
+			if (host.parentElement) resize?.observe(host.parentElement);
+			placeCodeOverlay(host, overlay);
+			const syncScroll = () => {
+				if (scroller === host && host instanceof HTMLTextAreaElement) {
+					paint.style.transform = `translate(${-host.scrollLeft}px, ${-host.scrollTop}px)`;
+					return;
+				}
+				if (paint instanceof HTMLElement && "scrollTop" in scroller) {
+					paint.scrollTop = scroller.scrollTop;
+					paint.scrollLeft = scroller.scrollLeft;
+				}
+			};
+			scroller.addEventListener("scroll", syncScroll, { passive: true });
+			host.addEventListener("scroll", syncScroll, { passive: true });
+			host.addEventListener("select", syncCodeSelectionHighlight, { passive: true });
+			host.addEventListener("keyup", syncCodeSelectionHighlight, { passive: true });
+			hostPaint.set(host, paint);
+			ensureSelectionMirror();
+			let stopWatch = () => void 0;
+			const disconnect = () => {
+				stopWatch();
+				resize?.disconnect();
+				hostPaint.delete(host);
+				scroller.removeEventListener("scroll", syncScroll);
+				host.removeEventListener("scroll", syncScroll);
+				host.removeEventListener("select", syncCodeSelectionHighlight);
+				host.removeEventListener("keyup", syncCodeSelectionHighlight);
+				overlay.remove();
+				syncCodeSelectionHighlight();
+			};
+			stopWatch = watchHostRemoval(host, disconnect);
+			return {
+				overlay,
+				paint,
+				updateMetrics,
+				syncScroll,
+				disconnect
+			};
+		};
+	}));
+	//#endregion
 	//#region ../../modules/projects/lur.e/src/interactive/tasking/Manager.ts
 	var getBy, taskHashUrl$1, historyBack, getFocused, registerTask, navigationEnable;
 	var init_Manager = __esmMin((() => {
@@ -26291,10 +26822,8 @@ cacheWillUpdate: async ({ response }) => {
 			addSelfToList(list, doFocus = false) {
 				if (list == null) return this;
 				const has = getBy(list, this);
-				if (has != this) {
-					if (!has) list?.push(makeTask(this));
-					else Object.assign(has, this);
-				}
+				if (has != this) if (!has) list?.push(makeTask(this));
+				else Object.assign(has, this);
 				this.list = list;
 				if (doFocus) {
 					this.focus = true;
@@ -26489,21 +27018,20 @@ cacheWillUpdate: async ({ response }) => {
 						for (const cb of Array.from(set)) if (cb(ev)) hadHandled = true;
 					};
 					const path = ev?.composedPath?.();
-					if (Array.isArray(path)) {
-						if (strategy === "closest") for (const n of path) {
-							const el = resolveHTMLElement(n);
-							if (!el) continue;
-							const set = targets.get(el);
-							if (!set) continue;
-							callSet(set);
-							break;
-						}
-						else for (const n of path) {
-							const el = resolveHTMLElement(n);
-							if (!el) continue;
-							callSet(targets.get(el));
-						}
-					} else {
+					if (Array.isArray(path)) if (strategy === "closest") for (const n of path) {
+						const el = resolveHTMLElement(n);
+						if (!el) continue;
+						const set = targets.get(el);
+						if (!set) continue;
+						callSet(set);
+						break;
+					}
+					else for (const n of path) {
+						const el = resolveHTMLElement(n);
+						if (!el) continue;
+						callSet(targets.get(el));
+					}
+					else {
 						let cur = resolveHTMLElement(ev?.target);
 						while (cur) {
 							const set = targets.get(cur);
@@ -27040,9 +27568,7 @@ cacheWillUpdate: async ({ response }) => {
 					config.padding.x,
 					config.padding.y
 				], () => {
-					const x = config.padding.x.value + coord.col.value * (config.cellWidth.value + config.gap.value);
-					const y = config.padding.y.value + coord.row.value * (config.cellHeight.value + config.gap.value);
-					return vector2Ref(x, y);
+					return vector2Ref(config.padding.x.value + coord.col.value * (config.cellWidth.value + config.gap.value), config.padding.y.value + coord.row.value * (config.cellHeight.value + config.gap.value));
 				});
 			}
 			static fromPixel(pixel, config) {
@@ -27077,9 +27603,7 @@ cacheWillUpdate: async ({ response }) => {
 					config.cellWidth,
 					config.cellHeight
 				], () => {
-					const centerX = cellTopLeft.x.value + config.cellWidth.value / 2;
-					const centerY = cellTopLeft.y.value + config.cellHeight.value / 2;
-					return vector2Ref(centerX, centerY);
+					return vector2Ref(cellTopLeft.x.value + config.cellWidth.value / 2, cellTopLeft.y.value + config.cellHeight.value / 2);
 				});
 			}
 			static adjacent(coord, direction) {
@@ -27250,9 +27774,9 @@ cacheWillUpdate: async ({ response }) => {
 							currentRow += cell.rowSpan.value;
 							break;
 						case "diagonal":
-							const diagonal = Math.floor(index / Math.sqrt(cells.length));
-							cell.row = numberRef(diagonal);
+							cell.row = numberRef(Math.floor(index / Math.sqrt(cells.length)));
 							cell.col = numberRef(index % Math.ceil(Math.sqrt(cells.length)));
+							break;
 					}
 					redistributed.push(cell);
 				});
@@ -27364,30 +27888,22 @@ cacheWillUpdate: async ({ response }) => {
 			if (!isFinite(x) || !isFinite(y)) return vector2Ref(0, 0);
 			const cols = Math.max(1, layout[0] || 1);
 			const rows = Math.max(1, layout[1] || 1);
-			const clampedX = Math.max(0, Math.min(Math.floor(x), cols - 1));
-			const clampedY = Math.max(0, Math.min(Math.floor(y), rows - 1));
-			return vector2Ref(clampedX, clampedY);
+			return vector2Ref(Math.max(0, Math.min(Math.floor(x), cols - 1)), Math.max(0, Math.min(Math.floor(y), rows - 1)));
 		};
 		floorCell = (cellPos, N = 1) => {
 			const x = cellPos instanceof Vector2D ? cellPos.x.value : cellPos[0];
 			const y = cellPos instanceof Vector2D ? cellPos.y.value : cellPos[1];
-			const flooredCol = Math.floor(x / N) * N;
-			const flooredRow = Math.floor(y / N) * N;
-			return vector2Ref(flooredCol, flooredRow);
+			return vector2Ref(Math.floor(x / N) * N, Math.floor(y / N) * N);
 		};
 		ceilCell = (cellPos, N = 1) => {
 			const x = cellPos instanceof Vector2D ? cellPos.x.value : cellPos[0];
 			const y = cellPos instanceof Vector2D ? cellPos.y.value : cellPos[1];
-			const ceiledCol = Math.ceil(x / N) * N;
-			const ceiledRow = Math.ceil(y / N) * N;
-			return vector2Ref(ceiledCol, ceiledRow);
+			return vector2Ref(Math.ceil(x / N) * N, Math.ceil(y / N) * N);
 		};
 		roundCell = (cellPos, N = 1) => {
 			const x = cellPos instanceof Vector2D ? cellPos.x.value : cellPos[0];
 			const y = cellPos instanceof Vector2D ? cellPos.y.value : cellPos[1];
-			const roundedCol = Math.round(x / N) * N;
-			const roundedRow = Math.round(y / N) * N;
-			return vector2Ref(roundedCol, roundedRow);
+			return vector2Ref(Math.round(x / N) * N, Math.round(y / N) * N);
 		};
 		snapToGridCell = (cellPos, layout) => {
 			const coord = cellPos instanceof Vector2D ? GridCoordUtils.create(cellPos.y.value, cellPos.x.value) : GridCoordUtils.create(cellPos[1], cellPos[0]);
@@ -27797,8 +28313,7 @@ cacheWillUpdate: async ({ response }) => {
 				};
 			}
 			static getReactiveProperty(element, propName) {
-				const initialValue = parseFloat(getComputedStyle(element).getPropertyValue(propName)) || 0;
-				const reactiveValue = numberRef(initialValue);
+				const reactiveValue = numberRef(parseFloat(getComputedStyle(element).getPropertyValue(propName)) || 0);
 				new MutationObserver(() => {
 					const newValue = parseFloat(getComputedStyle(element).getPropertyValue(propName)) || 0;
 					reactiveValue.value = newValue;
@@ -27854,13 +28369,10 @@ cacheWillUpdate: async ({ response }) => {
 				});
 			}
 			static clamp(min, value, max) {
-				const minStr = typeof min === "number" || typeof min === "string" ? min : operated([min], (v) => v);
-				const valStr = typeof value === "number" || typeof value === "string" ? value : operated([value], (v) => v);
-				const maxStr = typeof max === "number" || typeof max === "string" ? max : operated([max], (v) => v);
 				return operated([
-					minStr,
-					valStr,
-					maxStr
+					typeof min === "number" || typeof min === "string" ? min : operated([min], (v) => v),
+					typeof value === "number" || typeof value === "string" ? value : operated([value], (v) => v),
+					typeof max === "number" || typeof max === "string" ? max : operated([max], (v) => v)
 				].filter((v) => typeof v !== "string"), () => {
 					return `clamp(${typeof min === "number" ? min : typeof min === "string" ? min : min.value}, ${typeof value === "number" ? value : typeof value === "string" ? value : value.value}, ${typeof max === "number" ? max : typeof max === "string" ? max : max.value})`;
 				});
@@ -27889,8 +28401,7 @@ cacheWillUpdate: async ({ response }) => {
 				return CSSBinder.bindTransform(thumbElement, position);
 			}
 			static bindProgressFill(fillElement, progress) {
-				const width = operated([progress], () => `${progress.value * 100}%`);
-				return bindWith(fillElement, "width", width, handleStyleChange) ?? (() => {});
+				return bindWith(fillElement, "width", operated([progress], () => `${progress.value * 100}%`), handleStyleChange) ?? (() => {});
 			}
 			static bindToggleState(element, checked) {
 				const scale = operated([checked], () => checked.value ? "scale(1)" : "scale(0)");
@@ -27991,8 +28502,7 @@ cacheWillUpdate: async ({ response }) => {
 		};
 		CSSInteractionStates = class {
 			static bindFocusRing(element, isFocused, ringColor = "rgba(59, 130, 246, 0.5)") {
-				const boxShadow = operated([isFocused], () => isFocused.value ? `0 0 0 2px ${ringColor}` : "none");
-				return bindWith(element, "box-shadow", boxShadow, handleStyleChange) ?? (() => {});
+				return bindWith(element, "box-shadow", operated([isFocused], () => isFocused.value ? `0 0 0 2px ${ringColor}` : "none"), handleStyleChange) ?? (() => {});
 			}
 			static bindHoverState(element, isHovered, hoverTransform = "scale(1.05)") {
 				const transform = operated([isHovered], () => isHovered.value ? hoverTransform : "none");
@@ -28105,8 +28615,7 @@ cacheWillUpdate: async ({ response }) => {
 					setStyleProperty(holder, "--shift-x", `${box?.left || 0}px`);
 					setStyleProperty(holder, "--shift-y", `${box?.top || 0}px`);
 				};
-				const draggingArray = [this.#dragging.x, this.#dragging.y];
-				return bindDraggable(binding, dragResolve, draggingArray, () => {
+				return bindDraggable(binding, dragResolve, [this.#dragging.x, this.#dragging.y], () => {
 					const holder = weak?.deref?.();
 					holder?.setAttribute?.("data-dragging", "");
 					holder?.style?.setProperty("will-change", "inset, translate, transform, opacity, z-index");
@@ -28326,6 +28835,7 @@ cacheWillUpdate: async ({ response }) => {
 						style.top = "50%";
 						style.left = "0";
 						style.transform = "translateY(-50%)";
+						break;
 				}
 			}
 			getCursorForHandle(handle) {
@@ -28482,6 +28992,7 @@ cacheWillUpdate: async ({ response }) => {
 					case "w":
 						newX += delta.x.value;
 						newWidth -= delta.x.value;
+						break;
 				}
 				if (newWidth < 0) {
 					newX += newWidth;
@@ -28506,10 +29017,8 @@ cacheWillUpdate: async ({ response }) => {
 				if (this.options.aspectRatio) {
 					const currentRatio = rect.size.x.value / rect.size.y.value;
 					const targetRatio = this.options.aspectRatio;
-					if (Math.abs(currentRatio - targetRatio) > .01) {
-						if (currentRatio > targetRatio) rect.size.y.value = rect.size.x.value / targetRatio;
-						else rect.size.x.value = rect.size.y.value * targetRatio;
-					}
+					if (Math.abs(currentRatio - targetRatio) > .01) if (currentRatio > targetRatio) rect.size.y.value = rect.size.x.value / targetRatio;
+					else rect.size.x.value = rect.size.y.value * targetRatio;
 				}
 				rect.size.x.value = Math.max(this.options.minSize.x.value, Math.min(this.options.maxSize.x.value, rect.size.x.value));
 				rect.size.y.value = Math.max(this.options.minSize.y.value, Math.min(this.options.maxSize.y.value, rect.size.y.value));
@@ -29878,17 +30387,16 @@ cacheWillUpdate: async ({ response }) => {
 			if (anchorBox?.connectElement) return anchorBox?.connectElement?.(scrollbar, Object.assign(options || {}, { placement: axis == "horizontal" ? "bottom" : "right" }));
 			scrollbar.style.position = useIntersection ? "fixed" : "absolute";
 			scrollbar.style.zIndex = `${zIndexShift}`;
-			if (useIntersection) {
-				if (axis === "horizontal") {
-					usb.push(bindWith(scrollbar, "left", CSSUnitUtils.asPx(anchorBox[0]), handleStyleChange));
-					usb.push(bindWith(scrollbar, "top", CSSUnitUtils.asPx(anchorBox[5]), handleStyleChange));
-					usb.push(bindWith(scrollbar, "width", CSSUnitUtils.asPx(anchorBox[2]), handleStyleChange));
-				} else {
-					usb.push(bindWith(scrollbar, "left", CSSUnitUtils.asPx(anchorBox[4]), handleStyleChange));
-					usb.push(bindWith(scrollbar, "top", CSSUnitUtils.asPx(anchorBox[1]), handleStyleChange));
-					usb.push(bindWith(scrollbar, "height", CSSUnitUtils.asPx(anchorBox[3]), handleStyleChange));
-				}
-			} else if (axis === "horizontal") {
+			if (useIntersection) if (axis === "horizontal") {
+				usb.push(bindWith(scrollbar, "left", CSSUnitUtils.asPx(anchorBox[0]), handleStyleChange));
+				usb.push(bindWith(scrollbar, "top", CSSUnitUtils.asPx(anchorBox[5]), handleStyleChange));
+				usb.push(bindWith(scrollbar, "width", CSSUnitUtils.asPx(anchorBox[2]), handleStyleChange));
+			} else {
+				usb.push(bindWith(scrollbar, "left", CSSUnitUtils.asPx(anchorBox[4]), handleStyleChange));
+				usb.push(bindWith(scrollbar, "top", CSSUnitUtils.asPx(anchorBox[1]), handleStyleChange));
+				usb.push(bindWith(scrollbar, "height", CSSUnitUtils.asPx(anchorBox[3]), handleStyleChange));
+			}
+			else if (axis === "horizontal") {
 				usb.push(bindWith(scrollbar, "left", CSSUnitUtils.asPx(anchorBox[0]), handleStyleChange));
 				usb.push(bindWith(scrollbar, "top", CSSUnitUtils.asPx(anchorBox[5]), handleStyleChange));
 				usb.push(bindWith(scrollbar, "width", CSSUnitUtils.asPx(anchorBox[2]), handleStyleChange));
@@ -30321,28 +30829,26 @@ cacheWillUpdate: async ({ response }) => {
 			scrollbar.classList.add(`scrollbar-theme-${theme}`);
 			scrollbar.setAttribute("data-axis", axis);
 			const cleanupFunctions = [];
-			if (autoPosition) {
-				if (useIntersection) {
-					const intersectionBox = enhancedIntersectionBoxAnchorRef(content, {
-						root: window,
-						observeResize: true,
-						observeMutations: true,
-						observeIntersection: true
-					});
-					cleanupFunctions.push(bindScrollbarPosition(scrollbar, intersectionBox, axis, {
-						useIntersection: true,
-						zIndexShift
-					}));
-				} else {
-					const box = boundingBoxAnchorRef(content, {
-						observeResize: true,
-						observeMutations: true
-					});
-					cleanupFunctions.push(bindScrollbarPosition(scrollbar, box, axis, {
-						useIntersection: false,
-						zIndexShift
-					}));
-				}
+			if (autoPosition) if (useIntersection) {
+				const intersectionBox = enhancedIntersectionBoxAnchorRef(content, {
+					root: window,
+					observeResize: true,
+					observeMutations: true,
+					observeIntersection: true
+				});
+				cleanupFunctions.push(bindScrollbarPosition(scrollbar, intersectionBox, axis, {
+					useIntersection: true,
+					zIndexShift
+				}));
+			} else {
+				const box = boundingBoxAnchorRef(content, {
+					observeResize: true,
+					observeMutations: true
+				});
+				cleanupFunctions.push(bindScrollbarPosition(scrollbar, box, axis, {
+					useIntersection: false,
+					zIndexShift
+				}));
 			}
 			if (!scrollbar.parentNode) document.body.appendChild(scrollbar);
 			observeDisconnect(content, () => {
@@ -30759,7 +31265,7 @@ cacheWillUpdate: async ({ response }) => {
 				unregister?.();
 				unregister = null;
 			};
-			const entry = {
+			unregister = registerCloseable({
 				id,
 				priority: orderedPriority,
 				element: element ? new WeakRef(element) : null,
@@ -30771,8 +31277,7 @@ cacheWillUpdate: async ({ response }) => {
 					if (result !== false) dispose();
 					return result;
 				}
-			};
-			unregister = registerCloseable(entry);
+			});
 			return dispose;
 		};
 	}));
@@ -31075,10 +31580,9 @@ cacheWillUpdate: async ({ response }) => {
 					if (typeof document !== "undefined" && document.hasFocus && !document.hasFocus()) globalThis?.focus?.();
 					try {
 						let imageBlob;
-						if (typeof blob === "string") {
-							if (blob.startsWith("data:")) imageBlob = await (await fetch(blob)).blob();
-							else imageBlob = await (await fetch(blob)).blob();
-						} else imageBlob = blob;
+						if (typeof blob === "string") if (blob.startsWith("data:")) imageBlob = await (await fetch(blob)).blob();
+						else imageBlob = await (await fetch(blob)).blob();
+						else imageBlob = blob;
 						if (typeof navigator !== "undefined" && navigator.clipboard?.write) {
 							const pngBlob = imageBlob.type === "image/png" ? imageBlob : await convertToPng(imageBlob);
 							await navigator.clipboard.write([new ClipboardItem({ [pngBlob.type]: pngBlob })]);
@@ -31160,13 +31664,12 @@ cacheWillUpdate: async ({ response }) => {
 			return new Promise((resolve) => {
 				scheduleClipboardFrame(async () => {
 					let result;
-					if (data instanceof Blob) {
-						if (data.type.startsWith("image/")) result = await writeImage(data);
-						else {
-							const text = await data.text();
-							result = await writeText(text);
-						}
-					} else if (type === "html" || typeof data === "string" && data.trim().startsWith("<")) result = await writeHTML(String(data));
+					if (data instanceof Blob) if (data.type.startsWith("image/")) result = await writeImage(data);
+					else {
+						const text = await data.text();
+						result = await writeText(text);
+					}
+					else if (type === "html" || typeof data === "string" && data.trim().startsWith("<")) result = await writeHTML(String(data));
 					else if (type === "image") result = await writeImage(data);
 					else result = await writeText(toText(data));
 					if (showFeedback && (result.ok || !silentOnError)) broadcastClipboardFeedback(result);
@@ -31952,6 +32455,2497 @@ cacheWillUpdate: async ({ response }) => {
 				}
 			}
 		};
+	}));
+	//#endregion
+	//#region ../../node_modules/jsox/lib/jsox.mjs
+	/**
+	* get a context from stack (reuse contexts)
+	* @internal
+	*/
+	function getContext() {
+		let ctx = contexts.pop();
+		if (!ctx) ctx = {
+			context: CONTEXT_UNKNOWN,
+			current_proto: null,
+			current_class: null,
+			current_class_field: 0,
+			arrayType: -1,
+			valueType: VALUE_UNSET,
+			elements: null
+		};
+		return ctx;
+	}
+	/**
+	* return a context to the stack (reuse contexts)
+	* @internal
+	*/
+	function dropContext(ctx) {
+		contexts.push(ctx);
+	}
+	function getBuffer() {
+		let buf = buffers.pop();
+		if (!buf) buf = {
+			buf: null,
+			n: 0
+		};
+		else buf.n = 0;
+		return buf;
+	}
+	function dropBuffer(buf) {
+		buffers.push(buf);
+	}
+	function this_value() {
+		return this && this.valueOf();
+	}
+	function base64ArrayBuffer(arrayBuffer) {
+		let base64 = "";
+		let bytes = new Uint8Array(arrayBuffer);
+		let byteLength = bytes.byteLength;
+		let byteRemainder = byteLength % 3;
+		let mainLength = byteLength - byteRemainder;
+		let a, b, c, d;
+		let chunk;
+		for (let i = 0; i < mainLength; i = i + 3) {
+			chunk = bytes[i] << 16 | bytes[i + 1] << 8 | bytes[i + 2];
+			a = (chunk & 16515072) >> 18;
+			b = (chunk & 258048) >> 12;
+			c = (chunk & 4032) >> 6;
+			d = chunk & 63;
+			base64 += encodings[a] + encodings[b] + encodings[c] + encodings[d];
+		}
+		if (byteRemainder == 1) {
+			chunk = bytes[mainLength];
+			a = (chunk & 252) >> 2;
+			b = (chunk & 3) << 4;
+			base64 += encodings[a] + encodings[b] + "==";
+		} else if (byteRemainder == 2) {
+			chunk = bytes[mainLength] << 8 | bytes[mainLength + 1];
+			a = (chunk & 64512) >> 10;
+			b = (chunk & 1008) >> 4;
+			c = (chunk & 15) << 2;
+			base64 += encodings[a] + encodings[b] + encodings[c] + "=";
+		}
+		return base64;
+	}
+	function DecodeBase64(buf) {
+		let outsize;
+		if (buf.length % 4 == 1) outsize = ((buf.length + 3) / 4 | 0) * 3 - 3;
+		else if (buf.length % 4 == 2) outsize = ((buf.length + 3) / 4 | 0) * 3 - 2;
+		else if (buf.length % 4 == 3) outsize = ((buf.length + 3) / 4 | 0) * 3 - 1;
+		else if (decodings[buf[buf.length - 3]] == -1) outsize = ((buf.length + 3) / 4 | 0) * 3 - 3;
+		else if (decodings[buf[buf.length - 2]] == -1) outsize = ((buf.length + 3) / 4 | 0) * 3 - 2;
+		else if (decodings[buf[buf.length - 1]] == -1) outsize = ((buf.length + 3) / 4 | 0) * 3 - 1;
+		else outsize = ((buf.length + 3) / 4 | 0) * 3;
+		let ab = new ArrayBuffer(outsize);
+		let out = new Uint8Array(ab);
+		let n;
+		let l = buf.length + 3 >> 2;
+		for (n = 0; n < l; n++) {
+			let index0 = decodings[buf[n * 4]];
+			let index1 = n * 4 + 1 < buf.length ? decodings[buf[n * 4 + 1]] : -1;
+			let index2 = index1 >= 0 && n * 4 + 2 < buf.length ? decodings[buf[n * 4 + 2]] : -1;
+			let index3 = index2 >= 0 && n * 4 + 3 < buf.length ? decodings[buf[n * 4 + 3]] : -1;
+			if (index1 >= 0) out[n * 3 + 0] = index0 << 2 | index1 >> 4;
+			if (index2 >= 0) out[n * 3 + 1] = index1 << 4 | index2 >> 2 & 15;
+			if (index3 >= 0) out[n * 3 + 2] = index2 << 6 | index3 & 63;
+		}
+		return ab;
+	}
+	var _JSON, JSOX, hasBigInt, VALUE_UNDEFINED, VALUE_UNSET, VALUE_NULL, VALUE_TRUE, VALUE_FALSE, VALUE_STRING, VALUE_NUMBER, VALUE_OBJECT, VALUE_NEG_NAN, VALUE_NAN, VALUE_NEG_INFINITY, VALUE_INFINITY, VALUE_EMPTY, VALUE_ARRAY, knownArrayTypeNames, arrayToJSOX, mapToJSOX, knownArrayTypes, WORD_POS_RESET, WORD_POS_TRUE_1, WORD_POS_TRUE_2, WORD_POS_TRUE_3, WORD_POS_FALSE_1, WORD_POS_FALSE_2, WORD_POS_FALSE_3, WORD_POS_FALSE_4, WORD_POS_NULL_1, WORD_POS_NULL_2, WORD_POS_NULL_3, WORD_POS_UNDEFINED_1, WORD_POS_UNDEFINED_2, WORD_POS_UNDEFINED_3, WORD_POS_UNDEFINED_4, WORD_POS_UNDEFINED_5, WORD_POS_UNDEFINED_6, WORD_POS_UNDEFINED_7, WORD_POS_UNDEFINED_8, WORD_POS_NAN_1, WORD_POS_NAN_2, WORD_POS_INFINITY_1, WORD_POS_INFINITY_2, WORD_POS_INFINITY_3, WORD_POS_INFINITY_4, WORD_POS_INFINITY_5, WORD_POS_INFINITY_6, WORD_POS_INFINITY_7, WORD_POS_FIELD, WORD_POS_AFTER_FIELD, WORD_POS_END, WORD_POS_AFTER_FIELD_VALUE, CONTEXT_UNKNOWN, CONTEXT_IN_ARRAY, CONTEXT_OBJECT_FIELD, CONTEXT_OBJECT_FIELD_VALUE, CONTEXT_CLASS_FIELD, CONTEXT_CLASS_VALUE, CONTEXT_CLASS_FIELD_VALUE, keywords, DateNS, contexts, buffers, toProtoTypes, toObjectTypes, fromProtoTypes, commonClasses, _parser, _parse_level, encodings, decodings;
+	var init_jsox = __esmMin((() => {
+		_JSON = JSON;
+		JSOX = {};
+		JSOX.JSOX = JSOX;
+		JSOX.version = "1.2.125";
+		hasBigInt = typeof BigInt === "function";
+		VALUE_UNDEFINED = -1;
+		VALUE_UNSET = 0;
+		VALUE_NULL = 1;
+		VALUE_TRUE = 2;
+		VALUE_FALSE = 3;
+		VALUE_STRING = 4;
+		VALUE_NUMBER = 5;
+		VALUE_OBJECT = 6;
+		VALUE_NEG_NAN = 7;
+		VALUE_NAN = 8;
+		VALUE_NEG_INFINITY = 9;
+		VALUE_INFINITY = 10;
+		VALUE_EMPTY = 12;
+		VALUE_ARRAY = 13;
+		knownArrayTypeNames = [
+			"ab",
+			"u8",
+			"cu8",
+			"s8",
+			"u16",
+			"s16",
+			"u32",
+			"s32",
+			"u64",
+			"s64",
+			"f32",
+			"f64"
+		];
+		arrayToJSOX = null;
+		mapToJSOX = null;
+		knownArrayTypes = [
+			ArrayBuffer,
+			Uint8Array,
+			Uint8ClampedArray,
+			Int8Array,
+			Uint16Array,
+			Int16Array,
+			Uint32Array,
+			Int32Array,
+			null,
+			null,
+			Float32Array,
+			Float64Array
+		];
+		WORD_POS_RESET = 0;
+		WORD_POS_TRUE_1 = 1;
+		WORD_POS_TRUE_2 = 2;
+		WORD_POS_TRUE_3 = 3;
+		WORD_POS_FALSE_1 = 5;
+		WORD_POS_FALSE_2 = 6;
+		WORD_POS_FALSE_3 = 7;
+		WORD_POS_FALSE_4 = 8;
+		WORD_POS_NULL_1 = 9;
+		WORD_POS_NULL_2 = 10;
+		WORD_POS_NULL_3 = 11;
+		WORD_POS_UNDEFINED_1 = 12;
+		WORD_POS_UNDEFINED_2 = 13;
+		WORD_POS_UNDEFINED_3 = 14;
+		WORD_POS_UNDEFINED_4 = 15;
+		WORD_POS_UNDEFINED_5 = 16;
+		WORD_POS_UNDEFINED_6 = 17;
+		WORD_POS_UNDEFINED_7 = 18;
+		WORD_POS_UNDEFINED_8 = 19;
+		WORD_POS_NAN_1 = 20;
+		WORD_POS_NAN_2 = 21;
+		WORD_POS_INFINITY_1 = 22;
+		WORD_POS_INFINITY_2 = 23;
+		WORD_POS_INFINITY_3 = 24;
+		WORD_POS_INFINITY_4 = 25;
+		WORD_POS_INFINITY_5 = 26;
+		WORD_POS_INFINITY_6 = 27;
+		WORD_POS_INFINITY_7 = 28;
+		WORD_POS_FIELD = 29;
+		WORD_POS_AFTER_FIELD = 30;
+		WORD_POS_END = 31;
+		WORD_POS_AFTER_FIELD_VALUE = 32;
+		CONTEXT_UNKNOWN = 0;
+		CONTEXT_IN_ARRAY = 1;
+		CONTEXT_OBJECT_FIELD = 2;
+		CONTEXT_OBJECT_FIELD_VALUE = 3;
+		CONTEXT_CLASS_FIELD = 4;
+		CONTEXT_CLASS_VALUE = 5;
+		CONTEXT_CLASS_FIELD_VALUE = 6;
+		keywords = {
+			["true"]: true,
+			["false"]: false,
+			["null"]: null,
+			["NaN"]: NaN,
+			["Infinity"]: Infinity,
+			["undefined"]: void 0
+		};
+		DateNS = class extends Date {
+			constructor(a, b) {
+				super(a);
+				this.ns = b || 0;
+			}
+		};
+		JSOX.DateNS = DateNS;
+		contexts = [];
+		/**
+		* SACK jsox compatibility; hands maps to internal C++ code in other case.
+		* @internal
+		*/
+		JSOX.updateContext = function() {};
+		buffers = [];
+		/**
+		* Provide minimal escapes for a string to be encapsulated as a JSOX string in quotes.
+		*
+		* @param {string} string 
+		* @returns {string}
+		*/
+		JSOX.escape = function(string) {
+			let n;
+			let output = "";
+			if (!string) return string;
+			for (n = 0; n < string.length; n++) {
+				if (string[n] == "\"" || string[n] == "\\" || string[n] == "`" || string[n] == "'") output += "\\";
+				output += string[n];
+			}
+			return output;
+		};
+		toProtoTypes = /* @__PURE__ */ new WeakMap();
+		toObjectTypes = /* @__PURE__ */ new Map();
+		fromProtoTypes = /* @__PURE__ */ new Map();
+		commonClasses = [];
+		/**
+		* reset JSOX parser entirely; clears all type mappings
+		*
+		* @returns {void}
+		*/
+		JSOX.reset = function() {
+			toProtoTypes = /* @__PURE__ */ new WeakMap();
+			toObjectTypes = /* @__PURE__ */ new Map();
+			fromProtoTypes = /* @__PURE__ */ new Map();
+			commonClasses = [];
+		};
+		/**
+		* Create a streaming parser.  Add data with parser.write(data); values that
+		* are found are dispatched to the callback.
+		*
+		* @param {(value:any) => void} [cb]
+		* @param {(this: any, key: string, value: any) => any} [reviver] 
+		* @returns {JSOXParser}
+		*/
+		JSOX.begin = function(cb, reviver) {
+			const val = {
+				name: null,
+				value_type: VALUE_UNSET,
+				string: "",
+				contains: null,
+				className: null
+			};
+			const pos = {
+				line: 1,
+				col: 1
+			};
+			let n = 0;
+			let str;
+			let localFromProtoTypes = /* @__PURE__ */ new Map();
+			let word = WORD_POS_RESET, status = true, redefineClass = false, negative = false, result = null, rootObject = null, elements = void 0, context_stack = {
+				first: null,
+				last: null,
+				saved: null,
+				push(node) {
+					let recover = this.saved;
+					if (recover) {
+						this.saved = recover.next;
+						recover.node = node;
+						recover.next = null;
+						recover.prior = this.last;
+					} else recover = {
+						node,
+						next: null,
+						prior: this.last
+					};
+					if (!this.last) this.first = recover;
+					else this.last.next = recover;
+					this.last = recover;
+					this.length++;
+				},
+				pop() {
+					let result = this.last;
+					if (!(this.last = result.prior)) this.first = null;
+					result.next = this.saved;
+					if (this.last) this.last.next = null;
+					if (!result.next) result.first = null;
+					this.saved = result;
+					this.length--;
+					return result.node;
+				},
+				length: 0
+			}, classes = [], protoTypes = {}, current_proto = null, current_class = null, current_class_field = 0, arrayType = -1, parse_context = CONTEXT_UNKNOWN, comment = 0, fromHex = false, decimal = false, exponent = false, exponent_sign = false, exponent_digit = false, inQueue = {
+				first: null,
+				last: null,
+				saved: null,
+				push(node) {
+					let recover = this.saved;
+					if (recover) {
+						this.saved = recover.next;
+						recover.node = node;
+						recover.next = null;
+						recover.prior = this.last;
+					} else recover = {
+						node,
+						next: null,
+						prior: this.last
+					};
+					if (!this.last) this.first = recover;
+					else this.last.next = recover;
+					this.last = recover;
+				},
+				shift() {
+					let result = this.first;
+					if (!result) return null;
+					if (!(this.first = result.next)) this.last = null;
+					result.next = this.saved;
+					this.saved = result;
+					return result.node;
+				},
+				unshift(node) {
+					let recover = this.saved;
+					this.saved = recover.next;
+					recover.node = node;
+					recover.next = this.first;
+					recover.prior = null;
+					if (!this.first) this.last = recover;
+					this.first = recover;
+				}
+			}, gatheringStringFirstChar = null, gatheringString = false, gatheringNumber = false, stringEscape = false, cr_escaped = false, unicodeWide = false, stringUnicode = false, stringHex = false, hex_char = 0, hex_char_len = 0, completed = false, date_format = false, isBigInt = false;
+			function throwEndError(leader) {
+				throw new Error(`${leader} at ${n} [${pos.line}:${pos.col}]`);
+			}
+			return {
+				/**
+				* Define a class that can be used to deserialize objects of this type.
+				* @param {string} prototypeName 
+				* @param {new ():any} o 
+				* @param {(any)=>any} f 
+				*/
+				fromJSOX(prototypeName, o, f) {
+					if (localFromProtoTypes.get(prototypeName)) throw new Error("Existing fromJSOX has been registered for prototype");
+					function privateProto() {}
+					if (!o) o = privateProto;
+					if (o && !("constructor" in o)) throw new Error("Please pass a prototype like thing...");
+					localFromProtoTypes.set(prototypeName, {
+						protoCon: o.prototype.constructor,
+						cb: f
+					});
+				},
+				registerFromJSOX(prototypeName, o) {
+					throw new Error("registerFromJSOX is deprecated, please update to use fromJSOX instead:" + prototypeName + o.toString());
+				},
+				finalError() {
+					if (comment !== 0) {
+						if (comment === 1) throwEndError("Comment began at end of document");
+						if (comment === 2);
+						if (comment === 3) throwEndError("Open comment '/*' is missing close at end of document");
+						if (comment === 4) throwEndError("Incomplete '/* *' close at end of document");
+					}
+					if (gatheringString) throwEndError("Incomplete string");
+				},
+				value() {
+					this.finalError();
+					let r = result;
+					result = void 0;
+					return r;
+				},
+				/**
+				* Reset the parser to a blank state.
+				*/
+				reset() {
+					word = WORD_POS_RESET;
+					status = true;
+					if (inQueue.last) inQueue.last.next = inQueue.save;
+					inQueue.save = inQueue.first;
+					inQueue.first = inQueue.last = null;
+					if (context_stack.last) context_stack.last.next = context_stack.save;
+					context_stack.length = 0;
+					context_stack.save = inQueue.first;
+					context_stack.first = context_stack.last = null;
+					elements = void 0;
+					parse_context = CONTEXT_UNKNOWN;
+					classes = [];
+					protoTypes = {};
+					current_proto = null;
+					current_class = null;
+					current_class_field = 0;
+					val.value_type = VALUE_UNSET;
+					val.name = null;
+					val.string = "";
+					val.className = null;
+					pos.line = 1;
+					pos.col = 1;
+					negative = false;
+					comment = 0;
+					completed = false;
+					gatheringString = false;
+					stringEscape = false;
+					cr_escaped = false;
+					date_format = false;
+				},
+				usePrototype(className, protoType) {
+					protoTypes[className] = protoType;
+				},
+				/**
+				* Add input to the parser to get parsed.
+				* @param {string} msg 
+				*/
+				write(msg) {
+					let retcode;
+					if (typeof msg !== "string" && typeof msg !== "undefined") msg = String(msg);
+					if (!status) throw new Error("Parser is still in an error state, please reset before resuming");
+					for (retcode = this._write(msg, false); retcode > 0; retcode = this._write()) {
+						if (typeof reviver === "function") (function walk(holder, key) {
+							let k, v, value = holder[key];
+							if (value && typeof value === "object") {
+								for (k in value) if (Object.prototype.hasOwnProperty.call(value, k)) {
+									v = walk(value, k);
+									if (v !== void 0) value[k] = v;
+									else delete value[k];
+								}
+							}
+							return reviver.call(holder, key, value);
+						})({ "": result }, "");
+						result = cb(result);
+						if (retcode < 2) break;
+					}
+				},
+				/**
+				* Parse a string and return the result.
+				* @template T
+				* @param {string} msg
+				* @param {(key:string,value:any)=>any} [reviver]
+				* @returns {T}
+				*/
+				parse(msg, reviver) {
+					if (typeof msg !== "string") msg = String(msg);
+					this.reset();
+					const writeResult = this._write(msg, true);
+					if (writeResult > 0) {
+						if (writeResult > 1) {}
+						let result = this.value();
+						if ("undefined" === typeof result && writeResult > 1) throw new Error("Pending value could not complete");
+						result = typeof reviver === "function" ? function walk(holder, key) {
+							let k, v, value = holder[key];
+							if (value && typeof value === "object") {
+								for (k in value) if (Object.prototype.hasOwnProperty.call(value, k)) {
+									v = walk(value, k);
+									if (v !== void 0) value[k] = v;
+									else delete value[k];
+								}
+							}
+							return reviver.call(holder, key, value);
+						}({ "": result }, "") : result;
+						return result;
+					}
+					this.finalError();
+				},
+				_write(msg, complete_at_end) {
+					let cInt;
+					let input;
+					let buf;
+					let retval = 0;
+					function throwError(leader, c) {
+						throw new Error(`${leader} '${String.fromCodePoint(c)}' unexpected at ${n} (near '${buf.substr(n > 4 ? n - 4 : 0, n > 4 ? 3 : n - 1)}[${String.fromCodePoint(c)}]${buf.substr(n, 10)}') [${pos.line}:${pos.col}]`);
+					}
+					function RESET_VAL() {
+						val.value_type = VALUE_UNSET;
+						val.string = "";
+						val.contains = null;
+					}
+					function convertValue() {
+						let fp = null;
+						switch (val.value_type) {
+							case VALUE_NUMBER:
+								if ((val.string.length > 13 || val.string.length == 13 && val[0] > "2") && !date_format && !exponent_digit && !exponent_sign && !decimal) isBigInt = true;
+								if (isBigInt) if (hasBigInt) return BigInt(val.string);
+								else throw new Error("no builtin BigInt()", 0);
+								if (date_format) {
+									const r = val.string.match(/\.(\d\d\d\d*)/);
+									const frac = r ? r[1] : null;
+									if (!frac || frac.length < 4) {
+										const r = new Date(val.string);
+										if (isNaN(r.getTime())) throwError("Bad Date format", cInt);
+										return r;
+									} else {
+										let ns = frac.substr(3);
+										while (ns.length < 6) ns = ns + "0";
+										const r = new DateNS(val.string, Number(ns));
+										if (isNaN(r.getTime())) throwError("Bad DateNS format" + r + r.getTime(), cInt);
+										return r;
+									}
+								}
+								return (negative ? -1 : 1) * Number(val.string);
+							case VALUE_STRING:
+								if (val.className) {
+									fp = localFromProtoTypes.get(val.className);
+									if (!fp) fp = fromProtoTypes.get(val.className);
+									if (fp && fp.cb) {
+										val.className = null;
+										return fp.cb.call(val.string);
+									} else throw new Error("Double string error, no constructor for: new " + val.className + "(" + val.string + ")");
+								}
+								return val.string;
+							case VALUE_TRUE: return true;
+							case VALUE_FALSE: return false;
+							case VALUE_NEG_NAN: return NaN;
+							case VALUE_NAN: return NaN;
+							case VALUE_NEG_INFINITY: return -Infinity;
+							case VALUE_INFINITY: return Infinity;
+							case VALUE_NULL: return null;
+							case VALUE_UNDEFINED: return;
+							case VALUE_EMPTY: return;
+							case VALUE_OBJECT:
+								if (val.className) {
+									fp = localFromProtoTypes.get(val.className);
+									if (!fp) fp = fromProtoTypes.get(val.className);
+									val.className = null;
+									if (fp && fp.cb) return val.contains = fp.cb.call(val.contains);
+								}
+								return val.contains;
+							case VALUE_ARRAY:
+								if (arrayType >= 0) {
+									let ab;
+									if (val.contains.length) ab = DecodeBase64(val.contains[0]);
+									else ab = DecodeBase64(val.string);
+									if (arrayType === 0) {
+										arrayType = -1;
+										return ab;
+									} else {
+										const newab = new knownArrayTypes[arrayType](ab);
+										arrayType = -1;
+										return newab;
+									}
+								} else if (arrayType === -2) {
+									let obj = rootObject;
+									let lvl;
+									const pathlen = val.contains.length;
+									for (lvl = 0; lvl < pathlen; lvl++) {
+										const idx = val.contains[lvl];
+										let nextObj = obj[idx];
+										if (!nextObj) {
+											let ctx = context_stack.first;
+											let p = 0;
+											while (ctx && p < pathlen && p < context_stack.length) {
+												const thisKey = val.contains[p];
+												if (!ctx.next || thisKey !== ctx.next.node.name) break;
+												if (ctx.next) if ("number" === typeof thisKey) {
+													const actualObject = ctx.next.node.elements;
+													if (actualObject && thisKey >= actualObject.length) if (p === context_stack.length - 1) {
+														console.log("This is actually at the current object so use that", p, val.contains, elements);
+														nextObj = elements;
+														p++;
+														ctx = ctx.next;
+														break;
+													} else {
+														if (ctx.next.next && thisKey === actualObject.length) {
+															nextObj = ctx.next.next.node.elements;
+															ctx = ctx.next;
+															p++;
+															obj = nextObj;
+															continue;
+														}
+														nextObj = elements;
+														p++;
+														break;
+													}
+												} else if (thisKey !== ctx.next.node.name) {
+													nextObj = ctx.next.node.elements[thisKey];
+													lvl = p;
+													break;
+												} else if (ctx.next.next) nextObj = ctx.next.next.node.elements;
+												else nextObj = elements;
+												else nextObj = nextObj[thisKey];
+												ctx = ctx.next;
+												p++;
+											}
+											if (p < pathlen) lvl = p - 1;
+											else lvl = p;
+										}
+										if ("object" === typeof nextObj && !nextObj) throw new Error("Path did not resolve properly:" + val.contains + " at " + idx + "(" + lvl + ")");
+										obj = nextObj;
+									}
+									arrayType = -3;
+									return obj;
+								}
+								if (val.className) {
+									fp = localFromProtoTypes.get(val.className);
+									if (!fp) fp = fromProtoTypes.get(val.className);
+									val.className = null;
+									if (fp && fp.cb) return fp.cb.call(val.contains);
+								}
+								return val.contains;
+							default:
+								console.log("Unhandled value conversion.", val);
+								break;
+						}
+					}
+					function arrayPush() {
+						if (arrayType == -3) {
+							if (val.value_type === VALUE_OBJECT) elements.push(val.contains);
+							arrayType = -1;
+							return;
+						}
+						switch (val.value_type) {
+							case VALUE_EMPTY:
+								elements.push(void 0);
+								delete elements[elements.length - 1];
+								break;
+							default:
+								elements.push(convertValue());
+								break;
+						}
+						RESET_VAL();
+					}
+					function objectPush() {
+						if (arrayType === -3 && val.value_type === VALUE_ARRAY) {
+							RESET_VAL();
+							arrayType = -1;
+							return;
+						}
+						if (val.value_type === VALUE_EMPTY) return;
+						if (!val.name && current_class) val.name = current_class.fields[current_class_field++];
+						let value = convertValue();
+						if (current_proto && current_proto.protoDef && current_proto.protoDef.cb) {
+							value = current_proto.protoDef.cb.call(elements, val.name, value);
+							if (value) elements[val.name] = value;
+						} else elements[val.name] = value;
+						RESET_VAL();
+					}
+					function recoverIdent(cInt) {
+						if (word !== WORD_POS_RESET) {
+							if (negative) throwError("Negative outside of quotes, being converted to a string (would lose count of leading '-' characters)", cInt);
+							switch (word) {
+								case WORD_POS_END:
+									switch (val.value_type) {
+										case VALUE_TRUE:
+											val.string += "true";
+											break;
+										case VALUE_FALSE:
+											val.string += "false";
+											break;
+										case VALUE_NULL:
+											val.string += "null";
+											break;
+										case VALUE_INFINITY:
+											val.string += "Infinity";
+											break;
+										case VALUE_NEG_INFINITY:
+											val.string += "-Infinity";
+											throwError("Negative outside of quotes, being converted to a string", cInt);
+											break;
+										case VALUE_NAN:
+											val.string += "NaN";
+											break;
+										case VALUE_NEG_NAN:
+											val.string += "-NaN";
+											throwError("Negative outside of quotes, being converted to a string", cInt);
+											break;
+										case VALUE_UNDEFINED:
+											val.string += "undefined";
+											break;
+										case VALUE_STRING: break;
+										case VALUE_UNSET: break;
+										default: console.log("Value of type " + val.value_type + " is not restored...");
+									}
+									break;
+								case WORD_POS_TRUE_1:
+									val.string += "t";
+									break;
+								case WORD_POS_TRUE_2:
+									val.string += "tr";
+									break;
+								case WORD_POS_TRUE_3:
+									val.string += "tru";
+									break;
+								case WORD_POS_FALSE_1:
+									val.string += "f";
+									break;
+								case WORD_POS_FALSE_2:
+									val.string += "fa";
+									break;
+								case WORD_POS_FALSE_3:
+									val.string += "fal";
+									break;
+								case WORD_POS_FALSE_4:
+									val.string += "fals";
+									break;
+								case WORD_POS_NULL_1:
+									val.string += "n";
+									break;
+								case WORD_POS_NULL_2:
+									val.string += "nu";
+									break;
+								case WORD_POS_NULL_3:
+									val.string += "nul";
+									break;
+								case WORD_POS_UNDEFINED_1:
+									val.string += "u";
+									break;
+								case WORD_POS_UNDEFINED_2:
+									val.string += "un";
+									break;
+								case WORD_POS_UNDEFINED_3:
+									val.string += "und";
+									break;
+								case WORD_POS_UNDEFINED_4:
+									val.string += "unde";
+									break;
+								case WORD_POS_UNDEFINED_5:
+									val.string += "undef";
+									break;
+								case WORD_POS_UNDEFINED_6:
+									val.string += "undefi";
+									break;
+								case WORD_POS_UNDEFINED_7:
+									val.string += "undefin";
+									break;
+								case WORD_POS_UNDEFINED_8:
+									val.string += "undefine";
+									break;
+								case WORD_POS_NAN_1:
+									val.string += "N";
+									break;
+								case WORD_POS_NAN_2:
+									val.string += "Na";
+									break;
+								case WORD_POS_INFINITY_1:
+									val.string += "I";
+									break;
+								case WORD_POS_INFINITY_2:
+									val.string += "In";
+									break;
+								case WORD_POS_INFINITY_3:
+									val.string += "Inf";
+									break;
+								case WORD_POS_INFINITY_4:
+									val.string += "Infi";
+									break;
+								case WORD_POS_INFINITY_5:
+									val.string += "Infin";
+									break;
+								case WORD_POS_INFINITY_6:
+									val.string += "Infini";
+									break;
+								case WORD_POS_INFINITY_7:
+									val.string += "Infinit";
+									break;
+								case WORD_POS_RESET: break;
+								case WORD_POS_FIELD: break;
+								case WORD_POS_AFTER_FIELD: break;
+								case WORD_POS_AFTER_FIELD_VALUE:
+									throwError("String-keyword recovery fail (after whitespace)", cInt);
+									break;
+								default:
+							}
+							val.value_type = VALUE_STRING;
+							if (word < WORD_POS_FIELD) word = WORD_POS_END;
+						} else {
+							word = WORD_POS_END;
+							val.value_type = VALUE_STRING;
+						}
+						if (cInt == 123) openObject();
+						else if (cInt == 91) openArray();
+						else if (cInt == 44) {} else {
+							if (cInt == 32 || cInt == 13 || cInt == 10 || cInt == 9 || cInt == 65279 || cInt == 8232 || cInt == 8233) return;
+							if (cInt == 44 || cInt == 125 || cInt == 93 || cInt == 58);
+							else val.string += str;
+						}
+					}
+					function gatherString(start_c) {
+						let retval = 0;
+						while (retval == 0 && n < buf.length) {
+							str = buf.charAt(n);
+							let cInt = buf.codePointAt(n++);
+							if (cInt >= 65536) {
+								str += buf.charAt(n);
+								n++;
+							}
+							pos.col++;
+							if (cInt == start_c) if (stringEscape) {
+								if (stringHex) throwError("Incomplete hexidecimal sequence", cInt);
+								else if (stringUnicode) throwError("Incomplete long unicode sequence", cInt);
+								else if (unicodeWide) throwError("Incomplete unicode sequence", cInt);
+								if (cr_escaped) {
+									cr_escaped = false;
+									retval = 1;
+								} else val.string += str;
+								stringEscape = false;
+							} else retval = 1;
+							else if (stringEscape) {
+								if (unicodeWide) {
+									if (cInt == 125) {
+										val.string += String.fromCodePoint(hex_char);
+										unicodeWide = false;
+										stringUnicode = false;
+										stringEscape = false;
+										continue;
+									}
+									hex_char *= 16;
+									if (cInt >= 48 && cInt <= 57) hex_char += cInt - 48;
+									else if (cInt >= 65 && cInt <= 70) hex_char += cInt - 65 + 10;
+									else if (cInt >= 97 && cInt <= 102) hex_char += cInt - 97 + 10;
+									else {
+										throwError("(escaped character, parsing hex of \\u)", cInt);
+										retval = -1;
+										unicodeWide = false;
+										stringEscape = false;
+										continue;
+									}
+									continue;
+								} else if (stringHex || stringUnicode) {
+									if (hex_char_len === 0 && cInt === 123) {
+										unicodeWide = true;
+										continue;
+									}
+									if (hex_char_len < 2 || stringUnicode && hex_char_len < 4) {
+										hex_char *= 16;
+										if (cInt >= 48 && cInt <= 57) hex_char += cInt - 48;
+										else if (cInt >= 65 && cInt <= 70) hex_char += cInt - 65 + 10;
+										else if (cInt >= 97 && cInt <= 102) hex_char += cInt - 97 + 10;
+										else {
+											throwError(stringUnicode ? "(escaped character, parsing hex of \\u)" : "(escaped character, parsing hex of \\x)", cInt);
+											retval = -1;
+											stringHex = false;
+											stringEscape = false;
+											continue;
+										}
+										hex_char_len++;
+										if (stringUnicode) {
+											if (hex_char_len == 4) {
+												val.string += String.fromCodePoint(hex_char);
+												stringUnicode = false;
+												stringEscape = false;
+											}
+										} else if (hex_char_len == 2) {
+											val.string += String.fromCodePoint(hex_char);
+											stringHex = false;
+											stringEscape = false;
+										}
+										continue;
+									}
+								}
+								switch (cInt) {
+									case 13:
+										cr_escaped = true;
+										pos.col = 1;
+										continue;
+									case 8232:
+									case 8233: pos.col = 1;
+									case 10:
+										if (!cr_escaped) pos.col = 1;
+										else cr_escaped = false;
+										pos.line++;
+										break;
+									case 116:
+										val.string += "	";
+										break;
+									case 98:
+										val.string += "\b";
+										break;
+									case 110:
+										val.string += "\n";
+										break;
+									case 114:
+										val.string += "\r";
+										break;
+									case 102:
+										val.string += "\f";
+										break;
+									case 118:
+										val.string += "\v";
+										break;
+									case 48:
+										val.string += "\0";
+										break;
+									case 120:
+										stringHex = true;
+										hex_char_len = 0;
+										hex_char = 0;
+										continue;
+									case 117:
+										stringUnicode = true;
+										hex_char_len = 0;
+										hex_char = 0;
+										continue;
+									default:
+										val.string += str;
+										break;
+								}
+								stringEscape = false;
+							} else if (cInt === 92) if (stringEscape) {
+								val.string += "\\";
+								stringEscape = false;
+							} else {
+								stringEscape = true;
+								hex_char = 0;
+								hex_char_len = 0;
+							}
+							else {
+								if (cr_escaped) {
+									cr_escaped = false;
+									pos.line++;
+									pos.col = 2;
+								}
+								val.string += str;
+							}
+						}
+						return retval;
+					}
+					function collectNumber() {
+						let _n;
+						while ((_n = n) < buf.length) {
+							str = buf.charAt(_n);
+							let cInt = buf.codePointAt(n++);
+							if (cInt >= 256) {
+								pos.col -= n - _n;
+								n = _n;
+								break;
+							} else {
+								if (cInt == 95) continue;
+								pos.col++;
+								if (cInt >= 48 && cInt <= 57) {
+									if (exponent) exponent_digit = true;
+									val.string += str;
+								} else if (cInt == 45 || cInt == 43) if (val.string.length == 0 || exponent && !exponent_sign && !exponent_digit) {
+									if (cInt == 45 && !exponent) negative = !negative;
+									val.string += str;
+									exponent_sign = true;
+								} else {
+									if (negative) {
+										val.string = "-" + val.string;
+										negative = false;
+									}
+									val.string += str;
+									date_format = true;
+								}
+								else if (cInt == 78) {
+									if (word == WORD_POS_RESET) {
+										gatheringNumber = false;
+										word = WORD_POS_NAN_1;
+										return;
+									}
+									throwError("fault while parsing number;", cInt);
+									break;
+								} else if (cInt == 73) {
+									if (word == WORD_POS_RESET) {
+										gatheringNumber = false;
+										word = WORD_POS_INFINITY_1;
+										return;
+									}
+									throwError("fault while parsing number;", cInt);
+									break;
+								} else if (cInt == 58 && date_format) {
+									if (negative) {
+										val.string = "-" + val.string;
+										negative = false;
+									}
+									val.string += str;
+									date_format = true;
+								} else if (cInt == 84 && date_format) {
+									if (negative) {
+										val.string = "-" + val.string;
+										negative = false;
+									}
+									val.string += str;
+									date_format = true;
+								} else if (cInt == 90 && date_format) {
+									if (negative) {
+										val.string = "-" + val.string;
+										negative = false;
+									}
+									val.string += str;
+									date_format = true;
+								} else if (cInt == 46) if (!decimal && !fromHex && !exponent) {
+									val.string += str;
+									decimal = true;
+								} else {
+									status = false;
+									throwError("fault while parsing number;", cInt);
+									break;
+								}
+								else if (cInt == 110) {
+									isBigInt = true;
+									break;
+								} else if (fromHex && (cInt >= 95 && cInt <= 102 || cInt >= 65 && cInt <= 70)) val.string += str;
+								else if (cInt == 120 || cInt == 98 || cInt == 111 || cInt == 88 || cInt == 66 || cInt == 79) if (!fromHex && val.string == "0") {
+									fromHex = true;
+									val.string += str;
+								} else {
+									status = false;
+									throwError("fault while parsing number;", cInt);
+									break;
+								}
+								else if (cInt == 101 || cInt == 69) if (!exponent) {
+									val.string += str;
+									exponent = true;
+								} else {
+									status = false;
+									throwError("fault while parsing number;", cInt);
+									break;
+								}
+								else if (cInt == 32 || cInt == 13 || cInt == 10 || cInt == 9 || cInt == 47 || cInt == 35 || cInt == 44 || cInt == 125 || cInt == 93 || cInt == 123 || cInt == 91 || cInt == 34 || cInt == 39 || cInt == 96 || cInt == 58) {
+									pos.col -= n - _n;
+									n = _n;
+									break;
+								} else {
+									if (complete_at_end) {
+										status = false;
+										throwError("fault while parsing number;", cInt);
+									}
+									break;
+								}
+							}
+						}
+						if (!complete_at_end && n == buf.length) gatheringNumber = true;
+						else {
+							gatheringNumber = false;
+							val.value_type = VALUE_NUMBER;
+							if (parse_context == CONTEXT_UNKNOWN) completed = true;
+						}
+					}
+					function openObject() {
+						let nextMode = CONTEXT_OBJECT_FIELD;
+						let cls = null;
+						let tmpobj = {};
+						if (word > WORD_POS_RESET && word < WORD_POS_FIELD) recoverIdent(123);
+						let protoDef;
+						protoDef = getProto();
+						if (parse_context == CONTEXT_UNKNOWN) if (word == WORD_POS_FIELD || word == WORD_POS_END && (protoDef || val.string.length)) {
+							if (protoDef && protoDef.protoDef && protoDef.protoDef.protoCon) tmpobj = new protoDef.protoDef.protoCon();
+							if (!protoDef || !protoDef.protoDef && val.string) {
+								cls = classes.find((cls) => cls.name === val.string);
+								if (!cls) {
+									function privateProto() {}
+									classes.push(cls = {
+										name: val.string,
+										protoCon: protoDef && protoDef.protoDef && protoDef.protoDef.protoCon || privateProto.constructor,
+										fields: []
+									});
+									nextMode = CONTEXT_CLASS_FIELD;
+								} else if (redefineClass) {
+									cls.fields.length = 0;
+									nextMode = CONTEXT_CLASS_FIELD;
+								} else {
+									tmpobj = new cls.protoCon();
+									nextMode = CONTEXT_CLASS_VALUE;
+								}
+								redefineClass = false;
+							}
+							current_class = cls;
+							word = WORD_POS_RESET;
+						} else word = WORD_POS_FIELD;
+						else if (word == WORD_POS_FIELD || parse_context === CONTEXT_IN_ARRAY || parse_context === CONTEXT_OBJECT_FIELD_VALUE || parse_context == CONTEXT_CLASS_VALUE) if (word != WORD_POS_RESET || val.value_type == VALUE_STRING) {
+							if (protoDef && protoDef.protoDef) tmpobj = new protoDef.protoDef.protoCon();
+							else {
+								cls = classes.find((cls) => cls.name === val.string);
+								if (!cls) {
+									function privateProto() {}
+									localFromProtoTypes.set(val.string, {
+										protoCon: privateProto.prototype.constructor,
+										cb: null
+									});
+									tmpobj = new privateProto();
+								} else {
+									nextMode = CONTEXT_CLASS_VALUE;
+									tmpobj = {};
+								}
+							}
+							word = WORD_POS_RESET;
+						} else word = WORD_POS_RESET;
+						else if (parse_context == CONTEXT_OBJECT_FIELD && word == WORD_POS_RESET) {
+							throwError("fault while parsing; getting field name unexpected ", cInt);
+							status = false;
+							return false;
+						}
+						let old_context = getContext();
+						val.value_type = VALUE_OBJECT;
+						if (parse_context === CONTEXT_UNKNOWN) elements = tmpobj;
+						else if (parse_context == CONTEXT_IN_ARRAY) {
+							if (arrayType == -1) {}
+							val.name = elements.length;
+						} else if (parse_context == CONTEXT_OBJECT_FIELD_VALUE || parse_context == CONTEXT_CLASS_VALUE) {
+							if (!val.name && current_class) val.name = current_class.fields[current_class_field++];
+							elements[val.name] = tmpobj;
+						}
+						old_context.context = parse_context;
+						old_context.elements = elements;
+						old_context.name = val.name;
+						old_context.current_proto = current_proto;
+						old_context.current_class = current_class;
+						old_context.current_class_field = current_class_field;
+						old_context.valueType = val.value_type;
+						old_context.arrayType = arrayType;
+						old_context.className = val.className;
+						val.className = null;
+						val.name = null;
+						current_proto = protoDef;
+						current_class = cls;
+						current_class_field = 0;
+						elements = tmpobj;
+						if (!rootObject) rootObject = elements;
+						context_stack.push(old_context);
+						RESET_VAL();
+						parse_context = nextMode;
+						return true;
+					}
+					function openArray() {
+						if (word > WORD_POS_RESET && word < WORD_POS_FIELD) recoverIdent(91);
+						if (word == WORD_POS_END && val.string.length) {
+							let typeIndex = knownArrayTypeNames.findIndex((type) => type === val.string);
+							word = WORD_POS_RESET;
+							if (typeIndex >= 0) {
+								arrayType = typeIndex;
+								val.className = val.string;
+								val.string = null;
+							} else if (val.string === "ref") {
+								val.className = null;
+								arrayType = -2;
+							} else if (localFromProtoTypes.get(val.string)) val.className = val.string;
+							else if (fromProtoTypes.get(val.string)) val.className = val.string;
+							else throwError(`Unknown type '${val.string}' specified for array`, cInt);
+						} else if (parse_context == CONTEXT_OBJECT_FIELD || word == WORD_POS_FIELD || word == WORD_POS_AFTER_FIELD) {
+							throwError("Fault while parsing; while getting field name unexpected", cInt);
+							status = false;
+							return false;
+						}
+						{
+							let old_context = getContext();
+							val.value_type = VALUE_ARRAY;
+							let tmparr = [];
+							if (parse_context == CONTEXT_UNKNOWN) elements = tmparr;
+							else if (parse_context == CONTEXT_IN_ARRAY) {
+								if (arrayType == -1) elements.push(tmparr);
+								val.name = elements.length;
+							} else if (parse_context == CONTEXT_OBJECT_FIELD_VALUE) {
+								if (!val.name) {
+									console.log("This says it's resolved.......");
+									arrayType = -3;
+								}
+								if (current_proto && current_proto.protoDef) if (current_proto.protoDef.cb) {
+									const newarr = current_proto.protoDef.cb.call(elements, val.name, tmparr);
+									if (newarr !== void 0) tmparr = elements[val.name] = newarr;
+								} else elements[val.name] = tmparr;
+								else elements[val.name] = tmparr;
+							}
+							old_context.context = parse_context;
+							old_context.elements = elements;
+							old_context.name = val.name;
+							old_context.current_proto = current_proto;
+							old_context.current_class = current_class;
+							old_context.current_class_field = current_class_field;
+							old_context.valueType = val.value_type;
+							old_context.arrayType = arrayType == -1 ? -3 : arrayType;
+							old_context.className = val.className;
+							arrayType = -1;
+							val.className = null;
+							val.name = null;
+							current_proto = null;
+							current_class = null;
+							current_class_field = 0;
+							elements = tmparr;
+							if (!rootObject) rootObject = tmparr;
+							context_stack.push(old_context);
+							RESET_VAL();
+							parse_context = CONTEXT_IN_ARRAY;
+						}
+						return true;
+					}
+					function getProto() {
+						const result = {
+							protoDef: null,
+							cls: null
+						};
+						if (result.protoDef = localFromProtoTypes.get(val.string)) {
+							if (!val.className) {
+								val.className = val.string;
+								val.string = null;
+							}
+						} else if (result.protoDef = fromProtoTypes.get(val.string)) {
+							if (!val.className) {
+								val.className = val.string;
+								val.string = null;
+							}
+						}
+						if (val.string) {
+							result.cls = classes.find((cls) => cls.name === val.string);
+							if (!result.protoDef && !result.cls) {}
+						}
+						return result.protoDef || result.cls ? result : null;
+					}
+					if (!status) return -1;
+					if (msg && msg.length) {
+						input = getBuffer();
+						input.buf = msg;
+						inQueue.push(input);
+					} else {
+						if (gatheringNumber) {
+							gatheringNumber = false;
+							val.value_type = VALUE_NUMBER;
+							if (parse_context == CONTEXT_UNKNOWN) completed = true;
+							retval = 1;
+						}
+						if (parse_context !== CONTEXT_UNKNOWN) throwError("Unclosed object at end of stream.", cInt);
+					}
+					while (status && (input = inQueue.shift())) {
+						n = input.n;
+						buf = input.buf;
+						if (gatheringString) {
+							let string_status = gatherString(gatheringStringFirstChar);
+							if (string_status < 0) status = false;
+							else if (string_status > 0) {
+								gatheringString = false;
+								if (status) val.value_type = VALUE_STRING;
+							}
+						}
+						if (gatheringNumber) collectNumber();
+						while (!completed && status && n < buf.length) {
+							str = buf.charAt(n);
+							cInt = buf.codePointAt(n++);
+							if (cInt >= 65536) {
+								str += buf.charAt(n);
+								n++;
+							}
+							pos.col++;
+							if (comment) {
+								if (comment == 1) if (cInt == 42) comment = 3;
+								else if (cInt != 47) return throwError("fault while parsing;", cInt);
+								else comment = 2;
+								else if (comment == 2) {
+									if (cInt == 10 || cInt == 13) comment = 0;
+								} else if (comment == 3) {
+									if (cInt == 42) comment = 4;
+								} else if (cInt == 47) comment = 0;
+								else comment = 3;
+								continue;
+							}
+							switch (cInt) {
+								case 35:
+									comment = 2;
+									break;
+								case 47:
+									comment = 1;
+									break;
+								case 123:
+									openObject();
+									break;
+								case 91:
+									openArray();
+									break;
+								case 58:
+									if (parse_context == CONTEXT_CLASS_VALUE) {
+										word = WORD_POS_RESET;
+										val.name = val.string;
+										val.string = "";
+										val.value_type = VALUE_UNSET;
+									} else if (parse_context == CONTEXT_OBJECT_FIELD || parse_context == CONTEXT_CLASS_FIELD) if (parse_context == CONTEXT_CLASS_FIELD) {
+										if (!Object.keys(elements).length) {
+											console.log("This is a full object, not a class def...", val.className);
+											const privateProto = () => {};
+											localFromProtoTypes.set(context_stack.last.node.current_class.name, {
+												protoCon: privateProto.prototype.constructor,
+												cb: null
+											});
+											elements = new privateProto();
+											parse_context = CONTEXT_OBJECT_FIELD_VALUE;
+											val.name = val.string;
+											word = WORD_POS_RESET;
+											val.string = "";
+											val.value_type = VALUE_UNSET;
+											console.log("don't do default;s do a revive...");
+										}
+									} else {
+										if (word != WORD_POS_RESET && word != WORD_POS_END && word != WORD_POS_FIELD && word != WORD_POS_AFTER_FIELD) recoverIdent(32);
+										word = WORD_POS_RESET;
+										val.name = val.string;
+										val.string = "";
+										parse_context = parse_context === CONTEXT_OBJECT_FIELD ? CONTEXT_OBJECT_FIELD_VALUE : CONTEXT_CLASS_FIELD_VALUE;
+										val.value_type = VALUE_UNSET;
+									}
+									else if (parse_context == CONTEXT_UNKNOWN) {
+										console.log("Override colon found, allow class redefinition", parse_context);
+										redefineClass = true;
+										break;
+									} else {
+										if (parse_context == CONTEXT_IN_ARRAY) throwError("(in array, got colon out of string):parsing fault;", cInt);
+										else if (parse_context == CONTEXT_OBJECT_FIELD_VALUE) throwError("String unexpected", cInt);
+										else throwError("(outside any object, got colon out of string):parsing fault;", cInt);
+										status = false;
+									}
+									break;
+								case 125:
+									if (word == WORD_POS_END) word = WORD_POS_RESET;
+									if (parse_context == CONTEXT_CLASS_FIELD) if (current_class) {
+										if (val.string) current_class.fields.push(val.string);
+										RESET_VAL();
+										let old_context = context_stack.pop();
+										parse_context = CONTEXT_UNKNOWN;
+										word = WORD_POS_RESET;
+										val.name = old_context.name;
+										elements = old_context.elements;
+										current_class = old_context.current_class;
+										current_class_field = old_context.current_class_field;
+										arrayType = old_context.arrayType;
+										val.value_type = old_context.valueType;
+										val.className = old_context.className;
+										rootObject = null;
+										dropContext(old_context);
+									} else throwError("State error; gathering class fields, and lost the class", cInt);
+									else if (parse_context == CONTEXT_OBJECT_FIELD || parse_context == CONTEXT_CLASS_VALUE) {
+										if (val.value_type != VALUE_UNSET) {
+											if (current_class) val.name = current_class.fields[current_class_field++];
+											objectPush();
+										}
+										val.value_type = VALUE_OBJECT;
+										if (current_proto && current_proto.protoDef) {
+											console.log("SOMETHING SHOULD AHVE BEEN REPLACED HERE??", current_proto);
+											console.log("The other version only revives on init");
+											elements = new current_proto.protoDef.cb(elements, void 0, void 0);
+										}
+										val.contains = elements;
+										val.string = "";
+										let old_context = context_stack.pop();
+										parse_context = old_context.context;
+										val.name = old_context.name;
+										elements = old_context.elements;
+										current_class = old_context.current_class;
+										current_proto = old_context.current_proto;
+										current_class_field = old_context.current_class_field;
+										arrayType = old_context.arrayType;
+										val.value_type = old_context.valueType;
+										val.className = old_context.className;
+										dropContext(old_context);
+										if (parse_context == CONTEXT_UNKNOWN) completed = true;
+									} else if (parse_context == CONTEXT_OBJECT_FIELD_VALUE) {
+										if (val.value_type === VALUE_UNSET) if (word == WORD_POS_RESET) throwError("Fault while parsing; unexpected", cInt);
+										else recoverIdent(cInt);
+										objectPush();
+										val.value_type = VALUE_OBJECT;
+										val.contains = elements;
+										word = WORD_POS_RESET;
+										let old_context = context_stack.pop();
+										parse_context = old_context.context;
+										val.name = old_context.name;
+										elements = old_context.elements;
+										current_proto = old_context.current_proto;
+										current_class = old_context.current_class;
+										current_class_field = old_context.current_class_field;
+										arrayType = old_context.arrayType;
+										val.value_type = old_context.valueType;
+										val.className = old_context.className;
+										dropContext(old_context);
+										if (parse_context == CONTEXT_UNKNOWN) completed = true;
+									} else {
+										throwError("Fault while parsing; unexpected", cInt);
+										status = false;
+									}
+									negative = false;
+									break;
+								case 93:
+									if (word >= WORD_POS_AFTER_FIELD) word = WORD_POS_RESET;
+									if (parse_context == CONTEXT_IN_ARRAY) {
+										if (val.value_type != VALUE_UNSET) arrayPush();
+										else if (word !== WORD_POS_RESET) {
+											recoverIdent(cInt);
+											arrayPush();
+										}
+										val.contains = elements;
+										{
+											let old_context = context_stack.pop();
+											val.name = old_context.name;
+											val.className = old_context.className;
+											parse_context = old_context.context;
+											elements = old_context.elements;
+											current_proto = old_context.current_proto;
+											current_class = old_context.current_class;
+											current_class_field = old_context.current_class_field;
+											arrayType = old_context.arrayType;
+											val.value_type = old_context.valueType;
+											dropContext(old_context);
+										}
+										val.value_type = VALUE_ARRAY;
+										if (parse_context == CONTEXT_UNKNOWN) completed = true;
+									} else {
+										throwError(`bad context ${parse_context}; fault while parsing`, cInt);
+										status = false;
+									}
+									negative = false;
+									break;
+								case 44:
+									if (word < WORD_POS_AFTER_FIELD && word != WORD_POS_RESET) recoverIdent(cInt);
+									if (word == WORD_POS_END || word == WORD_POS_FIELD) word = WORD_POS_RESET;
+									if (parse_context == CONTEXT_CLASS_FIELD) if (current_class) {
+										current_class.fields.push(val.string);
+										val.string = "";
+										word = WORD_POS_FIELD;
+									} else throwError("State error; gathering class fields, and lost the class", cInt);
+									else if (parse_context == CONTEXT_OBJECT_FIELD) {
+										if (current_class) {
+											val.name = current_class.fields[current_class_field++];
+											if (val.value_type != VALUE_UNSET) {
+												objectPush();
+												RESET_VAL();
+											}
+										} else if (val.string || val.value_type) throwError("State error; comma in field name and/or lost the class", cInt);
+									} else if (parse_context == CONTEXT_CLASS_VALUE) {
+										if (current_class) {
+											if (arrayType != -3 && !val.name) val.name = current_class.fields[current_class_field++];
+											if (val.value_type != VALUE_UNSET) {
+												if (arrayType != -3) objectPush();
+												RESET_VAL();
+											}
+										} else if (val.value_type != VALUE_UNSET) {
+											objectPush();
+											RESET_VAL();
+										}
+										val.name = null;
+									} else if (parse_context == CONTEXT_IN_ARRAY) {
+										if (val.value_type == VALUE_UNSET) val.value_type = VALUE_EMPTY;
+										arrayPush();
+										RESET_VAL();
+										word = WORD_POS_RESET;
+									} else if (parse_context == CONTEXT_OBJECT_FIELD_VALUE && val.value_type != VALUE_UNSET) {
+										parse_context = CONTEXT_OBJECT_FIELD;
+										if (val.value_type != VALUE_UNSET) {
+											objectPush();
+											RESET_VAL();
+										}
+										word = WORD_POS_RESET;
+									} else {
+										status = false;
+										throwError("bad context; excessive commas while parsing;", cInt);
+									}
+									negative = false;
+									break;
+								default:
+									switch (cInt) {
+										default:
+											if (parse_context == CONTEXT_UNKNOWN || parse_context == CONTEXT_OBJECT_FIELD_VALUE && word == WORD_POS_FIELD || parse_context == CONTEXT_OBJECT_FIELD || word == WORD_POS_FIELD || parse_context == CONTEXT_CLASS_FIELD) switch (cInt) {
+												case 96:
+												case 34:
+												case 39:
+													if (word == WORD_POS_RESET || word == WORD_POS_FIELD) {
+														if (val.string.length) {
+															console.log("IN ARRAY AND FIXING?");
+															val.className = val.string;
+															val.string = "";
+														}
+														if (gatherString(cInt)) val.value_type = VALUE_STRING;
+														else {
+															gatheringStringFirstChar = cInt;
+															gatheringString = true;
+														}
+													} else throwError("fault while parsing; quote not at start of field name", cInt);
+													break;
+												case 10:
+													pos.line++;
+													pos.col = 1;
+												case 13:
+												case 32:
+												case 8232:
+												case 8233:
+												case 9:
+												case 65279:
+													if (parse_context === CONTEXT_UNKNOWN && word === WORD_POS_END) {
+														word = WORD_POS_RESET;
+														if (parse_context === CONTEXT_UNKNOWN) completed = true;
+														break;
+													}
+													if (word === WORD_POS_RESET || word === WORD_POS_AFTER_FIELD) {
+														if (parse_context == CONTEXT_UNKNOWN && val.value_type) completed = true;
+														break;
+													} else if (word === WORD_POS_FIELD) {
+														if (parse_context === CONTEXT_UNKNOWN) {
+															word = WORD_POS_RESET;
+															completed = true;
+															break;
+														}
+														if (val.string.length) console.log("STEP TO NEXT TOKEN.");
+														word = WORD_POS_AFTER_FIELD;
+													} else {
+														status = false;
+														throwError("fault while parsing; whitepsace unexpected", cInt);
+													}
+													break;
+												default:
+													if (word == WORD_POS_RESET && (cInt >= 48 && cInt <= 57 || cInt == 43 || cInt == 46 || cInt == 45)) {
+														fromHex = false;
+														exponent = false;
+														date_format = false;
+														isBigInt = false;
+														exponent_sign = false;
+														exponent_digit = false;
+														decimal = false;
+														val.string = str;
+														input.n = n;
+														collectNumber();
+														break;
+													}
+													if (word === WORD_POS_AFTER_FIELD) {
+														status = false;
+														throwError("fault while parsing; character unexpected", cInt);
+													}
+													if (word === WORD_POS_RESET) {
+														word = WORD_POS_FIELD;
+														val.value_type = VALUE_STRING;
+														val.string += str;
+														break;
+													}
+													if (val.value_type == VALUE_UNSET) {
+														if (word !== WORD_POS_RESET && word !== WORD_POS_END) recoverIdent(cInt);
+													} else {
+														if (word === WORD_POS_END || word === WORD_POS_FIELD) {
+															val.string += str;
+															break;
+														}
+														if (parse_context == CONTEXT_OBJECT_FIELD) {
+															if (word == WORD_POS_FIELD) {
+																val.string += str;
+																break;
+															}
+															throwError("Multiple values found in field name", cInt);
+														}
+														if (parse_context == CONTEXT_OBJECT_FIELD_VALUE) throwError("String unexpected", cInt);
+													}
+													break;
+											}
+											else {
+												if (word == WORD_POS_RESET && (cInt >= 48 && cInt <= 57 || cInt == 43 || cInt == 46 || cInt == 45)) {
+													fromHex = false;
+													exponent = false;
+													date_format = false;
+													isBigInt = false;
+													exponent_sign = false;
+													exponent_digit = false;
+													decimal = false;
+													val.string = str;
+													input.n = n;
+													collectNumber();
+												} else if (val.value_type == VALUE_UNSET) if (word != WORD_POS_RESET) recoverIdent(cInt);
+												else {
+													word = WORD_POS_END;
+													val.string += str;
+													val.value_type = VALUE_STRING;
+												}
+												else if (parse_context == CONTEXT_OBJECT_FIELD) throwError("Multiple values found in field name", cInt);
+												else if (parse_context == CONTEXT_OBJECT_FIELD_VALUE) {
+													if (val.value_type != VALUE_STRING) {
+														if (val.value_type == VALUE_OBJECT || val.value_type == VALUE_ARRAY) throwError("String unexpected", cInt);
+														recoverIdent(cInt);
+													}
+													if (word == WORD_POS_AFTER_FIELD) if (getProto()) val.string = str;
+													else throwError("String unexpected", cInt);
+													else if (word == WORD_POS_END) val.string += str;
+													else throwError("String unexpected", cInt);
+												} else if (parse_context == CONTEXT_IN_ARRAY) {
+													if (word == WORD_POS_AFTER_FIELD) {
+														if (!val.className) {
+															val.className = val.string;
+															val.string = "";
+														}
+														val.string += str;
+														break;
+													} else if (word == WORD_POS_END) val.string += str;
+												}
+												break;
+											}
+											break;
+										case 96:
+										case 34:
+										case 39:
+											if (val.string) val.className = val.string;
+											val.string = "";
+											if (gatherString(cInt)) {
+												val.value_type = VALUE_STRING;
+												word = WORD_POS_END;
+											} else {
+												gatheringStringFirstChar = cInt;
+												gatheringString = true;
+											}
+											break;
+										case 10:
+											pos.line++;
+											pos.col = 1;
+										case 32:
+										case 9:
+										case 13:
+										case 8232:
+										case 8233:
+										case 65279:
+											if (word == WORD_POS_END) {
+												if (parse_context == CONTEXT_UNKNOWN) {
+													word = WORD_POS_RESET;
+													completed = true;
+													break;
+												} else if (parse_context == CONTEXT_OBJECT_FIELD_VALUE) {
+													word = WORD_POS_AFTER_FIELD_VALUE;
+													break;
+												} else if (parse_context == CONTEXT_OBJECT_FIELD) {
+													word = WORD_POS_AFTER_FIELD;
+													break;
+												} else if (parse_context == CONTEXT_IN_ARRAY) {
+													word = WORD_POS_AFTER_FIELD;
+													break;
+												}
+											}
+											if (word == WORD_POS_RESET || word == WORD_POS_AFTER_FIELD) break;
+											else if (word == WORD_POS_FIELD) {
+												if (val.string.length) word = WORD_POS_AFTER_FIELD;
+											} else if (word < WORD_POS_END) recoverIdent(cInt);
+											break;
+										case 116:
+											if (word == WORD_POS_RESET) word = WORD_POS_TRUE_1;
+											else if (word == WORD_POS_INFINITY_6) word = WORD_POS_INFINITY_7;
+											else recoverIdent(cInt);
+											break;
+										case 114:
+											if (word == WORD_POS_TRUE_1) word = WORD_POS_TRUE_2;
+											else recoverIdent(cInt);
+											break;
+										case 117:
+											if (word == WORD_POS_TRUE_2) word = WORD_POS_TRUE_3;
+											else if (word == WORD_POS_NULL_1) word = WORD_POS_NULL_2;
+											else if (word == WORD_POS_RESET) word = WORD_POS_UNDEFINED_1;
+											else recoverIdent(cInt);
+											break;
+										case 101:
+											if (word == WORD_POS_TRUE_3) {
+												val.value_type = VALUE_TRUE;
+												word = WORD_POS_END;
+											} else if (word == WORD_POS_FALSE_4) {
+												val.value_type = VALUE_FALSE;
+												word = WORD_POS_END;
+											} else if (word == WORD_POS_UNDEFINED_3) word = WORD_POS_UNDEFINED_4;
+											else if (word == WORD_POS_UNDEFINED_7) word = WORD_POS_UNDEFINED_8;
+											else recoverIdent(cInt);
+											break;
+										case 110:
+											if (word == WORD_POS_RESET) word = WORD_POS_NULL_1;
+											else if (word == WORD_POS_UNDEFINED_1) word = WORD_POS_UNDEFINED_2;
+											else if (word == WORD_POS_UNDEFINED_6) word = WORD_POS_UNDEFINED_7;
+											else if (word == WORD_POS_INFINITY_1) word = WORD_POS_INFINITY_2;
+											else if (word == WORD_POS_INFINITY_4) word = WORD_POS_INFINITY_5;
+											else recoverIdent(cInt);
+											break;
+										case 100:
+											if (word == WORD_POS_UNDEFINED_2) word = WORD_POS_UNDEFINED_3;
+											else if (word == WORD_POS_UNDEFINED_8) {
+												val.value_type = VALUE_UNDEFINED;
+												word = WORD_POS_END;
+											} else recoverIdent(cInt);
+											break;
+										case 105:
+											if (word == WORD_POS_UNDEFINED_5) word = WORD_POS_UNDEFINED_6;
+											else if (word == WORD_POS_INFINITY_3) word = WORD_POS_INFINITY_4;
+											else if (word == WORD_POS_INFINITY_5) word = WORD_POS_INFINITY_6;
+											else recoverIdent(cInt);
+											break;
+										case 108:
+											if (word == WORD_POS_NULL_2) word = WORD_POS_NULL_3;
+											else if (word == WORD_POS_NULL_3) {
+												val.value_type = VALUE_NULL;
+												word = WORD_POS_END;
+											} else if (word == WORD_POS_FALSE_2) word = WORD_POS_FALSE_3;
+											else recoverIdent(cInt);
+											break;
+										case 102:
+											if (word == WORD_POS_RESET) word = WORD_POS_FALSE_1;
+											else if (word == WORD_POS_UNDEFINED_4) word = WORD_POS_UNDEFINED_5;
+											else if (word == WORD_POS_INFINITY_2) word = WORD_POS_INFINITY_3;
+											else recoverIdent(cInt);
+											break;
+										case 97:
+											if (word == WORD_POS_FALSE_1) word = WORD_POS_FALSE_2;
+											else if (word == WORD_POS_NAN_1) word = WORD_POS_NAN_2;
+											else recoverIdent(cInt);
+											break;
+										case 115:
+											if (word == WORD_POS_FALSE_3) word = WORD_POS_FALSE_4;
+											else recoverIdent(cInt);
+											break;
+										case 73:
+											if (word == WORD_POS_RESET) word = WORD_POS_INFINITY_1;
+											else recoverIdent(cInt);
+											break;
+										case 78:
+											if (word == WORD_POS_RESET) word = WORD_POS_NAN_1;
+											else if (word == WORD_POS_NAN_2) {
+												val.value_type = negative ? VALUE_NEG_NAN : VALUE_NAN;
+												negative = false;
+												word = WORD_POS_END;
+											} else recoverIdent(cInt);
+											break;
+										case 121:
+											if (word == WORD_POS_INFINITY_7) {
+												val.value_type = negative ? VALUE_NEG_INFINITY : VALUE_INFINITY;
+												negative = false;
+												word = WORD_POS_END;
+											} else recoverIdent(cInt);
+											break;
+										case 45:
+											if (word == WORD_POS_RESET) negative = !negative;
+											else recoverIdent(cInt);
+											break;
+										case 43:
+											if (word !== WORD_POS_RESET) recoverIdent(cInt);
+											break;
+									}
+									break;
+							}
+							if (completed) {
+								if (word == WORD_POS_END) word = WORD_POS_RESET;
+								break;
+							}
+						}
+						if (n == buf.length) {
+							dropBuffer(input);
+							if (val.value_type == VALUE_UNSET && complete_at_end && word != WORD_POS_RESET) recoverIdent(32);
+							if (gatheringString || gatheringNumber || parse_context == CONTEXT_OBJECT_FIELD) retval = 0;
+							else if (parse_context == CONTEXT_UNKNOWN && (val.value_type != VALUE_UNSET || result)) {
+								completed = true;
+								retval = 1;
+							}
+						} else {
+							input.n = n;
+							inQueue.unshift(input);
+							retval = 2;
+						}
+						if (completed) {
+							rootObject = null;
+							break;
+						}
+					}
+					if (!status) return -1;
+					if (completed && val.value_type != VALUE_UNSET) {
+						word = WORD_POS_RESET;
+						result = convertValue();
+						negative = false;
+						val.string = "";
+						val.value_type = VALUE_UNSET;
+					}
+					completed = false;
+					return retval;
+				}
+			};
+		};
+		_parser = [Object.freeze(JSOX.begin())];
+		_parse_level = 0;
+		/**
+		* parse a string resulting with one value from it.
+		*
+		* @template T
+		* @param {string} msg 
+		* @param {(this: any, key: string, value: any) => any} [reviver] 
+		* @returns {T}
+		*/
+		JSOX.parse = function(msg, reviver) {
+			let parse_level = _parse_level++;
+			let parser;
+			if (_parser.length <= parse_level) _parser.push(Object.freeze(JSOX.begin()));
+			parser = _parser[parse_level];
+			if (typeof msg !== "string") msg = String(msg);
+			parser.reset();
+			const writeResult = parser._write(msg, true);
+			if (writeResult > 0) {
+				if (writeResult > 1) {}
+				let result = parser.value();
+				if ("undefined" === typeof result && writeResult > 1) throw new Error("Pending value could not complete");
+				result = typeof reviver === "function" ? function walk(holder, key) {
+					let k, v, value = holder[key];
+					if (value && typeof value === "object") {
+						for (k in value) if (Object.prototype.hasOwnProperty.call(value, k)) {
+							v = walk(value, k);
+							if (v !== void 0) value[k] = v;
+							else delete value[k];
+						}
+					}
+					return reviver.call(holder, key, value);
+				}({ "": result }, "") : result;
+				_parse_level--;
+				return result;
+			}
+			parser.finalError();
+		};
+		/**
+		* Define a class to be used for serialization; the class allows emitting the class fields ahead of time, and just provide values later.
+		* @param {string} name 
+		* @param {object} obj 
+		*/
+		JSOX.defineClass = function(name, obj) {
+			let cls;
+			let denormKeys = Object.keys(obj);
+			for (let i = 1; i < denormKeys.length; i++) {
+				let a, b;
+				if ((a = denormKeys[i - 1]) > (b = denormKeys[i])) {
+					denormKeys[i - 1] = b;
+					denormKeys[i] = a;
+					if (i) i -= 2;
+					else i--;
+				}
+			}
+			commonClasses.push(cls = {
+				name,
+				tag: denormKeys.toString(),
+				proto: Object.getPrototypeOf(obj),
+				fields: Object.keys(obj)
+			});
+			for (let n = 1; n < cls.fields.length; n++) if (cls.fields[n] < cls.fields[n - 1]) {
+				let tmp = cls.fields[n - 1];
+				cls.fields[n - 1] = cls.fields[n];
+				cls.fields[n] = tmp;
+				if (n > 1) n -= 2;
+			}
+			if (cls.proto === Object.getPrototypeOf({})) cls.proto = null;
+		};
+		/**
+		* deprecated; define a class to be used for serialization
+		*
+		* @param {string} named
+		* @param {class} ptype
+		* @param {(any)=>any} f
+		*/
+		JSOX.registerToJSOX = function(name, ptype, f) {
+			throw new Error("registerToJSOX deprecated; please use toJSOX:" + prototypeName + prototype.toString());
+		};
+		/**
+		* define a class with special serialization rules.
+		*
+		* @param {string} named
+		* @param {class} ptype
+		* @param {(any)=>any} f
+		*/
+		JSOX.toJSOX = function(name, ptype, f) {
+			if (!ptype.prototype || ptype.prototype !== Object.prototype) {
+				if (toProtoTypes.get(ptype.prototype)) throw new Error("Existing toJSOX has been registered for prototype");
+				toProtoTypes.set(ptype.prototype, {
+					external: true,
+					name: name || f.constructor.name,
+					cb: f
+				});
+			} else {
+				let key = Object.keys(ptype).toString();
+				if (toObjectTypes.get(key)) throw new Error("Existing toJSOX has been registered for object type");
+				toObjectTypes.set(key, {
+					external: true,
+					name,
+					cb: f
+				});
+			}
+		};
+		/**
+		* define a class to be used for deserialization
+		* @param {string} prototypeName 
+		* @param {class} o 
+		* @param {(any)=>any} f 
+		*/
+		JSOX.fromJSOX = function(prototypeName, o, f) {
+			function privateProto() {}
+			if (!o) o = privateProto.prototype;
+			if (fromProtoTypes.get(prototypeName)) throw new Error("Existing fromJSOX has been registered for prototype");
+			if (o && !("constructor" in o)) throw new Error("Please pass a prototype like thing...");
+			fromProtoTypes.set(prototypeName, {
+				protoCon: o.prototype.constructor,
+				cb: f
+			});
+		};
+		/**
+		* deprecated; use fromJSOX instead
+		*/
+		JSOX.registerFromJSOX = function(prototypeName, o) {
+			throw new Error("deprecated; please adjust code to use fromJSOX:" + prototypeName + o.toString());
+		};
+		/**
+		* Define serialization and deserialization methods for a class.
+		* This is the same as registering separately with toJSOX and fromJSOX methods.
+		* 
+		* @param {string} name - Name used to prefix objects of this type encoded in JSOX
+		* @param {class} prototype - prototype to match when serializing, and to create instaces of when deserializing.
+		* @param {(stringifier:JSOXStringifier)=>{string}} to - `this` is the value to convert; function to call to encode JSOX from an object
+		* @param {(field:string,val:any)=>{any}} from - handle storing revived value in class
+		*/
+		JSOX.addType = function(prototypeName, prototype, to, from) {
+			JSOX.toJSOX(prototypeName, prototype, to);
+			JSOX.fromJSOX(prototypeName, prototype, from);
+		};
+		JSOX.registerToFrom = function(prototypeName, prototype) {
+			throw new Error("registerToFrom deprecated; please use addType:" + prototypeName + prototype.toString());
+		};
+		/**
+		* Create a stringifier to convert objects to JSOX text.  Allows defining custom serialization for objects.
+		* @returns {JSOXStringifier}
+		*/
+		JSOX.stringifier = function() {
+			let classes = [];
+			let useQuote = "\"";
+			let fieldMap = /* @__PURE__ */ new WeakMap();
+			const path = [];
+			let encoding = [];
+			const localToProtoTypes = /* @__PURE__ */ new WeakMap();
+			const localToObjectTypes = /* @__PURE__ */ new Map();
+			let objectToJSOX = null;
+			const stringifying = [];
+			let ignoreNonEnumerable = false;
+			function getIdentifier(s) {
+				if ("string" === typeof s && s === "") return "\"\"";
+				if ("number" === typeof s && !isNaN(s)) return [
+					"'",
+					s.toString(),
+					"'"
+				].join("");
+				if (s.includes("﻿")) return useQuote + JSOX.escape(s) + useQuote;
+				return s in keywords || /[0-9\-]/.test(s[0]) || /[\n\r\t #\[\]{}()<>\~!+*/.:,\-"'`]/.test(s) ? useQuote + JSOX.escape(s) + useQuote : s;
+			}
+			if (!toProtoTypes.get(Object.prototype)) {
+				toProtoTypes.set(Object.prototype, {
+					external: false,
+					name: Object.prototype.constructor.name,
+					cb: null
+				});
+				toProtoTypes.set(Date.prototype, {
+					external: false,
+					name: "Date",
+					cb: function() {
+						if (this.getTime() === -621672192e5) return "0000-01-01T00:00:00.000Z";
+						let tzo = -this.getTimezoneOffset(), dif = tzo >= 0 ? "+" : "-", pad = function(num) {
+							let norm = Math.floor(Math.abs(num));
+							return (norm < 10 ? "0" : "") + norm;
+						}, pad3 = function(num) {
+							let norm = Math.floor(Math.abs(num));
+							return (norm < 100 ? "0" : "") + (norm < 10 ? "0" : "") + norm;
+						};
+						return [
+							this.getFullYear(),
+							"-",
+							pad(this.getMonth() + 1),
+							"-",
+							pad(this.getDate()),
+							"T",
+							pad(this.getHours()),
+							":",
+							pad(this.getMinutes()),
+							":",
+							pad(this.getSeconds()),
+							"." + pad3(this.getMilliseconds()) + dif,
+							pad(tzo / 60),
+							":",
+							pad(tzo % 60)
+						].join("");
+					}
+				});
+				toProtoTypes.set(DateNS.prototype, {
+					external: false,
+					name: "DateNS",
+					cb: function() {
+						let tzo = -this.getTimezoneOffset(), dif = tzo >= 0 ? "+" : "-", pad = function(num) {
+							let norm = Math.floor(Math.abs(num));
+							return (norm < 10 ? "0" : "") + norm;
+						}, pad3 = function(num) {
+							let norm = Math.floor(Math.abs(num));
+							return (norm < 100 ? "0" : "") + (norm < 10 ? "0" : "") + norm;
+						}, pad6 = function(num) {
+							let norm = Math.floor(Math.abs(num));
+							return (norm < 1e5 ? "0" : "") + (norm < 1e4 ? "0" : "") + (norm < 1e3 ? "0" : "") + (norm < 100 ? "0" : "") + (norm < 10 ? "0" : "") + norm;
+						};
+						return [
+							this.getFullYear(),
+							"-",
+							pad(this.getMonth() + 1),
+							"-",
+							pad(this.getDate()),
+							"T",
+							pad(this.getHours()),
+							":",
+							pad(this.getMinutes()),
+							":",
+							pad(this.getSeconds()),
+							"." + pad3(this.getMilliseconds()) + pad6(this.ns) + dif,
+							pad(tzo / 60),
+							":",
+							pad(tzo % 60)
+						].join("");
+					}
+				});
+				toProtoTypes.set(Boolean.prototype, {
+					external: false,
+					name: "Boolean",
+					cb: this_value
+				});
+				toProtoTypes.set(Number.prototype, {
+					external: false,
+					name: "Number",
+					cb: function() {
+						if (isNaN(this)) return "NaN";
+						return isFinite(this) ? String(this) : this < 0 ? "-Infinity" : "Infinity";
+					}
+				});
+				toProtoTypes.set(String.prototype, {
+					external: false,
+					name: "String",
+					cb: function() {
+						return "\"" + JSOX.escape(this_value.apply(this)) + "\"";
+					}
+				});
+				if (typeof BigInt === "function") toProtoTypes.set(BigInt.prototype, {
+					external: false,
+					name: "BigInt",
+					cb: function() {
+						return this + "n";
+					}
+				});
+				toProtoTypes.set(ArrayBuffer.prototype, {
+					external: true,
+					name: "ab",
+					cb: function() {
+						return "[" + getIdentifier(base64ArrayBuffer(this)) + "]";
+					}
+				});
+				toProtoTypes.set(Uint8Array.prototype, {
+					external: true,
+					name: "u8",
+					cb: function() {
+						return "[" + getIdentifier(base64ArrayBuffer(this.buffer)) + "]";
+					}
+				});
+				toProtoTypes.set(Uint8ClampedArray.prototype, {
+					external: true,
+					name: "uc8",
+					cb: function() {
+						return "[" + getIdentifier(base64ArrayBuffer(this.buffer)) + "]";
+					}
+				});
+				toProtoTypes.set(Int8Array.prototype, {
+					external: true,
+					name: "s8",
+					cb: function() {
+						return "[" + getIdentifier(base64ArrayBuffer(this.buffer)) + "]";
+					}
+				});
+				toProtoTypes.set(Uint16Array.prototype, {
+					external: true,
+					name: "u16",
+					cb: function() {
+						return "[" + getIdentifier(base64ArrayBuffer(this.buffer)) + "]";
+					}
+				});
+				toProtoTypes.set(Int16Array.prototype, {
+					external: true,
+					name: "s16",
+					cb: function() {
+						return "[" + getIdentifier(base64ArrayBuffer(this.buffer)) + "]";
+					}
+				});
+				toProtoTypes.set(Uint32Array.prototype, {
+					external: true,
+					name: "u32",
+					cb: function() {
+						return "[" + getIdentifier(base64ArrayBuffer(this.buffer)) + "]";
+					}
+				});
+				toProtoTypes.set(Int32Array.prototype, {
+					external: true,
+					name: "s32",
+					cb: function() {
+						return "[" + getIdentifier(base64ArrayBuffer(this.buffer)) + "]";
+					}
+				});
+				toProtoTypes.set(Float32Array.prototype, {
+					external: true,
+					name: "f32",
+					cb: function() {
+						return "[" + getIdentifier(base64ArrayBuffer(this.buffer)) + "]";
+					}
+				});
+				toProtoTypes.set(Float64Array.prototype, {
+					external: true,
+					name: "f64",
+					cb: function() {
+						return "[" + getIdentifier(base64ArrayBuffer(this.buffer)) + "]";
+					}
+				});
+				toProtoTypes.set(Float64Array.prototype, {
+					external: true,
+					name: "f64",
+					cb: function() {
+						return "[" + getIdentifier(base64ArrayBuffer(this.buffer)) + "]";
+					}
+				});
+				toProtoTypes.set(RegExp.prototype, mapToJSOX = {
+					external: true,
+					name: "regex",
+					cb: function(o, stringifier) {
+						return "'" + escape(this.source) + "'";
+					}
+				});
+				fromProtoTypes.set("regex", {
+					protoCon: RegExp,
+					cb: function(field, val) {
+						return new RegExp(this);
+					}
+				});
+				toProtoTypes.set(Map.prototype, mapToJSOX = {
+					external: true,
+					name: "map",
+					cb: null
+				});
+				fromProtoTypes.set("map", {
+					protoCon: Map,
+					cb: function(field, val) {
+						if (field) {
+							this.set(field, val);
+							return;
+						}
+						return this;
+					}
+				});
+				toProtoTypes.set(Array.prototype, arrayToJSOX = {
+					external: false,
+					name: Array.prototype.constructor.name,
+					cb: null
+				});
+			}
+			const stringifier = {
+				defineClass(name, obj) {
+					let cls;
+					let denormKeys = Object.keys(obj);
+					for (let i = 1; i < denormKeys.length; i++) {
+						let a, b;
+						if ((a = denormKeys[i - 1]) > (b = denormKeys[i])) {
+							denormKeys[i - 1] = b;
+							denormKeys[i] = a;
+							if (i) i -= 2;
+							else i--;
+						}
+					}
+					classes.push(cls = {
+						name,
+						tag: denormKeys.toString(),
+						proto: Object.getPrototypeOf(obj),
+						fields: Object.keys(obj)
+					});
+					for (let n = 1; n < cls.fields.length; n++) if (cls.fields[n] < cls.fields[n - 1]) {
+						let tmp = cls.fields[n - 1];
+						cls.fields[n - 1] = cls.fields[n];
+						cls.fields[n] = tmp;
+						if (n > 1) n -= 2;
+					}
+					if (cls.proto === Object.getPrototypeOf({})) cls.proto = null;
+				},
+				setDefaultObjectToJSOX(cb) {
+					objectToJSOX = cb;
+				},
+				isEncoding(o) {
+					return !!encoding.find((eo, i) => eo === o && i < encoding.length - 1);
+				},
+				encodeObject(o) {
+					if (objectToJSOX) return objectToJSOX.apply(o, [this]);
+					return o;
+				},
+				stringify(o, r, s) {
+					return stringify(o, r, s);
+				},
+				setQuote(q) {
+					useQuote = q;
+				},
+				registerToJSOX(n, p, f) {
+					return this.toJSOX(n, p, f);
+				},
+				toJSOX(name, ptype, f) {
+					if (ptype.prototype && ptype.prototype !== Object.prototype) {
+						if (localToProtoTypes.get(ptype.prototype)) throw new Error("Existing toJSOX has been registered for prototype");
+						localToProtoTypes.set(ptype.prototype, {
+							external: true,
+							name: name || f.constructor.name,
+							cb: f
+						});
+					} else {
+						let key = Object.keys(ptype).toString();
+						if (localToObjectTypes.get(key)) throw new Error("Existing toJSOX has been registered for object type");
+						localToObjectTypes.set(key, {
+							external: true,
+							name,
+							cb: f
+						});
+					}
+				},
+				get ignoreNonEnumerable() {
+					return ignoreNonEnumerable;
+				},
+				set ignoreNonEnumerable(val) {
+					ignoreNonEnumerable = val;
+				}
+			};
+			return stringifier;
+			/**
+			* get a reference to a previously seen object
+			* @param {any} here 
+			* @returns reference to existing object, or undefined if not found.
+			*/
+			function getReference(here) {
+				if (here === null) return void 0;
+				let field = fieldMap.get(here);
+				if (!field) {
+					fieldMap.set(here, _JSON.stringify(path));
+					return;
+				}
+				return "ref" + field;
+			}
+			/**
+			* find the prototype definition for a class
+			* @param {object} o 
+			* @param {map} useK 
+			* @returns object
+			*/
+			function matchObject(o, useK) {
+				let k;
+				let cls;
+				let prt = Object.getPrototypeOf(o);
+				cls = classes.find((cls) => {
+					if (cls.proto && cls.proto === prt) return true;
+				});
+				if (cls) return cls;
+				if (classes.length || commonClasses.length) {
+					if (useK) {
+						useK = useK.map((v) => {
+							if (typeof v === "string") return v;
+							else return void 0;
+						});
+						k = useK.toString();
+					} else {
+						let denormKeys = Object.keys(o);
+						for (let i = 1; i < denormKeys.length; i++) {
+							let a, b;
+							if ((a = denormKeys[i - 1]) > (b = denormKeys[i])) {
+								denormKeys[i - 1] = b;
+								denormKeys[i] = a;
+								if (i) i -= 2;
+								else i--;
+							}
+						}
+						k = denormKeys.toString();
+					}
+					cls = classes.find((cls) => {
+						if (cls.tag === k) return true;
+					});
+					if (!cls) cls = commonClasses.find((cls) => {
+						if (cls.tag === k) return true;
+					});
+				}
+				return cls;
+			}
+			/**
+			* Serialize an object to JSOX text.
+			* @param {any} object 
+			* @param {(key:string,value:any)=>string} replacer 
+			* @param {string|number} space 
+			* @returns 
+			*/
+			function stringify(object, replacer, space) {
+				if (object === void 0) return "undefined";
+				if (object === null) return;
+				let gap;
+				let indent;
+				let rep;
+				let i;
+				const spaceType = typeof space;
+				const repType = typeof replacer;
+				gap = "";
+				indent = "";
+				if (spaceType === "number") for (i = 0; i < space; i += 1) indent += " ";
+				else if (spaceType === "string") indent = space;
+				rep = replacer;
+				if (replacer && repType !== "function" && (repType !== "object" || typeof replacer.length !== "number")) throw new Error("JSOX.stringify");
+				path.length = 0;
+				fieldMap = /* @__PURE__ */ new WeakMap();
+				const finalResult = str("", { "": object });
+				commonClasses.length = 0;
+				return finalResult;
+				function str(key, holder) {
+					var mind = gap;
+					const doArrayToJSOX_ = arrayToJSOX.cb;
+					const mapToObject_ = mapToJSOX.cb;
+					arrayToJSOX.cb = doArrayToJSOX;
+					mapToJSOX.cb = mapToObject;
+					const v = str_(key, holder);
+					arrayToJSOX.cb = doArrayToJSOX_;
+					mapToJSOX.cb = mapToObject_;
+					return v;
+					function doArrayToJSOX() {
+						let v;
+						let partial = [];
+						let thisNodeNameIndex = path.length;
+						for (let i = 0; i < this.length; i += 1) {
+							path[thisNodeNameIndex] = i;
+							partial[i] = str(i, this) || "null";
+						}
+						path.length = thisNodeNameIndex;
+						encoding.length = thisNodeNameIndex;
+						v = partial.length === 0 ? "[]" : gap ? [
+							"[\n",
+							gap,
+							partial.join(",\n" + gap),
+							"\n",
+							mind,
+							"]"
+						].join("") : "[" + partial.join(",") + "]";
+						return v;
+					}
+					function mapToObject() {
+						let tmp = { tmp: null };
+						let out = "{";
+						let first = true;
+						for (let [key, value] of this) {
+							tmp.tmp = value;
+							let thisNodeNameIndex = path.length;
+							path[thisNodeNameIndex] = key;
+							out += (first ? "" : ",") + getIdentifier(key) + ":" + str("tmp", tmp);
+							path.length = thisNodeNameIndex;
+							first = false;
+						}
+						out += "}";
+						return out;
+					}
+					function str_(key, holder) {
+						let i;
+						let k;
+						let v;
+						let length;
+						let partialClass;
+						let partial;
+						let thisNodeNameIndex = path.length;
+						let isValue = true;
+						let value = holder[key];
+						let isObject = typeof value === "object";
+						let c;
+						if (isObject && value !== null) {
+							if (objectToJSOX) {
+								if (!stringifying.find((val) => val === value)) {
+									stringifying.push(value);
+									encoding[thisNodeNameIndex] = value;
+									isValue = false;
+									value = objectToJSOX.apply(value, [stringifier]);
+									isObject = typeof value === "object";
+									stringifying.pop();
+									encoding.length = thisNodeNameIndex;
+									isObject = typeof value === "object";
+								}
+							}
+						}
+						const objType = value !== void 0 && value !== null && Object.getPrototypeOf(value);
+						let protoConverter = objType && (localToProtoTypes.get(objType) || toProtoTypes.get(objType) || null);
+						let objectConverter = !protoConverter && value !== void 0 && value !== null && (localToObjectTypes.get(Object.keys(value).toString()) || toObjectTypes.get(Object.keys(value).toString()) || null);
+						if (typeof rep === "function") {
+							isValue = false;
+							value = rep.call(holder, key, value);
+						}
+						let toJSOX = protoConverter && protoConverter.cb || objectConverter && objectConverter.cb;
+						if (value !== void 0 && value !== null && typeof value === "object" && typeof toJSOX === "function") if (!stringifying.find((val) => val === value)) {
+							if (typeof value === "object") {
+								v = getReference(value);
+								if (v) return v;
+							}
+							stringifying.push(value);
+							encoding[thisNodeNameIndex] = value;
+							value = toJSOX.call(value, stringifier);
+							isValue = false;
+							stringifying.pop();
+							if (protoConverter && protoConverter.name) {
+								if ("string" === typeof value && value[0] !== "-" && (value[0] < "0" || value[0] > "9") && value[0] !== "\"" && value[0] !== "'" && value[0] !== "`" && value[0] !== "[" && value[0] !== "{") value = " " + value;
+							}
+							encoding.length = thisNodeNameIndex;
+						} else v = getReference(value);
+						else if (typeof value === "object") {
+							v = getReference(value);
+							if (v) return v;
+						}
+						switch (typeof value) {
+							case "bigint": return value + "n";
+							case "string": {
+								value = isValue ? getIdentifier(value) : value;
+								let c = "";
+								if (key === "") c = classes.map((cls) => cls.name + "{" + cls.fields.join(",") + "}").join(gap ? "\n" : "") + commonClasses.map((cls) => cls.name + "{" + cls.fields.join(",") + "}").join(gap ? "\n" : "") + (gap ? "\n" : "");
+								if (protoConverter && protoConverter.external) return c + protoConverter.name + value;
+								if (objectConverter && objectConverter.external) return c + objectConverter.name + value;
+								return c + value;
+							}
+							case "number":
+							case "boolean":
+							case "null": return String(value);
+							case "object":
+								if (v) return v;
+								if (!value) return "null";
+								gap += indent;
+								partialClass = null;
+								partial = [];
+								if (rep && typeof rep === "object") {
+									length = rep.length;
+									partialClass = matchObject(value, rep);
+									for (i = 0; i < length; i += 1) if (typeof rep[i] === "string") {
+										k = rep[i];
+										path[thisNodeNameIndex] = k;
+										v = str(k, value);
+										if (v !== void 0) if (partialClass) partial.push(v);
+										else partial.push(getIdentifier(k) + (gap ? ": " : ":") + v);
+									}
+									path.splice(thisNodeNameIndex, 1);
+								} else {
+									partialClass = matchObject(value);
+									let keys = [];
+									for (k in value) {
+										if (ignoreNonEnumerable) {
+											if (!Object.prototype.propertyIsEnumerable.call(value, k)) continue;
+										}
+										if (Object.prototype.hasOwnProperty.call(value, k)) {
+											let n;
+											for (n = 0; n < keys.length; n++) if (keys[n] > k) {
+												keys.splice(n, 0, k);
+												break;
+											}
+											if (n == keys.length) keys.push(k);
+										}
+									}
+									for (let n = 0; n < keys.length; n++) {
+										k = keys[n];
+										if (Object.prototype.hasOwnProperty.call(value, k)) {
+											path[thisNodeNameIndex] = k;
+											v = str(k, value);
+											if (v !== void 0) if (partialClass) partial.push(v);
+											else partial.push(getIdentifier(k) + (gap ? ": " : ":") + v);
+										}
+									}
+									path.splice(thisNodeNameIndex, 1);
+								}
+								if (key === "") c = (classes.map((cls) => cls.name + "{" + cls.fields.join(",") + "}").join(gap ? "\n" : "") || commonClasses.map((cls) => cls.name + "{" + cls.fields.join(",") + "}").join(gap ? "\n" : "")) + (gap ? "\n" : "");
+								else c = "";
+								if (protoConverter && protoConverter.external) c = c + getIdentifier(protoConverter.name);
+								let ident = null;
+								if (partialClass) ident = getIdentifier(partialClass.name);
+								v = c + (partial.length === 0 ? "{}" : gap ? (partialClass ? ident : "") + "{\n" + gap + partial.join(",\n" + gap) + "\n" + mind + "}" : (partialClass ? ident : "") + "{" + partial.join(",") + "}");
+								gap = mind;
+								return v;
+						}
+					}
+				}
+			}
+		};
+		encodings = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789$_";
+		decodings = {
+			"~": -1,
+			"=": -1,
+			"$": 62,
+			"_": 63,
+			"+": 62,
+			"-": 62,
+			".": 62,
+			"/": 63,
+			",": 63
+		};
+		for (let x = 0; x < 64; x++) decodings[encodings[x]] = x;
+		Object.freeze(decodings);
+		/**
+		* @param {unknown} object 
+		* @param {(this: unknown, key: string, value: unknown)} [replacer] 
+		* @param {string | number} [space] 
+		* @returns {string}
+		*/
+		JSOX.stringify = function(object, replacer, space) {
+			return JSOX.stringifier().stringify(object, replacer, space);
+		};
+		[[
+			0,
+			256,
+			[
+				16767487,
+				16739071,
+				130048,
+				3670016,
+				0,
+				16777208,
+				16777215,
+				8388607
+			]
+		]].map((row) => {
+			return {
+				firstChar: row[0],
+				lastChar: row[1],
+				bits: row[2]
+			};
+		});
 	}));
 	//#endregion
 	//#region ../../modules/projects/lur.e/src/interactive/modules/UIState.ts
@@ -34922,8 +37916,7 @@ cacheWillUpdate: async ({ response }) => {
 			setIdleInterval(updater, 500);
 		};
 		currentColorFromPointRef = (x, y, ROOT = document.documentElement, timeout = 500) => {
-			const color = pickBgColor(x, y, ROOT);
-			const rfc = stringRef(color);
+			const rfc = stringRef(pickBgColor(x, y, ROOT));
 			const updater = () => {
 				const color = pickBgColor(x, y, ROOT);
 				rfc.value = color;
@@ -34937,8 +37930,7 @@ cacheWillUpdate: async ({ response }) => {
 			return rfc;
 		};
 		currentColorFromCenterRef = (element, ROOT = document.documentElement, timeout = 500) => {
-			const color = pickFromCenter(element);
-			const rfc = stringRef(color);
+			const rfc = stringRef(pickFromCenter(element));
 			const updater = () => {
 				const color = pickFromCenter(element);
 				rfc.value = color;
@@ -36151,7 +39143,7 @@ cacheWillUpdate: async ({ response }) => {
 			let res = {
 				mode: "dlch",
 				l: factor / 1 * Math.log(1 + .0039 * l),
-				c: Math.log(1 + .075 * G) / .0435
+				c: Math.log(1 + .075 * G) / (.0435 * 1 * 1)
 			};
 			if (res.c) res.h = normalizeHue((Math.atan2(f, e) + θ) / Math.PI * 180);
 			if (alpha !== void 0) res.alpha = alpha;
@@ -38306,7 +41298,7 @@ cacheWillUpdate: async ({ response }) => {
 		β$1 = .018053968510807;
 		gamma = (v) => {
 			const abs = Math.abs(v);
-			if (abs > β$1) return (Math.sign(v) || 1) * (α$1 * Math.pow(abs, .45) - .09929682680944008);
+			if (abs > β$1) return (Math.sign(v) || 1) * (α$1 * Math.pow(abs, .45) - (α$1 - 1));
 			return 4.5 * v;
 		};
 		convertXyz65ToRec2020 = ({ x, y, z, alpha }) => {
@@ -40606,8 +43598,7 @@ cacheWillUpdate: async ({ response }) => {
 	* Download text content as a file
 	*/
 	function downloadTextFile(content, filename, mimeType = "text/plain") {
-		const blob = new Blob([content], { type: mimeType });
-		downloadFile(blob, filename);
+		downloadFile(new Blob([content], { type: mimeType }), filename);
 	}
 	/**
 	* Download markdown content
@@ -41221,7 +44212,7 @@ cacheWillUpdate: async ({ response }) => {
 		return looksLikeBase64(input).isBase64;
 	}
 	async function normalizeDataAsset(input, options = {}) {
-		const maxBytes = options.maxBytes ?? 52428800;
+		const maxBytes = options.maxBytes ?? 50 * 1024 * 1024;
 		const namePrefix = (options.namePrefix || "asset").trim() || "asset";
 		const preserveFileName = options.preserveFileName ?? false;
 		let source = "text";
@@ -41268,7 +44259,7 @@ cacheWillUpdate: async ({ response }) => {
 		};
 	}
 	async function stringToBlobOrFile(input, options = {}) {
-		const maxBytes = options.maxBytes ?? 52428800;
+		const maxBytes = options.maxBytes ?? 50 * 1024 * 1024;
 		const raw = (input ?? "").trim();
 		const parsedDataUrl = parseDataUrl(raw);
 		if (parsedDataUrl) {
@@ -41967,14 +44958,13 @@ cacheWillUpdate: async ({ response }) => {
 				console.warn("writeFileSmart JSON merge failed, falling back to raw write:", err);
 			}
 			let toWrite;
-			if (file instanceof File) {
-				if (file.name === finalName) toWrite = file;
-				else {
-					const type = file.type || (ext ? `application/${ext}` : "application/octet-stream");
-					const buf = await file.arrayBuffer();
-					toWrite = new File([buf], finalName, { type });
-				}
-			} else {
+			if (file instanceof File) if (file.name === finalName) toWrite = file;
+			else {
+				const type = file.type || (ext ? `application/${ext}` : "application/octet-stream");
+				const buf = await file.arrayBuffer();
+				toWrite = new File([buf], finalName, { type });
+			}
+			else {
 				const type = file.type || (ext ? `application/${ext}` : "application/octet-stream");
 				toWrite = new File([await file.arrayBuffer()], finalName, { type });
 			}
@@ -42284,9 +45274,9 @@ cacheWillUpdate: async ({ response }) => {
 			*/
 			formatFileSize(bytes) {
 				if (bytes < 1024) return `${bytes} B`;
-				if (bytes < 1048576) return `${(bytes / 1024).toFixed(1)} KB`;
-				if (bytes < 1073741824) return `${(bytes / 1048576).toFixed(1)} MB`;
-				return `${(bytes / 1073741824).toFixed(1)} GB`;
+				if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+				if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+				return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
 			}
 			/**
 			* Check if a file is likely a markdown file
@@ -42784,6 +45774,7 @@ cacheWillUpdate: async ({ response }) => {
 		BAKE_SCREEN_CHROME: () => BAKE_SCREEN_CHROME,
 		BAKE_SCREEN_MEDIA: () => BAKE_SCREEN_MEDIA,
 		C: () => C,
+		CODE_SELECTION_HIGHLIGHT: () => CODE_SELECTION_HIGHLIGHT,
 		COPY_HACK: () => COPY_HACK,
 		CSM: () => CSM,
 		CSSAnchor: () => CSSAnchor,
@@ -42917,6 +45908,7 @@ cacheWillUpdate: async ({ response }) => {
 		asinRef: () => asinRef,
 		atan2Ref: () => atan2Ref,
 		atanRef: () => atanRef,
+		attachCodeOverlay: () => attachCodeOverlay,
 		attachFile: () => attachFile,
 		attrLink: () => attrLink,
 		attrRef: () => attrRef,
@@ -43002,6 +45994,7 @@ cacheWillUpdate: async ({ response }) => {
 		convertPointerToValueShift: () => convertPointerToValueShift,
 		convertValueToPointer: () => convertValueToPointer,
 		copy: () => copy,
+		copyCodeMetrics: () => copyCodeMetrics,
 		copyFromOneHandlerToAnother: () => copyFromOneHandlerToAnother,
 		copyHandleTree: () => copyHandleTree,
 		copyWithResult: () => copyWithResult,
@@ -43568,6 +46561,7 @@ cacheWillUpdate: async ({ response }) => {
 		init_Glit();
 		init_src$3();
 		init_Syntax();
+		init_CodeOverlay();
 		init_Manager();
 		init_Types();
 		init_Tasks();
@@ -44619,7 +47613,7 @@ cacheWillUpdate: async ({ response }) => {
 				ok: false,
 				error: "No session yet — Accept the pair on the phone, or check the device code"
 			};
-			if (!expiresAt || expiresAt < Date.now()) expiresAt = Date.now() + 31536e7;
+			if (!expiresAt || expiresAt < Date.now()) expiresAt = Date.now() + 10 * 365 * 24 * 60 * 6e4;
 			try {
 				const verify = await fetch(`${controlHost}/service/config`, {
 					method: "GET",
@@ -44878,7 +47872,7 @@ cacheWillUpdate: async ({ response }) => {
 	}
 	var SETTINGS_KEY, SETTINGS_LS_MIRROR_KEY, lastSettingsSaveReport, getLastSettingsSaveReport, noteSettingsControlSync, trimSetting, CAPACITOR_FACTORY_SELF_IDS, isCapacitorFactorySelfId, isHomeFleetClientId, normalizePersistedClientId, isCapacitorNativeShell, CAPACITOR_DESK_PEER_ID, isDeskPeerId, splitClipboardDestIds, joinClipboardDestIds, ensureDeskPeerInDestCsv, ensureCapacitorDeskClipboardTargets, CAPACITOR_CLIPBOARD_ASK_MIGRATED_KEY, ensureCapacitorClipboardAskModes, applyCapacitorShellMigrations, isWebnativeSurface, readDesktopControlAuth, readControlBridgeVia, isPublicCwspControlSpa, isChromeExtensionPage, readControlSessionToken, readCrxControlSessionTokenAsync, webnativeControl, mapWebnativeSnapshotToCore, mapWebnativeBundleToShell, webnativeBundleCache, webnativeSnapshotFetchedAt, loadWebnativeControlBundle, pushWebnativeSettingsPatch, CAPACITOR_CWSP_BOOTSTRAP, needsCapacitorCwspBootstrap, capacitorCwspSeedDone, ensureCapacitorCwspSettingsSeeded, CRX_CWSP_CLIENT_ID, CRX_CWSP_BOOTSTRAP_TOKEN, CRX_LOCAL_HUB_URL, isCrxExtensionRuntime, readLocalStorageSettingsMirror, writeLocalStorageSettingsMirror, isControlSpaRelayUrl, mergeCapacitorNativeRelayOverlay, mergeNativeSettingsOverlay, splitPath, getByPath, slugify, DB_NAME, STORE, mergeAppSettingsShape, getWebDavCreateClient, isContentScriptContext, hasChromeStorage, idbGetSettings, idbPutSettings, normalizeCoreEndpointOrigin, applyLegacyCwspPortMigration, didPersistShellMaintainHubSocket, crxCwspSeedDone, ensureCrxCwspSettingsSeeded, shouldDeferCrxHubSocketBootstrap, loadSettings, saveSettings, joinPath, isDirHandle, safeTime, lureFsPromise, isServiceWorkerScope, loadLureFs, downloadContentsToOPFS, uploadOPFSToWebDav, getHostOnly, WebDavSync, currentWebDav, updateWebDavSettings;
 	var init_Settings = __esmMin((() => {
-		init_jsox();
+		init_jsox$1();
 		init_SettingsTypes();
 		init_open_policy();
 		init_process_ingress();
@@ -45845,7 +48839,7 @@ cacheWillUpdate: async ({ response }) => {
 		didPersistShellMaintainHubSocket = async () => {
 			try {
 				const raw = await idbGetSettings();
-				const stored = typeof raw === "string" ? JSOX.parse(raw) : raw;
+				const stored = typeof raw === "string" ? JSOX$1.parse(raw) : raw;
 				if (!stored || typeof stored !== "object") return false;
 				const shell = stored.shell;
 				return typeof shell === "object" && shell !== null && Object.prototype.hasOwnProperty.call(shell, "maintainHubSocketConnection");
@@ -45937,7 +48931,7 @@ cacheWillUpdate: async ({ response }) => {
 			try {
 				let raw = await idbGetSettings();
 				if (raw == null) raw = readLocalStorageSettingsMirror();
-				const stored = typeof raw === "string" ? JSOX.parse(raw) : raw;
+				const stored = typeof raw === "string" ? JSOX$1.parse(raw) : raw;
 				console.log("[Settings] loadSettings - raw type:", typeof raw, "stored type:", typeof stored);
 				if (stored && typeof stored === "object") {
 					let result = {
@@ -46030,10 +49024,8 @@ cacheWillUpdate: async ({ response }) => {
 					try {
 						if (opts?.nativeOverlay !== false && isCwsNativeIpcAvailable()) {
 							const nativeSettings = await getNativeUnifiedSettings();
-							if (nativeSettings && typeof nativeSettings === "object") {
-								if (isCapacitorNativeShell()) result = mergeCapacitorNativeRelayOverlay(result, nativeSettings);
-								else result = mergeNativeSettingsOverlay(result, nativeSettings);
-							}
+							if (nativeSettings && typeof nativeSettings === "object") if (isCapacitorNativeShell()) result = mergeCapacitorNativeRelayOverlay(result, nativeSettings);
+							else result = mergeNativeSettingsOverlay(result, nativeSettings);
 						}
 					} catch {}
 					try {
@@ -46083,7 +49075,7 @@ cacheWillUpdate: async ({ response }) => {
 			} catch (e) {
 				console.warn("[Settings] loadSettings error:", e);
 			}
-			const fallback = JSOX.parse(JSOX.stringify(DEFAULT_SETTINGS));
+			const fallback = JSOX$1.parse(JSOX$1.stringify(DEFAULT_SETTINGS));
 			rememberOpenPolicyFromSettings(fallback);
 			rememberProcessIngressSettings(fallback);
 			return fallback;
@@ -46485,7 +49477,7 @@ cacheWillUpdate: async ({ response }) => {
 		};
 	}));
 	//#endregion
-	//#region ../../node_modules/@toon-format/toon/dist/index.mjs
+	//#region node_modules/@toon-format/toon/dist/index.mjs
 	/**
 	* Escapes special characters in a string for encoding.
 	*
@@ -47309,7 +50301,7 @@ Expected output structure:
 	//#region src/shared/other/document/AIResponseParser.ts
 	var JSON_EXTRACTION_PATTERNS, cleanRawText, attemptJSONRecovery, tryParseJSON$1, extractJSONFromAIResponse, STRICT_JSON_INSTRUCTIONS;
 	var init_AIResponseParser = __esmMin((() => {
-		init_jsox();
+		init_jsox$1();
 		JSON_EXTRACTION_PATTERNS = [
 			/```json\s*\n?([\s\S]*?)\n?```/i,
 			/```toon\s*\n?([\s\S]*?)\n?```/i,
@@ -47338,7 +50330,7 @@ Expected output structure:
 			try {
 				return {
 					ok: true,
-					data: JSOX.parse(text)
+					data: JSOX$1.parse(text)
 				};
 			} catch {}
 			try {
@@ -47351,14 +50343,14 @@ Expected output structure:
 				const recovered = attemptJSONRecovery(text);
 				return {
 					ok: true,
-					data: JSOX.parse(recovered)
+					data: JSOX$1.parse(recovered)
 				};
 			} catch {}
 			try {
 				const match = text.match(/^[^{[]*([{\[][\s\S]*[}\]])[^}\]]*$/);
 				if (match?.[1]) return {
 					ok: true,
-					data: JSOX.parse(match[1])
+					data: JSOX$1.parse(match[1])
 				};
 			} catch {}
 			return {
@@ -47460,15 +50452,15 @@ If you cannot provide the requested data, return: {"error": "description of the 
 	var init_GPT_Responses = __esmMin((() => {
 		init_dist();
 		init_GPT_Config();
-		init_jsox();
+		init_jsox$1();
 		init_AIResponseParser();
 		init_Runtime();
 		hasFile = () => typeof globalThis.File !== "undefined";
 		hasBlob = () => typeof globalThis.Blob !== "undefined";
 		DEFAULT_REQUEST_TIMEOUTS = {
-			low: 6e4,
-			medium: 3e5,
-			high: 9e5
+			low: 60 * 1e3,
+			medium: 300 * 1e3,
+			high: 900 * 1e3
 		};
 		RETRY_DELAY = 2e3;
 		normalizeResponsesContentPart = (role, part) => {
@@ -47508,7 +50500,7 @@ If you cannot provide the requested data, return: {"error": "description of the 
 		};
 		toBase64 = (bytes) => {
 			if (typeof globalThis.Buffer !== "undefined") return globalThis.Buffer.from(bytes).toString("base64");
-			const CHUNK_SIZE = 1048576;
+			const CHUNK_SIZE = 1024 * 1024;
 			if (bytes.length > CHUNK_SIZE) {
 				let result = "";
 				for (let i = 0; i < bytes.length; i += CHUNK_SIZE) {
@@ -47528,7 +50520,7 @@ If you cannot provide the requested data, return: {"error": "description of the 
 			const BlobCtor = hasBlob() ? globalThis.Blob : void 0;
 			if (BlobCtor && data?.dataSource instanceof BlobCtor || FileCtor && data?.dataSource instanceof FileCtor) {
 				const fileSize = data?.dataSource?.size || 0;
-				const MAX_FILE_SIZE = 10485760;
+				const MAX_FILE_SIZE = 10 * 1024 * 1024;
 				if (fileSize > MAX_FILE_SIZE) {
 					console.warn(`[GPT-Responses] File too large: ${fileSize} bytes > ${MAX_FILE_SIZE} bytes`);
 					return {
@@ -47743,7 +50735,7 @@ If you cannot provide the requested data, return: {"error": "description of the 
 				for (const item of this.pending) {
 					if (!item) continue;
 					try {
-						const key = typeof item === "object" ? JSOX.stringify(item) : String(item);
+						const key = typeof item === "object" ? JSOX$1.stringify(item) : String(item);
 						if (!uniquePending.has(key)) uniquePending.set(key, item);
 					} catch (e) {
 						uniquePending.set(Math.random().toString(), item);
@@ -47921,7 +50913,7 @@ If you cannot provide the requested data, return: {"error": "description of the 
 					object: "chat.completion"
 				});
 				try {
-					const fallbackText = JSOX.parse(resp?.output ?? resp);
+					const fallbackText = JSOX$1.parse(resp?.output ?? resp);
 					if (fallbackText) return JSON.stringify({
 						choices: [{ message: { content: typeof fallbackText === "string" ? fallbackText : JSON.stringify(fallbackText) } }],
 						usage: resp?.usage || {},
@@ -47946,11 +50938,10 @@ If you cannot provide the requested data, return: {"error": "description of the 
 					await this.giveForRequest(`existing_entity: \`${encode(existingData)}\`\n`);
 					if (instructions.length) await this.giveForRequest(buildModificationPrompt(instructions));
 					await this.askToDoAction(modificationPrompt);
-					const raw = await this.sendRequest("high", "medium", null, {
+					const parseResult = extractJSONFromAIResponse(await this.sendRequest("high", "medium", null, {
 						responseFormat: "json",
 						temperature: .2
-					});
-					const parseResult = extractJSONFromAIResponse(raw);
+					}));
 					if (!parseResult.ok) {
 						console.warn("JSON extraction failed:", parseResult.error, "Raw:", parseResult.raw);
 						return {
@@ -47988,11 +50979,10 @@ ${searchTerms.length ? `\nSearch terms: ${searchTerms.join(", ")}` : ""}
 
 Return matching items with relevance scores.
             `);
-					const raw = await this.sendRequest("medium", "low", null, {
+					const parseResult = extractJSONFromAIResponse(await this.sendRequest("medium", "low", null, {
 						responseFormat: "json",
 						temperature: .1
-					});
-					const parseResult = extractJSONFromAIResponse(raw);
+					}));
 					if (!parseResult.ok) {
 						console.warn("JSON extraction failed:", parseResult.error, "Raw:", parseResult.raw);
 						return {
@@ -48031,11 +51021,10 @@ Merge the secondary data into the primary entity using "${mergeStrategy}" strate
 
 Return the merged entity with conflict resolution details.
             `);
-					const raw = await this.sendRequest("high", "medium", null, {
+					const parseResult = extractJSONFromAIResponse(await this.sendRequest("high", "medium", null, {
 						responseFormat: "json",
 						temperature: .2
-					});
-					const parseResult = extractJSONFromAIResponse(raw);
+					}));
 					if (!parseResult.ok) {
 						console.warn("JSON extraction failed:", parseResult.error, "Raw:", parseResult.raw);
 						return {
@@ -48081,11 +51070,10 @@ Expected output structure:
     "related_but_different": [...]
 }
             `);
-					const raw = await this.sendRequest("medium", "medium", null, {
+					const parseResult = extractJSONFromAIResponse(await this.sendRequest("medium", "medium", null, {
 						responseFormat: "json",
 						temperature: .3
-					});
-					const parseResult = extractJSONFromAIResponse(raw);
+					}));
 					if (!parseResult.ok) {
 						console.warn("JSON extraction failed:", parseResult.error, "Raw:", parseResult.raw);
 						return {
@@ -48223,9 +51211,7 @@ Expected output: { "processed": [...], "failed": [...] }
 			const settings = await loadSettings();
 			const apiKey = config?.apiKey || settings?.ai?.apiKey;
 			if (!apiKey) return null;
-			const baseUrl = config?.baseUrl || settings?.ai?.baseUrl || "https://api.proxyapi.ru/openai/v1";
-			const model = resolveConfiguredModel(config?.model || settings?.ai?.model, config?.customModel || settings?.ai?.customModel);
-			const gpt = createGPTInstance(apiKey, baseUrl, model);
+			const gpt = createGPTInstance(apiKey, config?.baseUrl || settings?.ai?.baseUrl || "https://api.proxyapi.ru/openai/v1", resolveConfiguredModel(config?.model || settings?.ai?.model, config?.customModel || settings?.ai?.customModel));
 			await configureMcpTools(gpt, config?.mcp ?? settings?.ai?.mcp);
 			return gpt;
 		};
@@ -49101,14 +52087,13 @@ Apply the user's custom instructions above when processing the data. Prioritize 
 		};
 		setActiveInstruction = async (id) => {
 			const settings = await loadSettings();
-			const updated = {
+			await saveSettings({
 				...settings,
 				ai: {
 					...settings.ai,
 					activeInstructionId: id || ""
 				}
-			};
-			await saveSettings(updated);
+			});
 		};
 		addInstruction = async (label, instruction) => {
 			const settings = await loadSettings();
@@ -49120,14 +52105,13 @@ Apply the user's custom instructions above when processing the data. Prioritize 
 				enabled: true,
 				order: instructions.length
 			};
-			const updated = {
+			await saveSettings({
 				...settings,
 				ai: {
 					...settings.ai,
 					customInstructions: [...instructions, newInstruction]
 				}
-			};
-			await saveSettings(updated);
+			});
 			return newInstruction;
 		};
 		addInstructions = async (items) => {
@@ -49141,14 +52125,13 @@ Apply the user's custom instructions above when processing the data. Prioritize 
 				enabled: item.enabled ?? true,
 				order: instructions.length + index
 			}));
-			const updated = {
+			await saveSettings({
 				...settings,
 				ai: {
 					...settings.ai,
 					customInstructions: [...instructions, ...newInstructions]
 				}
-			};
-			await saveSettings(updated);
+			});
 			return newInstructions;
 		};
 		updateInstruction = async (id, updates) => {
@@ -49160,14 +52143,13 @@ Apply the user's custom instructions above when processing the data. Prioritize 
 				...instructions[index],
 				...updates
 			};
-			const updated = {
+			await saveSettings({
 				...settings,
 				ai: {
 					...settings.ai,
 					customInstructions: instructions
 				}
-			};
-			await saveSettings(updated);
+			});
 			return true;
 		};
 		deleteInstruction = async (id) => {
@@ -49176,15 +52158,14 @@ Apply the user's custom instructions above when processing the data. Prioritize 
 			const filtered = instructions.filter((i) => i.id !== id);
 			if (filtered.length === instructions.length) return false;
 			const newActiveId = settings.ai?.activeInstructionId === id ? "" : settings.ai?.activeInstructionId || "";
-			const updated = {
+			await saveSettings({
 				...settings,
 				ai: {
 					...settings.ai,
 					customInstructions: filtered,
 					activeInstructionId: newActiveId
 				}
-			};
-			await saveSettings(updated);
+			});
 			return true;
 		};
 		reorderInstructions = async (orderedIds) => {
@@ -49197,14 +52178,13 @@ Apply the user's custom instructions above when processing the data. Prioritize 
 					order: index
 				} : null;
 			}).filter((i) => i !== null && i !== void 0);
-			const updated = {
+			await saveSettings({
 				...settings,
 				ai: {
 					...settings.ai,
 					customInstructions: reordered
 				}
-			};
-			await saveSettings(updated);
+			});
 		};
 		addDefaultTemplates = async () => {
 			const settings = await loadSettings();
@@ -49216,14 +52196,13 @@ Apply the user's custom instructions above when processing the data. Prioritize 
 				id: generateId(),
 				order: index
 			}));
-			const updated = {
+			await saveSettings({
 				...settings,
 				ai: {
 					...settings.ai,
 					customInstructions: newInstructions
 				}
-			};
-			await saveSettings(updated);
+			});
 			return newInstructions;
 		};
 	}));
@@ -49280,7 +52259,7 @@ Apply the user's custom instructions above when processing the data. Prioritize 
 		RecognitionCache = class {
 			cache = /* @__PURE__ */ new Map();
 			maxEntries = 100;
-			ttl = 864e5;
+			ttl = 1440 * 60 * 1e3;
 			generateDataHash(data) {
 				if (data instanceof File) return `${data.name}-${data.size}-${data.lastModified}`;
 				if (typeof data === "string") return btoa(data).substring(0, 32);
@@ -49506,11 +52485,10 @@ Apply the user's custom instructions above when processing the data. Prioritize 
 			let finalData = cleanedResponse;
 			if (cleanedResponse && instruction?.includes("Recognize data from image")) try {
 				const parsedJson = JSON.parse(cleanedResponse);
-				if (parsedJson?.recognized_data) {
-					if (Array.isArray(parsedJson.recognized_data)) finalData = parsedJson.recognized_data.join("\n");
-					else if (typeof parsedJson.recognized_data === "string") finalData = parsedJson.recognized_data;
-					else finalData = JSON.stringify(parsedJson.recognized_data);
-				} else if (parsedJson?.ok === false) finalData = null;
+				if (parsedJson?.recognized_data) if (Array.isArray(parsedJson.recognized_data)) finalData = parsedJson.recognized_data.join("\n");
+				else if (typeof parsedJson.recognized_data === "string") finalData = parsedJson.recognized_data;
+				else finalData = JSON.stringify(parsedJson.recognized_data);
+				else if (parsedJson?.ok === false) finalData = null;
 				else finalData = cleanedResponse;
 			} catch {
 				finalData = cleanedResponse;
@@ -50066,64 +53044,59 @@ Apply the user's custom instructions above when processing the data. Prioritize 
 				processor: async (input, context, options) => {
 					let result;
 					const formatInstruction = this.getRecognitionFormatInstruction(options?.recognitionFormat);
-					if (input.files.length > 1) {
-						const messages = [{
-							type: "message",
-							role: "user",
-							content: [{
+					if (input.files.length > 1) result = await processDataWithInstruction([{
+						type: "message",
+						role: "user",
+						content: [{
+							type: "input_text",
+							text: `Analyze and recognize content from the following ${input.files.length} files. ${formatInstruction}`
+						}, ...(await Promise.all(input.files.map(async (file, index) => {
+							const FileCtor = globalThis.File;
+							const isFile = FileCtor && file instanceof FileCtor;
+							const header = {
 								type: "input_text",
-								text: `Analyze and recognize content from the following ${input.files.length} files. ${formatInstruction}`
-							}, ...(await Promise.all(input.files.map(async (file, index) => {
-								const FileCtor = globalThis.File;
-								const isFile = FileCtor && file instanceof FileCtor;
-								const header = {
+								text: `\n--- File ${index + 1}: ${file.name} ---\n`
+							};
+							if (isFile && file.type.startsWith("image/")) try {
+								const arrayBuffer = await file.arrayBuffer();
+								const base64 = toBase64(new Uint8Array(arrayBuffer));
+								return [header, {
+									type: "input_image",
+									detail: "auto",
+									image_url: `data:${file.type};base64,${base64}`
+								}];
+							} catch (error) {
+								console.warn(`Failed to process image ${file.name}:`, error);
+								return [header, {
 									type: "input_text",
-									text: `\n--- File ${index + 1}: ${file.name} ---\n`
-								};
-								if (isFile && file.type.startsWith("image/")) try {
-									const arrayBuffer = await file.arrayBuffer();
-									const bytes = new Uint8Array(arrayBuffer);
-									const base64 = toBase64(bytes);
-									return [header, {
-										type: "input_image",
-										detail: "auto",
-										image_url: `data:${file.type};base64,${base64}`
-									}];
-								} catch (error) {
-									console.warn(`Failed to process image ${file.name}:`, error);
-									return [header, {
-										type: "input_text",
-										text: `[Failed to process image: ${file.name}]`
-									}];
-								}
-								else try {
-									return [header, {
-										type: "input_text",
-										text: await file.text()
-									}];
-								} catch (error) {
-									console.warn(`Failed to read file ${file.name}:`, error);
-									return [header, {
-										type: "input_text",
-										text: `[Failed to read file: ${file.name}]`
-									}];
-								}
-							}))).flat()].filter((item) => item !== null)
-						}];
-						result = await processDataWithInstruction(messages, {
-							instruction: `Analyze and recognize content from the provided files. ${formatInstruction}`,
-							outputFormat: options?.recognitionFormat || "auto",
-							intermediateRecognition: { enabled: false }
-						});
-					} else {
+									text: `[Failed to process image: ${file.name}]`
+								}];
+							}
+							else try {
+								return [header, {
+									type: "input_text",
+									text: await file.text()
+								}];
+							} catch (error) {
+								console.warn(`Failed to read file ${file.name}:`, error);
+								return [header, {
+									type: "input_text",
+									text: `[Failed to read file: ${file.name}]`
+								}];
+							}
+						}))).flat()].filter((item) => item !== null)
+					}], {
+						instruction: `Analyze and recognize content from the provided files. ${formatInstruction}`,
+						outputFormat: options?.recognitionFormat || "auto",
+						intermediateRecognition: { enabled: false }
+					});
+					else {
 						const file = input.files[0];
 						const FileCtor = globalThis.File;
 						if (FileCtor && file instanceof FileCtor && file.type.startsWith("image/")) try {
 							const arrayBuffer = await file.arrayBuffer();
-							const bytes = new Uint8Array(arrayBuffer);
-							const base64 = toBase64(bytes);
-							const dataUrl = `data:${file.type};base64,${base64}`;
-							result = await processDataWithInstruction(dataUrl, {
+							const base64 = toBase64(new Uint8Array(arrayBuffer));
+							result = await processDataWithInstruction(`data:${file.type};base64,${base64}`, {
 								instruction: `Analyze and recognize content from the provided image. ${formatInstruction}`,
 								outputFormat: options?.recognitionFormat || "auto",
 								intermediateRecognition: { enabled: false }
@@ -50235,44 +53208,42 @@ Apply the user's custom instructions above when processing the data. Prioritize 
 				processor: async (input) => {
 					const imageFiles = input.files.filter((f) => f.type.startsWith("image/"));
 					let result;
-					if (imageFiles.length > 1) {
-						const messages = [{
-							type: "message",
-							role: "user",
-							content: [{
-								type: "input_text",
-								text: `Recognize and extract text/content from the following ${imageFiles.length} shared images:`
-							}, ...(await Promise.all(imageFiles.map(async (file, index) => {
-								try {
-									const arrayBuffer = await file.arrayBuffer();
-									const bytes = new Uint8Array(arrayBuffer);
-									const base64 = btoa(String.fromCharCode(...bytes));
-									return [{
-										type: "input_text",
-										text: `\n--- Image ${index + 1}: ${file?.name ?? "unknown file"} ---\n`
-									}, {
-										type: "input_image",
-										detail: "auto",
-										image_url: `data:${file.type};base64,${base64}`
-									}];
-								} catch (error) {
-									console.warn(`Failed to process image ${file?.name ?? "unknown file"}:`, error);
-									return [{
-										type: "input_text",
-										text: `\n--- Image ${index + 1}: ${file?.name ?? "unknown file"} ---\n`
-									}, {
-										type: "input_text",
-										text: `[Failed to process image: ${file?.name ?? "unknown file"}]`
-									}];
-								}
-							}))).flat()]
-						}];
-						result = await processDataWithInstruction(messages, {
-							instruction: "Recognize and extract text/content from the shared images",
-							outputFormat: options?.recognitionFormat || "auto",
-							intermediateRecognition: { enabled: false }
-						});
-					} else result = await processDataWithInstruction(imageFiles[0], {
+					if (imageFiles.length > 1) result = await processDataWithInstruction([{
+						type: "message",
+						role: "user",
+						content: [{
+							type: "input_text",
+							text: `Recognize and extract text/content from the following ${imageFiles.length} shared images:`
+						}, ...(await Promise.all(imageFiles.map(async (file, index) => {
+							try {
+								const arrayBuffer = await file.arrayBuffer();
+								const bytes = new Uint8Array(arrayBuffer);
+								const base64 = btoa(String.fromCharCode(...bytes));
+								return [{
+									type: "input_text",
+									text: `\n--- Image ${index + 1}: ${file?.name ?? "unknown file"} ---\n`
+								}, {
+									type: "input_image",
+									detail: "auto",
+									image_url: `data:${file.type};base64,${base64}`
+								}];
+							} catch (error) {
+								console.warn(`Failed to process image ${file?.name ?? "unknown file"}:`, error);
+								return [{
+									type: "input_text",
+									text: `\n--- Image ${index + 1}: ${file?.name ?? "unknown file"} ---\n`
+								}, {
+									type: "input_text",
+									text: `[Failed to process image: ${file?.name ?? "unknown file"}]`
+								}];
+							}
+						}))).flat()]
+					}], {
+						instruction: "Recognize and extract text/content from the shared images",
+						outputFormat: options?.recognitionFormat || "auto",
+						intermediateRecognition: { enabled: false }
+					});
+					else result = await processDataWithInstruction(imageFiles[0], {
 						instruction: "Recognize and extract text/content from the shared image",
 						outputFormat: options?.recognitionFormat || "auto",
 						intermediateRecognition: { enabled: false }
@@ -50377,52 +53348,47 @@ Apply the user's custom instructions above when processing the data. Prioritize 
 				condition: () => true,
 				processor: async (input) => {
 					let result;
-					if (input.files.length > 1) {
-						const messages = [{
-							type: "message",
-							role: "user",
-							content: [{
-								type: "input_text",
-								text: `Analyze the following ${input.files.length} screenshots and extract any visible text or content:`
-							}, ...(await Promise.all(input.files.map(async (file, index) => {
-								try {
-									const arrayBuffer = await file.arrayBuffer();
-									const bytes = new Uint8Array(arrayBuffer);
-									const base64 = toBase64(bytes);
-									return [{
-										type: "input_text",
-										text: `\n--- Screenshot ${index + 1}: ${file.name} ---\n`
-									}, {
-										type: "input_image",
-										detail: "auto",
-										image_url: `data:${file.type};base64,${base64}`
-									}];
-								} catch (error) {
-									console.warn(`Failed to process screenshot ${file.name}:`, error);
-									return [{
-										type: "input_text",
-										text: `\n--- Screenshot ${index + 1}: ${file.name} ---\n`
-									}, {
-										type: "input_text",
-										text: `[Failed to process screenshot: ${file.name}]`
-									}];
-								}
-							}))).flat()]
-						}];
-						result = await processDataWithInstruction(messages, {
-							instruction: "Analyze the screenshots and extract any visible text or content",
-							outputFormat: options?.recognitionFormat || "auto",
-							intermediateRecognition: { enabled: false }
-						});
-					} else {
+					if (input.files.length > 1) result = await processDataWithInstruction([{
+						type: "message",
+						role: "user",
+						content: [{
+							type: "input_text",
+							text: `Analyze the following ${input.files.length} screenshots and extract any visible text or content:`
+						}, ...(await Promise.all(input.files.map(async (file, index) => {
+							try {
+								const arrayBuffer = await file.arrayBuffer();
+								const base64 = toBase64(new Uint8Array(arrayBuffer));
+								return [{
+									type: "input_text",
+									text: `\n--- Screenshot ${index + 1}: ${file.name} ---\n`
+								}, {
+									type: "input_image",
+									detail: "auto",
+									image_url: `data:${file.type};base64,${base64}`
+								}];
+							} catch (error) {
+								console.warn(`Failed to process screenshot ${file.name}:`, error);
+								return [{
+									type: "input_text",
+									text: `\n--- Screenshot ${index + 1}: ${file.name} ---\n`
+								}, {
+									type: "input_text",
+									text: `[Failed to process screenshot: ${file.name}]`
+								}];
+							}
+						}))).flat()]
+					}], {
+						instruction: "Analyze the screenshots and extract any visible text or content",
+						outputFormat: options?.recognitionFormat || "auto",
+						intermediateRecognition: { enabled: false }
+					});
+					else {
 						const file = input.files[0];
 						const FileCtor = globalThis.File;
 						if (FileCtor && file instanceof FileCtor && file.type.startsWith("image/")) try {
 							const arrayBuffer = await file.arrayBuffer();
-							const bytes = new Uint8Array(arrayBuffer);
-							const base64 = toBase64(bytes);
-							const dataUrl = `data:${file.type};base64,${base64}`;
-							result = await processDataWithInstruction(dataUrl, {
+							const base64 = toBase64(new Uint8Array(arrayBuffer));
+							result = await processDataWithInstruction(`data:${file.type};base64,${base64}`, {
 								instruction: "Analyze the screenshot and extract any visible text or content",
 								outputFormat: options?.recognitionFormat || "auto",
 								intermediateRecognition: { enabled: false }
@@ -50493,64 +53459,59 @@ Apply the user's custom instructions above when processing the data. Prioritize 
 				condition: () => true,
 				processor: async (input) => {
 					let result;
-					if (input.files.length > 1) {
-						const messages = [{
-							type: "message",
-							role: "user",
-							content: [{
+					if (input.files.length > 1) result = await processDataWithInstruction([{
+						type: "message",
+						role: "user",
+						content: [{
+							type: "input_text",
+							text: `Process the following ${input.files.length} files:`
+						}, ...(await Promise.all(input.files.map(async (file, index) => {
+							const FileCtor = globalThis.File;
+							const isFile = FileCtor && file instanceof FileCtor;
+							const header = {
 								type: "input_text",
-								text: `Process the following ${input.files.length} files:`
-							}, ...(await Promise.all(input.files.map(async (file, index) => {
-								const FileCtor = globalThis.File;
-								const isFile = FileCtor && file instanceof FileCtor;
-								const header = {
+								text: `\n--- File ${index + 1}: ${file.name} ---\n`
+							};
+							if (isFile && file.type.startsWith("image/")) try {
+								const arrayBuffer = await file.arrayBuffer();
+								const base64 = toBase64(new Uint8Array(arrayBuffer));
+								return [header, {
+									type: "input_image",
+									detail: "auto",
+									image_url: `data:${file.type};base64,${base64}`
+								}];
+							} catch (error) {
+								console.warn(`Failed to process file ${file.name}:`, error);
+								return [header, {
 									type: "input_text",
-									text: `\n--- File ${index + 1}: ${file.name} ---\n`
-								};
-								if (isFile && file.type.startsWith("image/")) try {
-									const arrayBuffer = await file.arrayBuffer();
-									const bytes = new Uint8Array(arrayBuffer);
-									const base64 = toBase64(bytes);
-									return [header, {
-										type: "input_image",
-										detail: "auto",
-										image_url: `data:${file.type};base64,${base64}`
-									}];
-								} catch (error) {
-									console.warn(`Failed to process file ${file.name}:`, error);
-									return [header, {
-										type: "input_text",
-										text: `[Failed to process file: ${file.name}]`
-									}];
-								}
-								else try {
-									return [header, {
-										type: "input_text",
-										text: await file.text()
-									}];
-								} catch (error) {
-									console.warn(`Failed to read file ${file.name}:`, error);
-									return [header, {
-										type: "input_text",
-										text: `[Failed to read file: ${file.name}]`
-									}];
-								}
-							}))).flat()]
-						}];
-						result = await processDataWithInstruction(messages, {
-							instruction: "Process the provided content",
-							outputFormat: options?.processingFormat || "auto",
-							intermediateRecognition: { enabled: false }
-						});
-					} else {
+									text: `[Failed to process file: ${file.name}]`
+								}];
+							}
+							else try {
+								return [header, {
+									type: "input_text",
+									text: await file.text()
+								}];
+							} catch (error) {
+								console.warn(`Failed to read file ${file.name}:`, error);
+								return [header, {
+									type: "input_text",
+									text: `[Failed to read file: ${file.name}]`
+								}];
+							}
+						}))).flat()]
+					}], {
+						instruction: "Process the provided content",
+						outputFormat: options?.processingFormat || "auto",
+						intermediateRecognition: { enabled: false }
+					});
+					else {
 						const file = input.files[0];
 						const FileCtor = globalThis.File;
 						if (FileCtor && file instanceof FileCtor && file.type.startsWith("image/")) try {
 							const arrayBuffer = await file.arrayBuffer();
-							const bytes = new Uint8Array(arrayBuffer);
-							const base64 = toBase64(bytes);
-							const dataUrl = `data:${file.type};base64,${base64}`;
-							result = await processDataWithInstruction(dataUrl, {
+							const base64 = toBase64(new Uint8Array(arrayBuffer));
+							result = await processDataWithInstruction(`data:${file.type};base64,${base64}`, {
 								instruction: "Process the provided image content",
 								outputFormat: options?.processingFormat || "auto",
 								intermediateRecognition: { enabled: false }
@@ -50633,13 +53594,12 @@ Apply the user's custom instructions above when processing the data. Prioritize 
 			if (!result) return "No result";
 			try {
 				let content = "";
-				if (result.data) {
-					if (typeof result.data === "string") content = result.data;
-					else if (result.data.recognized_data) {
-						const recognized = result.data.recognized_data;
-						content = Array.isArray(recognized) ? recognized.join("\n\n") : String(recognized);
-					} else content = JSON.stringify(result.data, null, 2);
-				} else if (typeof result === "string") content = result;
+				if (result.data) if (typeof result.data === "string") content = result.data;
+				else if (result.data.recognized_data) {
+					const recognized = result.data.recognized_data;
+					content = Array.isArray(recognized) ? recognized.join("\n\n") : String(recognized);
+				} else content = JSON.stringify(result.data, null, 2);
+				else if (typeof result === "string") content = result;
 				else content = JSON.stringify(result, null, 2);
 				content = this.unwrapUnwantedCodeBlocks(content);
 				return content;
@@ -51990,7 +54950,7 @@ Apply the user's custom instructions above when processing the data. Prioritize 
 			console.warn("[SW-Broadcast] Failed to broadcast to clients:", error);
 		}
 	}
-	var manifest = [{"revision":"4adfd931e7f459939579bc086b4afdcd","url":"index.html"},{"revision":"98d2ae82fd33d5e2b53d15b83a2e53f9","url":"workers/opfs/OPFS.uniform.worker.js"},{"revision":"34b573350c3edf1572c2ca9613ddb57c","url":"views/viewer.js"},{"revision":"a997e10cbf0af544d2779305ec1d96c8","url":"vendor/xlsx.js"},{"revision":"aa689cfe66df50189e85b19ec9d610df","url":"vendor/quill.js"},{"revision":"42cf392cc1234965cec990cd219c6a2d","url":"vendor/pdfjs-dist.js"},{"revision":"0f6b08abc3a91a9507a21bf46fe88003","url":"vendor/parchment.js"},{"revision":"776f5bb08a28e6bdcb0d881bdc785f94","url":"vendor/mammoth.js"},{"revision":"0bfca535a8bbb58f4c148d97b4ac5522","url":"vendor/lop.js"},{"revision":"c8741cf7f91408ce1ef47278156eac8f","url":"vendor/lodash.isequal.js"},{"revision":"f6c6602c08733d2d5474a44523a2139b","url":"vendor/lodash.clonedeep.js"},{"revision":"39fac3d6fe673e3aeabac7945f320696","url":"vendor/lodash-es.js"},{"revision":"ad18e855753678d16b95237f6f4127db","url":"vendor/jszip.js"},{"revision":"3be6e1ff8ce12b780c1129848c497a55","url":"vendor/fast-diff.js"},{"revision":"6fb6b129de239a1607bc4b6b79f8b9fa","url":"vendor/eventemitter3.js"},{"revision":"07f1b9397af6f4ac29980c832d4f3ab1","url":"vendor/dingbat-to-unicode.js"},{"revision":"f7447ea6adf08ccc0a78f24beee529a9","url":"vendor/bluebird.js"},{"revision":"b8d53040e646cc14be10c6f973a285d8","url":"vendor/base64-js.js"},{"revision":"a7018ffb2f665a8ec0433dab1f4ea1d3","url":"vendor/@xmldom_xmldom.js"},{"revision":"4b8116a6fa1dee7d129870976062230b","url":"vendor/@toon-format_toon.js"},{"revision":"aeae105e527abb30f2e144421af335cd","url":"shells/preference.js"},{"revision":"2a0c3839ddf37788f8ff8085a1428f9d","url":"shells/environment-window-views-browser-view.js"},{"revision":"ccde8d1947e5d1afb5d157090dfe96b2","url":"shells/environment-scss-main.scss_inline.js"},{"revision":"4833a915acbb598fba978668af339746","url":"shells/environment-index.js"},{"revision":"ec31446123f72c37ee2d1931b759a150","url":"shells/environment-environment-overlay.js"},{"revision":"85eac0ed52f366f1ade696168e16c004","url":"shells/environment-components-wallpaper.js"},{"revision":"bc67a0115e044dda44bac82d475407c1","url":"shells/environment-components-taskbar-element-TaskBar.js"},{"revision":"cd66491ca7c6b3aadc18198d54e10260","url":"shells/environment-components-statusbar-capacitor-native-safe-area.js"},{"revision":"6eb513b461f205131ff90cc3239724d6","url":"shells/environment-components-settings-QuickSettings.js"},{"revision":"64889064a833c96ce3e5a1ff6efcb693","url":"shells/environment-components-explorer-ContextMenu.js"},{"revision":"4e291273435e4e5e9481e5b7696376f3","url":"shells/environment-components-calendar-CalendarFlyout.js"},{"revision":"89b16db848006ba8b194085f96af7ca3","url":"shells/environment-components-app-menu-AppMenu.js"},{"revision":"a1fecd1b798ee7dc2b9119190657ef8d","url":"shells/boot-index.js"},{"revision":"3830e95b30538b677cbf37f7f43b7d1b","url":"shells/boot-history-base.js"},{"revision":"c9a1087915c5e664dceda8ed97462136","url":"pwa/tsconfig.json"},{"revision":"ee9e7e6d4f21bd22ca7229e89ceb2eb3","url":"pwa/manifest.json"},{"revision":"ee9e7e6d4f21bd22ca7229e89ceb2eb3","url":"pwa/src/pwa/manifest.json"},{"revision":"dbe5738443bd2f8968640f5f4a54cc3a","url":"pwa/screenshots/wide.png"},{"revision":"6abe53c0bc5b12ad1d599472cabe67a4","url":"pwa/screenshots/mobile.png"},{"revision":"dbe5738443bd2f8968640f5f4a54cc3a","url":"pwa/screenshots/src/pwa/screenshots/wide.png"},{"revision":"6abe53c0bc5b12ad1d599472cabe67a4","url":"pwa/screenshots/src/pwa/screenshots/mobile.png"},{"revision":"b2551f591bca6071a1817b562de415fd","url":"pwa/icons/web-app-manifest-512x512.png"},{"revision":"fd4b03e8560d1edbf07d3f5145dd097d","url":"pwa/icons/web-app-manifest-192x192.png"},{"revision":"3bce2e3833893e5a8a165101478b043c","url":"pwa/icons/transparent.svg"},{"revision":"b2551f591bca6071a1817b562de415fd","url":"pwa/icons/maskable.png"},{"revision":"c526291d3c869698ca3331bc9a49a79d","url":"pwa/icons/icon.svg"},{"revision":"1e50d9387b630062ac5c9b83c6ff78ea","url":"pwa/icons/icon.png"},{"revision":"85d33b738dd7f349f3f7b5a810a72993","url":"pwa/icons/icon-96.png"},{"revision":"74ba61fd7ca6dde80a0f7118ce562d79","url":"pwa/icons/favicon.svg"},{"revision":"53d98bfac7dda7b084baac936b146880","url":"pwa/icons/favicon-96x96.png"},{"revision":"cf552e9b17402324652bb0f58466481e","url":"pwa/icons/apple-touch-icon.png"},{"revision":"b2551f591bca6071a1817b562de415fd","url":"pwa/icons/src/pwa/icons/web-app-manifest-512x512.png"},{"revision":"fd4b03e8560d1edbf07d3f5145dd097d","url":"pwa/icons/src/pwa/icons/web-app-manifest-192x192.png"},{"revision":"3bce2e3833893e5a8a165101478b043c","url":"pwa/icons/src/pwa/icons/transparent.svg"},{"revision":"b2551f591bca6071a1817b562de415fd","url":"pwa/icons/src/pwa/icons/maskable.png"},{"revision":"c526291d3c869698ca3331bc9a49a79d","url":"pwa/icons/src/pwa/icons/icon.svg"},{"revision":"1e50d9387b630062ac5c9b83c6ff78ea","url":"pwa/icons/src/pwa/icons/icon.png"},{"revision":"85d33b738dd7f349f3f7b5a810a72993","url":"pwa/icons/src/pwa/icons/icon-96.png"},{"revision":"74ba61fd7ca6dde80a0f7118ce562d79","url":"pwa/icons/src/pwa/icons/favicon.svg"},{"revision":"53d98bfac7dda7b084baac936b146880","url":"pwa/icons/src/pwa/icons/favicon-96x96.png"},{"revision":"cf552e9b17402324652bb0f58466481e","url":"pwa/icons/src/pwa/icons/apple-touch-icon.png"},{"revision":"84ebb05c70524d3936b7121173965a69","url":"fest/veela.js"},{"revision":"110f01d0b12acae27e175a6bffa5647d","url":"fest/core.js"},{"revision":"7af31eca9318ada3366023f8d79d327e","url":"com/service.js"},{"revision":"6d779b4ded26f67d830c971b790ac769","url":"com/app.js"},{"revision":"41172b753a6cbe6ec026d34b23a86517","url":"chunks/workcenter-command-wire.js"},{"revision":"f541f98f5f2ede68e8618fd43230d992","url":"chunks/window.js"},{"revision":"146f7fbbc8e3a591e975fecabe8fec55","url":"chunks/vite-preload-BsPm7yBB.js"},{"revision":"af08c65caabe2ab2e4976229ef910ab2","url":"chunks/views.js"},{"revision":"2b65c36f4b63fe48d3aafecac3df4549","url":"chunks/utils.js"},{"revision":"ee43e222ee430c204ddc83edcc153f6b","url":"chunks/unified.js"},{"revision":"b6310f505affcc233519d8fe770c3815","url":"chunks/transfer-history-runtime.js"},{"revision":"c910a64f95e56ae1a692058a5525d43f","url":"chunks/toast2.js"},{"revision":"cb79930b3da235be4886d6cc8672cb8e","url":"chunks/toast.js"},{"revision":"c31ed75217b6e53ac5aa4caf4ca276c0","url":"chunks/templates.js"},{"revision":"cf6bcf7c0aac40eb6c8377f2a6f8ca83","url":"chunks/tabbed.js"},{"revision":"00120c3e19cd9bee4db683273a682060","url":"chunks/sw-page-bridge.js"},{"revision":"eaeaaedae02602e5bef91e5f3eee1476","url":"chunks/sw-handling.js"},{"revision":"de004211df231d4b980534778892b9e0","url":"chunks/src9.js"},{"revision":"555144a8f7cde0217931a19e646233c2","url":"chunks/src8.js"},{"revision":"b5b856af8158c137dada375240a74f15","url":"chunks/src7.js"},{"revision":"92cea1d56472773ac7209ad63c796c9b","url":"chunks/src6.js"},{"revision":"980c7b1d7c64ed3cadd9fd766dbc2076","url":"chunks/src5.js"},{"revision":"c9de3cd8d8c170e8d7f8665a3e8195ae","url":"chunks/src4.js"},{"revision":"5abb97c5e6163d45547f9a1d7a9c3741","url":"chunks/src3.js"},{"revision":"b4774209747ae98af2ae6e8972e8b994","url":"chunks/src2.js"},{"revision":"8f91d7897d9662d40a25f5a2c7ebebc0","url":"chunks/src11.js"},{"revision":"346c262b44d3afe926b96d7109df0848","url":"chunks/src10.js"},{"revision":"1f2693bcafe8e059c6cc6cfc8bfc91bf","url":"chunks/src.js"},{"revision":"7d6b5d97eaf806a530ba71ad75f8d44a","url":"chunks/shells.js"},{"revision":"3e42fc809cbe4013901962c6339603b6","url":"chunks/rolldown-runtime.js"},{"revision":"7a79cbfc0fe6099cc0f668d46dc1593b","url":"chunks/preview.js"},{"revision":"2adc47bc733f543c8a2416712416391a","url":"chunks/log-sanitizer.js"},{"revision":"afa46205b7f1a26cb6700e447c314d39","url":"chunks/launcher-state.js"},{"revision":"b80e6da5dcea429a0e51d14cc6d07db0","url":"chunks/launcher-bridge.js"},{"revision":"ea492461991d70963682d015eeb37e51","url":"chunks/frontend-debug-capture2.js"},{"revision":"642a500649124271c8a9b40c1e02c99a","url":"chunks/frontend-debug-capture.js"},{"revision":"2804aa1e0899c472afd13700b82bf0a6","url":"chunks/environment.js"},{"revision":"4fb0d89c035bbefa763a5ee8e774ec0b","url":"chunks/environment-shell.js"},{"revision":"b3d86ceb48aa77009affe47e31c8e7c6","url":"chunks/entities.js"},{"revision":"34c942400e7d33d4c807647c7b6d88b0","url":"chunks/ecosystem-skus.js"},{"revision":"82100a5cbf254a75a0bcc78475b72b05","url":"chunks/crx-control-session2.js"},{"revision":"4be124cadba155792d0eb60f9de2e7b2","url":"chunks/crx-control-session.js"},{"revision":"33b5dbbed488502e41e2270cf1b95da8","url":"chunks/crx-control-pair-modal2.js"},{"revision":"595ef65b24383b3cacccdccaf7a0a6ef","url":"chunks/crx-control-pair-modal.js"},{"revision":"37213ff4554815f6840b2acd5b0766ab","url":"chunks/core.js"},{"revision":"65181086a97635e7663d5977083a6d74","url":"chunks/channel-unknown.js"},{"revision":"f5c8cc81cb317e14aa0389f70efa01c2","url":"chunks/capacitor-share-intent2.js"},{"revision":"2ad9a3dc7df211034cb0ffb8236e1d6a","url":"chunks/capacitor-share-intent.js"},{"revision":"ab275a1ff82b33cf9790b1a6a8cefbe7","url":"chunks/capacitor-settings-permissions2.js"},{"revision":"b3244babed3d3e854c520d2e422bf295","url":"chunks/capacitor-settings-permissions.js"},{"revision":"dde4116eff49f3ca7507e7f17d295ecd","url":"chunks/capacitor-permissions2.js"},{"revision":"991e87b8a86bcc51cfceeda81a151f1e","url":"chunks/capacitor-permissions.js"},{"revision":"1c83ab3e200ebd025501156553809617","url":"chunks/capacitor-clipboard-asset2.js"},{"revision":"7f85be2acf402efcb37c5299c93233ec","url":"chunks/capacitor-clipboard-asset.js"},{"revision":"31f9228cb6e59c198269a076e8954385","url":"chunks/admin-doors.js"},{"revision":"e90975c9facad55bb3d0d5420298e80d","url":"chunks/WorkCenterState.js"},{"revision":"d25a6b4915583ff6fd42ff3bec66024c","url":"chunks/WorkCenter.js"},{"revision":"d6b5599d3b2a6487b6b613df53e0fd9e","url":"chunks/ViewTransferRouting.js"},{"revision":"8e3c5d088c24dda36cbfa88b40723eae","url":"chunks/ShareTargetGateway.js"},{"revision":"1191bde994e374bff8fb7893916a8b30","url":"chunks/RuntimeSettings.js"},{"revision":"3332f5b403e66e2be0df737899906ff0","url":"chunks/QuillEditor.js"},{"revision":"8c08bf1e8f15eed8d9ae90148d545e75","url":"chunks/MarkdownEditor.js"},{"revision":"53db4b287a0c4afe25e54f0916a3ca55","url":"chunks/DocxExport.js"},{"revision":"7161a748e7a5d08d27779217f0bc418a","url":"chunks/CustomInstructions.js"},{"revision":"cfb959df0719f4d718f3277cdc97a34c","url":"chunks/BootLoader.js"},{"revision":null,"url":"assets/index-l0xvZgBW.js"},{"revision":null,"url":"assets/crossword.css"},{"revision":null,"url":"assets/OPFS.uniform.worker.js"}];
+	var manifest = [{"revision":"06412ff2c9f094ae6e1f017acf1f7d7a","url":"index.html"},{"revision":"b44e93d83815dd4b64a33db5e5bb3890","url":"workers/opfs/OPFS.uniform.worker.js"},{"revision":"1004824bb4b9cb18eb0e9e5b2ef12f6d","url":"views/ingress-validation.js"},{"revision":"c6d90feb01405954298c1f8e13d7ec38","url":"views/inbound-timing.js"},{"revision":"35404e3660779297658a936c6cf17a65","url":"vendor/xlsx.js"},{"revision":"3b89be0b9f57dd1873d27daa15b71ff1","url":"vendor/underscore.js"},{"revision":"b6d94eee9d2f95bd93fd4270031e2210","url":"vendor/pdfjs-dist2.js"},{"revision":"b31c2b61dc5b8fefac22c1247ed0aaea","url":"vendor/pdfjs-dist.js"},{"revision":"9b2b5def76684dd9a21b07bb3e3e4136","url":"vendor/marked2.js"},{"revision":"dedb5552707346353e447115b52ce0c2","url":"vendor/marked.js"},{"revision":"026d373b99552121023f0552a0d7818e","url":"vendor/marked-katex-extension.js"},{"revision":"dbfbf84ef61f8c0adeac58b565664a5c","url":"vendor/lodash-es.js"},{"revision":"d36222ec1d81a64f50c55777ac3f2308","url":"vendor/katex.js"},{"revision":"fff296ed113a470b6a7fb1bd77d0fb9f","url":"vendor/jsox.js"},{"revision":"eb25c37d46027c695cca84135cabc67a","url":"vendor/highlight.js.js"},{"revision":"c4640bb8260ef52ca8284af3f660f96c","url":"vendor/dompurify2.js"},{"revision":"9fce9e7f9ca00bda09f6182a795da48d","url":"vendor/dompurify.js"},{"revision":"743ab916e04bbbb53e7e5cb674e5aba6","url":"vendor/culori.js"},{"revision":"bf223aae77dcbf44f4ddd928c3da0d3d","url":"vendor/@toon-format_toon.js"},{"revision":"b0bfd8e08663eb90c4b52827952a991a","url":"vendor/@capacitor_core2.js"},{"revision":"82ca2994e49914b99d4462f6492ea4d7","url":"vendor/@capacitor_core.js"},{"revision":"0c4937020a2a6e7e82f6beb3c6e0747c","url":"shells/preference.js"},{"revision":"60b7dcc85e573c2b10e153256aee2b71","url":"shells/environment-window-views-browser-view.js"},{"revision":"bac1df7df0799fc2bc3517bdf3a5c4e1","url":"shells/boot-history-base.js"},{"revision":"c9a1087915c5e664dceda8ed97462136","url":"pwa/tsconfig.json"},{"revision":"ee9e7e6d4f21bd22ca7229e89ceb2eb3","url":"pwa/manifest.json"},{"revision":"ee9e7e6d4f21bd22ca7229e89ceb2eb3","url":"pwa/src/pwa/manifest.json"},{"revision":"dbe5738443bd2f8968640f5f4a54cc3a","url":"pwa/screenshots/wide.png"},{"revision":"6abe53c0bc5b12ad1d599472cabe67a4","url":"pwa/screenshots/mobile.png"},{"revision":"dbe5738443bd2f8968640f5f4a54cc3a","url":"pwa/screenshots/src/pwa/screenshots/wide.png"},{"revision":"6abe53c0bc5b12ad1d599472cabe67a4","url":"pwa/screenshots/src/pwa/screenshots/mobile.png"},{"revision":"b2551f591bca6071a1817b562de415fd","url":"pwa/icons/web-app-manifest-512x512.png"},{"revision":"fd4b03e8560d1edbf07d3f5145dd097d","url":"pwa/icons/web-app-manifest-192x192.png"},{"revision":"3bce2e3833893e5a8a165101478b043c","url":"pwa/icons/transparent.svg"},{"revision":"b2551f591bca6071a1817b562de415fd","url":"pwa/icons/maskable.png"},{"revision":"c526291d3c869698ca3331bc9a49a79d","url":"pwa/icons/icon.svg"},{"revision":"1e50d9387b630062ac5c9b83c6ff78ea","url":"pwa/icons/icon.png"},{"revision":"85d33b738dd7f349f3f7b5a810a72993","url":"pwa/icons/icon-96.png"},{"revision":"74ba61fd7ca6dde80a0f7118ce562d79","url":"pwa/icons/favicon.svg"},{"revision":"53d98bfac7dda7b084baac936b146880","url":"pwa/icons/favicon-96x96.png"},{"revision":"cf552e9b17402324652bb0f58466481e","url":"pwa/icons/apple-touch-icon.png"},{"revision":"b2551f591bca6071a1817b562de415fd","url":"pwa/icons/src/pwa/icons/web-app-manifest-512x512.png"},{"revision":"fd4b03e8560d1edbf07d3f5145dd097d","url":"pwa/icons/src/pwa/icons/web-app-manifest-192x192.png"},{"revision":"3bce2e3833893e5a8a165101478b043c","url":"pwa/icons/src/pwa/icons/transparent.svg"},{"revision":"b2551f591bca6071a1817b562de415fd","url":"pwa/icons/src/pwa/icons/maskable.png"},{"revision":"c526291d3c869698ca3331bc9a49a79d","url":"pwa/icons/src/pwa/icons/icon.svg"},{"revision":"1e50d9387b630062ac5c9b83c6ff78ea","url":"pwa/icons/src/pwa/icons/icon.png"},{"revision":"85d33b738dd7f349f3f7b5a810a72993","url":"pwa/icons/src/pwa/icons/icon-96.png"},{"revision":"74ba61fd7ca6dde80a0f7118ce562d79","url":"pwa/icons/src/pwa/icons/favicon.svg"},{"revision":"53d98bfac7dda7b084baac936b146880","url":"pwa/icons/src/pwa/icons/favicon-96x96.png"},{"revision":"cf552e9b17402324652bb0f58466481e","url":"pwa/icons/src/pwa/icons/apple-touch-icon.png"},{"revision":"6c6946dd0a78a1a85572cdaa943cd01f","url":"fest/veela5.js"},{"revision":"c494baa841086a20ad39c8c2516faafe","url":"fest/veela4.js"},{"revision":"40b997f0cc3930aabb6a733e4af21b9e","url":"fest/veela3.js"},{"revision":"0c23d69e708bb862468cfa4ae740ae56","url":"fest/veela2.js"},{"revision":"78ca7a45ad14c7533b6b41660a2f1a4e","url":"fest/veela.js"},{"revision":"ffce960f42cb70e3ef436ee5ec92ebb9","url":"fest/uniform2.js"},{"revision":"75ce7f6d52f6ad32d6213b12cbeedeac","url":"fest/uniform.js"},{"revision":"b00d2cc03fe5287d2b0f5783645663ae","url":"fest/object2.js"},{"revision":"981992e7ab86c908d049243f928f5313","url":"fest/object.js"},{"revision":"33ce59405ab6c880b0c645f6cec7c6b3","url":"fest/icon3.js"},{"revision":"b908545c2a50070aeec46f4a666fec83","url":"fest/icon2.js"},{"revision":"5e17332835e2be8336055c5e1958d013","url":"fest/icon.js"},{"revision":"8514b056844be436c159dcf854fd3d3c","url":"fest/core5.js"},{"revision":"dbf6ba249e3145d66183c204dfbd9bf7","url":"fest/core4.js"},{"revision":"e562ee17c9610969d19eeab70056404e","url":"fest/core3.js"},{"revision":"4e2583a4f20a4215e742768ff7dce31f","url":"fest/core2.js"},{"revision":"d9b06c9b2204e08327ad0727eeee27e4","url":"fest/core.js"},{"revision":"76053cb9dc77ade5dd8d95c213179348","url":"com/app9.js"},{"revision":"7d2251075d4bb22dd359110ca1aa0233","url":"com/app8.js"},{"revision":"3412a150c9ea173122d6903be196717c","url":"com/app7.js"},{"revision":"ac16590b6542c7e6bd33f30b1a2d748b","url":"com/app6.js"},{"revision":"0f995859806e614e5ca2ecf6309eebc9","url":"com/app5.js"},{"revision":"48c1faa98871bb2a6223edb6b0c81b75","url":"com/app4.js"},{"revision":"b611b292433a9bcbeee03e4880e9a4d1","url":"com/app3.js"},{"revision":"e844368dd5cdf7c6e71b963149d564b4","url":"com/app2.js"},{"revision":"82d8817a8b53e16aa365110f3bd66db2","url":"com/app15.js"},{"revision":"f0f9216f19166edc99d3a0c3189a4421","url":"com/app14.js"},{"revision":"a8d5d6c7ca059fce72f550063a753cd0","url":"com/app13.js"},{"revision":"f3a2a2f0a7ce11155b11f0d5cc1fce43","url":"com/app12.js"},{"revision":"49bfe4059ec5b6e3036fde475a4af723","url":"com/app11.js"},{"revision":"3324a54f8939edf7a5a77062b5b3ff8c","url":"com/app10.js"},{"revision":"0453955d96a98982a92865de8dae7322","url":"com/app.js"},{"revision":"41172b753a6cbe6ec026d34b23a86517","url":"chunks/workcenter-command-wire.js"},{"revision":"69e2a83c820b45194a3effa9f2f6ab1f","url":"chunks/window.js"},{"revision":"af08c65caabe2ab2e4976229ef910ab2","url":"chunks/views.js"},{"revision":"2b65c36f4b63fe48d3aafecac3df4549","url":"chunks/utils.js"},{"revision":"a9c0a34c692612022cd0b3341daca6de","url":"chunks/unified.js"},{"revision":"790687036b3c4f16e8750f84634dcf9d","url":"chunks/types.js"},{"revision":"a7394bf361a5a2731937673637da3348","url":"chunks/transfer-history-runtime.js"},{"revision":"c910a64f95e56ae1a692058a5525d43f","url":"chunks/toast2.js"},{"revision":"cb79930b3da235be4886d6cc8672cb8e","url":"chunks/toast.js"},{"revision":"c31ed75217b6e53ac5aa4caf4ca276c0","url":"chunks/templates.js"},{"revision":"cf6bcf7c0aac40eb6c8377f2a6f8ca83","url":"chunks/tabbed.js"},{"revision":"a558d7e87f1204c077fff498cf5bde2b","url":"chunks/sw-page-bridge.js"},{"revision":"146379b4b0b359931aa984ef5d30c17f","url":"chunks/sw-handling.js"},{"revision":"a379feacab6785f38bfbec038a60bf7b","url":"chunks/src8.js"},{"revision":"0b7d352016b1d098e0fa77b0ff7d8d92","url":"chunks/src7.js"},{"revision":"d7d726496f960dd8b4edcfbcce30f37d","url":"chunks/src6.js"},{"revision":"5214856a26b1732c75876af3deb10564","url":"chunks/src5.js"},{"revision":"cc8e7f8e90a8ed82f7626172f7261e0f","url":"chunks/src4.js"},{"revision":"c5ea38b2784018290b364aac22c892c5","url":"chunks/src3.js"},{"revision":"50bf0d97c9017583f425e60a9da598a1","url":"chunks/src2.js"},{"revision":"b177679a8ef58f51f2c9047caac79fbf","url":"chunks/src.js"},{"revision":"14b6e457cb47da479886d4d0c2278fe4","url":"chunks/sku-ingress.js"},{"revision":"f8c4d53a53fd8be79f37632c604cf260","url":"chunks/shells.js"},{"revision":"c5546dc76aaa393e6792fed95cebedb9","url":"chunks/settings-shell-profile.js"},{"revision":"5ffaedc3151c15e57162ba260dca48d0","url":"chunks/rolldown-runtime.js"},{"revision":"a123b8f3180098be294a83db9ef9032d","url":"chunks/remote-connection-runtime.js"},{"revision":"be4dc9cd25d7e4d9539c12950a5742ad","url":"chunks/process-ingress.js"},{"revision":"16fdb5fcd6448a075184bbdc2b021ecc","url":"chunks/process-api-result.js"},{"revision":"7a2fae4bda49cd69d4f35260e79850b9","url":"chunks/preview.js"},{"revision":"c828f043333bc42183049198c2e9d5cc","url":"chunks/packet-wire-hash.js"},{"revision":"288cfef884f5321a71ab87b1ef5d303f","url":"chunks/open-policy.js"},{"revision":"20c43f559e148ec305b3a72d7da2a427","url":"chunks/names.js"},{"revision":"5eeabcf2bbc45c22e5013265c28eff8e","url":"chunks/multi-value-list.js"},{"revision":"2adc47bc733f543c8a2416712416391a","url":"chunks/log-sanitizer.js"},{"revision":"9e202fc85b5e156599fe913f9a6f7d1d","url":"chunks/layer-manager.js"},{"revision":"39ef656c916ed2484608db4ef13ca6b1","url":"chunks/launcher-state.js"},{"revision":"4e82da5554f406ae62c04b408a610981","url":"chunks/launcher-bridge.js"},{"revision":"9bd77a246ca7afed208ce5570ccd8c91","url":"chunks/hub-socket-boot.js"},{"revision":"1ab5b21061d1438d94b12b13b8799161","url":"chunks/frontend-debug-capture2.js"},{"revision":"5884d66ee284dafb35e85d1ba6622916","url":"chunks/frontend-debug-capture.js"},{"revision":"b2faa1939ad3607140a91461ed8f3343","url":"chunks/environment.js"},{"revision":"34c942400e7d33d4c807647c7b6d88b0","url":"chunks/ecosystem-skus3.js"},{"revision":"20a3d1a6dd5712f4c95490812792b886","url":"chunks/ecosystem-skus2.js"},{"revision":"e9b8952a6b2bb5240e40b92bf93b8b13","url":"chunks/ecosystem-skus.js"},{"revision":"a542f3d6f421160fc454dca119562892","url":"chunks/cws-bridge2.js"},{"revision":"d26305ce85151219c5fd56d437debc14","url":"chunks/cws-bridge.js"},{"revision":"056a3caf3156f1a74815d512a9974ccc","url":"chunks/crx-control-session2.js"},{"revision":"6a358cdb46d3744c1a19b17c09520f7d","url":"chunks/crx-control-session.js"},{"revision":"33b5dbbed488502e41e2270cf1b95da8","url":"chunks/crx-control-pair-modal2.js"},{"revision":"595ef65b24383b3cacccdccaf7a0a6ef","url":"chunks/crx-control-pair-modal.js"},{"revision":"37213ff4554815f6840b2acd5b0766ab","url":"chunks/core.js"},{"revision":"2e8090ef2e3ee154bbecdb2cc23a76f2","url":"chunks/clipboard-device.js"},{"revision":"5d1eb7be5fb9902be7b46a52dd2ef56c","url":"chunks/channel-unknown.js"},{"revision":"6ff4db867aff502b8e9a59541c6a8f51","url":"chunks/channel-actions.js"},{"revision":"261c3348ede25aab81dd51e37906f224","url":"chunks/capacitor-share-intent2.js"},{"revision":"897ca37dbbe9fe6fa983d783dc288e75","url":"chunks/capacitor-share-intent.js"},{"revision":"29b42a2b81f8c2316d0d729ab217b09c","url":"chunks/capacitor-settings-permissions3.js"},{"revision":"ab275a1ff82b33cf9790b1a6a8cefbe7","url":"chunks/capacitor-settings-permissions2.js"},{"revision":"8e31b3cedbb3baaed692d9ceb36d0be3","url":"chunks/capacitor-settings-permissions.js"},{"revision":"1a5ab25816384f0478c8cfbed75f1547","url":"chunks/capacitor-permissions3.js"},{"revision":"dde4116eff49f3ca7507e7f17d295ecd","url":"chunks/capacitor-permissions2.js"},{"revision":"991e87b8a86bcc51cfceeda81a151f1e","url":"chunks/capacitor-permissions.js"},{"revision":"6dfedd5293d328c23825a0c9d27d43e2","url":"chunks/capacitor-clipboard-asset2.js"},{"revision":"7f85be2acf402efcb37c5299c93233ec","url":"chunks/capacitor-clipboard-asset.js"},{"revision":"a3d3b596704ddd6ed31d7cbd27f65a6e","url":"chunks/airpad-cwsp-client-parity.js"},{"revision":"31f9228cb6e59c198269a076e8954385","url":"chunks/admin-doors.js"},{"revision":"e90975c9facad55bb3d0d5420298e80d","url":"chunks/WorkCenterState.js"},{"revision":"9ea73dc07212b48673d57aa0bac6a269","url":"chunks/ViewTransferRouting.js"},{"revision":"960bbd543cd9cd0f76567663c93150eb","url":"chunks/UniformViewTransport.js"},{"revision":"ee104330d67b06f9238efab99b19a750","url":"chunks/UniformInterop2.js"},{"revision":"d5924d9e220e852fc060f3c254e0384e","url":"chunks/UniformInterop.js"},{"revision":"1a4a873c45ea0097b3bccab3ea4bfe0f","url":"chunks/UnifiedMessaging2.js"},{"revision":"687c1113354ef16d273ac6967c5aee1b","url":"chunks/UnifiedMessaging.js"},{"revision":"39b0553aec8ab896cede7b1ee93e0cbe","url":"chunks/Theme.js"},{"revision":"23a7bf5386666dba5623c45c6ec53e3a","url":"chunks/StateStorage.js"},{"revision":"0d93bf0c6e6449239b83b89969cd6c53","url":"chunks/ShareTargetGateway2.js"},{"revision":"96fd86b63d459eb92c5375aeac4b80b6","url":"chunks/ShareTargetGateway.js"},{"revision":"40d6e72a9739324bc27034f5a6ae8654","url":"chunks/SettingsTypes.js"},{"revision":"2abeebe7c9745937299b719fc8d9ea2f","url":"chunks/RuntimeSettings.js"},{"revision":"cdbbdb96b1873680e761cd3a9ba271fd","url":"chunks/Runtime.js"},{"revision":"87c89653e910c6a80e2ff7f6ae0d0bd9","url":"chunks/MarkdownEditor.js"},{"revision":"5841c9dfb54951b0b83971d4d48e6f89","url":"chunks/CustomInstructions.js"},{"revision":"ebfb4669a2211fe3943f5811fa5ec4ab","url":"chunks/Clipboard.js"},{"revision":"cf7c19006e4b5ec59d0fc75e08919cf5","url":"chunks/BootLoader.js"},{"revision":null,"url":"assets/index-C9QTqpCS.js"},{"revision":null,"url":"assets/crossword.css"},{"revision":null,"url":"assets/OPFS.uniform.worker.js"}];
 	cleanupOutdatedCaches();
 	if (manifest && true) precacheAndRoute(manifest.filter((entry) => {
 		const url = typeof entry === "string" ? entry : String(entry?.url || "");
@@ -52419,7 +55379,7 @@ Apply the user's custom instructions above when processing the data. Prioritize 
 				console.log("[ShareTarget] Starting async AI processing, mode:", aiConfig.mode);
 				const aiTimeout = setTimeout(() => {
 					console.warn("[ShareTarget] AI processing timeout - service worker may terminate connection");
-				}, 24e4);
+				}, 240 * 1e3);
 				processShareWithAI(shareData, {
 					mode: aiConfig.mode,
 					customInstruction: aiConfig.customInstruction
@@ -52564,7 +55524,7 @@ Apply the user's custom instructions above when processing the data. Prioritize 
 		},
 		plugins: [new ExpirationPlugin({
 			maxEntries: 300,
-			maxAgeSeconds: 2592e3,
+			maxAgeSeconds: 3600 * 24 * 30,
 			purgeOnQuotaError: true
 		})]
 	}));
@@ -52578,7 +55538,7 @@ Apply the user's custom instructions above when processing the data. Prioritize 
 		},
 		plugins: [new ExpirationPlugin({
 			maxEntries: 150,
-			maxAgeSeconds: 604800,
+			maxAgeSeconds: 3600 * 24 * 7,
 			purgeOnQuotaError: true
 		})]
 	}));
@@ -52591,7 +55551,7 @@ Apply the user's custom instructions above when processing the data. Prioritize 
 		},
 		plugins: [new ExpirationPlugin({
 			maxEntries: 100,
-			maxAgeSeconds: 86400
+			maxAgeSeconds: 1440 * 60
 		})]
 	}));
 	registerRoute(({ url, request }) => url?.pathname === "/api/test" && request?.method === "GET", async () => {

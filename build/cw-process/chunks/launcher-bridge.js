@@ -1,4 +1,4 @@
-import { fn as invokeCwsPlatformIPC } from "../shells/boot-index.js";
+import { o as invokeCwsPlatformIPC } from "./cws-bridge.js";
 //#region src/shared/routing/native/launcher-bridge.ts
 async function launcherIsDefault() {
 	return false;
@@ -63,7 +63,7 @@ var fileToDataUrl = (file) => new Promise((resolve, reject) => {
 /** Write bytes to this APK's cache FileProvider and ACTION_VIEW a sibling package. */
 async function launcherOpenFile(file, options = {}) {
 	if (!file) return false;
-	if (file.size <= 0 || file.size > 8388608) return false;
+	if (file.size <= 0 || file.size > 8 * 1024 * 1024) return false;
 	const packageName = String(options.packageName || "").trim();
 	const mimeType = String(options.mimeType || file.type || "").trim();
 	const chooser = options.chooser === true;

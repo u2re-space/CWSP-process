@@ -1,5 +1,5 @@
-import { _r as API_ENDPOINTS } from "../shells/boot-index.js";
-//#region ../../modules/projects/subsystem/src/routing/pwa/sw-cache.ts
+import "./names.js";
+//#region src/shared/routing/pwa/sw-cache.ts
 var originHint = () => {
 	try {
 		const origin = globalThis.location?.origin;
@@ -65,6 +65,19 @@ var safeCacheMatch = async (cache, requestLike) => {
 		return;
 	}
 };
+var safeCachePut = async (cache, requestLike, response) => {
+	const request = toCacheRequestInfo(requestLike);
+	if (!cache || !request || typeof cache.put !== "function") return false;
+	const key = asMatchKey(request);
+	if (!key || !isCacheApiKey(key)) return false;
+	try {
+		await cache.put(key, response);
+		return true;
+	} catch (error) {
+		console.warn("[SW] Cache.put failed:", request, error);
+		return false;
+	}
+};
 var safeCacheDelete = async (cache, requestLike) => {
 	const request = toCacheRequestInfo(requestLike);
 	if (!cache || !request || typeof cache.delete !== "function") return false;
@@ -75,18 +88,59 @@ var safeCacheDelete = async (cache, requestLike) => {
 	}
 };
 //#endregion
-//#region ../../modules/projects/subsystem/src/routing/channel/ShareTargetGateway.ts
-/**
-* Helpers for moving share-target payloads between the service worker, Cache
-* Storage, and the foreground app.
-*
-* WHY: share-target launches often happen before the main app is ready. These
-* helpers persist the payload in browser-managed caches so the UI can consume
-* it later without depending on a live in-memory handoff.
-*/
+//#region src/shared/routing/channel/ShareTargetGateway.ts
 var SHARE_CACHE_NAME = "share-target-data";
 var SHARE_CACHE_KEY = "/share-target-data";
 var SHARE_FILES_MANIFEST_KEY = "/share-target-files";
+var SHARE_FILE_PREFIX = "/share-target-file/";
+/** Persist the last share-target payload so the app can recover it after navigation or cold start. */
+var storeShareTargetPayloadToCache = async (payload) => {
+	const files = Array.isArray(payload.files) ? payload.files : [];
+	const meta = payload.meta ?? {};
+	try {
+		const cache = await safeCacheOpen(SHARE_CACHE_NAME);
+		if (!cache) return false;
+		const timestamp = Number(meta?.timestamp) || Date.now();
+		await safeCachePut(cache, SHARE_CACHE_KEY, new Response(JSON.stringify({
+			...meta,
+			title: meta?.title,
+			text: meta?.text,
+			url: meta?.url,
+			sharedUrl: meta?.sharedUrl,
+			source: meta?.source || "share-target",
+			route: meta?.route || meta?.source || "share-target",
+			timestamp,
+			fileCount: files.length,
+			imageCount: files.filter((f) => (f?.type || "").toLowerCase().startsWith("image/")).length
+		}), { headers: { "Content-Type": "application/json" } }));
+		const fileManifest = [];
+		for (let i = 0; i < files.length; i++) {
+			const file = files[i];
+			const key = `${SHARE_FILE_PREFIX}${timestamp}-${i}`;
+			const headers = new Headers();
+			headers.set("Content-Type", file.type || "application/octet-stream");
+			headers.set("X-File-Name", encodeURIComponent(file.name || `file-${i}`));
+			headers.set("X-File-Size", String(file.size || 0));
+			headers.set("X-File-LastModified", String(file.lastModified ?? 0));
+			await safeCachePut(cache, key, new Response(file, { headers }));
+			fileManifest.push({
+				key,
+				name: file.name || `file-${i}`,
+				type: file.type || "application/octet-stream",
+				size: file.size || 0,
+				lastModified: file.lastModified ?? void 0
+			});
+		}
+		await safeCachePut(cache, SHARE_FILES_MANIFEST_KEY, new Response(JSON.stringify({
+			files: fileManifest,
+			timestamp
+		}), { headers: { "Content-Type": "application/json" } }));
+		return true;
+	} catch (error) {
+		console.warn("[ShareTargetGateway] Failed to store payload to cache:", error);
+		return false;
+	}
+};
 /**
 * Rehydrate the cached share-target payload and optionally clear the consumed
 * cache entries so they are not replayed on the next app load.
@@ -129,60 +183,40 @@ var consumeCachedShareTargetPayload = async (opts = {}) => {
 		return null;
 	}
 };
-/** Read the service worker's advertised cached content entries through the HTTP bridge. */
-var fetchSwCachedEntries = async () => {
-	try {
-		const response = await fetch(API_ENDPOINTS.SW_CONTENT_AVAILABLE);
-		if (!response.ok) return [];
-		const data = await response.json();
-		const keys = Array.isArray(data?.cacheKeys) ? data.cacheKeys : [];
-		const content = [];
-		for (const cacheKey of keys) {
-			const key = String(cacheKey?.key || "");
-			if (!key) continue;
-			try {
-				const contentResponse = await fetch(`${API_ENDPOINTS.SW_CONTENT}/${key}`);
-				if (!contentResponse.ok) continue;
-				content.push({
-					key,
-					context: String(cacheKey?.context || ""),
-					content: await contentResponse.json()
-				});
-			} catch (error) {
-				console.warn("[ShareTargetGateway] Failed to fetch SW cache item:", error);
-			}
-		}
-		return content;
-	} catch (error) {
-		console.warn("[ShareTargetGateway] Failed to fetch SW cache entries:", error);
-		return [];
+/**
+* Convert the staged cache payload back into a share/launch transfer object that
+* the foreground pipeline can route without caring whether the ingress was
+* share-target, launch-queue, or another staged producer.
+*/
+var buildShareDataFromCachedPayload = (payload) => {
+	const meta = payload?.meta || {};
+	const files = Array.isArray(payload?.files) ? payload.files : [];
+	const fileMeta = Array.isArray(payload?.fileMeta) ? payload.fileMeta : [];
+	const manifestName = typeof fileMeta[0]?.name === "string" && fileMeta[0].name.trim().length > 0 ? fileMeta[0].name.trim() : void 0;
+	const rawHint = meta.hint;
+	const baseHint = rawHint && typeof rawHint === "object" && !Array.isArray(rawHint) ? { ...rawHint } : {};
+	let hintOut = Object.keys(baseHint).length > 0 ? { ...baseHint } : void 0;
+	if (manifestName && !files.length) {
+		if (!(typeof baseHint.filename === "string" ? String(baseHint.filename).trim() : "")) hintOut = {
+			...hintOut || baseHint,
+			filename: manifestName
+		};
 	}
-};
-/** Fetch share-target files exposed by the service worker-side manifest endpoint. */
-var fetchCachedShareFiles = async (cacheKey = "latest") => {
-	try {
-		const response = await fetch(`/share-target-files?cacheKey=${encodeURIComponent(cacheKey)}`);
-		if (!response.ok) return [];
-		const manifest = await response.json();
-		const fileItems = Array.isArray(manifest?.files) ? manifest.files : [];
-		const files = [];
-		for (const item of fileItems) {
-			const fileUrl = typeof item?.key === "string" ? item.key : "";
-			if (!fileUrl) continue;
-			try {
-				const fileResponse = await fetch(fileUrl);
-				if (!fileResponse.ok) continue;
-				const fileBlob = await fileResponse.blob();
-				files.push(new File([fileBlob], item.name || "shared-file", { type: item.type || fileBlob.type || "application/octet-stream" }));
-			} catch (error) {
-				console.warn("[ShareTargetGateway] Failed to fetch file from cache:", error);
-			}
-		}
-		return files;
-	} catch (error) {
-		console.warn("[ShareTargetGateway] Failed to fetch cached share files:", error);
-		return [];
-	}
+	const out = {
+		...meta,
+		title: typeof meta.title === "string" ? meta.title : void 0,
+		text: typeof meta.text === "string" ? meta.text : void 0,
+		url: typeof meta.url === "string" ? meta.url : void 0,
+		sharedUrl: typeof meta.sharedUrl === "string" ? meta.sharedUrl : void 0,
+		source: typeof meta.source === "string" ? meta.source : "share-target",
+		route: typeof meta.route === "string" ? meta.route : typeof meta.source === "string" ? meta.source : "share-target",
+		timestamp: Number(meta.timestamp || Date.now()),
+		files,
+		fileCount: files.length || Number(meta.fileCount || 0),
+		imageCount: Number(meta.imageCount || files.filter((file) => (file?.type || "").toLowerCase().startsWith("image/")).length)
+	};
+	if (hintOut !== void 0) out.hint = hintOut;
+	return out;
 };
 //#endregion
-export { fetchCachedShareFiles as n, fetchSwCachedEntries as r, consumeCachedShareTargetPayload as t };
+export { safeCacheOpen as a, safeCacheMatch as i, consumeCachedShareTargetPayload as n, safeCachePut as o, storeShareTargetPayloadToCache as r, buildShareDataFromCachedPayload as t };

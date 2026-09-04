@@ -1,573 +1,151 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./sw-page-bridge.js","./rolldown-runtime.js","../com/app.js","../views/viewer.js","../shells/boot-index.js","../fest/core.js","../shells/boot-history-base.js","../com/service.js","../fest/veela.js","./workcenter-command-wire.js","./capacitor-share-intent.js","./capacitor-permissions.js","./BootLoader.js","../shells/preference.js","./capacitor-settings-permissions.js"])))=>i.map(i=>d[i]);
-import { Ar as __vitePreload, br as loadAsAdopted } from "../com/app.js";
-import { A as initializeLayers, mt as safeCachesKeys, pt as safeCachesDelete } from "../shells/boot-index.js";
-import { a as applyCwspSku } from "../shells/boot-history-base.js";
-import { checkPendingShareData, ensureAppCss, handleShareTarget, initReceivers, n as ensureServiceWorkerRegistered, setupLaunchQueueConsumer, t as dropStaleServiceWorkerRegistrations } from "./sw-handling.js";
-//#region src/shared/routing/pwa/pwa-handling.ts
-var IS_DEV = Boolean(false);
-var AUTO_RELOAD_COOLDOWN_MS = 12e4;
-var RELOAD_GUARD_KEY = "cw:pwa:last-auto-reload-at";
-var shouldSkipAutoReloadNow = () => {
-	if (IS_DEV) return true;
-	try {
-		const now = Date.now();
-		const last = Number(globalThis?.sessionStorage?.getItem?.(RELOAD_GUARD_KEY) || "0");
-		if (Number.isFinite(last) && now - last < AUTO_RELOAD_COOLDOWN_MS) return true;
-		globalThis?.sessionStorage?.setItem?.(RELOAD_GUARD_KEY, String(now));
-	} catch {}
-	return false;
-};
-var isExtension = () => {
-	try {
-		return typeof chrome !== "undefined" && Boolean(chrome?.runtime?.id) && globalThis?.location?.protocol === "chrome-extension:";
-	} catch {
-		return false;
-	}
-};
-var isCapacitorNative = () => {
-	try {
-		const c = globalThis.Capacitor;
-		return typeof c?.isNativePlatform === "function" && Boolean(c.isNativePlatform());
-	} catch {
-		return false;
-	}
-};
-var isServiceWorkerAllowedContext = () => {
-	const protocol = (globalThis?.location?.protocol || "").toLowerCase();
-	if (protocol === "chrome-extension:" || protocol === "file:" || protocol === "about:") return false;
-	if (protocol === "capacitor:" || protocol === "ionic:") return true;
-	if (isCapacitorNative() && (protocol === "https:" || protocol === "http:")) return true;
-	return protocol === "https:" || protocol === "http:";
-};
+import { $ as H } from "../fest/core4.js";
+import { n as SHELL_SLOT, t as ShellBase } from "./shells.js";
+//#region ../../modules/shells/immersive-shell/src/base.scss?inline
+var base_default = "@layer shell.tokens, shell.immersive, shell.components, shell.utilities, shell.markdown-host-theme, shell.overrides;@layer shell.tokens{:root:has(.app-shell,.app-shell[data-style=immersive],.app-shell[data-style=raw]),:where(.app-shell,.app-shell[data-style=immersive],.app-shell[data-style=raw]){color-scheme:light dark;--shell-bg:light-dark(var(--color-surface),var(--color-surface));--shell-fg:light-dark(var(--color-on-surface),var(--color-on-surface));--shell-nav-bg:light-dark(var(--color-surface-container-high),var(--color-surface-container-high));--shell-nav-fg:light-dark(var(--color-on-surface),var(--color-on-surface));--shell-nav-border:light-dark(var(--color-outline-variant),var(--color-outline-variant));--shell-btn-hover:light-dark(var(--color-surface-container),var(--color-surface-container));--shell-btn-active-bg:light-dark(var(--color-surface-container-low),var(--color-surface-container-low));--shell-btn-active-fg:light-dark(var(--color-on-surface),var(--color-on-surface));--shell-status-bg:light-dark(var(--color-surface-container-low),var(--color-surface-container-low));--shell-status-fg:light-dark(var(--color-on-surface),var(--color-on-surface));--shell-loading-bg:light-dark(var(--color-surface),var(--color-surface));--shell-loading-fg:light-dark(var(--color-on-surface),var(--color-on-surface));--shell-loading-spinner-track:light-dark(color-mix(in oklab,var(--color-outline-variant) 35%,transparent),color-mix(in oklab,var(--color-outline-variant) 45%,transparent));--shell-loading-spinner-accent:light-dark(var(--color-primary),var(--color-primary));--shell-nav-height:var(--shell-nav-height-immersive,48px);--shell-sidebar-width:0;--shell-status-height:24px;--shell-padding:0}:host{--shell-bg:transparent;--shell-fg:inherit}:host([data-theme=dark]){--shell-bg:transparent;--shell-fg:inherit}}@layer shell.immersive{:host{align-self:stretch;background-color:initial;block-size:stretch;display:block;inline-size:100%;justify-self:stretch;min-block-size:max(100%,100dvh);min-inline-size:0}:where(.app-shell,.app-shell[data-style=immersive],.app-shell[data-style=raw]){align-items:stretch;background:transparent;background-color:initial;block-size:stretch;color:inherit;color-scheme:light dark;contain:layout style;display:flex;flex-direction:column;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica Neue,Arial,BlinkMacSystemFont,sans-serif;gap:0;inline-size:stretch;inset:0;justify-content:flex-start;margin:0;max-block-size:stretch;max-inline-size:stretch;min-block-size:0;min-inline-size:0;overflow:hidden;padding:0;position:absolute;-webkit-tap-highlight-color:transparent;border-radius:0}:where(.app-shell,.app-shell[data-style=immersive],.app-shell[data-style=raw])[data-theme=light]{color-scheme:light}:where(.app-shell,.app-shell[data-style=immersive],.app-shell[data-style=raw])[data-theme=dark]{color-scheme:dark}@media print{:where(.app-shell,.app-shell[data-style=immersive],.app-shell[data-style=raw]){display:contents!important}}}@layer shell.components{:where(.app-shell,.app-shell[data-style=immersive],.app-shell[data-style=raw]) slot{display:contents!important}.app-shell__viewport{align-self:stretch;flex:1 1 0;isolation:isolate;position:relative}.app-shell__underlying,.app-shell__viewport{min-block-size:0;min-inline-size:0;overflow:hidden}.app-shell__underlying{inset:0;pointer-events:none;position:absolute;z-index:0}.app-shell__underlying>slot::slotted(*){pointer-events:auto}.app-shell__content{block-size:stretch;border-radius:0;container-type:size;display:flex;flex-direction:column;inline-size:stretch;inset:0;max-block-size:stretch;max-inline-size:stretch;min-block-size:0;min-inline-size:0;overflow:auto;padding:0;position:absolute;scrollbar-color:rgba(128,128,128,.4) transparent;scrollbar-width:thin;z-index:1}.app-shell__content>*{flex:1 1 auto;min-block-size:0;min-inline-size:0}.app-shell__content slot:not([name])::slotted([data-view=explorer]){display:flex!important;flex:1 1 auto!important;flex-direction:column!important;min-block-size:0!important;overflow:hidden!important}.app-shell__content::-webkit-scrollbar{inline-size:8px}.app-shell__content::-webkit-scrollbar-track{background:transparent}.app-shell__content::-webkit-scrollbar-thumb{background-color:rgba(128,128,128,.4);border-radius:4px}.app-shell__overlays{inset:0;overflow:visible;pointer-events:none;position:absolute;z-index:4}.app-shell__overlays>*{pointer-events:auto}.app-shell__overlays>slot::slotted(*){pointer-events:auto}.app-shell__status{animation:e .2s ease-out;background-color:var(--shell-status-bg);border-radius:var(--radius-lg,8px);box-shadow:var(--elev-3,0 4px 12px rgba(0,0,0,.15));color:var(--shell-status-fg);font-size:var(--text-sm,.875rem);font-weight:var(--font-weight-medium,500);inset-block-end:var(--space-2xl,1.5rem);inset-inline-start:50%;padding:var(--space-md,.75rem) var(--space-xl,1.5rem);position:fixed;transform:translateX(-50%);z-index:3}.app-shell__status:empty,.app-shell__status[hidden]{display:none}.app-shell__loading,[data-shell-loading]{align-items:center;background-color:var(--shell-loading-bg,var(--shell-bg));block-size:stretch;box-sizing:border-box;color:var(--shell-loading-fg,var(--shell-fg));display:flex;filter:none;flex-direction:column;font-family:inherit;font-size:var(--shell-loading-font-size,.875rem);gap:var(--shell-loading-gap,var(--space-lg,1rem));inline-size:stretch;inset:0;isolation:isolate;justify-content:center;line-height:1.35;margin:0;max-block-size:stretch;max-inline-size:stretch;min-block-size:0;min-inline-size:0;opacity:1;padding:var(--shell-loading-pad,var(--space-2xl,2rem));pointer-events:none;position:absolute;transform:none;z-index:2}.app-shell__loading[hidden],[data-shell-loading][hidden]{display:none!important}.app-shell__loading .app-shell__loading-spinner,.app-shell__loading .loading-spinner,[data-shell-loading] .app-shell__loading-spinner,[data-shell-loading] .loading-spinner{animation:d .8s linear infinite;block-size:var(--shell-loading-spinner-size,32px);border:3px solid var(--shell-loading-spinner-track);border-block-start-color:var(--shell-loading-spinner-accent);border-radius:50%;display:block;flex-shrink:0;inline-size:var(--shell-loading-spinner-size,32px)}:is(.app-shell__loading,[data-shell-loading]) .app-shell__loading-label{color:inherit;display:block;font:inherit;margin:0;opacity:.85;padding:0;pointer-events:none}}@layer shell.utilities{@keyframes d{to{transform:rotate(1turn)}}@keyframes e{0%{opacity:0;transform:translate(-50%,.5rem)}to{opacity:1;transform:translate(-50%)}}}@layer shell.overrides{@media (max-width:480px){:where(.app-shell,.app-shell[data-style=immersive],.app-shell[data-style=raw]){--shell-nav-height:48px}}@media print{:host{align-self:start!important;block-size:auto!important;contain:none!important;container-type:normal!important;content-visibility:visible!important;display:block!important;inline-size:100%!important;height:auto!important;inset:auto!important;justify-self:stretch!important;max-block-size:none!important;max-height:none!important;min-block-size:0!important;min-height:0!important;overflow:visible!important;position:static!important}:is(html,body):has([data-shell=immersive]),:is(html,body):has(cw-shell-immersive){block-size:auto!important;contain:none!important;container-type:normal!important;content-visibility:visible!important;display:block!important;inline-size:100%!important;height:auto!important;inset:auto!important;max-block-size:none!important;max-height:none!important;min-block-size:0!important;min-height:0!important;overflow:visible!important;position:static!important}:is(html,body):has([data-shell=immersive]) #app,:is(html,body):has([data-shell=immersive]) [data-app-layer-root],:is(html,body):has([data-shell=immersive]) [data-app-layer=shell],:is(html,body):has(cw-shell-immersive) #app,:is(html,body):has(cw-shell-immersive) [data-app-layer-root],:is(html,body):has(cw-shell-immersive) [data-app-layer=shell]{block-size:auto!important;contain:none!important;container-type:normal!important;display:contents!important;height:auto!important;inset:auto!important;max-block-size:none!important;min-block-size:0!important;overflow:visible!important;position:static!important}cw-shell-immersive,cw-shell-immersive[data-shell=immersive]{display:block!important;height:auto!important}.app-shell,cw-shell-immersive,cw-shell-immersive[data-shell=immersive]{block-size:auto!important;contain:none!important;inset:auto!important;max-block-size:none!important;min-block-size:0!important;overflow:visible!important;position:static!important}.app-shell{background:white;color:black;display:contents!important}.app-shell__viewport{contain:none!important;display:contents!important;overflow:visible!important}.app-shell__overlays,.app-shell__underlying{display:none!important}.app-shell__content{contain:none;display:contents!important;overflow:visible;position:static!important}}@media print{.app-shell__content::-webkit-scrollbar{display:none}.app-shell__content>[data-view],.app-shell__content>slot:not([name])::slotted([data-view]){block-size:auto!important;inline-size:auto!important;inset:auto!important;max-block-size:none!important;min-block-size:0!important;overflow:visible!important;position:static!important}.cw-view-viewer-shell,.cw-view-viewer__prose,.markdown-body,.markdown-viewer-content,.result-content,[data-cw-view-host=true],[data-cw-view-host=true]>.cw-view-element__mount,[data-cw-viewer-prose],markdown-viewer,md-view{block-size:auto!important;contain:none!important;container-type:normal!important;max-block-size:none!important;overflow:visible!important}}:is(html,body):has([data-shell=immersive]){--shell-nav-height:0;--shell-content-padding:0;--shell-sidebar-width:0;--shell-status-height:0}:root:has(.app-shell) .app-shell{background-color:var(--shell-bg,var(--color-surface,#ffffff));color:var(--shell-fg,var(--color-on-surface,#1a1a1a));display:flex;flex-direction:column;inset:0;position:absolute;transition:background-color .2s ease,color .2s ease}.app-shell__content{scroll-behavior:smooth;scrollbar-color:var(--shell-scrollbar,rgba(128,128,128,.3)) transparent}.app-shell__content::-webkit-scrollbar{inline-size:6px}.app-shell__content::-webkit-scrollbar-thumb{background-color:var(--shell-scrollbar,rgba(128,128,128,.3));border-radius:3px}.app-shell__status{animation:e .2s ease-out;background-color:var(--shell-status-bg,rgba(0,0,0,.8));border-radius:8px;color:var(--shell-status-fg,#ffffff);font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;font-size:.875rem;inset-block-end:1rem;inset-inline-start:50%;padding:.75rem 1.5rem;position:fixed;transform:translateX(-50%);z-index:3}.app-shell__status:empty,.app-shell__status[hidden]{display:none}}@layer shell.markdown-host-theme{@scope (markdown-view,\n        md-view,\n        .markdown-view,\n        cw-view-viewer,\n        .cw-view-viewer-shell,\n        :host(markdown-view),\n        :host(md-view),\n        :host(.markdown-view),\n        :host(cw-view-viewer)\n    ){:host([data-theme=light]) ::slotted([data-view=viewer]){color-scheme:light;--base-color:var(--color-primary,#5a7fff);--base-color-neutralized:color-mix(in oklab,var(--base-color) 60%,gray);--view-bg:var(--color-surface,--u2-color-mod(var(--base-color-neutralized),70));--view-fg:var(--color-on-surface,--u2-color-mod(var(--base-color-neutralized),900));--view-toolbar-bg:color-mix(in oklab,--u2-color-mod(var(--base-color-neutralized),900) 6%,transparent);--view-btn-hover-bg:color-mix(in oklab,--u2-color-mod(var(--base-color-neutralized),900) 7%,transparent);--view-code-bg:--u2-color-mod(var(--base-color-neutralized),120);--view-blockquote-bg:color-mix(in oklab,--u2-color-mod(var(--base-color-neutralized),900) 3%,transparent);--color-on-surface:--u2-color-mod(var(--base-color-neutralized),980);--viewer-toolbar-row-fill:--u2-color-mod(var(--base-color),160);--view-picon-fill:--u2-color-mod(var(--base-color-neutralized),780);--view-picon-fill-hover:var(--color-primary,--u2-color-mod(var(--base-color-neutralized),550));--color-surface-container-high:color-mix(in oklab,--u2-color-mod(var(--base-color-neutralized),900) 10%,transparent)}:host([data-theme=dark]) ::slotted([data-view=viewer]){color-scheme:dark;--base-color:var(--color-primary,#5a7fff);--base-color-neutralized:color-mix(in oklab,var(--base-color) 60%,gray);--view-bg:var(--color-surface,--u2-color-mod(var(--base-color-neutralized),960));--view-fg:var(--color-on-surface,--u2-color-mod(var(--base-color-neutralized),100));--view-toolbar-bg:color-mix(in oklab,--u2-color-mod(var(--base-color-neutralized),100) 6%,transparent);--view-btn-hover-bg:color-mix(in oklab,--u2-color-mod(var(--base-color-neutralized),100) 8%,transparent);--view-code-bg:--u2-color-mod(var(--base-color-neutralized),900);--view-blockquote-bg:color-mix(in oklab,--u2-color-mod(var(--base-color-neutralized),100) 4%,transparent);--color-on-surface:--u2-color-mod(var(--base-color-neutralized),10);--viewer-toolbar-row-fill:--u2-color-mod(var(--base-color-neutralized),880);--view-picon-fill:--u2-color-mod(var(--base-color-neutralized),280);--view-picon-fill-hover:--u2-color-mod(var(--base-color-neutralized),420);--color-surface-container-high:color-mix(in oklab,--u2-color-mod(var(--base-color-neutralized),100) 14%,transparent)}:host([data-theme=light]) ::slotted([data-view=viewer]) :where(.markdown-body,[data-render-target].markdown-body){--base-color-neutralized:color-mix(in oklab,var(--base-color) 60%,gray);--color-surface:--u2-color-mod(var(--base-color-neutralized,var(--color-primary)),10);--color-on-surface:--u2-color-mod(var(--base-color-neutralized,var(--color-primary)),980);color-scheme:light}:host([data-theme=dark]) ::slotted([data-view=viewer]) :where(.markdown-body,[data-render-target].markdown-body){--base-color-neutralized:color-mix(in oklab,var(--base-color) 60%,gray);--color-surface:--u2-color-mod(var(--base-color-neutralized,var(--color-primary)),980);--color-on-surface:--u2-color-mod(var(--base-color-neutralized,var(--color-primary)),10);color-scheme:dark}}}";
+//#endregion
+//#region ../../modules/shells/immersive-shell/src/index.ts
 /**
-* Asset cache versioning and update detection
+* Immersive Shell
+*
+* Immersive shell with no frames, navigation UI, or chrome.
+* Just a content container with theme support.
+*
+* Use cases:
+* - Fullscreen views
+* - Print layouts
+* - Embedded views
+* - Single-component rendering
 */
-var AssetUpdateManager = class AssetUpdateManager {
-	static instance;
-	assetVersions = /* @__PURE__ */ new Map();
-	updateCheckInterval = null;
-	isChecking = false;
-	static getInstance() {
-		if (!AssetUpdateManager.instance) AssetUpdateManager.instance = new AssetUpdateManager();
-		return AssetUpdateManager.instance;
+var ImmersiveShell = class extends ShellBase {
+	id = "immersive";
+	name = "Immersive";
+	layout = {
+		hasSidebar: false,
+		hasToolbar: false,
+		hasTabs: false,
+		supportsMultiView: false,
+		supportsWindowing: false
+	};
+	wcoGeometryHandler = null;
+	wcoResizeHandler = null;
+	/** Content shell turns this off so only page overlays apply (no wallpaper/speed-dial layer). */
+	includeUnderlyingSlot() {
+		return true;
 	}
-	/**
-	* Check if an asset has been updated by comparing versions
-	*/
-	async checkAssetUpdate(url, currentVersion) {
-		try {
-			const response = await fetch(url, {
-				method: "HEAD",
-				cache: "no-cache",
-				headers: {
-					"Cache-Control": "no-cache",
-					"Pragma": "no-cache"
-				}
-			});
-			if (!response.ok) return false;
-			const etag = response.headers.get("etag");
-			const lastModified = response.headers.get("last-modified");
-			const contentLength = response.headers.get("content-length");
-			const versionKey = `${etag || ""}-${lastModified || ""}-${contentLength || ""}`;
-			const storedVersion = this.assetVersions.get(url);
-			if (storedVersion && storedVersion !== versionKey) {
-				console.log(`[AssetUpdate] Asset updated: ${url}`);
-				this.assetVersions.set(url, versionKey);
-				return true;
-			}
-			this.assetVersions.set(url, versionKey);
-			return false;
-		} catch (error) {
-			console.warn(`[AssetUpdate] Failed to check asset: ${url}`, error);
-			return false;
-		}
-	}
-	/**
-	* Force refresh a cached asset by adding cache-busting parameter
-	*/
-	forceRefreshAsset(url) {
-		return `${url}${url.includes("?") ? "&" : "?"}_cache=${Date.now()}`;
-	}
-	/**
-	* Check all critical assets for updates
-	*/
-	async checkAllAssets() {
-		if (this.isChecking) return [];
-		this.isChecking = true;
-		const criticalAssets = IS_DEV ? [] : ["./choice.js"];
-		const updatedAssets = [];
-		try {
-			const checks = criticalAssets.map(async (asset) => {
-				if (await this.checkAssetUpdate(asset)) updatedAssets.push(asset);
-			});
-			await Promise.all(checks);
-		} finally {
-			this.isChecking = false;
-		}
-		return updatedAssets;
-	}
-	/**
-	* Start periodic asset checking
-	*/
-	startPeriodicChecks(intervalMs = 3e5) {
-		if (this.updateCheckInterval) globalThis?.clearInterval?.(this.updateCheckInterval);
-		this.updateCheckInterval = globalThis?.setInterval?.(async () => {
-			const updatedAssets = await this.checkAllAssets();
-			if (updatedAssets.length > 0) {
-				console.log("[AssetUpdate] Updated assets detected:", updatedAssets);
-				globalThis?.dispatchEvent?.(new CustomEvent("assets-updated", { detail: { updatedAssets } }));
-			}
-		}, intervalMs);
-	}
-	/**
-	* Stop periodic checking
-	*/
-	stopPeriodicChecks() {
-		if (this.updateCheckInterval) {
-			clearInterval(this.updateCheckInterval);
-			this.updateCheckInterval = null;
-		}
-	}
-};
-/**
-* Show reload notification for critical updates
-*/
-function showReloadNotification() {
-	const existing = document.querySelector(".app-reload-notification");
-	if (existing) existing.remove();
-	const notification = document.createElement("div");
-	notification.className = "app-reload-notification";
-	Object.assign(notification.style, {
-		position: "fixed",
-		top: "50%",
-		left: "50%",
-		transform: "translate(-50%, -50%)",
-		background: "rgba(0, 0, 0, 0.9)",
-		color: "white",
-		padding: "24px",
-		borderRadius: "12px",
-		zIndex: "10002",
-		fontFamily: "system-ui, -apple-system, sans-serif",
-		textAlign: "center",
-		boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
-		backdropFilter: "blur(10px)",
-		border: "1px solid rgba(255,255,255,0.1)"
-	});
-	notification.innerHTML = `
-        <div style="font-size: 1.5rem; margin-bottom: 8px;"><ui-icon icon="arrow-clockwise" icon-style="duotone"></ui-icon></div>
-        <div style="font-size: 1.1rem; font-weight: 600; margin-bottom: 8px;">Update Available</div>
-        <div style="opacity: 0.8; margin-bottom: 16px;">CWSP-shell has been updated and will reload shortly.</div>
-        <div style="font-size: 0.9rem; opacity: 0.6;">Reloading in 3 seconds...</div>
-    `;
-	document.body.appendChild(notification);
-	let countdown = 3;
-	const countdownInterval = setInterval(() => {
-		countdown--;
-		const countdownEl = notification.querySelector("div:last-child");
-		if (countdownEl) countdownEl.textContent = `Reloading in ${countdown} second${countdown !== 1 ? "s" : ""}...`;
-		if (countdown <= 0) {
-			clearInterval(countdownInterval);
-			globalThis?.location?.reload?.();
-		}
-	}, 1e3);
-	notification.addEventListener("click", () => {
-		clearInterval(countdownInterval);
-		globalThis?.location?.reload?.();
-	});
-}
-/**
-* Service worker update manager with enhanced features
-*/
-var ServiceWorkerUpdateManager = class {
-	registration = null;
-	updateToast = null;
-	async waitForController(timeoutMs = 4e3) {
-		if (navigator.serviceWorker.controller) return true;
-		return await new Promise((resolve) => {
-			let done = false;
-			const finish = (value) => {
-				if (done) return;
-				done = true;
-				try {
-					navigator.serviceWorker.removeEventListener("controllerchange", onChange);
-				} catch {}
-				clearTimeout(timer);
-				resolve(value);
-			};
-			const onChange = () => finish(Boolean(navigator.serviceWorker.controller));
-			const timer = setTimeout(() => finish(Boolean(navigator.serviceWorker.controller)), timeoutMs);
-			navigator.serviceWorker.addEventListener("controllerchange", onChange, { once: true });
-		});
-	}
-	async register() {
-		if (!("serviceWorker" in navigator) || isExtension() || !isServiceWorkerAllowedContext()) return null;
-		try {
-			this.registration = await ensureServiceWorkerRegistered();
-			if (!this.registration) return null;
-			this.setupUpdateListeners();
-			this.startPeriodicUpdates();
-			navigator.serviceWorker.ready.catch(() => void 0);
-			this.waitForController(1500).catch(() => false);
-			console.log("[SW] Service worker registered successfully");
-			return this.registration;
-		} catch (error) {
-			console.error("[SW] Registration failed:", error);
-			return null;
-		}
-	}
-	setupUpdateListeners() {
-		if (!this.registration) return;
-		this.registration.addEventListener("updatefound", () => {
-			const newWorker = this.registration?.installing;
-			if (!newWorker) return;
-			console.log("[SW] New service worker found, installing...");
-			newWorker.addEventListener("statechange", () => {
-				if (newWorker.state === "installed") {
-					if (navigator.serviceWorker.controller) {
-						console.log("[SW] New service worker installed, ready to activate");
-						this.showUpdateNotification();
-					} else console.log("[SW] Service worker installed for offline use");
-				} else if (newWorker.state === "activated") {
-					console.log("[SW] New service worker activated");
-					globalThis?.dispatchEvent?.(new CustomEvent("sw-activated", { detail: { registration: this.registration } }));
-				}
-			});
-		});
-		navigator.serviceWorker.addEventListener("controllerchange", () => {
-			console.log("[SW] Controller changed - new service worker active");
-			globalThis?.dispatchEvent?.(new CustomEvent("sw-controller-changed"));
-		});
-		navigator.serviceWorker.addEventListener("message", (event) => {
-			const { type, data } = event.data || {};
-			if (type === "ai-result" || type === "process-api-result" || type === "share-target-result" || type === "share-target-input" || type === "share-received" || type === "content-cached" || type === "content-received") __vitePreload(async () => {
-				const { ingestSwClientMessage } = await import("./sw-page-bridge.js").then((n) => n.a);
-				return { ingestSwClientMessage };
-			}, __vite__mapDeps([0,1,2,3,4,5,6,7,8,9]), import.meta.url).then(({ ingestSwClientMessage }) => {
-				ingestSwClientMessage(event.data);
-			}).catch(() => void 0);
-			switch (type) {
-				case "sw-update-ready":
-					console.log("[SW] Service worker reports update ready");
-					this.showUpdateNotification();
-					break;
-				case "asset-updated":
-					console.log("[PWA] Service worker detected asset update:", data);
-					if (data.url.includes("choice.js") || data.url.includes("sw.js")) showReloadNotification();
-					break;
-				case "sw-activated":
-					console.log("[PWA] Service worker activated");
-					break;
-				case "cache-status":
-					console.log("[PWA] Cache status:", data);
-					break;
-				default: console.log("[PWA] Unknown SW message:", type, data);
-			}
-		});
-	}
-	startPeriodicUpdates() {
-		if (Boolean(false)) return;
-		globalThis?.setInterval?.(() => {
-			this.registration?.update().catch(console.warn);
-		}, 18e5);
-	}
-	showUpdateNotification() {
-		this.hideUpdateNotification();
-		this.updateToast = document.createElement("div");
-		Object.assign(this.updateToast.style, {
-			position: "fixed",
-			top: "20px",
-			right: "20px",
-			background: "#007acc",
-			color: "white",
-			padding: "16px 20px",
-			borderRadius: "8px",
-			boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
-			zIndex: "10000",
-			fontFamily: "system-ui, sans-serif",
-			fontSize: "14px",
-			cursor: "pointer",
-			maxWidth: "300px",
-			transition: "all 0.3s ease"
-		});
-		this.updateToast.innerHTML = `
-            <div style="font-weight: 600; margin-bottom: 4px;">Update Available</div>
-            <div style="opacity: 0.9; margin-bottom: 12px;">A new version of CWSP-shell is ready</div>
-            <div style="display: flex; gap: 8px;">
-                <button id="update-now" style="
-                    background: white;
-                    color: #007acc;
-                    border: none;
-                    padding: 6px 12px;
-                    border-radius: 4px;
-                    font-size: 12px;
-                    font-weight: 600;
-                    cursor: pointer;
-                ">Update Now</button>
-                <button id="update-later" style="
-                    background: transparent;
-                    color: white;
-                    border: 1px solid rgba(255,255,255,0.3);
-                    padding: 6px 12px;
-                    border-radius: 4px;
-                    font-size: 12px;
-                    cursor: pointer;
-                ">Later</button>
+	createLayout() {
+		return H`
+            <div class="app-shell" data-shell="immersive" data-style="immersive">
+                <div class="app-shell__viewport">
+                    ${this.includeUnderlyingSlot() ? H`
+            <div class="app-shell__underlying">
+                <slot name="${SHELL_SLOT.underlying}"></slot>
+            </div>
+        ` : ""}
+                    <main class="app-shell__content" data-shell-content role="main">
+                        <slot></slot>
+                    </main>
+                    <div class="app-shell__loading" data-shell-loading role="status" aria-live="polite">
+                        <div class="loading-spinner" aria-hidden="true"></div>
+                        <span class="app-shell__loading-label">Loading...</span>
+                    </div>
+                    <div class="app-shell__overlays" data-shell-overlays>
+                        <slot name="${SHELL_SLOT.overlay}"></slot>
+                    </div>
+                </div>
+                <div class="app-shell__status" data-shell-status hidden aria-live="polite"></div>
             </div>
         `;
-		const updateNowBtn = this.updateToast.querySelector("#update-now");
-		const updateLaterBtn = this.updateToast.querySelector("#update-later");
-		updateNowBtn?.addEventListener("click", () => {
-			this.applyUpdate();
-		});
-		updateLaterBtn?.addEventListener("click", () => {
-			this.hideUpdateNotification();
-		});
-		setTimeout(() => {
-			this.hideUpdateNotification();
-		}, 3e4);
-		document.body.appendChild(this.updateToast);
-		globalThis?.dispatchEvent?.(new CustomEvent("sw-update-notification-shown"));
 	}
-	hideUpdateNotification() {
-		if (this.updateToast) {
-			this.updateToast.style.opacity = "0";
-			setTimeout(() => {
-				this.updateToast?.remove();
-				this.updateToast = null;
-			}, 300);
-		}
-	}
-	async applyUpdate() {
-		console.log("[SW] Applying service worker update...");
-		this.hideUpdateNotification();
-		if (this.registration?.waiting) this.registration.waiting.postMessage({ type: "SKIP_WAITING" });
-		globalThis?.location?.reload?.();
+	getStylesheet() {
+		return base_default;
 	}
 	/**
-	* Force check for service worker updates
+	* Theme lives on `cw-shell-*` in `applyTheme`; inner `.app-shell` needs the same `data-theme`
+	* so shell SCSS `&[data-theme="light"|"dark"]` and token rules apply (matches MinimalShell).
 	*/
-	async checkForUpdates() {
-		await this.registration?.update();
+	applyTheme(theme) {
+		const inner = this.rootElement?.shadowRoot?.querySelector(".app-shell");
+		if (inner) inner.dataset.theme = this.resolveShellColorScheme(theme);
+		super.applyTheme(theme);
 	}
-};
-/**
-* Initialize PWA features and asset update system
-*/
-var initPWA = async () => {
-	console.log("[PWA] Initializing PWA features...");
-	try {
-		if (globalThis?.matchMedia?.("(display-mode: standalone)").matches || (globalThis?.navigator)?.standalone === true) console.log("[PWA] Running in standalone mode");
-		AssetUpdateManager.getInstance().startPeriodicChecks();
-		const registration = await new ServiceWorkerUpdateManager().register();
-		globalThis?.addEventListener?.("assets-updated", (event) => {
-			const { updatedAssets } = event.detail;
-			console.log("[PWA] Assets updated:", updatedAssets);
-			const criticalAssets = ["choice.js"];
-			if (updatedAssets.some((asset) => criticalAssets.some((critical) => asset.includes(critical)))) {
-				if (shouldSkipAutoReloadNow()) {
-					console.log("[PWA] Auto reload suppressed (dev or cooldown)");
-					return;
-				}
-				console.log("[PWA] Critical assets updated, reloading...");
-				showReloadNotification();
+	/**
+	* Routed views use the default (unnamed) slot inside `<main data-shell-content>`; append to the
+	* shell host in light DOM so document-level view CSS still targets roots that pierce shadow.
+	*/
+	renderView(element) {
+		if (!this.contentContainer || !this.rootElement) {
+			console.warn(`[${this.id}] No content container available`);
+			return;
+		}
+		this.contentContainer.setAttribute("data-current-view", this.currentView.value);
+		const previousId = this.navigationState.previousView;
+		if (previousId && previousId !== this.currentView.value && this.loadedViews.has(previousId)) {
+			const prev = this.loadedViews.get(previousId);
+			prev.element.removeAttribute("data-view");
+			prev.element.hidden = true;
+			if (this.rootElement.contains(prev.element)) prev.element.remove();
+		}
+		element.setAttribute("data-view", this.currentView.value);
+		element.hidden = false;
+		element.removeAttribute("slot");
+		if (!this.rootElement.contains(element)) this.rootElement.appendChild(element);
+		const loading = (this.rootElement?.shadowRoot?.querySelector(".app-shell") ?? this.rootElement)?.querySelector(".app-shell__loading");
+		if (loading) loading.hidden = true;
+		this.currentViewElement = element;
+	}
+	async mount(container) {
+		await super.mount(container);
+		this.setupHashNavigation();
+		this.setupPopstateNavigation();
+		this.bindWindowControlsOverlay();
+	}
+	unmount() {
+		this.unbindWindowControlsOverlay();
+		super.unmount();
+	}
+	bindWindowControlsOverlay() {
+		const overlay = (globalThis?.navigator || {})?.windowControlsOverlay;
+		const host = this.rootElement;
+		if (!host || !overlay) return;
+		const update = () => {
+			const isVisible = Boolean(overlay?.visible);
+			host.setAttribute("data-wco-visible", isVisible ? "true" : "false");
+			const rect = overlay?.getTitlebarAreaRect?.();
+			if (isVisible && rect) {
+				host.style.setProperty("--wco-titlebar-x", `${Math.max(0, Number(rect.x) || 0)}px`);
+				host.style.setProperty("--wco-titlebar-y", `${Math.max(0, Number(rect.y) || 0)}px`);
+				host.style.setProperty("--wco-titlebar-width", `${Math.max(0, Number(rect.width) || 0)}px`);
+				host.style.setProperty("--wco-titlebar-height", `${Math.max(0, Number(rect.height) || 0)}px`);
+			} else {
+				host.style.setProperty("--wco-titlebar-x", "0px");
+				host.style.setProperty("--wco-titlebar-y", "0px");
+				host.style.setProperty("--wco-titlebar-width", "0px");
+				host.style.setProperty("--wco-titlebar-height", "0px");
 			}
-		});
-		let deferredPrompt = null;
-		globalThis?.addEventListener?.("beforeinstallprompt", (e) => {
-			console.log("[PWA] Install prompt available");
-			e.preventDefault();
-			deferredPrompt = e;
-			globalThis?.dispatchEvent?.(new CustomEvent("pwa-install-available", { detail: { prompt: deferredPrompt } }));
-		});
-		globalThis?.addEventListener?.("appinstalled", () => {
-			console.log("[PWA] App installed successfully");
-			deferredPrompt = null;
-		});
-		return registration;
-	} catch (error) {
-		console.warn("[PWA] PWA initialization failed:", error);
-	}
-	return null;
-};
-/**
-* Manually check for updates (can be called from app UI)
-*/
-var checkForUpdates = async () => {
-	console.log("[PWA] Manual update check requested");
-	try {
-		if ("serviceWorker" in navigator && navigator.serviceWorker.controller) {
-			await dropStaleServiceWorkerRegistrations();
-			const registration = await navigator.serviceWorker.getRegistration();
-			if (registration) {
-				console.log("[PWA] Checking service worker for updates...");
-				await registration.update();
-				if (registration.active) registration.active.postMessage({ type: "CHECK_FOR_UPDATES" });
-			}
-		}
-		const updatedAssets = await AssetUpdateManager.getInstance().checkAllAssets();
-		if (updatedAssets.length > 0) {
-			console.log("[PWA] Asset updates found:", updatedAssets);
-			globalThis?.dispatchEvent?.(new CustomEvent("assets-updated", { detail: { updatedAssets } }));
-		} else {
-			console.log("[PWA] No updates found");
-			globalThis?.dispatchEvent?.(new CustomEvent("app-up-to-date"));
-		}
-	} catch (error) {
-		console.error("[PWA] Manual update check failed:", error);
-		throw error;
-	}
-};
-/**
-* Force reload all cached assets
-*/
-var forceRefreshAssets = async () => {
-	console.log("[PWA] Force refreshing all cached assets");
-	try {
-		const cacheNames = await safeCachesKeys();
-		await Promise.all(cacheNames.map((cacheName) => safeCachesDelete(cacheName)));
-		console.log("[PWA] All caches cleared");
-		globalThis?.location?.reload?.();
-	} catch (error) {
-		console.error("[PWA] Failed to force refresh assets:", error);
-		throw error;
-	}
-};
-//#endregion
-//#region src/frontend/web/sku-boot.ts
-/** INVARIANT: process chrome is workcenter + settings + history. `minimal` is the shell, not a view. */
-var ENABLED_VIEWS = "workcenter,settings,history";
-var PROCESS_VIEW_ALIASES = {
-	workcenter: "workcenter",
-	process: "workcenter",
-	settings: "settings",
-	history: "history"
-};
-var detectHostKind = (explicit) => {
-	if (explicit) return explicit;
-	try {
-		const proto = String(globalThis.location?.protocol || "").toLowerCase();
-		if (proto === "chrome-extension:" || proto === "moz-extension:") return "crx";
-		const g = globalThis;
-		if (typeof g.Capacitor?.isNativePlatform === "function" && g.Capacitor.isNativePlatform()) return "capacitor";
-	} catch {}
-	return "web";
-};
-var readProcessViewAlias = (raw) => {
-	return PROCESS_VIEW_ALIASES[String(raw || "").trim().toLowerCase()] || null;
-};
-/** Query `?view=`, then path segment, then explicit/default `workcenter`. */
-var resolveProcessBootView = (explicit) => {
-	try {
-		const fromQuery = readProcessViewAlias(new URLSearchParams(String(globalThis.location?.search || "")).get("view") || "");
-		if (fromQuery) return fromQuery;
-	} catch {}
-	try {
-		const fromPath = readProcessViewAlias(String(globalThis.location?.pathname || "/").split("/").filter(Boolean)[0] || "");
-		if (fromPath) return fromPath;
-	} catch {}
-	return readProcessViewAlias(explicit || "") || "workcenter";
-};
-var stampProcessSku = (kind) => {
-	const host = detectHostKind(kind);
-	applyCwspSku("process");
-	const root = document.documentElement;
-	root.dataset.cwspSku = "process";
-	root.dataset.cwspApp = "process";
-	root.dataset.cwspSurface = host === "crx" ? "cw-process-crx" : host === "capacitor" ? "cw-process" : "cw-workcenter";
-	root.dataset.cwspEnabledViews = ENABLED_VIEWS;
-	root.dataset.cwspDefaultView = "workcenter";
-	root.dataset.cwspDefaultShell = "minimal";
-	if (host === "capacitor") root.dataset.cwspNativeShell = "capacitor";
-	else if (host === "crx") root.dataset.cwspNativeShell = "crx";
-	try {
-		const hostname = String(location.hostname || "").toLowerCase();
-		if (!(hostname === "process.u2re.space" || hostname === "workcenter.u2re.space" || hostname === "ai.u2re.space")) {
-			const m = String(location.pathname || "").match(/^(\/(?:process|workcenter|ai))(?:\/|$)/i);
-			if (m) root.dataset.cwspRouterBase = m[1].toLowerCase();
-		}
-	} catch {}
-};
-var showProcessBootFailure = (error, mount = document.body) => {
-	const message = error instanceof Error ? error.stack || error.message : String(error);
-	console.error("[CWSP-process] boot failed", error);
-	mount.replaceChildren();
-	mount.style.cssText = "margin:0;padding:16px;font:14px/1.4 ui-monospace,monospace;background:#111;color:#f66;white-space:pre-wrap;";
-	mount.textContent = `[CWSP-process] boot failed\n\n${message}`;
-};
-/**
-* WHY: install the share bridge before `bootMinimal` so cold-start SEND/VIEW
-* is not dropped while BootLoader is still loading settings/styles.
-*/
-var installProcessShareIngress = () => {
-	try {
-		const g = globalThis;
-		if (typeof g.Capacitor?.isNativePlatform !== "function" || !g.Capacitor.isNativePlatform()) return;
-		__vitePreload(() => import("./capacitor-share-intent.js").then((mod) => mod.installCapacitorShareIntentBridge()), __vite__mapDeps([10,2,1,4,5,6,7,8,11]), import.meta.url).catch(() => void 0);
-	} catch {}
-};
-var bootProcessSku = async (container, kind, view = "workcenter") => {
-	const host = detectHostKind(kind);
-	stampProcessSku(host);
-	installProcessShareIngress();
-	if (host === "capacitor") try {
-		const { SystemBarType, SystemBars } = await __vitePreload(async () => {
-			const { SystemBarType, SystemBars } = await import("../shells/boot-index.js").then((n) => n.gn);
-			return {
-				SystemBarType,
-				SystemBars
-			};
-		}, __vite__mapDeps([4,1,2,5,6,7,8]), import.meta.url);
-		await SystemBars.hide({ bar: SystemBarType.NavigationBar });
-	} catch {}
-	const resolved = resolveProcessBootView(view);
-	const { bootMinimal } = await __vitePreload(async () => {
-		const { bootMinimal } = await import("./BootLoader.js");
-		return { bootMinimal };
-	}, __vite__mapDeps([12,2,1,5,4,6,7,8,13,14,11]), import.meta.url);
-	await bootMinimal(container, resolved, { rememberChoice: false });
-};
-//#endregion
-//#region src/index.ts
-try {
-	stampProcessSku();
-} catch {}
-var withTimeout = async (task, label, timeoutMs, fallback) => {
-	let timer = null;
-	try {
-		return await Promise.race([task, new Promise((resolve) => {
-			timer = setTimeout(() => {
-				console.info(`[Index] ${label} timed out after ${timeoutMs}ms`);
-				resolve(fallback);
-			}, timeoutMs);
-		})]);
-	} finally {
-		if (timer) clearTimeout(timer);
-	}
-};
-async function index(mountElement) {
-	initializeLayers();
-	try {
-		const viewMod = await __vitePreload(() => import("./views.js"), [], import.meta.url);
-		await loadAsAdopted(viewMod.default);
-	} catch (error) {
-		console.warn("[Index] view styles skipped:", error);
-	}
-	try {
-		if (!document.documentElement.dataset.cwspNativeShell) await ensureAppCss();
-		initReceivers();
-		handleShareTarget();
-		const PRE_SHELL_BUDGET_MS = 1200;
-		const pwaPromise = initPWA();
+		};
+		this.wcoGeometryHandler = () => update();
+		this.wcoResizeHandler = () => update();
 		try {
-			await Promise.race([Promise.all([withTimeout(setupLaunchQueueConsumer(), "setupLaunchQueueConsumer", PRE_SHELL_BUDGET_MS, void 0), withTimeout(checkPendingShareData(), "checkPendingShareData", PRE_SHELL_BUDGET_MS, null)]), new Promise((r) => globalThis.setTimeout(r, PRE_SHELL_BUDGET_MS))]);
-		} catch (error) {
-			console.warn("[Index] Pre-boot share/launch queue failed:", error);
-		}
-		withTimeout(pwaPromise, "initPWA", 5e3, null);
-		await bootProcessSku(mountElement);
-	} catch (error) {
-		showProcessBootFailure(error, mountElement);
+			overlay?.addEventListener?.("geometrychange", this.wcoGeometryHandler);
+		} catch {}
+		globalThis?.addEventListener?.("resize", this.wcoResizeHandler);
+		update();
 	}
+	unbindWindowControlsOverlay() {
+		const overlay = (globalThis?.navigator || {})?.windowControlsOverlay;
+		if (overlay && this.wcoGeometryHandler) try {
+			overlay?.removeEventListener?.("geometrychange", this.wcoGeometryHandler);
+		} catch {}
+		if (this.wcoResizeHandler) globalThis?.removeEventListener?.("resize", this.wcoResizeHandler);
+		this.wcoGeometryHandler = null;
+		this.wcoResizeHandler = null;
+	}
+};
+/**
+* Create a immersive shell instance
+*/
+function createShell(_container) {
+	return new ImmersiveShell();
 }
 //#endregion
-export { checkForUpdates, index as default, index, forceRefreshAssets };
+export { ImmersiveShell, createShell, createShell as default, base_default as t };

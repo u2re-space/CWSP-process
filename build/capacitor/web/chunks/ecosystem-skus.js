@@ -1,4 +1,33 @@
-//#region ../../modules/subsystem/src/other/config/ecosystem-skus.ts
+import { r as __exportAll } from "./rolldown-runtime.js";
+//#region src/shared/other/config/ecosystem-skus.ts
+var ecosystem_skus_exports = /* @__PURE__ */ __exportAll({
+	CWSP_SKU_HANDOFF_KEY: () => CWSP_SKU_HANDOFF_KEY,
+	ECOSYSTEM_SKUS: () => ECOSYSTEM_SKUS,
+	HUB_PUBLIC_HOSTS: () => HUB_PUBLIC_HOSTS,
+	SKU_HUB_PATHS: () => SKU_HUB_PATHS,
+	SKU_LOCAL_NAV_VIEWS: () => SKU_LOCAL_NAV_VIEWS,
+	SKU_PUBLIC_HOSTS: () => SKU_PUBLIC_HOSTS,
+	SKU_PUBLIC_HUB_PATH: () => SKU_PUBLIC_HUB_PATH,
+	VIEW_TO_SIBLING_SKU: () => VIEW_TO_SIBLING_SKU,
+	androidPackageForSku: () => androidPackageForSku,
+	apkManifestForSku: () => apkManifestForSku,
+	applyCwspSku: () => applyCwspSku,
+	ensureCwspSkuFromLocation: () => ensureCwspSkuFromLocation,
+	inferCwspSkuFromLocation: () => inferCwspSkuFromLocation,
+	isCwspNativeHost: () => isCwspNativeHost,
+	isCwspSku: () => isCwspSku,
+	isHubPublicHost: () => isHubPublicHost,
+	isViewLocalToSurface: () => isViewLocalToSurface,
+	isWebHubSurface: () => isWebHubSurface,
+	publicHrefForSku: () => publicHrefForSku,
+	publicHrefForView: () => publicHrefForView,
+	readCwspSku: () => readCwspSku,
+	shouldHandoffViewToSibling: () => shouldHandoffViewToSibling,
+	siblingSkuForView: () => siblingSkuForView,
+	skuForHubPathSegment: () => skuForHubPathSegment,
+	stashSkuHandoff: () => stashSkuHandoff,
+	takeSkuHandoff: () => takeSkuHandoff
+});
 var ECOSYSTEM_SKUS = {
 	launcher: {
 		sku: "launcher",
@@ -126,6 +155,33 @@ var SKU_HUB_PATHS = {
 	],
 	transfer: ["cwsp", "transfer"]
 };
+/** Specialized chrome. Empty list = hub/CRX keeps every view. */
+var SKU_LOCAL_NAV_VIEWS = {
+	launcher: [],
+	crx: [],
+	document: [
+		"viewer",
+		"editor",
+		"print",
+		"settings",
+		"history"
+	],
+	explorer: [
+		"explorer",
+		"settings",
+		"history"
+	],
+	process: [
+		"workcenter",
+		"settings",
+		"history"
+	],
+	transfer: [
+		"network",
+		"settings",
+		"history"
+	]
+};
 var currentHostname = () => {
 	try {
 		return String(globalThis.location?.hostname || "").toLowerCase();
@@ -144,6 +200,12 @@ var isLanOrLoopbackHost = (host) => host === "localhost" || host === "127.0.0.1"
 var isHubPublicHost = (hostname) => {
 	const host = String(hostname || currentHostname()).toLowerCase();
 	return HUB_PUBLIC_HOSTS.includes(host);
+};
+/** Web `u2re.space` / LAN hub — not a Capacitor APK and not a dedicated SKU host. */
+var isWebHubSurface = () => {
+	if (isCwspNativeHost()) return false;
+	const host = currentHostname();
+	return isHubPublicHost(host) || isLanOrLoopbackHost(host);
 };
 var skuForHubPathSegment = (segment) => {
 	const seg = String(segment || "").trim().toLowerCase();
@@ -167,6 +229,43 @@ var ensureCwspSkuFromLocation = () => {
 	if (sku) applyCwspSku(sku);
 	return sku;
 };
+var normalizeNavViewId = (view) => {
+	const key = String(view || "").trim().toLowerCase();
+	if (key === "markdown" || key === "document" || key === "md") return "viewer";
+	if (key === "process") return "workcenter";
+	if (key === "files" || key === "fm") return "explorer";
+	if (key === "transfer") return "network";
+	return key;
+};
+/** False on a specialized host/mount for views that belong to another SKU. */
+var isViewLocalToSurface = (view, sku = inferCwspSkuFromLocation()) => {
+	const id = normalizeNavViewId(view);
+	if (!id) return false;
+	if (!sku || sku === "launcher" || sku === "crx") return true;
+	const local = SKU_LOCAL_NAV_VIEWS[sku];
+	if (!local.length) return true;
+	return local.includes(id);
+};
+/** Canonical hub/LAN path the user types (`/viewer` not `/markdown`). */
+var SKU_PUBLIC_HUB_PATH = {
+	document: "/viewer",
+	explorer: "/explorer",
+	process: "/process",
+	transfer: "/cwsp"
+};
+/** Path or absolute URL for a sibling SKU. Hub keeps `/viewer` `/explorer` `/process`. */
+var publicHrefForSku = (sku) => {
+	const host = currentHostname();
+	const hosts = SKU_PUBLIC_HOSTS[sku];
+	const path = SKU_PUBLIC_HUB_PATH[sku];
+	if (hosts.includes(host)) return "/";
+	if (isHubPublicHost(host) || isLanOrLoopbackHost(host)) return path;
+	return `https://${hosts[0]}/`;
+};
+var publicHrefForView = (view) => {
+	const sku = siblingSkuForView(normalizeNavViewId(view));
+	return sku ? publicHrefForSku(sku) : null;
+};
 var isCwspNativeHost = () => {
 	try {
 		const g = globalThis;
@@ -175,6 +274,22 @@ var isCwspNativeHost = () => {
 	} catch {
 		return false;
 	}
+};
+/**
+* Leave this PWA for a sibling SKU.
+* INVARIANT: web `u2re.space` (launcher) keeps `/viewer` `/explorer` `/process` in-process.
+* Native launcher still opens sibling APKs.
+*/
+var shouldHandoffViewToSibling = (view) => {
+	const id = normalizeNavViewId(view);
+	const sibling = siblingSkuForView(id);
+	if (!sibling) return false;
+	const sku = inferCwspSkuFromLocation();
+	if (sku === "crx") return false;
+	if ((!sku || sku === "launcher") && !isCwspNativeHost()) return false;
+	if (sku === sibling) return false;
+	if (sku && sku !== "launcher" && sku !== "crx" && isViewLocalToSurface(id, sku)) return false;
+	return true;
 };
 var CWSP_SKU_HANDOFF_KEY = "cwsp-sku-handoff";
 var stashSkuHandoff = (payload) => {
@@ -189,9 +304,26 @@ var stashSkuHandoff = (payload) => {
 		globalThis.localStorage?.setItem?.(CWSP_SKU_HANDOFF_KEY, json);
 	} catch {}
 };
+var takeSkuHandoff = (...accept) => {
+	try {
+		const raw = globalThis.sessionStorage?.getItem?.("cwsp-sku-handoff") || globalThis.localStorage?.getItem?.("cwsp-sku-handoff");
+		if (!raw) return null;
+		const parsed = JSON.parse(raw);
+		const dest = normalizeNavViewId(String(parsed.dest || ""));
+		if (accept.length && dest) {
+			if (!accept.some((entry) => normalizeNavViewId(entry) === dest)) return null;
+		}
+		globalThis.sessionStorage?.removeItem?.(CWSP_SKU_HANDOFF_KEY);
+		globalThis.localStorage?.removeItem?.(CWSP_SKU_HANDOFF_KEY);
+		return parsed;
+	} catch {
+		return null;
+	}
+};
 try {
 	ensureCwspSkuFromLocation();
 } catch {}
 var androidPackageForSku = (sku) => ECOSYSTEM_SKUS[sku]?.androidPackage ?? null;
+var apkManifestForSku = (sku) => ECOSYSTEM_SKUS[sku]?.apkManifest || "";
 //#endregion
-export { androidPackageForSku, isCwspNativeHost, isCwspSku, readCwspSku, siblingSkuForView, stashSkuHandoff };
+export { siblingSkuForView as _, applyCwspSku as a, inferCwspSkuFromLocation as c, isViewLocalToSurface as d, isWebHubSurface as f, shouldHandoffViewToSibling as g, readCwspSku as h, apkManifestForSku as i, isCwspNativeHost as l, publicHrefForView as m, SKU_HUB_PATHS as n, ecosystem_skus_exports as o, publicHrefForSku as p, androidPackageForSku as r, ensureCwspSkuFromLocation as s, ECOSYSTEM_SKUS as t, isCwspSku as u, stashSkuHandoff as v, takeSkuHandoff as y };

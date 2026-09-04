@@ -1,9 +1,4 @@
-import { r as __exportAll } from "../chunks/rolldown-runtime.js";
 //#region src/frontend/shells/environment/window/views/browser-view.ts
-var browser_view_exports = /* @__PURE__ */ __exportAll({
-	createBrowserView: () => createBrowserView,
-	default: () => createBrowserView
-});
 var STYLE = `
 .wf-browser {
   display: flex;
@@ -144,4 +139,4 @@ function createBrowserView(options) {
 	return root;
 }
 //#endregion
-export { browser_view_exports as t };
+export { createBrowserView, createBrowserView as default };

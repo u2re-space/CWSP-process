@@ -1,272 +1,2798 @@
-import { r as __exportAll } from "../chunks/rolldown-runtime.js";
-//#region src/shared/other/config/ecosystem-skus.ts
-var ecosystem_skus_exports = /* @__PURE__ */ __exportAll({
-	CWSP_SKU_HANDOFF_KEY: () => CWSP_SKU_HANDOFF_KEY,
-	ECOSYSTEM_SKUS: () => ECOSYSTEM_SKUS,
-	HUB_PUBLIC_HOSTS: () => HUB_PUBLIC_HOSTS,
-	SKU_HUB_PATHS: () => SKU_HUB_PATHS,
-	SKU_LOCAL_NAV_VIEWS: () => SKU_LOCAL_NAV_VIEWS,
-	SKU_PUBLIC_HOSTS: () => SKU_PUBLIC_HOSTS,
-	SKU_PUBLIC_HUB_PATH: () => SKU_PUBLIC_HUB_PATH,
-	VIEW_TO_SIBLING_SKU: () => VIEW_TO_SIBLING_SKU,
-	androidPackageForSku: () => androidPackageForSku,
-	apkManifestForSku: () => apkManifestForSku,
-	applyCwspSku: () => applyCwspSku,
-	ensureCwspSkuFromLocation: () => ensureCwspSkuFromLocation,
-	inferCwspSkuFromLocation: () => inferCwspSkuFromLocation,
-	isCwspNativeHost: () => isCwspNativeHost,
-	isCwspSku: () => isCwspSku,
-	isHubPublicHost: () => isHubPublicHost,
-	isViewLocalToSurface: () => isViewLocalToSurface,
-	isWebHubSurface: () => isWebHubSurface,
-	publicHrefForSku: () => publicHrefForSku,
-	publicHrefForView: () => publicHrefForView,
-	readCwspSku: () => readCwspSku,
-	shouldHandoffViewToSibling: () => shouldHandoffViewToSibling,
-	siblingSkuForView: () => siblingSkuForView,
-	skuForHubPathSegment: () => skuForHubPathSegment,
-	stashSkuHandoff: () => stashSkuHandoff,
-	takeSkuHandoff: () => takeSkuHandoff
-});
-var ECOSYSTEM_SKUS = {
-	launcher: {
-		sku: "launcher",
-		androidPackage: "space.u2re.cw",
-		scheme: "space.u2re.cw",
-		phosphorIcon: "cross",
-		defaultView: "home",
-		shell: "environment",
-		apkManifest: "latest-launcher.json",
-		apkName: "cwsp-launcher.apk"
-	},
-	transfer: {
-		sku: "transfer",
-		androidPackage: "space.u2re.cwsp",
-		scheme: "space.u2re.cwsp",
-		phosphorIcon: "drone",
-		defaultView: "network",
-		shell: "minimal",
-		apkManifest: "latest.json",
-		apkName: "cwsp.apk"
-	},
-	explorer: {
-		sku: "explorer",
-		androidPackage: "space.u2re.explorer",
-		scheme: "space.u2re.explorer",
-		phosphorIcon: "folder",
-		defaultView: "explorer",
-		shell: "minimal",
-		apkManifest: "latest-explorer.json",
-		apkName: "cwsp-explorer.apk"
-	},
-	document: {
-		sku: "document",
-		androidPackage: "space.u2re.document",
-		scheme: "space.u2re.document",
-		phosphorIcon: "books",
-		defaultView: "viewer",
-		shell: "minimal",
-		apkManifest: "latest-document.json",
-		apkName: "cwsp-document.apk"
-	},
-	process: {
-		sku: "process",
-		androidPackage: "space.u2re.process",
-		scheme: "space.u2re.process",
-		phosphorIcon: "magic-wand",
-		defaultView: "workcenter",
-		shell: "minimal",
-		apkManifest: "latest-process.json",
-		apkName: "cwsp-process.apk"
-	},
-	crx: {
-		sku: "crx",
-		androidPackage: null,
-		scheme: "chrome-extension",
-		phosphorIcon: "cross",
-		defaultView: "home",
-		shell: "environment",
-		apkManifest: "",
-		apkName: ""
-	}
-};
-var SKU_SET = new Set(Object.keys(ECOSYSTEM_SKUS));
-/** Views that leave the launcher APK and open a sibling SKU. */
-var VIEW_TO_SIBLING_SKU = {
-	explorer: "explorer",
-	viewer: "document",
-	editor: "document",
-	markdown: "document",
-	print: "document",
-	workcenter: "process",
-	network: "transfer"
-};
-var isCwspSku = (value) => typeof value === "string" && SKU_SET.has(value);
-var readCwspSku = () => {
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../chunks/capacitor-share-intent2.js","../assets/index-CU5eF_0S.js","../chunks/ecosystem-skus.js","../chunks/rolldown-runtime.js","../chunks/multi-value-list.js","../chunks/capacitor-permissions3.js","../chunks/capacitor-clipboard-asset2.js","../com/app2.js","../chunks/frontend-debug-capture2.js","../chunks/cws-bridge.js","../fest/core3.js","../fest/core2.js","../fest/uniform.js","../chunks/airpad-cwsp-client-parity.js","../vendor/@capacitor_core.js","../chunks/UniformInterop2.js","../chunks/names.js","../vendor/@capacitor_core2.js","../chunks/sw-handling.js","../fest/core4.js","../fest/core.js","../fest/object.js","../fest/core5.js","../vendor/jsox.js","../chunks/open-policy.js","../chunks/SettingsTypes.js","../chunks/process-ingress.js","../chunks/remote-connection-runtime.js","../chunks/UnifiedMessaging.js","../chunks/UniformInterop.js","../chunks/process-api-result.js","../chunks/ShareTargetGateway.js","../chunks/UnifiedMessaging2.js","../chunks/sku-ingress.js","../chunks/log-sanitizer.js","../chunks/ViewTransferRouting.js","../chunks/workcenter-command-wire.js","../chunks/crx-control-session.js","../chunks/launcher-bridge.js","../chunks/clipboard-device.js","../chunks/hub-socket-boot.js","../chunks/packet-wire-hash.js","../chunks/ecosystem-skus2.js","../chunks/cws-bridge2.js","../chunks/Theme.js","../chunks/StateStorage.js","../fest/object2.js","../chunks/Clipboard.js","../chunks/Runtime.js"])))=>i.map(i=>d[i]);
+import { c as inferCwspSkuFromLocation, f as isWebHubSurface, g as shouldHandoffViewToSibling, h as readCwspSku, i as apkManifestForSku, l as isCwspNativeHost, m as publicHrefForView, n as SKU_HUB_PATHS, r as androidPackageForSku, u as isCwspSku } from "../chunks/ecosystem-skus.js";
+import { t as __vitePreload } from "../assets/index-CU5eF_0S.js";
+import { $ as unbakeScreenColors, Tt as removeAdopted, Z as scheduleBakeScreenColors, gt as loadAsAdopted, zt as unwrapCssLayer } from "../fest/core.js";
+import { $ as H, C as StorageKeys, Z as defineElement, w as setString } from "../fest/core4.js";
+import { f as ref, u as observe } from "../fest/object.js";
+import { a as initializeRegistries, d as DEFAULT_VIEW_ID, f as ENABLED_VIEW_IDS$1, i as defaultTheme, l as serviceChannels, m as pickEnabledView, o as lightTheme, p as isEnabledView, r as darkTheme, s as startImplicitViewMessagingBridge, t as ShellRegistry } from "../fest/uniform2.js";
+import { a as loadSettings, i as getLastSettingsSaveReport, n as ensureCapacitorCwspSettingsSeeded, o as noteSettingsControlSync, r as ensureCrxCwspSettingsSeeded, s as saveSettings } from "../vendor/jsox.js";
+import { c as __decorate, o as UIElement } from "../com/app3.js";
+import { S as stampHostOpenPolicy, c as mergeOpenPolicy, h as resolveHostOpenPolicy, n as OPEN_KINDS } from "../chunks/open-policy.js";
+import { l as sendMessage } from "../chunks/UnifiedMessaging.js";
+import { i as resolveEcosystemToken, r as normalizeEcosystemToken, t as BUILTIN_AI_MODELS } from "../chunks/SettingsTypes.js";
+import { s as mergeProcessIngress, t as PROCESS_INGRESS_KIND_LABELS } from "../chunks/process-ingress.js";
+import { W as resolveCwspUrlFields } from "../chunks/airpad-cwsp-client-parity.js";
+import { i as initCwsNativeBridge, s as isCapacitorCwsNativeShell } from "../chunks/cws-bridge.js";
+import { t as applyAirpadRuntimeFromAppSettings } from "../chunks/remote-connection-runtime.js";
+import { c as loadSettings$1, s as ensureCapacitorCwspSettingsSeeded$1, u as DEFAULT_SETTINGS } from "../chunks/packet-wire-hash.js";
+import { i as SettingsChannelAction } from "../chunks/channel-actions.js";
+import "../fest/icon.js";
+import { a as FALLBACK_BASE_COLOR, c as normalizeHexColor, n as applyTheme, o as defaultColorSource, s as isAppearanceColorSource } from "../chunks/Theme.js";
+import { a as hubSettingsSectionPath$1, c as rememberSettingsAreaSection, d as skuForHubSettingsSection, f as visibleHubSettingsSections, i as hasBuiltInSettingsPanel, l as resolveEffectiveHubSettingsSection, n as canonicalHubSettingsSection$1, o as pruneBuiltInSettingsTabs, r as defaultSettingsTabForProfile, s as readSettingsAreaSection, t as SIBLING_HUB_SETTINGS_SECTIONS$1, u as resolveSettingsShellProfile } from "../chunks/settings-shell-profile.js";
+import "../fest/veela3.js";
+import { i as initializeLayers, n as loadStyleSystem, r as applyTheme$1 } from "../fest/veela4.js";
+import { r as isViewLocalToSurface } from "../chunks/ecosystem-skus2.js";
+import { n as isCapacitorNative } from "../chunks/capacitor-permissions.js";
+import { r as requestCapacitorSettingsPermissionsAfterSave } from "../chunks/capacitor-settings-permissions.js";
+import { c as updateInstruction, i as deleteInstruction, n as addInstruction, o as getInstructionRegistry, r as addInstructions, s as setActiveInstruction } from "../chunks/CustomInstructions.js";
+import { t as DEFAULT_INSTRUCTION_TEMPLATES } from "../chunks/templates.js";
+import { n as openAdminDoorFromCore, r as resolveAdminDoorUrls } from "../chunks/admin-doors.js";
+import { n as ensureCapacitorBridgeDaemonStarted } from "../chunks/capacitor-settings-permissions3.js";
+import { t as applyHubSocketFromSettings } from "../chunks/hub-socket-boot.js";
+//#region ../../modules/projects/subsystem/src/boot/history-base.ts
+var KNOWN_PATH_MOUNTS = [
+	"cwsp",
+	"transfer",
+	"markdown",
+	"document",
+	"viewer",
+	"explorer",
+	"workcenter",
+	"process",
+	"ai",
+	"kvm"
+];
+/** Dedicated PWA hosts — app lives at `/`. Hub/LAN keep `/markdown` `/viewer` path mounts. */
+var DEDICATED_SKU_HOSTS = [
+	"md.u2re.space",
+	"www.md.u2re.space",
+	"explorer.u2re.space",
+	"www.explorer.u2re.space",
+	"process.u2re.space",
+	"workcenter.u2re.space",
+	"ai.u2re.space",
+	"cwsp.u2re.space",
+	"www.cwsp.u2re.space",
+	"transfer.u2re.space"
+];
+function isDedicatedSkuHost(hostname) {
 	try {
-		const raw = String(document.documentElement?.dataset?.cwspSku || "").trim().toLowerCase();
-		return isCwspSku(raw) ? raw : "";
+		const host = String(hostname ?? globalThis.location?.hostname ?? "").toLowerCase();
+		return DEDICATED_SKU_HOSTS.includes(host);
 	} catch {
-		return "";
+		return false;
+	}
+}
+function isKnownPathMountSegment(segment) {
+	return KNOWN_PATH_MOUNTS.includes(String(segment || "").toLowerCase());
+}
+/**
+* On a named SKU host, `/viewer` `/markdown` `/explorer` … are Fastify aliases of `/`, not view routes.
+* WHY: minimal path-routing wrote `/viewer?shell=minimal` → 302 `/viewer/` → 302 `/` → bootloop.
+*/
+function pathForSkuHostView(viewPath) {
+	let path = String(viewPath || "/").trim() || "/";
+	if (!path.startsWith("/")) path = `/${path}`;
+	const sku = inferCwspSkuFromLocation();
+	const nativeSku = isCwspNativeHost() && !!sku && sku !== "launcher" && sku !== "crx";
+	if (!isDedicatedSkuHost() && !nativeSku) return path;
+	const seg = path.replace(/^\/+/, "").split("/")[0]?.toLowerCase() || "";
+	if (!seg || !isKnownPathMountSegment(seg)) return path;
+	if (sku && sku !== "launcher" && sku !== "crx") return SKU_HUB_PATHS[sku]?.includes(seg) ? "/" : path;
+	return "/";
+}
+/**
+* Router base path without trailing slash ("" at domain root, "/cwsp" on IP path mount).
+* WHY: absolute `/network` history entries drop the Fastify debugPath prefix and 404 on reload.
+*/
+function getHistoryBasePath() {
+	try {
+		const fromData = String(globalThis.document?.documentElement?.dataset?.cwspRouterBase || "").trim();
+		if (fromData) return (fromData.startsWith("/") ? fromData : `/${fromData}`).replace(/\/+$/, "") || "";
+		const baseHref = globalThis.document?.querySelector?.("base")?.getAttribute("href");
+		if (baseHref && baseHref !== "/" && !baseHref.startsWith(".")) {
+			const origin = globalThis.location?.origin || "http://localhost";
+			return new URL(baseHref, origin).pathname.replace(/\/+$/, "") || "";
+		}
+		if (isDedicatedSkuHost()) return "";
+		const pathname = String(globalThis.location?.pathname || "/");
+		const re = new RegExp(`^/(${KNOWN_PATH_MOUNTS.join("|")})(?:/|$)`, "i");
+		const m = pathname.match(re);
+		if (m?.[1]) return `/${m[1].toLowerCase()}`;
+	} catch {}
+	return "";
+}
+/** Prefix an absolute app path with the history base (`/network` → `/cwsp/network`). */
+function withHistoryBase(pathname) {
+	const base = getHistoryBasePath();
+	let path = String(pathname || "/").trim() || "/";
+	if (!path.startsWith("/")) path = `/${path}`;
+	if (!base) return path;
+	if (path === base || path.startsWith(`${base}/`)) return path;
+	const pathSeg = path.replace(/^\/+/, "").split("/")[0]?.toLowerCase() || "";
+	const baseSeg = base.replace(/^\/+/, "").split("/")[0]?.toLowerCase() || "";
+	if (baseSeg && pathSeg && isKnownPathMountSegment(baseSeg) && isKnownPathMountSegment(pathSeg) && pathSeg !== baseSeg) return path;
+	if (path === "/") return `${base}/`;
+	return `${base}${path}`;
+}
+/** Persist detected mount on `<html>` so later navigations stay scoped. */
+function ensureHistoryBaseDataset() {
+	const base = getHistoryBasePath();
+	try {
+		const el = globalThis.document?.documentElement;
+		if (el && base) el.dataset.cwspRouterBase = base;
+	} catch {}
+	return base;
+}
+//#endregion
+//#region ../../modules/projects/subsystem/src/boot/shell-preference.ts
+var LS_BOOT_SHELL_LAST_ACTIVE = "rs-boot-shell-last-active";
+//#endregion
+//#region ../../modules/views/settings-view/src/ts/settings-styles-attach.ts
+var STYLE_MARKER = "data-settings-view-css";
+/**
+* WHY: Inlined `@layer` loses to unlayered shell CSS in Capacitor / ui-window hosts — unwrap for paint.
+* COMPAT: Vite often prefixes `@charset` and the SCSS file may start with a block comment, so a
+* strict `^@layer` match never fired and tab/panel rules stayed layered (and lost).
+*/
+var normalizeInlineSettingsCss = (raw) => unwrapCssLayer(String(raw || ""), "settings-view");
+/**
+* Layout-only fallback when SCSS inline import is empty.
+* INVARIANT: no hardcoded dark `color`/`background` — Settings.scss owns theme via `--sv-*`.
+* INVARIANT: only `.is-active` tab panels paint (`.card { display:flex }` must not reveal siblings).
+*/
+var CRITICAL_SETTINGS_CSS = `
+.view-settings{display:grid!important;grid-template-rows:auto minmax(0,1fr) auto!important;grid-template-columns:minmax(0,1fr)!important;inline-size:100%!important;block-size:100%!important;min-block-size:0!important;overflow:hidden!important;pointer-events:auto!important;container-type:inline-size}
+.view-settings .settings-screen__top{display:flex!important;flex-direction:column!important;align-items:stretch!important;inline-size:100%!important;max-inline-size:100%!important;min-inline-size:0!important;pointer-events:auto!important}
+.view-settings .settings-tab-actions{display:flex!important;flex-wrap:nowrap!important;inline-size:100%!important;max-inline-size:100%!important;min-inline-size:0!important;overflow-x:auto!important;overflow-y:hidden!important;pointer-events:auto!important}
+.view-settings .settings-screen__body{display:flex!important;flex-direction:column!important;min-block-size:0!important;overflow:auto!important;-webkit-overflow-scrolling:touch;pointer-events:auto!important}
+.view-settings .settings-screen__body>[data-tab-panel]:not(.is-active),.view-settings .settings-screen__body>[data-tab-panel][hidden]{display:none!important}
+.view-settings .settings-screen__body>[data-tab-panel].is-active:not([hidden]){display:flex!important;flex-direction:column!important;gap:.75rem!important;pointer-events:auto!important}
+.view-settings .field,.view-settings .form-input,.view-settings .form-select,.view-settings .btn,.view-settings .card{pointer-events:auto!important}
+.view-settings .settings-tab-btn{pointer-events:auto!important;cursor:pointer!important;flex:0 0 auto!important}
+`;
+/** Attach Settings.scss once on `document` (not per host — in-host inject forced a full recalc). */
+var attachSettingsInlineStyles = (host) => {
+	if (host && !host.classList?.contains("view-settings")) return;
+	if (typeof document === "undefined") return;
+	if (document.head?.querySelector(`style[${STYLE_MARKER}]`)) {
+		if (host) scheduleBakeScreenColors(host);
+		return;
+	}
+	let css = normalizeInlineSettingsCss(String("@layer components{:is(html[data-theme=light] .view-settings,:host-context(html[data-theme=light]) .view-settings){color-scheme:light only;--sv-bg:var(--color-surface,--u2-color-mod(var(--base-color,#5a7fff),40));--sv-fg:var(--color-on-surface,--u2-color-mod(var(--base-color,#5a7fff),900));--sv-muted:var(--color-on-surface-variant,--u2-color-mod(var(--base-color,#5a7fff),700));--sv-outline:var(--color-outline-variant,--u2-color-mod(var(--base-color,#5a7fff),400));--sv-surface-1:var(--color-surface-container-low,--u2-color-mod(var(--base-color,#5a7fff),10));--sv-surface-2:var(--color-surface-container,--u2-color-mod(var(--base-color,#5a7fff),10))}:is(html[data-theme=dark] .view-settings,:host-context(html[data-theme=dark]) .view-settings){color-scheme:dark only;--sv-bg:var(--color-surface,--u2-color-mod(var(--base-color,#5a7fff),1000));--sv-fg:var(--color-on-surface,--u2-color-mod(var(--base-color,#5a7fff),100));--sv-muted:var(--color-on-surface-variant,--u2-color-mod(var(--base-color,#5a7fff),280));--sv-outline:var(--color-outline-variant,--u2-color-mod(var(--base-color,#5a7fff),640));--sv-surface-1:var(--color-surface-container-low,--u2-color-mod(var(--base-color,#5a7fff),900));--sv-surface-2:var(--color-surface-container,--u2-color-mod(var(--base-color,#5a7fff),960))}.view-settings{color-scheme:inherit;margin:0;padding:0;--base-color-neutralized:color-mix(in oklab,var(--base-color) 60%,gray);--sv-accent:light-dark(--u2-color-mod(oklch(from var(--sv-primary,#5a7fff) calc(l * 1.6) calc(c * 2) h),600),--u2-color-mod(oklch(from var(--sv-primary,#5a7fff) calc(l * 1.6) calc(c * 2) h),400));--sv-on-primary:var(\n        --color-on-primary,light-dark(--u2-color-mod(var(--sv-primary,#5a7fff),10),--u2-color-mod(var(--sv-primary,#5a7fff),990))\n    );--sv-elev:0 2px 14px color-mix(in oklab,var(--sv-fg,light-dark(#12151a,#e8edf2)) 5%,transparent);--sv-divider:color-mix(in oklab,var(--sv-outline,light-dark(#c5cdd8,#3d4755)) 35%,transparent);--sv-ring:color-mix(in oklab,var(--sv-outline,light-dark(#c5cdd8,#3d4755)) 55%,transparent);background-color:var(--sv-surface-2,light-dark(#ffffff,#171c24));block-size:100%;color:var(--sv-fg,light-dark(#12151a,#e8edf2));container-name:settings-view;container-type:inline-size;display:grid!important;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;gap:0;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,max-content) minmax(0,1fr) minmax(0,max-content);inline-size:100%;max-block-size:100%;min-block-size:0;overflow:hidden;pointer-events:auto;text-align:start;touch-action:pan-x pan-y}.view-settings,.view-settings *,.view-settings :after,.view-settings :before{box-sizing:border-box}.view-settings :where(select,input,textarea,option,button){font-family:inherit;pointer-events:auto}.view-settings textarea{container-type:inline-size;inline-size:100%;max-inline-size:100%;resize:vertical}.view-settings :is(h2,h3){color:var(--sv-fg,light-dark(#12151a,#e8edf2));margin:0;text-align:start}.view-settings h2{font-size:1.3rem;font-weight:700;letter-spacing:-.02em}.view-settings h2,.view-settings h3{margin:0;padding-block:.5rem;text-align:center}.view-settings h3{font-size:1.2rem;font-weight:600;letter-spacing:-.01em}.view-settings h4{font-size:1rem;font-weight:500;letter-spacing:-.01em;margin:0;padding-block:.5rem}.view-settings .settings-screen__top{align-items:stretch;background:var(--sv-surface-2,var(--sv-bg));border:0 transparent;border-block-end:0 none transparent;display:flex;flex-direction:column;flex-shrink:0;gap:0;inline-size:100%;max-inline-size:100%;max-inline-size:stretch;min-inline-size:0;overflow:hidden;padding-block-end:0}.view-settings .settings-screen__title{flex:0 0 auto;font-size:clamp(1.05rem,2.5cqi,1.35rem);font-weight:600;letter-spacing:-.015em;max-inline-size:stretch;overflow:visible}.view-settings .settings-screen__body{background:var(--sv-surface-1,light-dark(#f4f6fa,#1c232d));block-size:stretch;border-radius:0;max-inline-size:stretch;min-block-size:stretch;min-inline-size:0;overflow:auto;overflow:hidden;overflow-y:auto;scrollbar-color:var(--sv-outline,light-dark(#c5cdd8,#3d4755)) transparent;touch-action:pan-y;-webkit-overflow-scrolling:touch;anchor-name:--shape-anchor;display:flex;flex-direction:column;gap:1rem;max-block-size:stretch;overscroll-behavior:contain;padding-block:0;position:relative;scrollbar-gutter:stable;scrollbar-width:thin;z-index:0;--padding:0.5rem;--radius:0.5rem;--box-x:calc(var(--padding) + 0.5rem);--box-y:calc(var(--padding) + 0.5rem);--box-width:calc(100% - var(--padding) * 2 - 1rem);--box-height:calc(100% - var(--padding) * 2 - 1rem);--hole-x:calc(var(--box-x) - var(--padding));--hole-y:calc(var(--box-y) - var(--padding));--hole-width:calc(var(--box-width) + var(--padding) + var(--padding));--hole-height:calc(var(--box-height) + var(--padding) + var(--padding));--hole-radius:calc(var(--radius) + var(--padding))}@supports (color:light-dark(red,red)){.view-settings .settings-screen__body{scrollbar-color:var(--sv-outline,light-dark(#c5cdd8,#3d4755)) transparent}}@supports (clip-path:shape(evenodd from 0 0)){.view-settings .settings-screen__body:after{background:var(--sv-surface-1,light-dark(#f4f6fa,#1c232d));block-size:anchor-size(self-block);clip-path:shape(evenodd from 0 0,line to 100% 0,line to 100% 100%,line to 0 100%,close,move to calc(var(--hole-x) + var(--hole-radius)) var(--hole-y),line to calc(var(--hole-x) + var(--hole-width) - var(--hole-radius)) var(--hole-y),arc to calc(var(--hole-x) + var(--hole-width)) calc(var(--hole-y) + var(--hole-radius)) of var(--hole-radius) cw,line to calc(var(--hole-x) + var(--hole-width)) calc(var(--hole-y) + var(--hole-height) - var(--hole-radius)),arc to calc(var(--hole-x) + var(--hole-width) - var(--hole-radius)) calc(var(--hole-y) + var(--hole-height)) of var(--hole-radius) cw,line to calc(var(--hole-x) + var(--hole-radius)) calc(var(--hole-y) + var(--hole-height)),arc to var(--hole-x) calc(var(--hole-y) + var(--hole-height) - var(--hole-radius)) of var(--hole-radius) cw,line to var(--hole-x) calc(var(--hole-y) + var(--hole-radius)),arc to calc(var(--hole-x) + var(--hole-radius)) var(--hole-y) of var(--hole-radius) cw,close);content:\"\";inline-size:calc(anchor-size(self-inline) - var(--padding));inset:auto;inset-block-end:anchor(end);inset-block-start:anchor(start);inset-inline-end:anchor(end);inset-inline-start:anchor(start);pointer-events:none;position:fixed;position-anchor:--shape-anchor;touch-action:pan-y;z-index:1}}.view-settings .settings-screen__body::-webkit-scrollbar{inline-size:6px}.view-settings .settings-screen__body::-webkit-scrollbar-thumb{background:color-mix(in oklab,var(--sv-outline,light-dark(#c5cdd8,#3d4755)) 45%,transparent);border-radius:99px}.view-settings .settings-screen__footer{align-items:center;display:flex;flex-shrink:0;flex-wrap:wrap;gap:.5rem;inline-size:stretch;justify-content:flex-start;max-inline-size:stretch;padding-block:.5rem;padding-inline:.25rem;padding-inline:.5rem}.view-settings .ext-note,.view-settings .settings-screen__footer{background:var(--sv-surface-1,light-dark(#f4f6fa,#1c232d))}.view-settings .settings-tab-actions{align-items:center;background-color:var(--sv-surface-1,light-dark(#ffffff,#171c24));border-block-start:1px solid var(--sv-divider);display:flex;flex:0 0 auto;flex-wrap:nowrap;gap:.375rem;inline-size:100%;max-inline-size:100%;max-inline-size:stretch;min-inline-size:0;overflow-x:auto;overflow-y:hidden;padding-block:.25rem;padding-block-end:.25rem;padding-inline:.5rem;pointer-events:auto;position:relative;scrollbar-color:var(--sv-outline,light-dark(#c5cdd8,#3d4755)) transparent;scrollbar-width:thin;touch-action:pan-x;z-index:1}.view-settings:not(:has(.settings-sku-nav)) .settings-tab-actions{background-color:initial;border:0 transparent;border-block-end:1px solid var(--sv-divider);border-block-start:0 none transparent;margin:0}.view-settings .settings-sku-nav{align-items:center;background-color:initial;border:0 transparent;border-block-end:0 none transparent;border-block-start:0 none transparent;box-shadow:none;display:flex;flex:0 0 auto;flex-wrap:nowrap;gap:.375rem;inline-size:100%;justify-content:flex-start;margin-block-end:.125rem;margin:0;max-inline-size:stretch;max-inline-size:100%;min-inline-size:0;overflow-x:auto;overflow-y:hidden;padding-block:.5rem;padding-block:.25rem;pointer-events:auto;position:relative;scrollbar-color:var(--sv-outline,light-dark(#c5cdd8,#3d4755)) transparent;scrollbar-width:thin;touch-action:pan-x;z-index:1}.view-settings .settings-sku-nav .settings-tab-btn{align-items:center;border-radius:.5rem;display:inline-flex;gap:.4rem}.view-settings .settings-sku-nav .settings-sku-nav__icon{--icon-size:1.05rem;block-size:var(--icon-size);color:currentColor;flex:0 0 auto;font-size:var(--icon-size);inline-size:var(--icon-size);pointer-events:none}.view-settings .settings-tab-actions::-webkit-scrollbar{block-size:4px}.view-settings .settings-tab-actions::-webkit-scrollbar-thumb{background:color-mix(in oklab,var(--sv-accent,var(--sv-primary,#5a7fff)) 70%,transparent);border-radius:99px}.view-settings .settings-tab-btn{background:color-mix(in oklab,var(--sv-surface-1,light-dark(#f4f6fa,#1c232d)) 94%,transparent);border:2px solid transparent;border-radius:999px;color:var(--sv-muted,light-dark(#5c6570,#a8b0bc));cursor:pointer;font-size:.75rem;font-weight:500;max-inline-size:stretch;min-block-size:2.5rem;padding:.5rem .875rem;pointer-events:auto;transition:background-color .12s ease,color .12s ease,box-shadow .12s ease;white-space:nowrap}@supports (color:contrast-color(red)) and (color:light-dark(red,red)){.view-settings .settings-tab-btn{color:contrast-color(var(--sv-surface-1,light-dark(#f4f6fa,#1c232d)))}}.view-settings .settings-tab-btn:hover{background:color-mix(in oklab,var(--sv-surface-2,light-dark(#f4f6fa,#1c232d)) 100%,transparent);color:var(--sv-fg,light-dark(#12151a,#e8edf2))}.view-settings .settings-tab-btn.is-active{border:2px solid;border-color:var(--sv-accent,var(--sv-primary,#5a7fff))}.view-settings .settings-screen__body>.settings-tab-panel{max-inline-size:stretch;pointer-events:auto;scrollbar-width:none;touch-action:pan-x pan-y}.view-settings .settings-screen__body>:is(.settings-tab-panel:not(.is-active),.settings-tab-panel[hidden]){display:none!important}.view-settings .settings-screen__body>.settings-tab-panel.is-active:not([hidden]){align-items:stretch;display:flex!important;flex-direction:column;gap:.75rem;min-inline-size:0}.view-settings .card{background:var(--sv-surface-2,light-dark(#ffffff,#171c24));border:none;border-radius:16px;box-shadow:none;display:flex;flex-direction:column;gap:.75rem;inline-size:stretch;margin-inline:.5rem;max-inline-size:stretch;padding:1rem}@container settings-view (max-inline-size: 480px){.view-settings .card{border-radius:12px;padding:.75rem}}.view-settings .settings-panel-form{display:flex;flex-direction:column;gap:.75rem;inline-size:stretch;max-inline-size:stretch}.view-settings .field{display:grid;font-size:.75rem;gap:.375rem;grid-auto-flow:row;inline-size:stretch;margin:0;margin-block-start:.5rem;max-inline-size:stretch;pointer-events:auto}.view-settings .field>span{color:var(--sv-muted,light-dark(#5c6570,#a8b0bc));font-size:.75rem;font-weight:500;padding-block:.25rem;padding-block-end:0}.view-settings .field.checkbox{align-items:center;gap:.625rem;grid-auto-columns:minmax(0,max-content) 1fr;grid-auto-flow:column;max-inline-size:stretch}.view-settings [data-contribution]{background:var(--sv-surface-2,light-dark(#ffffff,#171c24));border:0 solid color-mix(in oklab,var(--sv-outline,light-dark(#c5cdd8,#3d4755)) 40%,transparent);border-radius:12px;display:flex;flex-direction:column;gap:.5rem;max-inline-size:stretch;padding:.5rem}.view-settings .field-hint{color:var(--sv-muted,light-dark(#5c6570,#a8b0bc));font-size:.85em;line-height:1.45;margin:0 0 .75rem;max-inline-size:stretch;opacity:.95;padding-inline:.25rem}.view-settings .apk-update-fleet-row{background:var(--sv-surface-1,light-dark(#f4f6f8,#12171e));border:1px solid color-mix(in oklab,var(--sv-outline,light-dark(#c5cdd8,#3d4755)) 45%,transparent);border-radius:10px;display:flex;flex-direction:column;gap:.35rem;margin-block:.35rem .75rem;padding:.65rem .75rem}.view-settings .apk-update-fleet-row h4{font-size:.95rem;margin:0}.view-settings .apk-update-fleet-row .field-hint{margin-block-end:.25rem}.view-settings .appearance-swatches{display:flex;flex-wrap:wrap;gap:.45rem}.view-settings .appearance-swatch{background:var(--color-primary,#5a9ec8);block-size:1.75rem;border:2px solid color-mix(in oklab,var(--sv-fg,#e8edf2) 18%,transparent);border-radius:999px;cursor:pointer;inline-size:1.75rem;padding:0}.view-settings .appearance-swatch[aria-selected=true]{outline:2px solid var(--sv-accent,var(--color-primary,#5a9ec8));outline-offset:2px}.view-settings .appearance-hue{display:grid;gap:.25rem}.view-settings .appearance-hue__range{accent-color:var(--color-primary,#5a9ec8);inline-size:100%}.view-settings .appearance-color-input{block-size:2rem;inline-size:3.25rem;padding:.15rem}.view-settings :is(.form-input,.form-select){background:var(--sv-surface-1,light-dark(#ffffff,#171c24));border-radius:10px;color:var(--sv-fg,light-dark(#12151a,#e8edf2));display:block;inline-size:100%;min-block-size:2.5rem;padding:.5rem .65rem;-webkit-text-fill-color:var(--sv-fg,light-dark(#12151a,#e8edf2));border:0 transparent;box-shadow:none;caret-color:var(--sv-fg,light-dark(#12151a,#e8edf2));font-size:.875rem;line-height:1.25;max-inline-size:stretch;outline:none;outline:0 none transparent;transition:border-color .12s ease,box-shadow .12s ease}.view-settings :is(select.form-input,select.form-select){background-color:var(--sv-surface-1,light-dark(#ffffff,#171c24));background-position:calc(100% - 14px) calc(50% - 2px),calc(100% - 9px) calc(50% - 2px);background-repeat:no-repeat;background-size:5px 5px;border:0 transparent;box-shadow:none;max-inline-size:stretch;outline:0 none transparent;padding-inline-end:2rem;pointer-events:auto}.view-settings .btn{align-items:center;background:color-mix(in oklab,var(--sv-surface-1,light-dark(#ffffff,#171c24)) 90%,transparent);border:none;border-radius:999px;color:var(--sv-fg,var(--color-on-surface));cursor:pointer;display:inline-flex;font-size:.8125rem;font-weight:500;gap:.35rem;justify-content:center;max-inline-size:stretch;min-block-size:2.5rem;padding:.5rem 1.125rem;transition:background-color .12s ease,filter .12s ease}@supports (color:contrast-color(red)){.view-settings .btn{color:contrast-color(var(--sv-surface-1,var(--color-surface)))}}.view-settings .btn:hover{background:color-mix(in oklab,var(--sv-fg,light-dark(#12151a,#e8edf2)) 6%,var(--sv-surface-1,light-dark(#ffffff,#171c24)))}.view-settings .btn.primary{background:var(--sv-accent,var(--sv-primary,#5a7fff));color:var(--sv-on-primary)}@supports (color:contrast-color(red)){.view-settings .btn.primary{color:contrast-color(var(--sv-accent,var(--sv-primary,#5a7fff)))}}.view-settings .btn.primary:hover{filter:brightness(1.1)}.view-settings :is(.btn.btn-sm,.btn.small){font-size:.75rem;min-block-size:2rem;padding:.35rem .65rem}.view-settings .btn.btn-danger{background:color-mix(in oklab,var(--sv-danger,#d32f2f) 92%,#000);color:var(--sv-on-primary)}.view-settings .btn.btn-danger:hover{filter:brightness(1.08)}.view-settings .btn.tiny{font-size:.72rem;min-block-size:2rem;padding:.3rem .5rem}.view-settings :is(.ext-note,.note){color:var(--sv-muted,light-dark(#5c6570,#a8b0bc));display:block;flex:1 1 auto;font-size:.75rem;max-inline-size:100%;opacity:.92;overflow:hidden;text-overflow:ellipsis;white-space:normal}.view-settings :is(.ext-note:empty,.note:empty){display:none}.view-settings :is(.ext-note,.note){line-height:1.35;max-inline-size:stretch;pointer-events:none}.view-settings :is(.ext-note.note--ok,.note.note--ok){color:color-mix(in oklab,var(--color-success,#3ecf8e) 70%,var(--sv-fg,light-dark(#12151a,#e8edf2)))}.view-settings :is(.ext-note.note--warn,.note.note--warn){color:color-mix(in oklab,var(--color-warning,#e6a700) 75%,var(--sv-fg,light-dark(#12151a,#e8edf2)))}.view-settings :is(.ext-note.note--err,.note.note--err){color:color-mix(in oklab,var(--color-error,#e05252) 80%,var(--sv-fg,light-dark(#12151a,#e8edf2)))}.view-settings .ext-note{line-height:1.4;max-inline-size:stretch}.view-settings .ext-note code{background:color-mix(in oklab,var(--sv-surface-1,light-dark(#ffffff,#171c24)) 80%,var(--sv-bg,light-dark(#eef1f6,#0f1318)));border-radius:4px;color:var(--sv-fg,light-dark(#12151a,#e8edf2));font-size:.68rem;max-inline-size:stretch;padding:2px 6px}.view-settings .form-checkbox input[type=checkbox],.view-settings label.field.checkbox input[type=checkbox]{accent-color:var(--sv-accent,var(--sv-primary,#5a7fff));block-size:1.15rem;flex-shrink:0;inline-size:1.15rem;max-inline-size:stretch}.view-settings .mcp-section{display:flex;flex-direction:column;gap:.5rem;max-inline-size:stretch}.view-settings .mcp-actions{display:flex;flex-wrap:wrap;gap:.5rem;margin-block-start:.5rem;max-inline-size:stretch}.view-settings .mcp-row{background:color-mix(in oklab,var(--sv-surface-1,light-dark(#ffffff,#171c24)) 88%,var(--sv-bg,light-dark(#eef1f6,#0f1318)));border-radius:12px;display:grid;gap:.5rem;max-inline-size:stretch;padding:.75rem}.view-settings .mcp-empty-note,.view-settings .mcp-row .field{margin:0;max-inline-size:stretch}.view-settings .mcp-empty-note{color:var(--sv-muted,light-dark(#5c6570,#a8b0bc));font-size:.75rem}.view-settings .settings-spoiler{background:color-mix(in oklab,var(--sv-surface-1,light-dark(#ffffff,#171c24)) 55%,transparent);border:1px solid color-mix(in oklab,var(--sv-outline,light-dark(#c5cdd8,#3d4755)) 22%,transparent);border-radius:12px;max-inline-size:stretch;padding:.25rem .5rem}.view-settings .settings-spoiler summary{color:var(--sv-fg,light-dark(#12151a,#e8edf2));cursor:pointer;font-size:.8rem;font-weight:600;max-inline-size:stretch;padding:.35rem .25rem}.view-settings .settings-spoiler .settings-panel-form{max-inline-size:stretch;padding-block-end:.25rem}.view-settings .view-settings__content{inline-size:100%;max-inline-size:min(clamp(640px,90%,800px),100%)}.view-settings .view-settings__section{border-block-end:1px solid var(--sv-divider);display:flex;flex-direction:column;margin-block-end:2rem;max-inline-size:stretch;padding-block-end:2rem}.view-settings .view-settings__section:last-of-type{border-block-end:none}.view-settings .view-settings__group{display:flex;flex-direction:column;gap:1rem;max-inline-size:stretch}.view-settings .view-settings__label{display:flex;flex-direction:column;gap:.375rem;max-inline-size:stretch}.view-settings .view-settings__label>span{font-size:.8125rem;font-weight:500}.view-settings :is(.view-settings__input,.view-settings__select){background:var(--sv-surface-1,light-dark(#ffffff,#171c24));border:0 transparent;border-radius:10px;box-shadow:none;color:var(--sv-fg,light-dark(#12151a,#e8edf2));font-size:.875rem;max-inline-size:stretch;min-block-size:2.5rem;outline:0 none transparent;padding:.45rem .6rem}.view-settings .view-settings__checkbox{align-items:center;display:flex;font-size:.8125rem;gap:.5rem;max-inline-size:stretch}.view-settings .view-settings__actions{display:flex;gap:.75rem;margin-block-start:1.5rem;max-inline-size:stretch}.view-settings .view-settings__btn{background:var(--sv-surface-1,light-dark(#ffffff,#171c24));border:0 solid color-mix(in oklab,var(--sv-outline,light-dark(#c5cdd8,#3d4755)) 40%,transparent);border-radius:8px;color:var(--sv-fg,light-dark(#12151a,#e8edf2));cursor:pointer;max-inline-size:stretch;padding:.55rem 1.1rem}@supports (color:light-dark(red,red)){.view-settings .view-settings__btn{color:var(--sv-fg,light-dark(#12151a,#e8edf2))}}@supports (color:contrast-color(red)){.view-settings .view-settings__btn{color:contrast-color(var(--sv-surface-1,var(--color-surface)))}}.view-settings .view-settings__btn--primary{background:var(--sv-accent,var(--sv-primary,#5a7fff));border-color:color-mix(in oklab,var(--sv-accent,var(--sv-primary,#5a7fff)) 35%,transparent);color:var(--sv-on-primary)}@supports (color:contrast-color(red)){.view-settings .view-settings__btn--primary{color:contrast-color(var(--sv-accent,var(--sv-primary,#5a7fff)))}}.view-settings .view-settings__btn--primary:hover{filter:brightness(1.1)}.view-settings :is(.custom-instructions-editor,.custom-instructions-panel){display:flex;flex-direction:column;gap:.75rem;max-inline-size:stretch}.view-settings :is(.ci-row,.cip-select-row){display:flex;flex-direction:column;gap:.35rem;max-inline-size:stretch}.view-settings .ci-header{margin-block-end:.25rem;max-inline-size:stretch}.view-settings .ci-header h4{font-size:.88rem;margin:0 0 .25rem}.view-settings .ci-desc{color:var(--sv-muted,light-dark(#5c6570,#a8b0bc));font-size:.78rem;line-height:1.45;margin:0;max-inline-size:stretch}.view-settings .ci-active-select{display:flex;flex-direction:column;gap:.25rem;max-inline-size:stretch}.view-settings :is(.ci-select,.cip-select){background:var(--sv-surface-1,light-dark(#ffffff,#171c24));border:1px solid color-mix(in oklab,var(--sv-outline,light-dark(#c5cdd8,#3d4755)) 40%,transparent);border-radius:10px;color:var(--sv-fg,light-dark(#12151a,#e8edf2));font-size:.8rem;max-inline-size:stretch;min-block-size:2.35rem;padding:.4rem .55rem}.view-settings :is(.ci-list,.cip-list){display:flex;flex-direction:column;gap:.5rem;max-inline-size:stretch}.view-settings :is(.ci-item,.cip-item){background:var(--sv-surface-1,light-dark(#ffffff,#171c24));border:1px solid color-mix(in oklab,var(--sv-outline,light-dark(#c5cdd8,#3d4755)) 16%,transparent);border-radius:12px;max-inline-size:stretch;padding:.65rem .75rem}.view-settings :is(.ci-item.active,.ci-item.is-active,.cip-item.active,.cip-item.is-active){border-color:color-mix(in oklab,var(--sv-primary,#5a7fff) 35%,transparent)}.view-settings :is(.ci-item-header,.cip-item-header){align-items:flex-start;display:flex;gap:.5rem;justify-content:space-between;max-inline-size:stretch}.view-settings :is(.ci-item-label,.cip-item-label){font-size:.8rem;font-weight:600;max-inline-size:stretch}.view-settings :is(.ci-item-actions,.cip-item-actions){display:flex;flex-wrap:wrap;gap:.35rem;justify-content:start;max-inline-size:stretch}.view-settings :is(.ci-badge,.cip-badge){background:color-mix(in oklab,var(--sv-primary,#5a7fff) 16%,transparent);border-radius:999px;color:var(--sv-fg,light-dark(#12151a,#e8edf2));font-size:.65rem;max-inline-size:stretch;padding:.15rem .4rem}.view-settings :is(.ci-item-preview,.cip-item-preview){color:var(--sv-muted,light-dark(#5c6570,#a8b0bc));font-size:.75rem;line-height:1.45;margin-block-start:.35rem;max-inline-size:stretch}.view-settings :is(.ci-edit-form,.cip-edit-form){display:flex;flex-direction:column;gap:.5rem;margin-block-start:.5rem;max-inline-size:stretch}.view-settings :is(.ci-actions,.ci-add-actions,.ci-edit-actions,.cip-form-actions,.cip-toolbar){align-items:center;display:flex;flex-wrap:wrap;gap:.5rem;max-inline-size:stretch}.view-settings :is(.ci-input,.ci-textarea,.cip-input,.cip-textarea,.field-control){background:var(--sv-surface-1,light-dark(#ffffff,#171c24));border:0 transparent;border-radius:10px;box-shadow:none;color:var(--sv-fg,light-dark(#12151a,#e8edf2));font-size:.8125rem;inline-size:100%;max-inline-size:stretch;outline:0 none transparent;padding:.45rem .55rem}.view-settings :is(.ci-textarea,.cip-textarea){max-inline-size:stretch;min-block-size:5rem}.view-settings :is(.ci-empty,.cip-empty){font-size:.8rem;padding:.75rem;text-align:center}.view-settings .field-label,.view-settings :is(.ci-empty,.cip-empty){color:var(--sv-muted,light-dark(#5c6570,#a8b0bc));max-inline-size:stretch}.view-settings .field-label{font-size:.72rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase}.view-settings input[type=number]::-webkit-inner-spin-button,.view-settings input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}@container settings-view (max-inline-size: 1024px){.view-settings{max-inline-size:stretch;padding:.65rem}}@container settings-view (max-inline-size: 560px){.view-settings .settings-tab-actions{gap:.3rem;max-inline-size:stretch}.view-settings .settings-tab-btn{max-inline-size:stretch;min-block-size:2.65rem;padding-inline:.7rem}}@container settings-view (max-inline-size: 480px){.view-settings{padding:.45rem;padding-block-end:.15rem}.view-settings .settings-screen__title{display:none;max-inline-size:stretch}.view-settings .settings-screen__body{gap:.75rem;max-inline-size:stretch;padding-block:.5rem}.view-settings .settings-screen__footer{align-items:stretch;flex-direction:column-reverse;gap:.35rem;max-inline-size:stretch;padding-block:.5rem;padding-inline:.5rem;padding-inline-end:3.25rem}.view-settings .settings-screen__footer .btn.primary{inline-size:100%;justify-content:center;max-inline-size:stretch;min-block-size:2.75rem}.view-settings .settings-screen__footer .note{max-inline-size:stretch;text-align:center;white-space:normal}}}"));
+	if (!css.trim()) css = CRITICAL_SETTINGS_CSS;
+	const style = document.createElement("style");
+	style.setAttribute(STYLE_MARKER, "");
+	style.textContent = css;
+	document.head?.appendChild(style);
+	if (host) scheduleBakeScreenColors(host);
+};
+/** Retry until the host is connected (Capacitor shell attaches views async). */
+var attachSettingsInlineStylesWhenConnected = (host) => {
+	if (!host) return;
+	const tryAttach = () => {
+		if (!host.isConnected) {
+			requestAnimationFrame(tryAttach);
+			return;
+		}
+		attachSettingsInlineStyles(host);
+	};
+	if (host.isConnected) attachSettingsInlineStyles(host);
+	else requestAnimationFrame(tryAttach);
+};
+[
+	"cw-shell-base",
+	"cw-shell-window",
+	"cw-shell-tabbed",
+	"cw-shell-minimal",
+	"cw-shell-environment",
+	"env-shell-container",
+	"cw-shell-content",
+	"cw-shell-immersive",
+	"cw-shell-faint"
+].join(",");
+//#endregion
+//#region src/frontend/shells/boot/registry.ts
+var ViewBase = class ViewBase extends UIElement {
+	__options;
+	__initialized = false;
+	/** Per-element broadcast surface for intra-view messaging (slots, decorators, tooling). Separate from CWSP routing. */
+	__viewChannel = null;
+	set options(value) {
+		this.__options = value;
+	}
+	get options() {
+		return this.__options;
+	}
+	get viewChannel() {
+		if (!this.__viewChannel) this.__viewChannel = new EventTarget();
+		return this.__viewChannel;
+	}
+	dispatchViewChannel(type, detail, init) {
+		return this.viewChannel.dispatchEvent(new CustomEvent(type, {
+			...init,
+			detail
+		}));
+	}
+	subscribeViewChannel(type, listener) {
+		const bus = this.viewChannel;
+		bus.addEventListener(type, listener);
+		return () => bus.removeEventListener(type, listener);
+	}
+	viewInitialize() {
+		const opts = this.options;
+		opts?.initializator?.call?.(this, this, opts);
+		return this;
+	}
+	constructor() {
+		super();
+	}
+	onInitialize() {
+		super.onInitialize?.call?.(this);
+		this?.viewInitialize?.call?.(this);
+		return this;
 	}
 };
-/** Stamp `data-cwsp-sku` so Settings / openView / APK update resolve the same host. */
-var applyCwspSku = (sku) => {
+ViewBase = __decorate([defineElement("cw-view-base")], ViewBase);
+//#endregion
+//#region ../../modules/projects/subsystem/src/boot/BootLoader.ts
+var normalizeShellId = (shell) => {
+	if (shell === "faint") return "tabbed";
+	if (shell === "base") return "immersive";
+	return shell;
+};
+/**
+* Style system configurations
+*/
+var STYLE_CONFIGS = {
+	"raw": {
+		name: "Raw (No Framework)",
+		stylesheets: [],
+		description: "No CSS framework, raw browser defaults",
+		recommendedShells: ["immersive"]
+	},
+	"vl-core": {
+		name: "Core (Shared Foundation)",
+		stylesheets: [],
+		description: "Shared foundation styles for all veela variants",
+		recommendedShells: ["immersive", "minimal"]
+	},
+	"vl-basic": {
+		name: "Basic Veela Styles",
+		stylesheets: [],
+		description: "Minimal styling for basic functionality",
+		recommendedShells: [
+			"window",
+			"tabbed",
+			"minimal",
+			"environment",
+			"immersive",
+			"content"
+		]
+	},
+	"vl-advanced": {
+		name: "Advanced (Full-Featured Styling)",
+		stylesheets: [],
+		description: "Full-featured styling with design tokens and effects",
+		recommendedShells: [
+			"tabbed",
+			"minimal",
+			"environment"
+		]
+	},
+	"vl-beercss": {
+		name: "BeerCSS (Beer CSS Compatible)",
+		stylesheets: [],
+		description: "Beer CSS compatible styling with Material Design 3",
+		recommendedShells: ["tabbed"]
+	}
+};
+(class BootLoader {
+	static instance;
+	state = {
+		phase: "idle",
+		styleSystem: null,
+		shell: null,
+		view: null,
+		error: null
+	};
+	stateChangeHandlers = /* @__PURE__ */ new Set();
+	shellInstance = null;
+	/** MutationObserver-driven view host bindings (shared routing); disconnected between boots. */
+	implicitBridgeCleanup = null;
+	phaseHandlers = /* @__PURE__ */ new Map();
+	constructor() {
+		initializeRegistries();
+	}
+	static getInstance() {
+		if (!BootLoader.instance) BootLoader.instance = new BootLoader();
+		return BootLoader.instance;
+	}
+	/**
+	* Execute the boot sequence
+	*/
+	async boot(container, config) {
+		console.log("[BootLoader] Starting boot sequence:", config);
+		try {
+			if (this.shellInstance) try {
+				this.implicitBridgeCleanup?.();
+				this.implicitBridgeCleanup = null;
+				ShellRegistry.unload(this.shellInstance.id);
+			} catch (error) {
+				console.warn("[BootLoader] Failed to unload previous shell:", error);
+			} finally {
+				this.shellInstance = null;
+			}
+			initializeLayers();
+			initCwsNativeBridge().catch(() => {});
+			if (isCapacitorCwsNativeShell()) {
+				__vitePreload(() => import("../chunks/capacitor-share-intent2.js").then((mod) => mod.installCapacitorShareIntentBridge()), __vite__mapDeps([0,1,2,3,4,5]), import.meta.url).catch(() => void 0);
+				__vitePreload(() => import("../chunks/capacitor-clipboard-asset2.js").then((mod) => mod.installCapacitorClipboardAssetBridge()), __vite__mapDeps([6,5]), import.meta.url).catch(() => void 0);
+				__vitePreload(() => import("../com/app2.js").then((n) => n.m).then((mod) => mod.ensureNativeStorageProvide()), __vite__mapDeps([7,3,1,2]), import.meta.url).catch(() => void 0);
+			}
+			try {
+				const { initFrontendDebugCapture } = await __vitePreload(async () => {
+					const { initFrontendDebugCapture } = await import("../chunks/frontend-debug-capture2.js");
+					return { initFrontendDebugCapture };
+				}, __vite__mapDeps([8,9,3,10,11,12,1,2,13,4,14,15,16,17]), import.meta.url);
+				initFrontendDebugCapture();
+			} catch {}
+			const persistedSettings = await loadSettings$1().catch((error) => {
+				console.warn("[BootLoader] Failed to load settings:", error);
+				return null;
+			});
+			let effectiveSettings = persistedSettings;
+			if (isCapacitorCwsNativeShell()) {
+				const seeded = await ensureCapacitorCwspSettingsSeeded$1().catch(() => null);
+				if (seeded) effectiveSettings = seeded;
+			}
+			if (effectiveSettings) applyHubSocketFromSettings(effectiveSettings).catch(() => void 0);
+			if (isCapacitorCwsNativeShell()) ensureCapacitorBridgeDaemonStarted(effectiveSettings).catch((error) => {
+				console.warn("[BootLoader] CWSP bridge daemon auto-start skipped:", error);
+			});
+			applyTheme$1(effectiveSettings ?? DEFAULT_SETTINGS);
+			if (!(() => {
+				try {
+					const g = globalThis;
+					const surface = typeof document !== "undefined" ? String(document.documentElement?.dataset?.cwspSurface || "") : "";
+					const protocol = String(globalThis.location?.protocol || "");
+					const nativeShell = typeof document !== "undefined" ? String(document.documentElement?.dataset?.cwspNativeShell || "") : "";
+					return Boolean(g.__CWS_SKIP_PWA__ || g.__CWS_NEUTRALINO_BOOT__ || g.__CWS_WEBNATIVE_BOOT__ || g.Neutralino || typeof g.NL_OS === "string" || protocol === "chrome-extension:" || nativeShell === "crx" || surface.includes("crx") || surface === "cwsp-control" || surface === "gateway");
+				} catch {
+					return false;
+				}
+			})()) try {
+				const { initIngressPWA } = await __vitePreload(async () => {
+					const { initIngressPWA } = await import("../chunks/sw-handling.js");
+					return { initIngressPWA };
+				}, __vite__mapDeps([18,2,3,1,19,20,11,21,22,12,23,24,25,26,13,4,9,10,14,15,16,27,28,29,30,31,32,33,34,35,36]), import.meta.url);
+				await initIngressPWA();
+			} catch (e) {
+				console.warn("[BootLoader] Share-target / service worker ingress failed (non-fatal):", e);
+			}
+			await this.loadStyles(config.styleSystem);
+			const persistedTheme = this.resolveThemeFromSettings(persistedSettings);
+			const shell = await this.loadShell(config.shell, container);
+			shell.setTheme(config.theme || persistedTheme);
+			await shell.mount(container);
+			this.implicitBridgeCleanup?.();
+			this.implicitBridgeCleanup = startImplicitViewMessagingBridge();
+			if (config.channels && config.channels.length > 0) await this.initChannels(config.channels, config.channelPriorityId);
+			if (config.skipInitialNavigate) this.dismissShellLoadingSpinner(shell);
+			else {
+				let bootParams;
+				try {
+					bootParams = Object.fromEntries(new URLSearchParams(globalThis.location?.search || ""));
+				} catch {
+					bootParams = void 0;
+				}
+				await shell.navigate(config.defaultView, bootParams);
+			}
+			this.setPhase("ready");
+			try {
+				if (typeof document !== "undefined") document.documentElement.dataset.cwspBoot = "ready";
+				globalThis.dispatchEvent?.(new CustomEvent("cwsp:boot-ready"));
+			} catch {}
+			if (config.rememberChoice) this.savePreferences(config);
+			console.log("[BootLoader] Boot complete");
+			return shell;
+		} catch (error) {
+			console.error("[BootLoader] Boot failed:", error);
+			this.updateState({
+				phase: "error",
+				error
+			});
+			throw error;
+		}
+	}
+	resolveThemeFromSettings(settings) {
+		const theme = settings?.appearance?.theme || "auto";
+		if (theme === "dark") return darkTheme;
+		if (theme === "light") return lightTheme;
+		return defaultTheme;
+	}
+	/** Hide immersive/minimal shell loading row when skipping {@link Shell.navigate}. */
+	dismissShellLoadingSpinner(shell) {
+		try {
+			const loading = shell.getElement().shadowRoot?.querySelector(".app-shell__loading");
+			if (loading) loading.hidden = true;
+		} catch {}
+	}
+	/**
+	* Load style system
+	*/
+	async loadStyles(styleSystem) {
+		this.setPhase("styles");
+		console.log(`[BootLoader] Loading style system: ${styleSystem}`);
+		const config = STYLE_CONFIGS[styleSystem] || STYLE_CONFIGS["vl-basic"];
+		try {
+			await loadStyleSystem(styleSystem);
+		} catch (error) {
+			console.error(`[BootLoader] Failed to load style system: ${styleSystem}`, error);
+			throw error;
+		}
+		for (const sheet of config.stylesheets) try {
+			await loadAsAdopted(sheet);
+		} catch (error) {
+			console.warn(`[BootLoader] Failed to load stylesheet: ${sheet}`, error);
+		}
+		this.updateState({ styleSystem });
+		console.log(`[BootLoader] Style system ${styleSystem} loaded`);
+	}
+	/**
+	* Load and initialize shell
+	*/
+	async loadShell(shellId, container) {
+		this.setPhase("shell");
+		const normalizedShell = normalizeShellId(shellId);
+		if (normalizedShell !== shellId) console.warn(`[BootLoader] Shell "${shellId}" is temporarily disabled, redirecting to "${normalizedShell}"`);
+		console.log(`[BootLoader] Loading shell: ${normalizedShell}`);
+		const shell = await ShellRegistry.load(normalizedShell, container);
+		this.shellInstance = shell;
+		this.updateState({ shell: normalizedShell });
+		console.log(`[BootLoader] Shell ${normalizedShell} loaded`);
+		return shell;
+	}
+	/**
+	* Initialize service channels: one high-priority channel blocks boot, the rest
+	* run when the browser is idle so startup stays within interactive budgets.
+	*/
+	async initChannels(channelIds, priorityId) {
+		this.setPhase("channels");
+		const unique = [...new Set(channelIds)];
+		if (unique.length === 0) return;
+		const primary = (priorityId && unique.includes(priorityId) ? priorityId : null) ?? unique[0];
+		const rest = unique.filter((id) => id !== primary);
+		console.log(`[BootLoader] Initializing primary channel:`, primary, rest.length ? `(+${rest.length} deferred)` : "");
+		try {
+			await serviceChannels.initChannel(primary);
+		} catch (error) {
+			console.warn(`[BootLoader] Failed to init primary channel ${primary}:`, error);
+		}
+		if (rest.length === 0) {
+			console.log("[BootLoader] Channels initialized");
+			return;
+		}
+		const runDeferred = () => {
+			(async () => {
+				for (const channelId of rest) try {
+					await serviceChannels.initChannel(channelId);
+				} catch (error) {
+					console.warn(`[BootLoader] Failed to init channel ${channelId}:`, error);
+				}
+				console.log("[BootLoader] Deferred channels initialized:", rest);
+			})();
+		};
+		if (typeof globalThis.requestIdleCallback === "function") globalThis.requestIdleCallback(runDeferred, { timeout: 5e3 });
+		else globalThis.setTimeout?.(runDeferred, 0);
+	}
+	/**
+	* Update state and notify handlers
+	*/
+	updateState(partial) {
+		Object.assign(this.state, partial);
+		this.notifyStateChange();
+	}
+	/**
+	* Set current phase and notify handlers
+	*/
+	setPhase(phase) {
+		this.updateState({ phase });
+		const handlers = this.phaseHandlers.get(phase);
+		if (handlers) for (const handler of handlers) try {
+			handler(this.state);
+		} catch (error) {
+			console.error(`[BootLoader] Phase handler error:`, error);
+		}
+	}
+	/**
+	* Notify all state change handlers
+	*/
+	notifyStateChange() {
+		for (const handler of this.stateChangeHandlers) try {
+			handler(this.state);
+		} catch (error) {
+			console.error(`[BootLoader] State handler error:`, error);
+		}
+	}
+	/**
+	* Subscribe to state changes
+	*/
+	onStateChange(handler) {
+		this.stateChangeHandlers.add(handler);
+		return () => {
+			this.stateChangeHandlers.delete(handler);
+		};
+	}
+	/**
+	* Register a phase handler
+	*/
+	onPhase(phase, handler) {
+		if (!this.phaseHandlers.has(phase)) this.phaseHandlers.set(phase, /* @__PURE__ */ new Set());
+		this.phaseHandlers.get(phase).add(handler);
+		return () => {
+			this.phaseHandlers.get(phase)?.delete(handler);
+		};
+	}
+	/**
+	* Get current state
+	*/
+	getState() {
+		return { ...this.state };
+	}
+	/**
+	* Get current shell instance
+	*/
+	getShell() {
+		return this.shellInstance;
+	}
+	/**
+	* Save boot preferences
+	*/
+	savePreferences(config) {
+		try {
+			const normalizedShell = normalizeShellId(config.shell);
+			localStorage.setItem("rs-boot-style", config.styleSystem);
+			localStorage.setItem("rs-boot-shell", normalizedShell);
+			localStorage.setItem("rs-boot-view", config.defaultView);
+			localStorage.setItem("rs-boot-remember", "1");
+		} catch (error) {
+			console.warn("[BootLoader] Failed to save preferences:", error);
+		}
+	}
+	/**
+	* Load boot preferences
+	*/
+	loadPreferences() {
+		try {
+			if (localStorage.getItem("rs-boot-remember") !== "1") return null;
+			const shell = normalizeShellId(localStorage.getItem("rs-boot-shell") || "environment");
+			return {
+				styleSystem: localStorage.getItem("rs-boot-style") || void 0,
+				shell,
+				defaultView: localStorage.getItem("rs-boot-view") || void 0
+			};
+		} catch {
+			return null;
+		}
+	}
+	/**
+	* Clear preferences
+	*/
+	clearPreferences() {
+		try {
+			localStorage.removeItem("rs-boot-style");
+			localStorage.removeItem("rs-boot-shell");
+			localStorage.removeItem("rs-boot-view");
+			localStorage.removeItem("rs-boot-remember");
+			localStorage.removeItem(LS_BOOT_SHELL_LAST_ACTIVE);
+		} catch {}
+	}
+}).getInstance();
+var VIEW_FLAGS = {
+	network: "network",
+	settings: "settings",
+	viewer: "viewer",
+	editor: "editor",
+	workcenter: "workcenter",
+	explorer: "explorer",
+	history: "history",
+	home: "home",
+	print: "print"
+};
+/**
+* Optional per-build allowlist: `VITE_ENABLED_VIEWS="network,settings"` restricts
+* which views are enabled (e.g. the Capacitor CWSAndroid shell: Network + Settings
+* only). When unset, all flagged views are enabled. Read from Vite env first,
+* then Node env, guarded for non-bundled (tsx) contexts.
+*/
+var readEnabledViewsAllowlist = () => {
+	let raw = "";
 	try {
-		document.documentElement.dataset.cwspSku = sku;
-		const rec = ECOSYSTEM_SKUS[sku];
-		if (rec.defaultView && !document.documentElement.dataset.cwspDefaultView) document.documentElement.dataset.cwspDefaultView = rec.defaultView;
+		const search = globalThis?.location?.search;
+		if (search) {
+			const params = new URLSearchParams(search);
+			raw = String(params.get("views") || params.get("enabledViews") || "");
+		}
+	} catch {}
+	if (!raw) try {
+		raw = String(globalThis?.localStorage?.getItem?.("rs-enabled-views") ?? "");
+	} catch {}
+	if (!raw) try {
+		raw = String("workcenter,settings,history");
+	} catch {}
+	if (!raw) try {
+		raw = String({}.VITE_ENABLED_VIEWS ?? "");
+	} catch {}
+	const list = raw.split(/[\s,;]+/).map((entry) => entry.trim().toLowerCase()).filter(Boolean);
+	if (!list.length) return null;
+	list.push("settings");
+	try {
+		const search = globalThis?.location?.search;
+		if (search && new URLSearchParams(search).get("views")) globalThis?.localStorage?.setItem?.("rs-enabled-views", Array.from(new Set(list)).join(","));
+	} catch {}
+	return new Set(list);
+};
+var ENABLED_VIEWS_ALLOWLIST = readEnabledViewsAllowlist();
+/**
+* Build-time gate: the host bundler (CWSP-shell Vite) replaces `__RS_VIEW_<ID>__`
+* with a boolean from `VITE_ENABLED_VIEWS`. `typeof` is safe for undeclared
+* globals (returns "undefined") so non-bundled/tsx contexts fall back to enabled.
+*/
+var BUILD_VIEW_FLAGS = {
+	viewer: false,
+	editor: false,
+	workcenter: true,
+	explorer: false,
+	settings: true,
+	history: true,
+	home: false,
+	print: false,
+	network: false
+};
+var buildAllows = (viewId) => BUILD_VIEW_FLAGS[String(viewId).toLowerCase()] !== false;
+var runtimeAllows = (viewId) => !ENABLED_VIEWS_ALLOWLIST || ENABLED_VIEWS_ALLOWLIST.has(String(viewId).toLowerCase());
+var isViewAllowed = (viewId) => buildAllows(viewId) && runtimeAllows(viewId);
+Object.entries(VIEW_FLAGS).filter(([viewId, enabled]) => Boolean(enabled) && isViewAllowed(viewId) && isViewLocalToSurface(viewId)).map(([viewId]) => viewId);
+//#endregion
+//#region ../../modules/projects/subsystem/src/other/config/settings/settings-shell-profile.ts
+var HUB_SETTINGS_ALIASES = {
+	"": "hub",
+	hub: "hub",
+	shell: "hub",
+	explorer: "explorer",
+	cwsp: "transfer",
+	transfer: "transfer",
+	viewer: "document",
+	markdown: "document",
+	document: "document",
+	md: "document",
+	process: "process",
+	workcenter: "process"
+};
+/** Canonical path segment for a hub settings section (`hub` → no extra segment). */
+var hubSettingsSectionPath = (section) => {
+	if (section === "hub") return "";
+	if (section === "document") return "markdown";
+	return section;
+};
+var canonicalHubSettingsSection = (raw) => {
+	return HUB_SETTINGS_ALIASES[String(raw || "").trim().toLowerCase()] || "hub";
+};
+[...ENABLED_VIEW_IDS$1], pickEnabledView("home", DEFAULT_VIEW_ID);
+/**
+* Build URL from route.
+* WHY: prefer `/${view}?…` so environment/native deep links stay readable
+* (`/settings?shell=environment&native=1`), not root `/?view=settings`.
+*/
+function buildUrl(route) {
+	ensureHistoryBaseDataset();
+	const view = String(route.view || "").trim().replace(/^\/+/, "").toLowerCase();
+	if (shouldHandoffViewToSibling(view)) return publicHrefForView(view) || `/${view}`;
+	const params = { ...route.params || {} };
+	let path;
+	if (view === "settings") {
+		const section = hubSettingsSectionPath(canonicalHubSettingsSection(String(params.section || "").trim()));
+		delete params.section;
+		path = section ? withHistoryBase(`/settings/${section}`) : withHistoryBase("/settings");
+	} else path = view && view !== "home" ? withHistoryBase(pathForSkuHostView(`/${view}`)) : withHistoryBase("/");
+	let url = path;
+	if (Object.keys(params).length > 0) {
+		const search = new URLSearchParams(params).toString();
+		url += (url.includes("?") ? "&" : "?") + search;
+	}
+	return url;
+}
+/**
+* Navigate to a route (view)
+*/
+function navigate(route, options = {}) {
+	const url = buildUrl(route);
+	if (shouldHandoffViewToSibling(route.view) || /^https?:\/\//i.test(url)) {
+		globalThis.location.assign(url);
+		return;
+	}
+	if (options.replace) history.replaceState(options.state ?? route, "", url);
+	else history.pushState(options.state ?? route, "", url);
+	globalThis?.dispatchEvent?.(new CustomEvent("route-change", { detail: route }));
+}
+/**
+* Navigate to a view
+*/
+function navigateToView(view, params) {
+	navigate({
+		view,
+		params
+	});
+}
+//#endregion
+//#region ../../modules/views/settings-view/src/ts/settings-utils.ts
+var SUPPORTED_SPEECH_LANGUAGES = [
+	"en",
+	"ru",
+	"en-GB",
+	"en-US"
+];
+var speechLanguageLabel = (lang) => {
+	if (lang === "en") return "English (generic)";
+	if (lang === "ru") return "Russian";
+	if (lang === "en-GB") return "English (UK)";
+	return "English (US)";
+};
+var normalizeSpeechLanguage = (lang) => {
+	const value = (lang || "").trim();
+	if (!value) return null;
+	if (value === "ru" || value.startsWith("ru-")) return "ru";
+	if (value === "en-GB") return "en-GB";
+	if (value === "en-US") return "en-US";
+	if (value === "en" || value.startsWith("en-")) return "en";
+	return null;
+};
+var buildSpeechLanguageOptions = () => {
+	const ordered = /* @__PURE__ */ new Set();
+	const navLanguages = typeof navigator !== "undefined" ? [...navigator.languages || [], navigator.language] : [];
+	for (const navLanguage of navLanguages) {
+		const normalized = normalizeSpeechLanguage(navLanguage);
+		if (normalized) ordered.add(normalized);
+	}
+	for (const fallback of SUPPORTED_SPEECH_LANGUAGES) ordered.add(fallback);
+	return Array.from(ordered);
+};
+var buildResponseLanguageOptions = () => {
+	const ordered = /* @__PURE__ */ new Set(["ru", "en"]);
+	const navLanguages = typeof navigator !== "undefined" ? [...navigator.languages || [], navigator.language] : [];
+	for (const navLanguage of navLanguages) {
+		const value = (navLanguage || "").trim();
+		if (!value || value === "en" || value === "ru") continue;
+		ordered.add(value);
+	}
+	return Array.from(ordered);
+};
+var parseNumberOrDefault = (value, fallback) => {
+	const parsed = Number((value || "").trim());
+	if (!Number.isFinite(parsed)) return fallback;
+	return parsed;
+};
+var parseFloatInRange = (value, fallback, min, max) => {
+	const parsed = Number.parseFloat((value || "").trim());
+	if (!Number.isFinite(parsed)) return fallback;
+	return Math.max(min, Math.min(max, parsed));
+};
+var readTrimmedControlValue = (control, fallback = "") => {
+	if (!control) return fallback;
+	const value = control.value.trim();
+	if (!value && control instanceof HTMLInputElement && control.type === "password") return fallback;
+	return value || fallback;
+};
+var readCheckboxValue = (control, fallback) => {
+	return control ? Boolean(control.checked) : fallback;
+};
+/**
+* Innermost `Element` for delegated handlers — prefer `composedPath()` so Text targets,
+* shadow-tree retargeting, and Chrome extension pages resolve like a real hit element.
+*/
+var eventTargetElement = (ev) => {
+	if (typeof ev.composedPath === "function") {
+		for (const n of ev.composedPath()) if (n instanceof Element) return n;
+	}
+	const raw = ev.target;
+	if (raw instanceof Element) return raw;
+	if (raw instanceof Text) return raw.parentElement;
+	return null;
+};
+//#endregion
+//#region ../../modules/views/settings-view/src/ts/settings-mcp.ts
+var createMcpRow = (cfg) => {
+	const safeCfg = {
+		id: (cfg?.id || `mcp-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`).trim(),
+		serverLabel: (cfg?.serverLabel || "").trim(),
+		origin: (cfg?.origin || "").trim(),
+		clientKey: (cfg?.clientKey || "").trim(),
+		secretKey: (cfg?.secretKey || "").trim()
+	};
+	return H`<div class="field mcp-row" data-mcp-id=${safeCfg.id}>
+            <label class="field">
+              <span>Server Label</span>
+              <input class="form-input" type="text" data-mcp-field="serverLabel" autocomplete="off" value="${safeCfg.serverLabel}" />
+            </label>
+            <label class="field">
+              <span>Origin</span>
+              <input class="form-input" type="url" data-mcp-field="origin" autocomplete="off" placeholder="https://server.example" value="${safeCfg.origin}" />
+            </label>
+            <label class="field">
+              <span>Client Key</span>
+              <input class="form-input" type="text" data-mcp-field="clientKey" autocomplete="off" value="${safeCfg.clientKey}" />
+            </label>
+            <label class="field">
+              <span>Secret Key</span>
+              <input class="form-input" type="password" data-mcp-field="secretKey" autocomplete="off" placeholder="sk-..." value="${safeCfg.secretKey}" />
+            </label>
+            <button class="btn btn-danger" type="button" data-action="remove-mcp-server">Remove</button>
+          </div>`;
+};
+var collectMcpConfigurations = (mcpSection) => {
+	if (!mcpSection) return [];
+	const rows = Array.from(mcpSection.querySelectorAll("[data-mcp-id]"));
+	const items = [];
+	for (const row of rows) {
+		const id = row.getAttribute("data-mcp-id") || `mcp-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
+		const serverLabel = row.querySelector("[data-mcp-field=\"serverLabel\"]")?.value?.trim() || "";
+		const origin = row.querySelector("[data-mcp-field=\"origin\"]")?.value?.trim() || "";
+		const clientKey = row.querySelector("[data-mcp-field=\"clientKey\"]")?.value?.trim() || "";
+		const secretKey = row.querySelector("[data-mcp-field=\"secretKey\"]")?.value?.trim() || "";
+		if (!serverLabel) continue;
+		items.push({
+			id,
+			serverLabel,
+			origin,
+			clientKey,
+			secretKey
+		});
+	}
+	return items;
+};
+var renderMcpConfigurations = (mcpSection, configs) => {
+	if (!mcpSection) return;
+	mcpSection.replaceChildren();
+	const list = Array.isArray(configs) ? configs : [];
+	if (!list.length) {
+		mcpSection.appendChild(H`<p class="mcp-empty-note">No MCP servers configured.</p>`);
+		return;
+	}
+	list.forEach((cfg) => mcpSection.appendChild(createMcpRow(cfg)));
+};
+//#endregion
+//#region ../../modules/views/settings-view/src/sections/SettingsFooter.ts
+var createSettingsFooter = () => H`<footer class="settings-screen__footer">
+        <button class="btn primary" type="button" data-action="save">Save</button>
+        <span class="note" data-note></span>
+    </footer>`;
+//#endregion
+//#region ../../modules/views/settings-view/src/sections/SettingsHeader.ts
+/** Top title + category tabs. */
+var createSettingsHeader = () => H`<header class="settings-screen__top">
+        <div class="settings-tab-actions" data-settings-tabs data-active-tab="ai" role="tablist" aria-label="Settings categories">
+        <button class="settings-tab-btn" type="button" role="tab" data-action="switch-settings-tab" data-tab="appearance" aria-selected="false">Appearance</button>
+        <button class="settings-tab-btn" type="button" role="tab" data-action="switch-settings-tab" data-tab="markdown" aria-selected="false">Markdown</button>
+        <button class="settings-tab-btn is-active" type="button" role="tab" data-action="switch-settings-tab" data-tab="ai" aria-selected="true">AI</button>
+        <button class="settings-tab-btn" type="button" role="tab" data-action="switch-settings-tab" data-tab="mcp" aria-selected="false">MCP</button>
+        <button class="settings-tab-btn" type="button" role="tab" data-action="switch-settings-tab" data-tab="server" aria-selected="false">Server</button>
+        <button class="settings-tab-btn" type="button" role="tab" data-action="switch-settings-tab" data-tab="instructions" aria-selected="false">Instructions</button>
+        <button class="settings-tab-btn" type="button" role="tab" data-action="switch-settings-tab" data-tab="extension" aria-selected="false" data-extension-tab hidden>Extension</button>
+        </div>
+    </header>`;
+//#endregion
+//#region ../../modules/views/settings-view/src/sections/SettingsAppearance.ts
+var SWATCHES = [
+	{
+		hex: FALLBACK_BASE_COLOR,
+		label: "Cyan"
+	},
+	{
+		hex: "#4f8eb5",
+		label: "Steel"
+	},
+	{
+		hex: "#64748b",
+		label: "Slate"
+	},
+	{
+		hex: "#3b82f6",
+		label: "Blue"
+	},
+	{
+		hex: "#6366f1",
+		label: "Indigo"
+	},
+	{
+		hex: "#14b8a6",
+		label: "Teal"
+	},
+	{
+		hex: "#22c55e",
+		label: "Green"
+	},
+	{
+		hex: "#f59e0b",
+		label: "Amber"
+	},
+	{
+		hex: "#ef4444",
+		label: "Red"
+	},
+	{
+		hex: "#ec4899",
+		label: "Pink"
+	},
+	{
+		hex: "#8b5cf6",
+		label: "Violet"
+	}
+];
+var SOURCE_LABEL = {
+	wallpaper: "From wallpaper",
+	"material-you": "From Material You",
+	"system-wallpaper": "From system wallpaper",
+	"speed-dial": "From Speed Dial wallpaper",
+	custom: "Custom hue"
+};
+var sourceOptionLabel = (value, platformDefault) => {
+	if (value === "auto") return `Auto (${SOURCE_LABEL[platformDefault]})`;
+	const base = SOURCE_LABEL[value];
+	return value === platformDefault ? `${base} (default)` : base;
+};
+var createAppearanceSection = () => {
+	const platformDefault = defaultColorSource();
+	return H`<section class="card settings-tab-panel" data-tab-panel="appearance">
+      <h3>Appearance</h3>
+      <p class="field-hint">Theme, type size, and where the adaptive base color comes from. Auto picks the default for this app.</p>
+      <label class="field">
+        <span>Theme</span>
+        <select class="form-select" data-field="appearance.theme">
+          <option value="light">Light</option>
+          <option value="dark">Dark</option>
+          <option value="auto">Auto</option>
+        </select>
+      </label>
+      <label class="field">
+        <span>Font Size</span>
+        <select class="form-select" data-field="appearance.fontSize">
+          <option value="small">Small</option>
+          <option value="medium">Medium</option>
+          <option value="large">Large</option>
+        </select>
+      </label>
+      <div class="field appearance-base-color" data-appearance-color>
+        <label class="field">
+          <span>Base color</span>
+          <select class="form-select" data-field="appearance.colorSource">
+            <option value="auto">${sourceOptionLabel("auto", platformDefault)}</option>
+            <option value="wallpaper">${sourceOptionLabel("wallpaper", platformDefault)}</option>
+            <option value="material-you">${sourceOptionLabel("material-you", platformDefault)}</option>
+            <option value="system-wallpaper">${sourceOptionLabel("system-wallpaper", platformDefault)}</option>
+            <option value="speed-dial">${sourceOptionLabel("speed-dial", platformDefault)}</option>
+            <option value="custom">${sourceOptionLabel("custom", platformDefault)}</option>
+          </select>
+        </label>
+        <span class="field-hint" data-appearance-source-hint></span>
+        <div class="appearance-custom" data-appearance-custom hidden>
+          <span>Accent / hue</span>
+          <div class="appearance-swatches" role="listbox" aria-label="Accent color">
+            ${SWATCHES.map((s) => H`<button type="button" class="appearance-swatch" data-color="${s.hex}" title="${s.label}" aria-label="${s.label}" style="background:${s.hex}"></button>`)}
+          </div>
+          <label class="appearance-hue">
+            <span>Hue</span>
+            <input class="appearance-hue__range" type="range" min="0" max="360" value="200" data-field="appearance.hue" />
+          </label>
+          <input class="form-input appearance-color-input" type="color" data-field="appearance.color" value="${FALLBACK_BASE_COLOR}" />
+        </div>
+      </div>
+    </section>`;
+};
+var SOURCE_HINT = {
+	auto: "Uses this app’s default source.",
+	wallpaper: "Dominant color from the launcher / environment wallpaper.",
+	"material-you": "Android Material You system accent.",
+	"system-wallpaper": "Dominant color from the OS desktop wallpaper.",
+	"speed-dial": "Dominant color from the Speed Dial wallpaper.",
+	custom: "Manual swatch, hue, or color picker."
+};
+var hueFromHex = (hex) => {
+	const n = normalizeHexColor(hex);
+	if (!n) return 200;
+	const r = parseInt(n.slice(1, 3), 16) / 255;
+	const g = parseInt(n.slice(3, 5), 16) / 255;
+	const b = parseInt(n.slice(5, 7), 16) / 255;
+	const max = Math.max(r, g, b);
+	const d = max - Math.min(r, g, b);
+	if (d < 1e-4) return 200;
+	let h = 0;
+	if (max === r) h = (g - b) / d % 6;
+	else if (max === g) h = (b - r) / d + 2;
+	else h = (r - g) / d + 4;
+	h = Math.round(h * 60);
+	return h < 0 ? h + 360 : h;
+};
+var hexFromHue = (hue) => {
+	const h = (Number(hue) % 360 + 360) % 360;
+	const s = .42;
+	const l = .57;
+	const a = s * Math.min(l, 1 - l);
+	const f = (n) => {
+		const k = (n + h / 30) % 12;
+		const c = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+		return Math.round(255 * c).toString(16).padStart(2, "0");
+	};
+	return `#${f(0)}${f(8)}${f(4)}`;
+};
+var readAppearanceColorSource = (root) => {
+	const sel = root.querySelector("[data-field=\"appearance.colorSource\"]");
+	return isAppearanceColorSource(sel?.value) ? sel.value : "auto";
+};
+var syncAppearanceColorSource = (root, source) => {
+	const sel = root.querySelector("[data-field=\"appearance.colorSource\"]");
+	const custom = root.querySelector("[data-appearance-custom]");
+	const hint = root.querySelector("[data-appearance-source-hint]");
+	const next = isAppearanceColorSource(source) ? source : "auto";
+	if (sel) sel.value = next;
+	if (custom) custom.hidden = next !== "custom";
+	if (hint) hint.textContent = SOURCE_HINT[next];
+};
+var syncAppearanceColorControls = (root, color) => {
+	const input = root.querySelector("[data-field=\"appearance.color\"]");
+	const hue = root.querySelector("[data-field=\"appearance.hue\"]");
+	const hex = normalizeHexColor(color) || "#5a9ec8";
+	if (input) input.value = hex;
+	if (hue) hue.value = String(hueFromHex(hex));
+	root.querySelectorAll(".appearance-swatch").forEach((btn) => {
+		btn.setAttribute("aria-selected", normalizeHexColor(btn.dataset.color) === hex ? "true" : "false");
+	});
+};
+var readAppearanceColor = (root) => {
+	return normalizeHexColor(root.querySelector("[data-field=\"appearance.color\"]")?.value);
+};
+//#endregion
+//#region ../../modules/views/settings-view/src/sections/SettingsMarkdown.ts
+var createMarkdownSection = () => H`<section class="card settings-tab-panel" data-tab-panel="markdown">
+      <h3>Markdown Viewer</h3>
+      <label class="field">
+        <span>Style preset</span>
+        <select class="form-select" data-field="appearance.markdown.preset">
+          <option value="default">Default</option>
+          <option value="classic">Classic</option>
+          <option value="compact">Compact</option>
+          <option value="paper">Paper</option>
+        </select>
+      </label>
+      <label class="field">
+        <span>Font family</span>
+        <select class="form-select" data-field="appearance.markdown.fontFamily">
+          <option value="system">System UI</option>
+          <option value="sans">Sans</option>
+          <option value="serif">Serif</option>
+          <option value="mono">Monospace</option>
+        </select>
+      </label>
+      <label class="field">
+        <span>Font size (px)</span>
+        <input class="form-input" type="number" inputmode="numeric" min="12" max="26" step="1" data-field="appearance.markdown.fontSizePx" />
+      </label>
+      <label class="field">
+        <span>Line height</span>
+        <input class="form-input" type="number" inputmode="decimal" min="1.1" max="2.2" step="0.05" data-field="appearance.markdown.lineHeight" />
+      </label>
+      <label class="field">
+        <span>Content max width (px)</span>
+        <input class="form-input" type="number" inputmode="numeric" min="500" max="1400" step="10" data-field="appearance.markdown.contentMaxWidthPx" />
+      </label>
+      <label class="field">
+        <span>Print scale</span>
+        <input class="form-input" type="number" inputmode="decimal" min="0.5" max="1.5" step="0.05" data-field="appearance.markdown.printScale" />
+      </label>
+      <label class="field">
+        <span>Page size</span>
+        <select class="form-select" data-field="appearance.markdown.page.size">
+          <option value="auto">Auto</option>
+          <option value="A4">A4</option>
+          <option value="Letter">Letter</option>
+          <option value="Legal">Legal</option>
+          <option value="A5">A5</option>
+        </select>
+      </label>
+      <label class="field">
+        <span>Page orientation</span>
+        <select class="form-select" data-field="appearance.markdown.page.orientation">
+          <option value="portrait">Portrait</option>
+          <option value="landscape">Landscape</option>
+        </select>
+      </label>
+      <label class="field">
+        <span>Page margins (mm)</span>
+        <input class="form-input" type="number" inputmode="numeric" min="5" max="40" step="1" data-field="appearance.markdown.page.marginMm" />
+      </label>
+      <h4>Style modules</h4>
+      <p class="field-hint" style="margin: 0 0 0.5rem; opacity: 0.85; font-size: 0.9em;">Grouped by what they affect in the viewer. All are on by default.</p>
+      <fieldset class="field-group" style="border: 0; padding: 0; margin: 0 0 1rem;">
+        <legend class="field" style="font-weight: 600; margin-bottom: 0.35rem;">Type &amp; layout</legend>
+        <label class="field checkbox form-checkbox">
+          <input type="checkbox" data-field="appearance.markdown.modules.typography" />
+          <span>Typography (paragraphs, headings)</span>
+        </label>
+        <label class="field checkbox form-checkbox">
+          <input type="checkbox" data-field="appearance.markdown.modules.lists" />
+          <span>Lists (bullets &amp; numbering)</span>
+        </label>
+      </fieldset>
+      <fieldset class="field-group" style="border: 0; padding: 0; margin: 0 0 1rem;">
+        <legend class="field" style="font-weight: 600; margin-bottom: 0.35rem;">Blocks &amp; media</legend>
+        <label class="field checkbox form-checkbox">
+          <input type="checkbox" data-field="appearance.markdown.modules.tables" />
+          <span>Tables</span>
+        </label>
+        <label class="field checkbox form-checkbox">
+          <input type="checkbox" data-field="appearance.markdown.modules.codeBlocks" />
+          <span>Code blocks</span>
+        </label>
+        <label class="field checkbox form-checkbox">
+          <input type="checkbox" data-field="appearance.markdown.modules.blockquotes" />
+          <span>Blockquotes</span>
+        </label>
+        <label class="field checkbox form-checkbox">
+          <input type="checkbox" data-field="appearance.markdown.modules.media" />
+          <span>Images &amp; video</span>
+        </label>
+      </fieldset>
+      <fieldset class="field-group" style="border: 0; padding: 0; margin: 0 0 1rem;">
+        <legend class="field" style="font-weight: 600; margin-bottom: 0.35rem;">Print</legend>
+        <label class="field checkbox form-checkbox">
+          <input type="checkbox" data-field="appearance.markdown.modules.printBreaks" />
+          <span>Print breaks (avoid splits inside headings, tables, …)</span>
+        </label>
+      </fieldset>
+      <h4>Rendering plugins</h4>
+      <label class="field checkbox form-checkbox">
+        <input type="checkbox" data-field="appearance.markdown.plugins.smartTypography" />
+        <span>Smart typography</span>
+      </label>
+      <label class="field checkbox form-checkbox">
+        <input type="checkbox" data-field="appearance.markdown.plugins.softBreaksAsBr" />
+        <span>Soft line breaks as BR</span>
+      </label>
+      <label class="field checkbox form-checkbox">
+        <input type="checkbox" data-field="appearance.markdown.plugins.externalLinksNewTab" />
+        <span>Open external links in new tab</span>
+      </label>
+      <label class="field">
+        <span>Custom CSS (screen/view)</span>
+        <textarea class="form-input" rows="8" data-field="appearance.markdown.customCss" placeholder=".markdown-viewer-content h1 { color: var(--color-primary); }"></textarea>
+      </label>
+      <label class="field">
+        <span>Custom CSS (print only)</span>
+        <textarea class="form-input" rows="8" data-field="appearance.markdown.printCss" placeholder=".markdown-viewer-content { font-size: 12pt; line-height: 1.5; }"></textarea>
+      </label>
+      <label class="field">
+        <span>Markdown extensions (JSON rules)</span>
+        <textarea class="form-input" rows="10" data-field="appearance.markdown.extensions" placeholder='[
+  {
+    "id": "highlight",
+    "pattern": "==(.+?)==",
+    "replacement": "<mark>$1</mark>",
+    "flags": "g",
+    "enabled": true
+  }
+]'></textarea>
+      </label>
+      <div class="mcp-actions">
+        <button class="btn" type="button" data-action="open-user-styles">Open <code>/user/styles/</code> in Explorer</button>
+        <button class="btn" type="button" data-action="open-assets-readonly">Open <code>/assets/</code> (read-only) in Explorer</button>
+      </div>
+      <p class="mcp-empty-note">Rules are regex replacements applied before markdown parsing. Invalid JSON is rejected on save. Custom CSS supports explicit <code>@layer</code> blocks for advanced interop.</p>
+    </section>`;
+//#endregion
+//#region ../../modules/views/settings-view/src/sections/SettingsAI.ts
+var createAiSection = () => H`<section class="card settings-tab-panel is-active" data-tab-panel="ai">
+      <h3>AI</h3>
+      <p class="settings-hint">Process chat posts to <code>/api/process</code> (PWA SW, Capacitor Java, then process.u2re.space). Base URL and key below are the same fallback the backends use when core is down.</p>
+      <form class="settings-panel-form" novalidate onsubmit="return false">
+      <label class="field">
+        <span>Base URL</span>
+        <input placeholder="https://api.proxyapi.ru/openai/v1" class="form-input" type="url" inputmode="url" autocomplete="off" data-field="ai.baseUrl" />
+      </label>
+      <label class="field">
+        <span>API Key</span>
+        <input placeholder="sk-..." class="form-input" type="password" autocomplete="off" data-field="ai.apiKey"/>
+      </label>
+      <label class="field checkbox form-checkbox">
+        <input type="checkbox" data-field="ui.showKey" />
+        <span>Show API key</span>
+      </label>
+      <label class="field">
+        <span>Model</span>
+        <select class="form-select" data-field="ai.model"></select>
+      </label>
+      <label class="field" data-field-group="ai.customModel">
+        <span>Custom model identifier</span>
+        <input placeholder="provider/model-or-id" class="form-input" type="text" autocomplete="off" data-field="ai.customModel"/>
+      </label>
+      <label class="field">
+        <span>Default reasoning effort</span>
+        <select class="form-select" data-field="ai.defaultReasoningEffort">
+            <option value="none">None</option>
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+        </select>
+      </label>
+      <details class="settings-spoiler" data-advanced-ai-spoiler>
+        <summary>Advanced AI settings</summary>
+        <div>
+          
+          <label class="field">
+            <span>Default verbosity</span>
+            <select class="form-select" data-field="ai.defaultVerbosity">
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Max output tokens</span>
+            <input placeholder="400000" class="form-input" type="number" inputmode="numeric" data-field="ai.maxOutputTokens" />
+          </label>
+          <label class="field">
+            <span>Context truncation</span>
+            <select class="form-select" data-field="ai.contextTruncation">
+              <option value="disabled">Disabled</option>
+              <option value="auto">Auto</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Prompt cache retention</span>
+            <select class="form-select" data-field="ai.promptCacheRetention">
+              <option value="in-memory">In-memory</option>
+              <option value="24h">24h</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Max tool calls</span>
+            <input placeholder="8" class="form-input" type="number" inputmode="numeric" data-field="ai.maxToolCalls" />
+          </label>
+          <label class="field checkbox form-checkbox">
+            <input type="checkbox" data-field="ai.parallelToolCalls" />
+            <span>Allow parallel tool calls</span>
+          </label>
+          <label class="field">
+            <span>Timeout low (ms)</span>
+            <input placeholder="60000" class="form-input" type="number" inputmode="numeric" data-field="ai.requestTimeout.low" />
+          </label>
+          <label class="field">
+            <span>Timeout medium (ms)</span>
+            <input placeholder="300000" class="form-input" type="number" inputmode="numeric" data-field="ai.requestTimeout.medium" />
+          </label>
+          <label class="field">
+            <span>Timeout high (ms)</span>
+            <input placeholder="900000" class="form-input" type="number" inputmode="numeric" data-field="ai.requestTimeout.high" />
+          </label>
+          <label class="field">
+            <span>Max retries</span>
+            <input placeholder="2" class="form-input" type="number" inputmode="numeric" data-field="ai.maxRetries" />
+          </label>
+        </div>
+      </details>
+      <label class="field">
+        <span>Response language</span>
+        <select class="form-select" data-field="ai.responseLanguage"></select>
+      </label>
+      <label class="field checkbox form-checkbox">
+        <input type="checkbox" data-field="ai.translateResults" />
+        <span>Translate results</span>
+      </label>
+      <label class="field checkbox form-checkbox">
+        <input type="checkbox" data-field="ai.generateSvgGraphics" />
+        <span>Generate SVG graphics</span>
+      </label>
+      <label class="field">
+        <span>Speech Recognition language</span>
+        <select class="form-select" data-field="speech.language"></select>
+      </label>
+      </form>
+    </section>`;
+//#endregion
+//#region ../../modules/views/settings-view/src/sections/SettingsMcp.ts
+var createMcpSection = () => H`<section class="card settings-tab-panel" data-tab-panel="mcp">
+      <h3>MCP</h3>
+      <div class="mcp-section" data-mcp-section></div>
+      <div class="mcp-actions">
+        <button class="btn" type="button" data-action="add-mcp-server">Add MCP server</button>
+      </div>
+    </section>`;
+//#endregion
+//#region ../../modules/views/settings-view/src/sections/SettingsServer.ts
+/** CWSP endpoint and device identity. */
+var createServerSection = () => H`<section class="card settings-tab-panel" data-tab-panel="server">
+      <h3>Server</h3>
+      <p class="field-hint" style="margin: 0 0 0.75rem; opacity: 0.88; font-size: 0.9em;">
+        Connect to the hub with server URL, short client id (L-196), and one ecosystem token.
+      </p>
+      <h4>Endpoint and identity</h4>
+      <form class="settings-panel-form" novalidate onsubmit="return false">
+      <label class="field">
+        <span>Server URL</span>
+        <input class="form-input" type="text" inputmode="url" autocomplete="off" placeholder="45.147.121.152 or 192.168.0.200" data-field="core.endpointUrl" />
+      </label>
+      <p class="field-hint">IP or domain only — port and protocol are auto-discovered (8434, 443, 8080, …). Use gateway for phone↔phone even on LAN.</p>
+      <label class="field">
+        <span>Associated device / client ID</span>
+        <input class="form-input" type="text" autocomplete="off" data-field="core.userId" placeholder="L-196" />
+      </label>
+      <label class="field">
+        <span>Ecosystem token</span>
+        <input class="form-input" type="password" autocomplete="off" data-field="core.ecosystemToken" placeholder="Shared ecosystem key" />
+      </label>
+      <p class="field-hint">Replaces separate identification and control / access tokens — one key for the whole CWSP ecosystem.</p>
+      <label class="field checkbox form-checkbox">
+        <input type="checkbox" data-field="core.allowInsecureTls" />
+        <span>Allow self-signed / insecure TLS</span>
+      </label>
+      </form>
+    </section>`;
+//#endregion
+//#region ../../modules/views/settings-view/src/sections/CustomInstructionsEditor.ts
+var createCustomInstructionsEditor = (opts = {}) => {
+	const state = observe({
+		instructions: [],
+		activeId: "",
+		editingId: null,
+		newLabel: "",
+		newInstruction: "",
+		isAdding: false
+	});
+	const root = H`<div class="custom-instructions-editor">
+        <div class="ci-row">
+            <div class="ci-header">
+                <h4>Custom Instructions</h4>
+                <p class="ci-desc">Define custom instructions for AI operations. These can be activated for "Recognize & Copy" and selected in the Work Center.</p>
+            </div>
+
+            <div class="ci-active-select">
+                <label>
+                    <span>Active instruction:</span>
+                    <select class="ci-select" data-action="select-active">
+                        <option value="">None (use default)</option>
+                    </select>
+                </label>
+            </div>
+        </div>
+
+        <div class="ci-list" data-list></div>
+
+        <div class="ci-add-form" data-add-form hidden>
+            <input type="text" class="ci-input" data-field="label" placeholder="Instruction label..." />
+            <textarea class="ci-textarea" data-field="instruction" placeholder="Enter your custom instruction..." rows="4"></textarea>
+            <div class="ci-add-actions">
+                <button class="btn small primary" type="button" data-action="save-new">Add</button>
+                <button class="btn small" type="button" data-action="cancel-add">Cancel</button>
+            </div>
+        </div>
+
+        <div class="ci-actions">
+            <button class="btn small" type="button" data-action="add">+ Add Instruction</button>
+            <button class="btn small" type="button" data-action="add-templates">Add Templates</button>
+        </div>
+    </div>`;
+	const listEl = root.querySelector("[data-list]");
+	const selectEl = root.querySelector("[data-action='select-active']");
+	const addFormEl = root.querySelector("[data-add-form]");
+	const labelInput = root.querySelector("[data-field='label']");
+	const instructionInput = root.querySelector("[data-field='instruction']");
+	const renderList = () => {
+		listEl.replaceChildren();
+		const items = state.instructions ?? [];
+		if (!items.length) {
+			listEl.append(H`<div class="ci-empty">No custom instructions. Add one or use templates.</div>`);
+			return;
+		}
+		for (const instr of items) {
+			const isEditing = state.editingId === instr.id;
+			const isActive = state.activeId === instr.id;
+			const item = H`<div class="ci-item ${isActive ? "active" : ""}" data-id="${instr.id}">
+                <div class="ci-item-header">
+                    <span class="ci-item-label">${instr.label}</span>
+                    <div class="ci-item-actions">
+                        ${isActive ? H`<span class="ci-badge active">Active</span>` : H`<button class="btn tiny" type="button" data-action="activate">Use</button>`}
+                        <button class="btn tiny" type="button" data-action="edit">Edit</button>
+                        <button class="btn tiny danger" type="button" data-action="delete">×</button>
+                    </div>
+                </div>
+                ${isEditing ? H`<div class="ci-edit-form">
+                        <input type="text" class="ci-input" data-edit-field="label" value="${instr.label}" />
+                        <textarea class="ci-textarea" data-edit-field="instruction" rows="4">${instr.instruction}</textarea>
+                        <div class="ci-edit-actions">
+                            <button class="btn small primary" type="button" data-action="save-edit">Save</button>
+                            <button class="btn small" type="button" data-action="cancel-edit">Cancel</button>
+                        </div>
+                    </div>` : H`<div class="ci-item-preview">${truncate(instr.instruction, 120)}</div>`}
+            </div>`;
+			item.addEventListener("click", (e) => {
+				const action = e.target.closest("[data-action]")?.getAttribute("data-action");
+				if (action === "activate") setActiveInstruction(instr.id).then(loadData).then(() => opts.onUpdate?.());
+				if (action === "edit") {
+					state.editingId = instr.id;
+					renderList();
+				}
+				if (action === "delete") {
+					if (confirm(`Delete "${instr.label}"?`)) deleteInstruction(instr.id).then(loadData).then(() => opts.onUpdate?.());
+				}
+				if (action === "save-edit") {
+					const labelEl = item.querySelector("[data-edit-field='label']");
+					const instrEl = item.querySelector("[data-edit-field='instruction']");
+					updateInstruction(instr.id, {
+						label: labelEl.value.trim() || instr.label,
+						instruction: instrEl.value.trim()
+					}).then(() => {
+						state.editingId = null;
+						return loadData();
+					}).then(() => opts.onUpdate?.());
+				}
+				if (action === "cancel-edit") {
+					state.editingId = null;
+					renderList();
+				}
+			});
+			listEl.append(item);
+		}
+	};
+	const updateSelect = () => {
+		selectEl.replaceChildren();
+		selectEl.append(H`<option value="">None (use default)</option>`);
+		for (const instr of state.instructions ?? []) {
+			const opt = H`<option value="${instr.id}">${instr.label}</option>`;
+			if (instr.id === state.activeId) opt.selected = true;
+			selectEl.append(opt);
+		}
+	};
+	const truncate = (text, maxLen) => {
+		if (!text || text.length <= maxLen) return text || "";
+		return text.slice(0, maxLen).trim() + "…";
+	};
+	const loadData = async () => {
+		const raw = await getInstructionRegistry();
+		const snapshot = Array.isArray(raw) ? {
+			instructions: raw,
+			activeId: "",
+			activeInstruction: null
+		} : raw;
+		state.instructions = snapshot?.instructions ?? [];
+		state.activeId = snapshot?.activeId ?? "";
+		renderList();
+		updateSelect();
+	};
+	root.addEventListener("click", (e) => {
+		const action = e.target.closest("[data-action]")?.getAttribute("data-action");
+		if (action === "add") {
+			state.isAdding = true;
+			addFormEl.hidden = false;
+			labelInput.value = "";
+			instructionInput.value = "";
+			labelInput.focus();
+		}
+		if (action === "cancel-add") {
+			state.isAdding = false;
+			addFormEl.hidden = true;
+		}
+		if (action === "save-new") {
+			const label = labelInput.value.trim();
+			const instruction = instructionInput.value.trim();
+			if (!instruction) {
+				instructionInput.focus();
+				return;
+			}
+			addInstruction(label || "Custom", instruction).then((newInstr) => {
+				if (!newInstr) return;
+				state.isAdding = false;
+				addFormEl.hidden = true;
+				return loadData();
+			}).then(() => opts.onUpdate?.());
+		}
+		if (action === "add-templates") {
+			const existingLabels = new Set((state.instructions ?? []).map((i) => i.label.trim().toLowerCase()));
+			const templatesToAdd = DEFAULT_INSTRUCTION_TEMPLATES.filter((t) => !existingLabels.has(t.label.trim().toLowerCase()));
+			if (!templatesToAdd.length) {
+				alert("All templates are already added.");
+				return;
+			}
+			addInstructions(templatesToAdd.map((t) => ({
+				label: t.label,
+				instruction: t.instruction,
+				enabled: t.enabled
+			}))).then(loadData).then(() => opts.onUpdate?.());
+		}
+	});
+	selectEl.addEventListener("change", () => {
+		setActiveInstruction(selectEl.value || null).then(loadData).then(() => opts.onUpdate?.());
+	});
+	loadData();
+	return root;
+};
+//#endregion
+//#region ../../modules/views/settings-view/src/sections/SettingsInstructions.ts
+var createInstructionsSection = (setNote) => H`<section class="card settings-tab-panel" data-tab-panel="instructions" data-section="instructions">
+      <h3>Recognition Instructions</h3>
+      <div data-custom-instructions="editor">
+        ${createCustomInstructionsEditor({ onUpdate: () => setNote("Instructions updated.") })}
+      </div>
+    </section>`;
+//#endregion
+//#region ../../modules/views/settings-view/src/sections/SettingsExtension.ts
+var createExtensionSection = () => H`<section class="card settings-tab-panel" data-tab-panel="extension" data-section="extension" hidden>
+      <h3>Extension</h3>
+      <label class="field">
+        <span>Local hub URL (Neutralino / desk backend)</span>
+        <input class="form-input" type="text" inputmode="url" autocomplete="off" placeholder="https://127.0.0.1:8434/" data-field="shell.localHubUrl" />
+      </label>
+      <p class="field-hint">Chrome wire hub for L-110-crx only. Independent from CWSP → Relay / gateway.</p>
+      <label class="field checkbox form-checkbox">
+        <input type="checkbox" data-field="core.ntpEnabled" />
+        <span>Enable New Tab Page (CWSP-shell speed dial)</span>
+      </label>
+    </section>`;
+//#endregion
+//#region src/shared/other/config/SettingsContributions.ts
+var registry = /* @__PURE__ */ new Map();
+var registerSettingsContribution = (entry) => {
+	const id = String(entry?.id || "").trim();
+	if (!id) return () => {};
+	const contribution = {
+		...entry,
+		id
+	};
+	registry.set(id, contribution);
+	return () => {
+		if (registry.get(id) === contribution) registry.delete(id);
+	};
+};
+var getSettingsContributions = () => [...registry.values()].sort((a, b) => (a.order ?? 100) - (b.order ?? 100) || a.id.localeCompare(b.id));
+var getByPath = (source, path) => {
+	if (!source || !path) return void 0;
+	return path.split(".").reduce((acc, key) => {
+		if (acc == null || typeof acc !== "object") return void 0;
+		return acc[key];
+	}, source);
+};
+var setByPath = (target, path, value) => {
+	if (!target || !path) return;
+	const keys = path.split(".");
+	let cursor = target;
+	for (let i = 0; i < keys.length - 1; i += 1) {
+		const key = keys[i];
+		const next = cursor[key];
+		if (next == null || typeof next !== "object") cursor[key] = {};
+		cursor = cursor[key];
+	}
+	cursor[keys[keys.length - 1]] = value;
+};
+var readFieldValue = (el) => {
+	const input = el;
+	const fieldType = (el.getAttribute("data-field-type") || "").toLowerCase();
+	if (fieldType === "boolean" || input.type === "checkbox") return !!input.checked;
+	const raw = "value" in input ? String(input.value ?? "") : "";
+	if (fieldType === "number" || input.type === "number") {
+		const n = Number(raw);
+		return Number.isFinite(n) ? n : void 0;
+	}
+	if (fieldType === "json") try {
+		return raw.trim() ? JSON.parse(raw) : void 0;
+	} catch {
+		return;
+	}
+	if (input.type === "password" && !raw.trim()) return;
+	return raw;
+};
+/** Populate `[data-field]` controls from `AppSettings`. */
+var bindContributionFields = (panel, settings) => {
+	panel.querySelectorAll("[data-field]").forEach((el) => {
+		const path = el.getAttribute("data-field");
+		if (!path) return;
+		const value = getByPath(settings, path);
+		if (value === void 0) return;
+		const input = el;
+		if (input.type === "checkbox") {
+			input.checked = !!value;
+			return;
+		}
+		if (el.getAttribute("data-field-type") === "json") {
+			try {
+				input.value = typeof value === "string" ? value : JSON.stringify(value, null, 2);
+			} catch {
+				input.value = "";
+			}
+			return;
+		}
+		if ("value" in input) input.value = String(value ?? "");
+	});
+};
+/** Merge `[data-field]` control values into `AppSettings`. */
+var collectContributionFields = (panel, settings) => {
+	const target = settings;
+	panel.querySelectorAll("[data-field]").forEach((el) => {
+		const path = el.getAttribute("data-field");
+		if (!path) return;
+		const value = readFieldValue(el);
+		if (value === void 0) return;
+		setByPath(target, path, value);
+	});
+};
+//#endregion
+//#region src/shared/other/config/settings/settings-contribution-ui.ts
+/**
+* DOM helpers for settings contribution panels (no fest/lure — safe for any host).
+*/
+var settingsHint = (text) => {
+	const p = document.createElement("p");
+	p.className = "field-hint";
+	p.textContent = text;
+	return p;
+};
+var settingsHeading = (text) => {
+	const h = document.createElement("h4");
+	h.textContent = text;
+	return h;
+};
+var settingsTextField = (label, path, placeholder = "", type = "text") => {
+	const wrap = document.createElement("label");
+	wrap.className = "field";
+	const span = document.createElement("span");
+	span.textContent = label;
+	const input = document.createElement("input");
+	input.className = "form-input";
+	input.type = type;
+	input.autocomplete = "off";
+	input.setAttribute("data-field", path);
+	if (placeholder) input.placeholder = placeholder;
+	wrap.append(span, input);
+	return wrap;
+};
+var settingsNumberField = (label, path, attrs = {}) => {
+	const wrap = document.createElement("label");
+	wrap.className = "field";
+	const span = document.createElement("span");
+	span.textContent = label;
+	const input = document.createElement("input");
+	input.className = "form-input";
+	input.type = "number";
+	input.setAttribute("data-field", path);
+	if (attrs.min) input.min = attrs.min;
+	if (attrs.max) input.max = attrs.max;
+	if (attrs.step) input.step = attrs.step;
+	if (attrs.placeholder) input.placeholder = attrs.placeholder;
+	wrap.append(span, input);
+	return wrap;
+};
+var settingsCheckboxField = (label, path) => {
+	const wrap = document.createElement("label");
+	wrap.className = "field checkbox form-checkbox";
+	const input = document.createElement("input");
+	input.type = "checkbox";
+	input.setAttribute("data-field", path);
+	const span = document.createElement("span");
+	span.textContent = label;
+	wrap.append(input, span);
+	return wrap;
+};
+var settingsSelectField = (label, path, options) => {
+	const wrap = document.createElement("label");
+	wrap.className = "field";
+	const span = document.createElement("span");
+	span.textContent = label;
+	const sel = document.createElement("select");
+	sel.className = "form-select";
+	sel.setAttribute("data-field", path);
+	for (const [value, text] of options) {
+		const opt = document.createElement("option");
+		opt.value = value;
+		opt.textContent = text;
+		sel.appendChild(opt);
+	}
+	wrap.append(span, sel);
+	return wrap;
+};
+/** Action button (not a settings field) — wire via `data-action` in Settings.ts. */
+var settingsButton = (label, action, opts) => {
+	const btn = document.createElement("button");
+	btn.type = "button";
+	btn.className = opts?.className || (opts?.primary ? "view-settings__btn view-settings__btn--primary" : "view-settings__btn");
+	btn.setAttribute("data-action", action);
+	btn.textContent = label;
+	return btn;
+};
+/** Horizontal row of action buttons. */
+var settingsButtonRow = (...buttons) => {
+	const row = document.createElement("div");
+	row.className = "field settings-action-row";
+	row.style.display = "flex";
+	row.style.flexWrap = "wrap";
+	row.style.gap = "0.5rem";
+	for (const btn of buttons) row.appendChild(btn);
+	return row;
+};
+/**
+* Read-only secret display: masked with dots until View; Copy writes the real value.
+* WHY: Control public token / rotating device code must not sit in cleartext by default.
+*/
+var settingsSecretDisplayField = (label, dataKey, opts) => {
+	const wrap = document.createElement("div");
+	wrap.className = "field settings-secret-field";
+	wrap.setAttribute("data-secret-field", dataKey);
+	const span = document.createElement("span");
+	span.textContent = label;
+	const row = document.createElement("div");
+	row.style.cssText = "display:flex;gap:.4rem;align-items:center;margin-top:.3rem;";
+	const input = document.createElement("input");
+	input.className = "form-input";
+	input.type = "password";
+	input.readOnly = true;
+	input.autocomplete = "off";
+	input.spellcheck = false;
+	input.placeholder = opts?.placeholder || "••••••";
+	input.setAttribute(`data-${dataKey}`, "1");
+	input.setAttribute("data-secret-input", dataKey);
+	input.value = "";
+	if (opts?.mono) {
+		input.style.fontFamily = "ui-monospace, SFMono-Regular, Menlo, monospace";
+		input.style.fontSize = "0.9rem";
+		input.style.letterSpacing = "0.04em";
+	} else {
+		input.style.fontSize = "1.15rem";
+		input.style.fontWeight = "700";
+		input.style.letterSpacing = "0.12em";
+	}
+	input.style.flex = "1 1 auto";
+	input.style.minWidth = "0";
+	const viewBtn = document.createElement("button");
+	viewBtn.type = "button";
+	viewBtn.className = "view-settings__btn";
+	viewBtn.textContent = "View";
+	viewBtn.title = "Show / hide";
+	viewBtn.setAttribute("data-action", "control-secret-toggle");
+	viewBtn.setAttribute("data-secret-for", dataKey);
+	const copyBtn = document.createElement("button");
+	copyBtn.type = "button";
+	copyBtn.className = "view-settings__btn";
+	copyBtn.textContent = "Copy";
+	copyBtn.title = "Copy to clipboard";
+	copyBtn.setAttribute("data-action", "control-secret-copy");
+	copyBtn.setAttribute("data-secret-for", dataKey);
+	const meta = document.createElement("p");
+	meta.className = "field-hint";
+	meta.setAttribute("data-secret-meta", dataKey);
+	meta.style.margin = "0.2rem 0 0";
+	meta.textContent = "";
+	const applyMasked = () => {
+		const revealed = input.dataset.revealed === "1";
+		input.type = revealed ? "text" : "password";
+		viewBtn.textContent = revealed ? "Hide" : "View";
+	};
+	viewBtn.addEventListener("click", (ev) => {
+		ev.preventDefault();
+		ev.stopPropagation();
+		input.dataset.revealed = input.dataset.revealed === "1" ? "0" : "1";
+		applyMasked();
+	});
+	copyBtn.addEventListener("click", async (ev) => {
+		ev.preventDefault();
+		ev.stopPropagation();
+		const value = String(input.value || "").trim();
+		if (!value) return;
+		try {
+			await navigator.clipboard.writeText(value);
+			const prev = copyBtn.textContent;
+			copyBtn.textContent = "Copied";
+			window.setTimeout(() => {
+				copyBtn.textContent = prev || "Copy";
+			}, 1200);
+		} catch {
+			input.type = "text";
+			input.select();
+			try {
+				document.execCommand("copy");
+			} catch {}
+			applyMasked();
+		}
+	});
+	row.append(input, viewBtn, copyBtn);
+	wrap.append(span, row, meta);
+	return wrap;
+};
+var settingsPanel = (id, title, children) => {
+	const section = document.createElement("section");
+	section.className = "card settings-tab-panel";
+	section.setAttribute("data-tab-panel", id);
+	section.hidden = true;
+	const h3 = document.createElement("h3");
+	h3.textContent = title;
+	section.appendChild(h3);
+	for (const child of children) if (typeof child === "string") section.appendChild(settingsHeading(child));
+	else section.appendChild(child);
+	return section;
+};
+//#endregion
+//#region src/shared/other/config/settings/contributions/apk-update.ts
+/** Sibling APKs the launcher may check / sideload. CRX has no package. */
+var FLEET_SKUS = [
+	{
+		sku: "explorer",
+		label: "Explorer"
+	},
+	{
+		sku: "document",
+		label: "Document"
+	},
+	{
+		sku: "process",
+		label: "Process"
+	},
+	{
+		sku: "transfer",
+		label: "Transfer"
+	}
+];
+var skuOf = (ctx) => ctx.sku || readCwspSku();
+var versionHint = (sku, text) => {
+	const p = document.createElement("p");
+	p.className = "field-hint";
+	p.setAttribute("data-apk-local-version", "1");
+	p.setAttribute("data-apk-sku", sku);
+	p.textContent = text;
+	return p;
+};
+var skuButtons = (sku) => {
+	const check = settingsButton("Check", "apk-update-check");
+	const install = settingsButton("Download & install", "apk-update-install", { primary: true });
+	check.setAttribute("data-apk-sku", sku);
+	install.setAttribute("data-apk-sku", sku);
+	return settingsButtonRow(check, install);
+};
+var fleetRow = (sku, label) => {
+	const wrap = document.createElement("div");
+	wrap.className = "apk-update-fleet-row";
+	wrap.setAttribute("data-apk-sku-row", sku);
+	const title = document.createElement("h4");
+	title.textContent = label;
+	const manifest = apkManifestForSku(sku);
+	wrap.append(title, versionHint(sku, "Not checked — tap Check"), skuButtons(sku), settingsHint(sku === "transfer" ? `Reads ${manifest} (ecosystem token). Newer versionCode or versionName is an update.` : `Reads ${manifest}. Newer versionCode or versionName is an update.`));
+	return wrap;
+};
+var apkUpdateFields = (ctx) => {
+	const sku = skuOf(ctx);
+	const manifest = sku ? apkManifestForSku(sku) : "";
+	const hostSku = readCwspSku();
+	const hubSection = String(ctx.hubSection || "hub");
+	const fromLauncher = hostSku === "launcher" && sku && sku !== "launcher";
+	const showFleet = hostSku === "launcher" && (!ctx.hubSection || hubSection === "hub");
+	const hint = fromLauncher ? sku === "transfer" ? "Updates CWSP-transfer (`latest.json` / space.u2re.cwsp). Needs ecosystem token." : `Updates the installed ${sku} APK (${manifest || "channel"}).` : sku === "launcher" ? "This launcher reads latest-launcher.json. Other ecosystem APKs are listed below when this is the Shell APK." : sku === "transfer" ? "This hub APK reads latest.json (ecosystem token). Other SKUs are not installed from here." : manifest ? `This app reads ${manifest} for its own APK only.` : "Checks the gateway release that matches this installed package.";
+	const fields = [
+		showFleet ? "This launcher" : "App update (dev)",
+		versionHint(sku || "launcher", "Installed version: … (tap Check to refresh)"),
+		settingsSelectField("Update source", "shell.apkUpdateSource", [
+			["wan", "WAN — https://45.147.121.152:8434"],
+			["lan", "LAN — https://192.168.0.200:8434"],
+			["relay", "Current Relay (core.endpointUrl)"]
+		]),
+		skuButtons(sku || "launcher"),
+		settingsHint(hint)
+	];
+	if (showFleet) {
+		fields.push("Ecosystem APKs", settingsHint("Check or install Explorer, Document, Process, and Transfer from this launcher."));
+		for (const row of FLEET_SKUS) fields.push(fleetRow(row.sku, row.label));
+	}
+	return fields;
+};
+var registerApkUpdateSettingsContribution = () => registerSettingsContribution({
+	id: "apk-update",
+	label: "Updates",
+	order: 90,
+	surfaces: [
+		"capacitor",
+		"native",
+		"environment"
+	],
+	render: (ctx) => settingsPanel("apk-update", "Updates", apkUpdateFields(ctx)),
+	load: (settings, panel) => {
+		const src = panel.querySelector("[data-field=\"shell.apkUpdateSource\"]");
+		if (src) {
+			const v = String(settings.shell?.apkUpdateSource || "wan").trim();
+			src.value = v === "lan" || v === "relay" ? v : "wan";
+		}
+	}
+});
+//#endregion
+//#region src/shared/other/config/settings/contributions/cwsp.ts
+var MULTI_VALUE_HINT = "Separate with comma, semicolon, space, or newline. Short IDs: L-110, L-196, L-200, L-208, L-210.";
+var CRX_DESK_CLIENT_ID_DEFAULT = "L-110";
+var isCrxWireId = (value) => /^L-\d{1,3}-crx$/i.test(String(value ?? "").trim());
+var pickDeskClientId = (...candidates) => {
+	for (const raw of candidates) {
+		const id = String(raw ?? "").trim();
+		if (id && !isCrxWireId(id)) return id;
+	}
+	return CRX_DESK_CLIENT_ID_DEFAULT;
+};
+var connectionFields = (ctx) => {
+	const isCrx = ctx.surface === "crx" || Boolean(ctx.isExtension);
+	const fields = [
+		settingsHint(isCrx ? "CWSP tab syncs Neutralino portable (/service/config + clipboard-hub). Chrome wire hub URL is under Extension → Local hub URL — not this Relay field." : "Persist to IDB; Neutralino/WebNative also syncs to Node portable.config + clipboard-hub."),
+		"Connection",
+		settingsTextField("Relay / gateway host", "core.endpointUrl", "https://192.168.0.200:8434;https://45.147.121.152:8434"),
+		settingsHint(isCrx ? "Neutralino/Node gateway SoT only. Does not overwrite Extension Local hub URL. External/WAN hosts may require the ecosystem token (and gateway login for Control)." : "Coordinator / gateway. Multi-hub: separate with `;` or `,` (never `:`). Always include :8434 — bare host dials :443 where /ws is not served (404)."),
+		settingsTextField("Direct host (optional)", "core.ops.directUrl", "https://192.168.0.110:8434"),
+		settingsHint("Optional direct peer (desk). Leave empty when phones only talk via gateway.")
+	];
+	if (!isCrx) fields.push(settingsTextField("Client id", "core.userId", "L-196 or L-110"), settingsHint("Short fleet id (L-196, L-210, …)."));
+	else fields.push(settingsTextField("Client id (Neutralino / backend)", "shell.clientId", "L-110"), settingsHint("Desk Node identity for portable.config / clipboard-hub / PNA. Chrome wire peer stays under Extension (L-110-crx)."));
+	fields.push(settingsTextField("Ecosystem token", "core.ecosystemToken", "shared ecosystem key", "password"), settingsHint(isCrx ? "Shared ecosystem key for Neutralino + Chrome hub auth. WAN / external Relay or Local hub still needs this token (Control may also require gateway login)." : "One shared token for identification + control (replaces separate identifier / access tokens). Leave blank on Save to keep the stored token."), settingsTextField("Destination node ids", "core.socket.routeTarget", "L-196;L-210;L-208"), settingsHint(MULTI_VALUE_HINT), settingsCheckboxField("Allow insecure TLS", "core.allowInsecureTls"));
+	return fields;
+};
+var clipboardFields = () => [
+	"Clipboard",
+	settingsCheckboxField("Accept inbound clipboard", "shell.acceptInboundClipboardData"),
+	settingsCheckboxField("Apply remote clipboard to device", "shell.applyRemoteClipboardToDevice"),
+	settingsTextField("Inbound clipboard allow ids", "shell.clipboardInboundAllowIds", "* or L-196;L-210"),
+	settingsHint(MULTI_VALUE_HINT),
+	settingsTextField("Share-intent destination ids", "shell.clipboardShareDestinationIds", "L-196;L-210;L-110"),
+	settingsHint(MULTI_VALUE_HINT),
+	"Clipboard prompt",
+	settingsSelectField("Outbound mode", "shell.clipboardOutboundMode", [["auto", "Auto — share + show popup (Erase optional)"], ["ask", "Ask — hold share until confirmed"]]),
+	settingsSelectField("Inbound mode", "shell.clipboardInboundMode", [["auto", "Auto — apply + show popup (Undo optional)"], ["ask", "Ask — hold apply until confirmed"]]),
+	settingsCheckboxField("Show Erase on outbound auto popup", "shell.clipboardOutboundShowErase"),
+	settingsCheckboxField("Show Undo on inbound auto popup", "shell.clipboardInboundShowUndo"),
+	settingsNumberField("Popup auto-dismiss (ms)", "shell.clipboardPromptDismissMs", {
+		min: "1000",
+		step: "500",
+		placeholder: "10000"
+	}),
+	settingsHint("On Ask mode, dismiss / timeout means no share and no apply. Defaults to 10000ms.")
+];
+/**
+* Files transfer (Open-with / share-target / files:* hub).
+* WHY: W3 hubs already honor these keys; CWSP tab had no UI until W5.
+* INVARIANT: never overload clipboard prompt fields — separate shell.files*.
+*/
+var filesTransferFields = (ctx) => {
+	const fields = [
+		"Files transfer",
+		settingsHint("Open-with / share-target and files:offer use these knobs. Empty destinations open a peer picker. Wildcards (`*`) need Allow share to all."),
+		settingsCheckboxField("Accept inbound files", "shell.acceptInboundFilesData"),
+		settingsTextField("Default destination ids", "shell.filesShareDestinationIds", "L-196;L-210 (empty = picker)"),
+		settingsHint(MULTI_VALUE_HINT),
+		settingsCheckboxField("Allow share to all (*)", "shell.filesAllowShareToAll"),
+		settingsHint("SECURITY: off by default — blocks accidental fleet-wide files:offer fan-out."),
+		settingsSelectField("Open for share", "shell.filesOpenForShareMode", [["auto", "Auto — offer when destinations are set"], ["manual", "Manual — always ask for destinations"]]),
+		settingsSelectField("Inbound accept", "shell.filesInboundMode", [["ask", "Ask — Accept / Decline prompt"], ["auto", "Auto — accept into landing folder"]]),
+		settingsCheckboxField("Copy received files to clipboard (for Paste / re-share)", "shell.filesCopyOnReceive"),
+		settingsHint("Neutralino/Windows: after Accept, place landed files on CF_HDROP (Explorer Paste). On by default."),
+		settingsSelectField("Byte transport hint", "shell.filesByteTransport", [
+			["auto", "Auto — receiver chooses"],
+			["http", "HTTP blob GET/PUT"],
+			["ws", "WebSocket chunks"]
+		]),
+		settingsHint("Transport hint is advisory. Large batches still need a live blob endpoint (W4); small batches may embed.")
+	];
+	if (ctx.surface === "capacitor" || ctx.surface === "native") {
+		const safHint = document.createElement("p");
+		safHint.className = "field-hint";
+		safHint.setAttribute("data-files-saf-uri", "1");
+		safHint.textContent = "SAF folder: (not set)";
+		const pathsHint = document.createElement("p");
+		pathsHint.className = "field-hint";
+		pathsHint.setAttribute("data-files-storage-paths", "1");
+		pathsHint.style.whiteSpace = "pre-wrap";
+		pathsHint.textContent = "Staging / landing paths: tap Show paths.";
+		fields.push("Files storage (Capacitor)", settingsSelectField("Save received files to", "shell.filesLandingMode", [
+			["app", "App storage (private — default)"],
+			["downloads", "Downloads (user-visible)"],
+			["saf", "SAF folder (pick below)"]
+		]), settingsHint("App storage is NOT under Android/data in File Manager. After install, open Files → sidebar → “CWSP Files” (DocumentsProvider / SAF). Or use Downloads / SAF landing, Show paths, Share README."), safHint, settingsButtonRow(settingsButton("Choose SAF folder", "files-storage-pick-saf", { primary: true }), settingsButton("Clear SAF folder", "files-storage-clear-saf")), settingsCheckboxField("Ask for folder every time if SAF unset", "shell.filesAskDirEveryTime"), settingsSelectField("Temp staging place", "shell.filesStagingRoot", [
+			["app", "App internal (files/) — default"],
+			["cache", "App cache (may be purged)"],
+			["external", "App external (Android/data/… — OEM may hide)"]
+		]), settingsHint("Outgoing (Open-with) and incoming unpack stage here first, then export to the Save location above."), pathsHint, settingsButtonRow(settingsButton("Show paths", "files-storage-show-paths"), settingsButton("Browse CWSP Files…", "files-storage-open-explorer"), settingsButton("Share README…", "files-storage-share-readme")), "File access permissions", (() => {
+			const el = document.createElement("p");
+			el.className = "field-hint";
+			el.setAttribute("data-files-perm-status", "1");
+			el.style.whiteSpace = "pre-wrap";
+			el.textContent = "Permissions: tap Refresh status. Media/storage is a runtime dialog; all-files opens system settings.";
+			return el;
+		})(), settingsButtonRow(settingsButton("Refresh status", "files-storage-perm-status"), settingsButton("Request media access", "files-storage-request-media", { primary: true }), settingsButton("Allow manage all files…", "files-storage-request-all-files")), settingsHint("All-files access (MANAGE_EXTERNAL_STORAGE) is for shared storage / USB / MediaStore — not other apps’ Android/data. Our tree stays under Files → CWSP Files. Play may review this permission if you publish."));
+	}
+	return fields;
+};
+var nativeWireFields = () => [
+	"Native wire (Capacitor)",
+	settingsCheckboxField("Prefer native Java WebSocket", "core.interop.preferNativeWebsocket"),
+	settingsCheckboxField("Maintain hub socket in background", "shell.maintainHubSocketConnection")
+];
+/** Control pairing credentials shown on device (public token + rotating code). */
+var controlPairingFields = () => [
+	"Control pairing",
+	settingsSecretDisplayField("Public token", "control-public-token", {
+		mono: true,
+		placeholder: "••••••••••••"
+	}),
+	settingsSecretDisplayField("Device code (20s, +10s grace)", "control-device-code", { placeholder: "••••••" }),
+	settingsButtonRow(settingsButton("Refresh code", "control-pairing-refresh"), settingsButton("Regenerate public token", "control-public-token-regenerate")),
+	settingsHint("Copy order for https://cwsp.u2re.space: Public token, then live Device code. Values are hidden by default — use View / Copy. Session ≤ 1 hour. Regenerating the public token invalidates old pairings.")
+];
+/**
+* CRX Control pairing — compact status + modal trigger (no inline token/code fields).
+* WHY: same UX as https://cwsp.u2re.space modal; secrets never land in portable.config.
+*/
+var crxControlPairingFields = () => {
+	const status = document.createElement("p");
+	status.className = "field-hint";
+	status.setAttribute("data-crx-control-status", "1");
+	status.textContent = "Control: …";
+	return [
+		"Control pairing",
+		status,
+		settingsButtonRow(settingsButton("Pair Control…", "crx-control-pair", { primary: true }), settingsButton("Unpair", "crx-control-unpair")),
+		settingsHint("Opens a pairing dialog (public token + 20s device code from Neutralino). Persistent session authorizes Copy & Share / Paste by CWSP and CWSP tab sync.")
+	];
+};
+/**
+* Pairing secrets belong on the device shell (Neutralino / Capacitor), never on the
+* public Control SPA. `resolveSettingsSurface()` maps Neutralino → `"web"`, so we
+* must not key off `"webnative"` alone.
+*/
+var isPublicCwspControlSpa = () => {
+	try {
+		const g = globalThis;
+		if (g.NL_OS != null || g.NL_PORT != null || g.Neutralino) return false;
+		if (g.Capacitor?.isNativePlatform?.()) return false;
+		const plat = String(g.Capacitor?.getPlatform?.() || "").toLowerCase();
+		if (plat === "android" || plat === "ios") return false;
+		const host = String(location.hostname || "").toLowerCase();
+		if (!host || host === "localhost" || host === "127.0.0.1" || host === "[::1]") return false;
+		return location.protocol === "https:";
+	} catch {
+		return false;
+	}
+};
+/** Device toggles folded into CWSP tab on mobile (same `AppSettings.shell` paths). */
+var mobileDeviceFields = () => [
+	"Device",
+	settingsCheckboxField("Start CWSP on boot", "shell.autoStartOnBoot"),
+	settingsCheckboxField("Foreground CWSP service", "shell.bridgeDaemonEnabled"),
+	settingsCheckboxField("Allow Control API", "shell.allowControlApi"),
+	settingsHint("Allow Control API listens on :8434 so public CWSP Control can pair (public token + 20s code + Accept). Ecosystem token stays on-device for the hub — not used as the Control SPA password."),
+	...controlPairingFields(),
+	settingsCheckboxField("Enable remote clipboard bridge", "shell.enableRemoteClipboardBridge"),
+	settingsCheckboxField("Accept contacts bridge", "shell.acceptContactsBridgeData"),
+	settingsHint("Save may request contacts / notifications when those toggles are on. SMS is not used.")
+];
+var registerCwspSettingsContribution = () => registerSettingsContribution({
+	id: "cwsp",
+	label: "CWSP",
+	order: 55,
+	excludeSurfaces: ["markdown", "environment"],
+	render: (ctx) => {
+		const children = [
+			...connectionFields(ctx),
+			...clipboardFields(),
+			...filesTransferFields(ctx)
+		];
+		if (ctx.surface === "capacitor" || ctx.surface === "native") children.push(...nativeWireFields(), ...mobileDeviceFields());
+		else if (ctx.surface === "crx" || ctx.isExtension) children.push(...crxControlPairingFields());
+		else if (!isPublicCwspControlSpa()) children.push(...nativeWireFields(), ...controlPairingFields());
+		return settingsPanel("cwsp", "CWSP", children);
+	},
+	load: (settings, panel) => {
+		const input = panel.querySelector("[data-field=\"core.ecosystemToken\"]");
+		if (input) input.value = resolveEcosystemToken(settings);
+		const clientInput = panel.querySelector("[data-field=\"shell.clientId\"]");
+		if (clientInput) {
+			const desk = pickDeskClientId(clientInput.value, settings.shell?.clientId, settings.core?.userId);
+			clientInput.value = desk;
+			settings.shell = {
+				...settings.shell || {},
+				clientId: desk
+			};
+		}
+		const safEl = panel.querySelector("[data-files-saf-uri]");
+		if (safEl) {
+			const uri = String(settings.shell?.filesIncomingDir || "").trim();
+			safEl.textContent = uri ? `SAF folder: ${uri.length > 72 ? `${uri.slice(0, 36)}…${uri.slice(-28)}` : uri}` : "SAF folder: (not set)";
+		}
+		const refreshBtn = panel.querySelector("button[data-action=\"control-pairing-refresh\"]");
+		if (refreshBtn) {
+			queueMicrotask(() => refreshBtn.click());
+			const prev = Number(panel.__cwspPairTimer || 0);
+			if (prev) clearInterval(prev);
+			panel.__cwspPairTimer = window.setInterval(() => {
+				if (!panel.isConnected) return;
+				refreshBtn.click();
+			}, 2500);
+		}
+		const crxStatus = panel.querySelector("[data-crx-control-status]");
+		if (crxStatus) __vitePreload(() => import("../chunks/crx-control-session.js").then((m) => m.formatCrxControlSessionStatus()), __vite__mapDeps([37,1,2,3]), import.meta.url).then((text) => {
+			if (crxStatus.isConnected) crxStatus.textContent = text;
+		}).catch(() => {
+			crxStatus.textContent = "Control: status unavailable";
+		});
+	},
+	save: (settings) => {
+		normalizeEcosystemToken(settings);
+		if (isCrxWireId(settings.shell?.clientId)) settings.shell = {
+			...settings.shell || {},
+			clientId: pickDeskClientId(settings.core?.userId)
+		};
+	}
+});
+//#endregion
+//#region src/shared/other/config/settings/contributions/device.ts
+/**
+* Former CRX-only "Extension" contribution — removed to avoid duplicate tabs.
+* Capacitor folds device toggles into the CWSP tab; CRX uses the `crx` panel.
+*/
+var registerDeviceSettingsContribution = () => () => void 0;
+//#endregion
+//#region src/shared/other/config/settings/contributions/reader.ts
+var registerReaderSettingsContribution = () => registerSettingsContribution({
+	id: "reader",
+	label: "Reader",
+	order: 60,
+	requiresView: "viewer",
+	render: () => settingsPanel("reader", "Reader", [settingsNumberField("Default zoom (%)", "views.reader.zoomPercent", {
+		min: "50",
+		max: "300",
+		step: "10",
+		placeholder: "100"
+	}), settingsCheckboxField("Wrap long lines", "views.reader.wrapLongLines")])
+});
+//#endregion
+//#region src/shared/other/config/settings/contributions/open-files.ts
+var SINK_OPTIONS = [
+	["ask", "Follow default / this app"],
+	["display", "Display here"],
+	["viewer", "Markdown (in this app)"],
+	["document", "CWSP-document"],
+	["explorer", "CWSP-explorer"],
+	["workcenter", "CWSP-process"],
+	["transfer", "CWSP-transfer"],
+	["wallpaper", "Wallpaper if it fits, otherwise viewer"],
+	["external", "New tab / browser"],
+	["system", "Android / system chooser"]
+];
+/** Document PWA has no Work Center / Explorer host — those sinks swallow drop/paste. */
+var DOCUMENT_VIEWER_SINK_OPTIONS = [
+	["ask", "Follow default / this app"],
+	["display", "Display here"],
+	["viewer", "Markdown (in this app)"],
+	["document", "Stay in this app"],
+	["external", "New tab / browser"]
+];
+var PLACEMENT_OPTIONS = [
+	["inline", "Inline window (same tab)"],
+	["native-window", "Separate window"],
+	["new-tab", "New tab (file as-is)"]
+];
+var ANDROID_EXPLORER_OPEN_OPTIONS = [
+	["document", "CWSP-document"],
+	["system", "Ask Android (Open with…)"],
+	["transfer", "CWSP-transfer"],
+	["workcenter", "CWSP-process"]
+];
+var ANDROID_EXPLORER_KIND_OPTIONS = [["ask", "Follow Open / click"], ...ANDROID_EXPLORER_OPEN_OPTIONS];
+var SHELL_IMAGE_OPTIONS = [
+	["wallpaper", "Wallpaper if it fits, otherwise viewer"],
+	["viewer", "Markdown (in this app)"],
+	["document", "CWSP-document"],
+	["workcenter", "CWSP-process"],
+	["transfer", "CWSP-transfer"],
+	["ask", "Wallpaper if it fits, otherwise pin a shortcut"],
+	["system", "Android / system chooser"],
+	["external", "New tab / browser"]
+];
+var showSurface = (ctx, surface) => {
+	const hub = String(ctx.hubSection || "").trim();
+	const sku = String(ctx.sku || "").trim();
+	const host = String(ctx.surface || "").trim();
+	if (hub === "hub") return true;
+	if (hub === "document") return surface === "viewer";
+	if (hub === "explorer") return surface === "explorer";
+	if (hub === "process") return surface === "process";
+	if (hub === "transfer") return surface === "transfer";
+	if (hub) return surface === "shell";
+	if (sku === "document" || host === "markdown") return surface === "viewer";
+	if (sku === "explorer") return surface === "explorer";
+	if (sku === "process") return surface === "process";
+	if (sku === "transfer") return surface === "transfer";
+	if (sku === "launcher" || host === "environment") return surface === "shell" || surface === "explorer";
+	if (sku === "crx" || host === "crx") return surface === "crx" || surface === "explorer";
+	return true;
+};
+var section = (title, hint, fields) => [
+	settingsHeading(title),
+	settingsHint(hint),
+	...fields?.map?.((field) => typeof field === "string" ? settingsSelectField(field, field, SINK_OPTIONS) : field)
+];
+var registerOpenFilesSettingsContribution = () => registerSettingsContribution({
+	id: "open-files",
+	label: "Open & share",
+	order: 22,
+	render: (ctx) => {
+		const blocks = [settingsHint("Where files go when you open, share, or launch them. “Follow default” keeps the current app’s behavior.")];
+		if (showSurface(ctx, "viewer")) {
+			const documentSku = ctx.sku === "document" || ctx.hubSection === "document" || ctx.surface === "markdown";
+			const viewerSinks = documentSku ? DOCUMENT_VIEWER_SINK_OPTIONS : SINK_OPTIONS;
+			blocks.push(...section("Markdown / document", documentSku ? "Drop, paste, share, and open always paint in this viewer. Sibling-app sinks are not available here." : "Opened, pasted, dropped, or shared into the viewer.", [
+				settingsSelectField("When a file opens", "openPolicy.viewer.channels.open", viewerSinks),
+				settingsSelectField("Share target", "openPolicy.viewer.channels.share-target", viewerSinks),
+				settingsSelectField("Launch queue", "openPolicy.viewer.channels.launch-queue", viewerSinks),
+				settingsSelectField("Markdown", "openPolicy.viewer.kinds.markdown", viewerSinks),
+				settingsSelectField("Text", "openPolicy.viewer.kinds.text", viewerSinks),
+				settingsSelectField("Documents (PDF, Office)", "openPolicy.viewer.kinds.document", viewerSinks),
+				settingsSelectField("Images", "openPolicy.viewer.kinds.image", viewerSinks),
+				settingsSelectField("Other files", "openPolicy.viewer.kinds.other", viewerSinks)
+			]));
+		}
+		if (showSurface(ctx, "explorer")) {
+			const android = ctx.surface === "capacitor" || ctx.surface === "native" || isCwspNativeHost();
+			blocks.push(...section("Explorer", android ? "These rows are Android-only. They do not change the site / PWA / CRX. Open / click is CWSP-document or Ask Android; a file-type row overrides it only when it is not “Follow Open / click”." : "These rows are site / PWA / CRX only. They do not change the Android Explorer APK. Markdown and images open in an inline window unless you pick a separate window or a new tab.", android ? [
+				settingsSelectField("Open / click", "openPolicy.explorer.nativeOpen", ANDROID_EXPLORER_OPEN_OPTIONS),
+				settingsSelectField("Markdown", "openPolicy.explorer.nativeKinds.markdown", ANDROID_EXPLORER_KIND_OPTIONS),
+				settingsSelectField("Text", "openPolicy.explorer.nativeKinds.text", ANDROID_EXPLORER_KIND_OPTIONS),
+				settingsSelectField("Documents", "openPolicy.explorer.nativeKinds.document", ANDROID_EXPLORER_KIND_OPTIONS),
+				settingsSelectField("Images", "openPolicy.explorer.nativeKinds.image", ANDROID_EXPLORER_KIND_OPTIONS),
+				settingsSelectField("Other files", "openPolicy.explorer.nativeKinds.other", ANDROID_EXPLORER_KIND_OPTIONS)
+			] : [
+				settingsSelectField("Open markdown / images in", "openPolicy.explorer.placement", PLACEMENT_OPTIONS),
+				settingsSelectField("Open / click", "openPolicy.explorer.channels.open", SINK_OPTIONS),
+				settingsSelectField("Double-click", "openPolicy.explorer.channels.dblclick", SINK_OPTIONS),
+				settingsSelectField("Markdown", "openPolicy.explorer.kinds.markdown", SINK_OPTIONS),
+				settingsSelectField("Text", "openPolicy.explorer.kinds.text", SINK_OPTIONS),
+				settingsSelectField("Documents", "openPolicy.explorer.kinds.document", SINK_OPTIONS),
+				settingsSelectField("Images", "openPolicy.explorer.kinds.image", SINK_OPTIONS),
+				settingsSelectField("Other files", "openPolicy.explorer.kinds.other", SINK_OPTIONS)
+			]));
+		}
+		if (showSurface(ctx, "shell")) blocks.push(...section("Environment / shell", "Launch queue, Capacitor open-with, share, and drop/paste on the home grid. Per-tile “Open link in” still wins.", [
+			settingsSelectField("Share target", "openPolicy.shell.channels.share-target", SINK_OPTIONS),
+			settingsSelectField("Launch queue", "openPolicy.shell.channels.launch-queue", SINK_OPTIONS),
+			settingsSelectField("Capacitor open-with", "openPolicy.shell.channels.capacitor", SINK_OPTIONS),
+			settingsSelectField("Markdown", "openPolicy.shell.kinds.markdown", SINK_OPTIONS),
+			settingsSelectField("Text", "openPolicy.shell.kinds.text", SINK_OPTIONS),
+			settingsSelectField("Documents", "openPolicy.shell.kinds.document", SINK_OPTIONS),
+			settingsHint("Images on CWSP-shell: a photo that is large enough and not a strip/icon becomes wallpaper. Anything that does not fit opens in the viewer."),
+			settingsSelectField("Images", "openPolicy.shell.kinds.image", SHELL_IMAGE_OPTIONS),
+			settingsSelectField("Links", "openPolicy.shell.kinds.url", SINK_OPTIONS)
+		]));
+		if (showSurface(ctx, "crx")) blocks.push(...section("Chrome extension", "Markdown, images, documents, and snip results from CWSP-crx.", [
+			settingsSelectField("Markdown", "openPolicy.crx.kinds.markdown", SINK_OPTIONS),
+			settingsSelectField("Documents", "openPolicy.crx.kinds.document", SINK_OPTIONS),
+			settingsSelectField("Images", "openPolicy.crx.kinds.image", SINK_OPTIONS),
+			settingsSelectField("Snip results", "openPolicy.crx.channels.snip", SINK_OPTIONS)
+		]));
+		if (showSurface(ctx, "process")) blocks.push(...section("Work Center / process", "Defaults when Work Center is the receiver (share, launch, open-with).", [
+			settingsSelectField("Text", "openPolicy.process.kinds.text", SINK_OPTIONS),
+			settingsSelectField("Documents", "openPolicy.process.kinds.document", SINK_OPTIONS),
+			settingsSelectField("Images", "openPolicy.process.kinds.image", SINK_OPTIONS),
+			settingsSelectField("Links", "openPolicy.process.kinds.url", SINK_OPTIONS),
+			settingsSelectField("Share target", "openPolicy.process.channels.share-target", SINK_OPTIONS),
+			settingsSelectField("Launch queue", "openPolicy.process.channels.launch-queue", SINK_OPTIONS),
+			settingsSelectField("Capacitor open-with", "openPolicy.process.channels.capacitor", SINK_OPTIONS)
+		]));
+		if (showSurface(ctx, "transfer")) blocks.push(...section("Transfer", "What to do when Transfer receives a type or share.", [
+			settingsSelectField("Text", "openPolicy.transfer.kinds.text", SINK_OPTIONS),
+			settingsSelectField("Documents", "openPolicy.transfer.kinds.document", SINK_OPTIONS),
+			settingsSelectField("Images", "openPolicy.transfer.kinds.image", SINK_OPTIONS),
+			settingsSelectField("Links", "openPolicy.transfer.kinds.url", SINK_OPTIONS),
+			settingsSelectField("Share target", "openPolicy.transfer.channels.share-target", SINK_OPTIONS)
+		]));
+		return settingsPanel("open-files", "Open & share", blocks);
+	},
+	load: (settings, panel) => {
+		settings.openPolicy = resolveHostOpenPolicy(settings);
+		bindContributionFields(panel, settings);
+	},
+	save: (settings) => {
+		settings.openPolicy = mergeOpenPolicy(settings.openPolicy);
+		stampHostOpenPolicy(settings);
+	}
+});
+//#endregion
+//#region src/shared/other/config/settings/contributions/workcenter.ts
+var MODE_OPTIONS = [["attach", "Open as attachment in chat"], ["process", "Run AI and write to clipboard"]];
+var instructionSelect = (label, path) => {
+	const wrap = settingsSelectField(label, path, [["", "Active instruction"]]);
+	wrap.querySelector("select")?.setAttribute("data-instruction-select", "");
+	return wrap;
+};
+var fillInstructionSelects = (panel, settings) => {
+	const items = settings.ai?.customInstructions || [];
+	panel.querySelectorAll("[data-instruction-select]").forEach((sel) => {
+		const current = sel.value;
+		sel.replaceChildren();
+		const empty = document.createElement("option");
+		empty.value = "";
+		empty.textContent = "Active instruction";
+		sel.appendChild(empty);
+		for (const item of items) {
+			const opt = document.createElement("option");
+			opt.value = item.id;
+			opt.textContent = item.label || item.id;
+			sel.appendChild(opt);
+		}
+		if (current && [...sel.options].some((opt) => opt.value === current)) sel.value = current;
+	});
+};
+var kindBlock = (kind) => [
+	settingsHeading(PROCESS_INGRESS_KIND_LABELS[kind]),
+	settingsSelectField(`When ${PROCESS_INGRESS_KIND_LABELS[kind].toLowerCase()} arrives`, `ai.processIngress.kinds.${kind}.mode`, MODE_OPTIONS),
+	instructionSelect("Default instruction", `ai.processIngress.kinds.${kind}.instructionId`)
+];
+var dropRetiredProcessFlags = (settings) => {
+	if (settings.ai) {
+		delete settings.ai.autoProcessShared;
+		delete settings.ai.shareTargetMode;
+	}
+	const views = settings.views?.workcenter;
+	if (views) {
+		delete views.autoRunPinned;
+		delete views.defaultInstructionId;
+	}
+};
+var registerWorkcenterSettingsContribution = () => registerSettingsContribution({
+	id: "workcenter",
+	label: "Process",
+	order: 20,
+	requiresView: "workcenter",
+	manualFields: true,
+	render: () => settingsPanel("workcenter", "Process", [
+		settingsHint("Share Target, Android Share, Open with, and Launch Queue use one action per type. Attach puts the file in chat. Process runs AI in the background and writes the result to the clipboard."),
+		settingsHeading("Incoming file types"),
+		...OPEN_KINDS.flatMap((kind) => kindBlock(kind))
+	]),
+	load: (settings, panel) => {
+		settings.ai = settings.ai || {};
+		settings.ai.processIngress = mergeProcessIngress(settings.ai.processIngress);
+		dropRetiredProcessFlags(settings);
+		fillInstructionSelects(panel, settings);
+		bindContributionFields(panel, settings);
+	},
+	save: (settings, panel) => {
+		collectContributionFields(panel, settings);
+		settings.ai = settings.ai || {};
+		settings.ai.processIngress = mergeProcessIngress(settings.ai.processIngress);
+		const ingress = settings.ai.processIngress;
+		let anyProcess = false;
+		for (const kind of OPEN_KINDS) {
+			const row = ingress.kinds[kind];
+			row.copyToClipboard = row.mode === "process";
+			if (row.mode === "process") anyProcess = true;
+		}
+		ingress.backgroundClipboard = anyProcess;
+		dropRetiredProcessFlags(settings);
+	}
+});
+//#endregion
+//#region src/shared/other/config/settings/contributions/workspace.ts
+var GRID_LS_KEY = "cw::workspace::grid-layout";
+var OPEN_LINK_LS_KEY = "rs-open-link-target";
+var WORKSPACE_GRID_EVENT = "cwsp:workspace-grid";
+var SHAPE_OPTIONS = [
+	["squircle", "Squircle"],
+	["circle", "Circle"],
+	["square", "Rounded square"],
+	["wavy", "Wavy"]
+];
+var ACTION_OPTIONS = [["open-link", "Open link"], ["open-view", "Open view"]];
+var APP_MENU_SORT_OPTIONS = [
+	["name", "Name"],
+	["installed", "Date installed"],
+	["updated", "Date updated"],
+	["color", "Color (including mask)"],
+	["category", "Category"],
+	["package", "Package"]
+];
+var SORT_DIR_OPTIONS = [["asc", "Ascending"], ["desc", "Descending"]];
+var OPEN_TARGET_OPTIONS = [
+	["inline", "Inline (iframe / env window, same tab)"],
+	["external-app", "External app (Android chooser)"],
+	["viewer", "Markdown (in this app)"],
+	["document", "CWSP-document"],
+	["explorer", "CWSP-explorer"],
+	["workcenter", "CWSP-process"],
+	["transfer", "CWSP-transfer"],
+	["native-window", "Native window (new browser window)"],
+	["new-tab", "New tab"]
+];
+var ICON_SCALE_OPTIONS = [
+	["compact", "Compact (0.78)"],
+	["fit", "Fit (1.0 — no zoom)"],
+	["fill", "Fill (1.28 — adaptive default)"],
+	["zoom", "Zoom (1.5)"],
+	["max", "Max (1.75)"]
+];
+var ALLOWED_SHAPES = new Set(SHAPE_OPTIONS.map(([value]) => value));
+var ALLOWED_ACTIONS = new Set(ACTION_OPTIONS.map(([value]) => value));
+var ALLOWED_TARGETS = new Set(OPEN_TARGET_OPTIONS.map(([value]) => value));
+var ALLOWED_ICON_SCALES = new Set(ICON_SCALE_OPTIONS.map(([value]) => value));
+var clampGridCount = (raw, fallback) => {
+	const n = Number(raw);
+	if (!Number.isFinite(n)) return fallback;
+	return Math.max(1, Math.min(16, Math.round(n)));
+};
+var normalizeShape = (raw, fallback = "squircle") => {
+	const v = String(raw || "").trim().toLowerCase();
+	return ALLOWED_SHAPES.has(v) ? v : fallback;
+};
+var normalizeAction = (raw, fallback = "open-link") => {
+	const v = String(raw || "").trim().toLowerCase();
+	return ALLOWED_ACTIONS.has(v) ? v : fallback;
+};
+var normalizeIconScale = (raw, fallback = "fill") => {
+	const v = String(raw || "").trim().toLowerCase();
+	if (v === "small" || v === "0.78") return "compact";
+	if (v === "1" || v === "contain") return "fit";
+	if (v === "adaptive" || v === "1.28") return "fill";
+	if (v === "1.5") return "zoom";
+	if (v === "large" || v === "1.75") return "max";
+	return ALLOWED_ICON_SCALES.has(v) ? v : fallback;
+};
+var normalizeOpenTarget = (raw, fallback = "inline") => {
+	const v = String(raw || "").trim().toLowerCase();
+	if (v === "in-shell" || v === "env" || v === "shell") return "inline";
+	if (v === "native" || v === "window" || v === "app-window") return "native-window";
+	if (v === "tab" || v === "browser" || v === "browser-tab") return "new-tab";
+	if (v === "app" || v === "chooser" || v === "open-with" || v === "open-in-app" || v === "intent") return "external-app";
+	if (v === "markdown") return "viewer";
+	if (v === "document" || v === "cwsp-document") return "document";
+	if (v === "files") return "explorer";
+	if (v === "process" || v === "cwsp-process") return "workcenter";
+	if (v === "transfer" || v === "cwsp" || v === "network") return "transfer";
+	return ALLOWED_TARGETS.has(v) ? v : fallback;
+};
+/** Best-effort parse of makeUIState JSOX/JSON without importing lure. */
+var parseStoredGrid = (raw) => {
+	if (!raw) return {};
+	try {
+		const parsed = JSON.parse(raw);
+		if (parsed && typeof parsed === "object") return parsed;
+	} catch {}
+	const columns = /columns["']?\s*:\s*(\d+)/.exec(raw);
+	const rows = /rows["']?\s*:\s*(\d+)/.exec(raw);
+	const shape = /shape["']?\s*:\s*["']?([a-z-]+)/i.exec(raw);
+	const defaultAction = /defaultAction["']?\s*:\s*["']?([a-z-]+)/i.exec(raw);
+	const defaultOpenLinkTarget = /defaultOpenLinkTarget["']?\s*:\s*["']?([a-z-]+)/i.exec(raw);
+	const iconScale = /iconScale["']?\s*:\s*["']?([a-z0-9.-]+)/i.exec(raw);
+	const out = {};
+	if (columns) out.columns = Number(columns[1]);
+	if (rows) out.rows = Number(rows[1]);
+	if (shape) out.shape = normalizeShape(shape[1]);
+	if (defaultAction) out.defaultAction = normalizeAction(defaultAction[1]);
+	if (defaultOpenLinkTarget) out.defaultOpenLinkTarget = normalizeOpenTarget(defaultOpenLinkTarget[1]);
+	if (iconScale) out.iconScale = normalizeIconScale(iconScale[1]);
+	return out;
+};
+var readLiveGrid = () => {
+	let live = null;
+	try {
+		window.dispatchEvent(new CustomEvent(WORKSPACE_GRID_EVENT, { detail: {
+			query: true,
+			receive: (grid) => {
+				live = grid;
+			}
+		} }));
+	} catch {}
+	let stored = {};
+	let openTarget = "";
+	try {
+		stored = parseStoredGrid(localStorage.getItem(GRID_LS_KEY));
+		openTarget = String(localStorage.getItem(OPEN_LINK_LS_KEY) || "");
+	} catch {}
+	return {
+		columns: clampGridCount(live?.columns ?? stored.columns, 4),
+		rows: clampGridCount(live?.rows ?? stored.rows, 8),
+		shape: normalizeShape(live?.shape ?? stored.shape, "squircle"),
+		defaultAction: normalizeAction(live?.defaultAction ?? stored.defaultAction, "open-link"),
+		defaultOpenLinkTarget: normalizeOpenTarget(live?.defaultOpenLinkTarget ?? stored.defaultOpenLinkTarget ?? openTarget, "inline"),
+		iconScale: normalizeIconScale(live?.iconScale ?? stored.iconScale, "fill")
+	};
+};
+var setFieldValue = (panel, path, value) => {
+	const el = panel.querySelector(`[data-field="${path}"]`);
+	if (!el || value == null) return;
+	el.value = String(value);
+};
+var CATALOG_KEY = "cw::workspace::pages";
+var paintWorkspacePages = (host) => {
+	let pages = [];
+	let active = "side-a";
+	try {
+		const parsed = JSON.parse(localStorage.getItem(CATALOG_KEY) || "null");
+		if (parsed?.pages?.length) {
+			pages = parsed.pages;
+			active = String(parsed.activeId || pages[0].id);
+		}
+	} catch {
+		pages = [
+			{
+				id: "side-a",
+				label: "Side A"
+			},
+			{
+				id: "side-b",
+				label: "Side B"
+			},
+			{
+				id: "side-c",
+				label: "Side C"
+			}
+		];
+	}
+	if (!pages.length) pages = [
+		{
+			id: "side-a",
+			label: "Side A"
+		},
+		{
+			id: "side-b",
+			label: "Side B"
+		},
+		{
+			id: "side-c",
+			label: "Side C"
+		}
+	];
+	host.replaceChildren();
+	for (const page of pages) {
+		const row = document.createElement("div");
+		row.style.cssText = "display:flex;gap:.4rem;align-items:center;margin:.25rem 0;";
+		const btn = document.createElement("button");
+		btn.type = "button";
+		btn.className = "view-settings__btn";
+		btn.textContent = page.label + (page.id === active ? " · active" : "");
+		btn.addEventListener("click", () => {
+			window.dispatchEvent(new CustomEvent("cwsp:workspace-cmd", { detail: {
+				cmd: "switch",
+				id: page.id
+			} }));
+			requestAnimationFrame(() => paintWorkspacePages(host));
+		});
+		const rename = document.createElement("button");
+		rename.type = "button";
+		rename.className = "view-settings__btn";
+		rename.textContent = "Rename";
+		rename.addEventListener("click", () => {
+			const next = window.prompt("Workspace name", page.label);
+			if (!next) return;
+			window.dispatchEvent(new CustomEvent("cwsp:workspace-cmd", { detail: {
+				cmd: "rename",
+				id: page.id,
+				label: next
+			} }));
+			requestAnimationFrame(() => paintWorkspacePages(host));
+		});
+		row.append(btn, rename);
+		if (pages.length > 1) {
+			const remove = document.createElement("button");
+			remove.type = "button";
+			remove.className = "view-settings__btn";
+			remove.textContent = "Remove";
+			remove.addEventListener("click", () => {
+				window.dispatchEvent(new CustomEvent("cwsp:workspace-cmd", { detail: {
+					cmd: "remove",
+					id: page.id
+				} }));
+				requestAnimationFrame(() => paintWorkspacePages(host));
+			});
+			row.append(remove);
+		}
+		host.append(row);
+	}
+};
+var bindWorkspacePagesUi = (panel) => {
+	const host = panel.querySelector("[data-workspace-pages]");
+	if (host) paintWorkspacePages(host);
+	if (panel.dataset.workspacePagesBound === "1") return;
+	panel.dataset.workspacePagesBound = "1";
+	panel.addEventListener("click", (ev) => {
+		const action = (ev.target?.closest?.("[data-action]"))?.getAttribute("data-action") || "";
+		if (action === "add-workspace-page") window.dispatchEvent(new CustomEvent("cwsp:workspace-cmd", { detail: { cmd: "add" } }));
+		else if (action === "workspace-page-prev") window.dispatchEvent(new CustomEvent("cwsp:workspace-cmd", { detail: { cmd: "prev" } }));
+		else if (action === "workspace-page-next") window.dispatchEvent(new CustomEvent("cwsp:workspace-cmd", { detail: { cmd: "next" } }));
+		else return;
+		if (host) requestAnimationFrame(() => paintWorkspacePages(host));
+	});
+};
+var persistGridFallback = (grid) => {
+	try {
+		localStorage.setItem(GRID_LS_KEY, JSON.stringify({
+			columns: grid.columns,
+			rows: grid.rows,
+			shape: grid.shape,
+			defaultAction: grid.defaultAction,
+			iconScale: grid.iconScale || "fill"
+		}));
+		if (grid.defaultOpenLinkTarget) localStorage.setItem(OPEN_LINK_LS_KEY, grid.defaultOpenLinkTarget);
 	} catch {}
 };
-var siblingSkuForView = (view) => {
-	return VIEW_TO_SIBLING_SKU[String(view || "").trim().toLowerCase()] || null;
-};
-var HUB_PUBLIC_HOSTS = ["u2re.space", "www.u2re.space"];
-var SKU_PUBLIC_HOSTS = {
-	document: ["md.u2re.space", "www.md.u2re.space"],
-	explorer: ["explorer.u2re.space", "www.explorer.u2re.space"],
-	process: [
-		"process.u2re.space",
-		"workcenter.u2re.space",
-		"ai.u2re.space"
-	],
-	transfer: [
-		"cwsp.u2re.space",
-		"www.cwsp.u2re.space",
-		"transfer.u2re.space"
-	]
-};
-/** Hub/LAN Fastify prefixes — never nest (`/viewer/explorer`). */
-var SKU_HUB_PATHS = {
-	document: [
-		"markdown",
-		"document",
-		"viewer"
-	],
-	explorer: [
-		"explorer",
-		"files",
-		"fm"
-	],
-	process: [
-		"workcenter",
-		"process",
-		"ai"
-	],
-	transfer: ["cwsp", "transfer"]
-};
-/** Specialized chrome. Empty list = hub/CRX keeps every view. */
-var SKU_LOCAL_NAV_VIEWS = {
-	launcher: [],
-	crx: [],
-	document: [
-		"viewer",
-		"editor",
-		"print",
-		"settings",
-		"history"
-	],
-	explorer: [
-		"explorer",
-		"settings",
-		"history"
-	],
-	process: [
-		"workcenter",
-		"settings",
-		"history"
-	],
-	transfer: [
-		"network",
-		"settings",
-		"history"
-	]
-};
-var currentHostname = () => {
+var applyLiveGrid = (grid) => {
+	let applied = false;
 	try {
-		return String(globalThis.location?.hostname || "").toLowerCase();
-	} catch {
-		return "";
-	}
+		window.dispatchEvent(new CustomEvent(WORKSPACE_GRID_EVENT, { detail: {
+			...grid,
+			ack: () => {
+				applied = true;
+			}
+		} }));
+	} catch {}
+	if (!applied) persistGridFallback(grid);
 };
-var firstPathSegment = () => {
+var registerWorkspaceSettingsContribution = () => registerSettingsContribution({
+	id: "workspace",
+	label: "Workspace",
+	order: 18,
+	requiresView: "home",
+	surfaces: [
+		"environment",
+		"crx",
+		"web",
+		"native",
+		"capacitor"
+	],
+	excludeSurfaces: ["markdown"],
+	render: () => settingsPanel("workspace", "Workspace", [
+		settingsHint("Theme, workspaces, and the Speed Dial grid share this page."),
+		"Workspaces",
+		settingsHint("Pages of the Speed Dial. Explorer roots: /user/workspaces/side-a, side-b, …"),
+		(() => {
+			const host = document.createElement("div");
+			host.setAttribute("data-workspace-pages", "1");
+			host.className = "field";
+			return host;
+		})(),
+		settingsButtonRow(settingsButton("Add workspace", "add-workspace-page"), settingsButton("Previous page", "workspace-page-prev"), settingsButton("Next page", "workspace-page-next")),
+		"Grid",
+		settingsHint("Speed dial grid on the Home / NTP workspace."),
+		settingsSelectField("Default icon shape", "grid.shape", SHAPE_OPTIONS),
+		settingsSelectField("Icon bitmap scale", "grid.iconScale", ICON_SCALE_OPTIONS),
+		settingsNumberField("Columns", "grid.columns", {
+			min: "1",
+			max: "16",
+			step: "1",
+			placeholder: "4"
+		}),
+		settingsNumberField("Rows", "grid.rows", {
+			min: "1",
+			max: "16",
+			step: "1",
+			placeholder: "8"
+		}),
+		"Default actions",
+		settingsSelectField("New tile action", "grid.defaultAction", ACTION_OPTIONS),
+		settingsSelectField("Open links in", "grid.defaultOpenLinkTarget", OPEN_TARGET_OPTIONS),
+		"App menu",
+		settingsHint("Installed-app icons in the App Menu. Color uses the painted icon, including mask."),
+		settingsSelectField("Sort icons by", "appMenu.sortBy", APP_MENU_SORT_OPTIONS),
+		settingsSelectField("Icon order", "appMenu.sortDir", SORT_DIR_OPTIONS)
+	]),
+	load: (settings, panel) => {
+		const live = readLiveGrid();
+		const grid = settings.grid || {};
+		setFieldValue(panel, "grid.shape", live.shape || grid.shape || "squircle");
+		setFieldValue(panel, "grid.iconScale", live.iconScale || grid.iconScale || "fill");
+		setFieldValue(panel, "grid.columns", live.columns ?? grid.columns ?? 4);
+		setFieldValue(panel, "grid.rows", live.rows ?? grid.rows ?? 8);
+		setFieldValue(panel, "grid.defaultAction", live.defaultAction || grid.defaultAction || "open-link");
+		setFieldValue(panel, "grid.defaultOpenLinkTarget", live.defaultOpenLinkTarget || grid.defaultOpenLinkTarget || "inline");
+		let liveAppMenu = {};
+		try {
+			const raw = localStorage.getItem("cwsp-app-menu-sort");
+			if (raw) liveAppMenu = JSON.parse(raw);
+		} catch {}
+		settings.appMenu = {
+			...settings.appMenu || {},
+			sortBy: liveAppMenu.sortBy || settings.appMenu?.sortBy || "name",
+			sortDir: liveAppMenu.sortDir || settings.appMenu?.sortDir || "asc"
+		};
+		setFieldValue(panel, "appMenu.sortBy", settings.appMenu.sortBy || "name");
+		setFieldValue(panel, "appMenu.sortDir", settings.appMenu.sortDir || "asc");
+		bindWorkspacePagesUi(panel);
+	},
+	save: (settings) => {
+		const next = {
+			columns: clampGridCount(settings.grid?.columns, 4),
+			rows: clampGridCount(settings.grid?.rows, 8),
+			shape: normalizeShape(settings.grid?.shape, "squircle"),
+			defaultAction: normalizeAction(settings.grid?.defaultAction, "open-link"),
+			defaultOpenLinkTarget: normalizeOpenTarget(settings.grid?.defaultOpenLinkTarget, "inline"),
+			iconScale: normalizeIconScale(settings.grid?.iconScale, "fill")
+		};
+		settings.grid = {
+			...settings.grid || {},
+			...next
+		};
+		applyLiveGrid(next);
+		try {
+			localStorage.setItem("cwsp-app-menu-sort", JSON.stringify({
+				sortBy: settings.appMenu?.sortBy || "name",
+				sortDir: settings.appMenu?.sortDir || "asc"
+			}));
+			window.dispatchEvent(new CustomEvent("cwsp:app-menu-sort-change"));
+		} catch {}
+	}
+});
+//#endregion
+//#region src/shared/other/config/settings/contributions/list-sort.ts
+var EXPLORER_SORT = [
+	["name", "Name"],
+	["date", "Date modified"],
+	["type", "Type"],
+	["size", "Size"],
+	["kind", "Kind (file / folder)"]
+];
+var DIR = [["asc", "Ascending"], ["desc", "Descending"]];
+var persistExplorer = (settings) => {
 	try {
-		return (String(globalThis.location?.pathname || "/").split("?")[0] || "/").split("/").filter(Boolean)[0]?.toLowerCase() || "";
-	} catch {
-		return "";
-	}
+		localStorage.setItem("cwsp-explorer-sort", JSON.stringify({
+			sortBy: settings.explorer?.sortBy || "name",
+			sortDir: settings.explorer?.sortDir || "asc",
+			foldersFirst: settings.explorer?.foldersFirst !== false
+		}));
+		window.dispatchEvent(new CustomEvent("cwsp:explorer-sort-change"));
+	} catch {}
 };
-var isLanOrLoopbackHost = (host) => host === "localhost" || host === "127.0.0.1" || host === "::1" || /^\d{1,3}(\.\d{1,3}){3}$/.test(host);
-var isHubPublicHost = (hostname) => {
-	const host = String(hostname || currentHostname()).toLowerCase();
-	return HUB_PUBLIC_HOSTS.includes(host);
+var registerExplorerSortSettingsContribution = () => registerSettingsContribution({
+	id: "explorer-sort",
+	label: "Explorer list",
+	order: 25,
+	requiresView: "explorer",
+	render: () => settingsPanel("explorer-sort", "Explorer list", [
+		settingsHint("Order of files and folders in CWSP-explorer / Explorer."),
+		settingsSelectField("Sort items by", "explorer.sortBy", EXPLORER_SORT),
+		settingsSelectField("Order", "explorer.sortDir", DIR),
+		settingsCheckboxField("Folders first", "explorer.foldersFirst")
+	]),
+	load: (settings) => {
+		let live = {};
+		try {
+			const raw = localStorage.getItem("cwsp-explorer-sort");
+			if (raw) live = JSON.parse(raw);
+		} catch {}
+		settings.explorer = {
+			...settings.explorer || {},
+			sortBy: live.sortBy || settings.explorer?.sortBy || "name",
+			sortDir: live.sortDir || settings.explorer?.sortDir || "asc",
+			foldersFirst: (live.foldersFirst ?? settings.explorer?.foldersFirst) !== false
+		};
+	},
+	save: (settings) => persistExplorer(settings)
+});
+//#endregion
+//#region src/shared/other/config/settings/register-builtin-contributions.ts
+/**
+* Central bootstrap for shared settings contributions.
+* Views may also call individual `register*SettingsContribution()` exports
+* (idempotent by contribution id).
+*/
+var registered = false;
+var registerBuiltinSettingsContributions = () => {
+	if (registered) return;
+	registered = true;
+	registerCwspSettingsContribution();
+	registerWorkspaceSettingsContribution();
+	registerExplorerSortSettingsContribution();
+	registerOpenFilesSettingsContribution();
+	registerReaderSettingsContribution();
+	registerWorkcenterSettingsContribution();
+	registerApkUpdateSettingsContribution();
 };
-/** Web `u2re.space` / LAN hub — not a Capacitor APK and not a dedicated SKU host. */
-var isWebHubSurface = () => {
-	if (isCwspNativeHost()) return false;
-	const host = currentHostname();
-	return isHubPublicHost(host) || isLanOrLoopbackHost(host);
-};
-var skuForHubPathSegment = (segment) => {
-	const seg = String(segment || "").trim().toLowerCase();
-	if (!seg) return "";
-	for (const sku of Object.keys(SKU_HUB_PATHS)) if (SKU_HUB_PATHS[sku].includes(seg)) return sku;
-	return "";
-};
-/** Host + hub/LAN path mount → SKU. `u2re.space/` stays launcher (full chrome). */
-var inferCwspSkuFromLocation = () => {
-	const stamped = readCwspSku();
-	if (stamped) return stamped;
-	const host = currentHostname();
-	for (const sku of Object.keys(SKU_PUBLIC_HOSTS)) if (SKU_PUBLIC_HOSTS[sku].includes(host)) return sku;
-	const fromPath = skuForHubPathSegment(firstPathSegment());
-	if (fromPath) return fromPath;
-	if (isHubPublicHost(host) || isLanOrLoopbackHost(host)) return "launcher";
-	return "";
-};
-var ensureCwspSkuFromLocation = () => {
-	const sku = inferCwspSkuFromLocation();
-	if (sku) applyCwspSku(sku);
-	return sku;
-};
-var normalizeNavViewId = (view) => {
-	const key = String(view || "").trim().toLowerCase();
-	if (key === "markdown" || key === "document" || key === "md") return "viewer";
-	if (key === "process") return "workcenter";
-	if (key === "files" || key === "fm") return "explorer";
-	if (key === "transfer") return "network";
-	return key;
-};
-/** False on a specialized host/mount for views that belong to another SKU. */
-var isViewLocalToSurface = (view, sku = inferCwspSkuFromLocation()) => {
-	const id = normalizeNavViewId(view);
-	if (!id) return false;
-	if (!sku || sku === "launcher" || sku === "crx") return true;
-	const local = SKU_LOCAL_NAV_VIEWS[sku];
-	if (!local.length) return true;
-	return local.includes(id);
-};
-/** Canonical hub/LAN path the user types (`/viewer` not `/markdown`). */
-var SKU_PUBLIC_HUB_PATH = {
-	document: "/viewer",
-	explorer: "/explorer",
-	process: "/process",
-	transfer: "/cwsp"
-};
-/** Path or absolute URL for a sibling SKU. Hub keeps `/viewer` `/explorer` `/process`. */
-var publicHrefForSku = (sku) => {
-	const host = currentHostname();
-	const hosts = SKU_PUBLIC_HOSTS[sku];
-	const path = SKU_PUBLIC_HUB_PATH[sku];
-	if (hosts.includes(host)) return "/";
-	if (isHubPublicHost(host) || isLanOrLoopbackHost(host)) return path;
-	return `https://${hosts[0]}/`;
-};
-var publicHrefForView = (view) => {
-	const sku = siblingSkuForView(normalizeNavViewId(view));
-	return sku ? publicHrefForSku(sku) : null;
-};
-var isCwspNativeHost = () => {
+//#endregion
+//#region ../../modules/views/settings-view/src/ts/settings-sibling-presence.ts
+var cachedInstalled = null;
+var inflight = null;
+var isNativeApkHost$1 = () => {
 	try {
 		const g = globalThis;
 		const platform = g.Capacitor?.getPlatform?.();
@@ -275,55 +2801,2019 @@ var isCwspNativeHost = () => {
 		return false;
 	}
 };
-/**
-* Leave this PWA for a sibling SKU.
-* INVARIANT: web `u2re.space` (launcher) keeps `/viewer` `/explorer` `/process` in-process.
-* Native launcher still opens sibling APKs.
-*/
-var shouldHandoffViewToSibling = (view) => {
-	const id = normalizeNavViewId(view);
-	const sibling = siblingSkuForView(id);
-	if (!sibling) return false;
-	const sku = inferCwspSkuFromLocation();
-	if (sku === "crx") return false;
-	if ((!sku || sku === "launcher") && !isCwspNativeHost()) return false;
-	if (sku === sibling) return false;
-	if (sku && sku !== "launcher" && sku !== "crx" && isViewLocalToSurface(id, sku)) return false;
-	return true;
+/** Hub URL tree, or launcher APK (sibling packages), otherwise no area nav. */
+var resolveSettingsAreaNavMode = () => {
+	const sku = inferCwspSkuFromLocation() || readCwspSku();
+	if (sku && sku !== "launcher" && sku !== "crx") return "none";
+	if (resolveEffectiveHubSettingsSection() !== null) return "hub";
+	if (isWebHubSurface()) return "hub";
+	if (sku === "launcher" && isNativeApkHost$1()) return "launcher";
+	return "none";
 };
-var CWSP_SKU_HANDOFF_KEY = "cwsp-sku-handoff";
-var stashSkuHandoff = (payload) => {
-	const json = JSON.stringify({
-		...payload,
-		ts: Date.now()
-	});
-	try {
-		globalThis.sessionStorage?.setItem?.(CWSP_SKU_HANDOFF_KEY, json);
-	} catch {}
-	try {
-		globalThis.localStorage?.setItem?.(CWSP_SKU_HANDOFF_KEY, json);
-	} catch {}
-};
-var takeSkuHandoff = (...accept) => {
-	try {
-		const raw = globalThis.sessionStorage?.getItem?.("cwsp-sku-handoff") || globalThis.localStorage?.getItem?.("cwsp-sku-handoff");
-		if (!raw) return null;
-		const parsed = JSON.parse(raw);
-		const dest = normalizeNavViewId(String(parsed.dest || ""));
-		if (accept.length && dest) {
-			if (!accept.some((entry) => normalizeNavViewId(entry) === dest)) return null;
+var peekInstalledSiblingSettingsSections = () => cachedInstalled;
+var refreshInstalledSiblingSettingsSections = async () => {
+	if (inflight) return inflight;
+	inflight = (async () => {
+		const wanted = SIBLING_HUB_SETTINGS_SECTIONS$1.map((section) => {
+			return {
+				section,
+				pkg: androidPackageForSku(skuForHubSettingsSection(section))
+			};
+		}).filter((row) => Boolean(row.pkg));
+		try {
+			const { launcherHasPackages } = await __vitePreload(async () => {
+				const { launcherHasPackages } = await import("../chunks/launcher-bridge.js");
+				return { launcherHasPackages };
+			}, __vite__mapDeps([38,9,3,10,11,12,1,2,13,4,14,15,16]), import.meta.url);
+			const map = await launcherHasPackages(wanted.map((row) => row.pkg));
+			cachedInstalled = wanted.filter((row) => map[row.pkg] === true).map((row) => row.section);
+		} catch {
+			cachedInstalled = [];
 		}
-		globalThis.sessionStorage?.removeItem?.(CWSP_SKU_HANDOFF_KEY);
-		globalThis.localStorage?.removeItem?.(CWSP_SKU_HANDOFF_KEY);
-		return parsed;
-	} catch {
-		return null;
+		return cachedInstalled;
+	})();
+	try {
+		return await inflight;
+	} finally {
+		inflight = null;
 	}
 };
-try {
-	ensureCwspSkuFromLocation();
-} catch {}
-var androidPackageForSku = (sku) => ECOSYSTEM_SKUS[sku]?.androidPackage ?? null;
-var apkManifestForSku = (sku) => ECOSYSTEM_SKUS[sku]?.apkManifest || "";
+var sameSiblingSectionSet = (a, b) => {
+	const left = [...a || []].filter((s) => s !== "hub").sort();
+	const right = [...b || []].filter((s) => s !== "hub").sort();
+	return left.length === right.length && left.every((s, i) => s === right[i]);
+};
 //#endregion
-export { siblingSkuForView as _, applyCwspSku as a, inferCwspSkuFromLocation as c, isViewLocalToSurface as d, isWebHubSurface as f, shouldHandoffViewToSibling as g, readCwspSku as h, apkManifestForSku as i, isCwspNativeHost as l, publicHrefForView as m, SKU_HUB_PATHS as n, ecosystem_skus_exports as o, publicHrefForSku as p, androidPackageForSku as r, ensureCwspSkuFromLocation as s, ECOSYSTEM_SKUS as t, isCwspSku as u, stashSkuHandoff as v, takeSkuHandoff as y };
+//#region ../../modules/views/settings-view/src/ts/settings-sync-adapter.ts
+var arms = {};
+var surfaceDetector = detectSurfaceDefault;
+/**
+* Default surface detector — order matters (most specific first).
+*
+* `__CWS_WEBNATIVE_BOOT__` is set by `runtime/cwsp/webnative/app/frontend/index.ts`.
+* The Capacitor native shell is detected via the `Capacitor` global injected by
+* `@capacitor/core`; the CRX surface via the chrome extension global. Fallback is `web`.
+*/
+function detectSurfaceDefault() {
+	const g = globalThis;
+	if (g.__CWS_WEBNATIVE_BOOT__ || g.__CWS_NEUTRALINO_BOOT__) return "webnative";
+	if (typeof g.Capacitor !== "undefined") return "capacitor";
+	if (typeof g.chrome !== "undefined" && g.chrome?.runtime) return "crx";
+	return "web";
+}
+/** Override the surface detector (used by shells that know their surface better than heuristics). */
+function setSurfaceDetector(fn) {
+	surfaceDetector = fn;
+}
+/** Register a sync arm for a surface. Shells call this at bootstrap. */
+function registerSettingsSyncArm(surface, arm) {
+	arms[surface] = arm;
+}
+/** Remove a previously registered arm (tests / shell teardown). */
+function unregisterSettingsSyncArm(surface) {
+	delete arms[surface];
+}
+/** Clear every registered arm (tests / shell teardown). */
+function clearSettingsSyncArms() {
+	for (const key of Object.keys(arms)) delete arms[key];
+}
+/**
+* One-level object merge used by the reference memory arm.
+*
+* INVARIANT: patching a nested object must not drop sibling keys already persisted
+* (hidden / unsupported UI sections must not delete persisted values).
+*/
+function mergeSettingsPatch(base, patch) {
+	const out = { ...base };
+	for (const [key, value] of Object.entries(patch)) {
+		const prev = out[key];
+		if (value !== null && typeof value === "object" && !Array.isArray(value) && prev !== null && typeof prev === "object" && !Array.isArray(prev)) out[key] = {
+			...prev,
+			...value
+		};
+		else out[key] = value;
+	}
+	return out;
+}
+/**
+* Reference in-memory `settings:get` / `settings:patch` arm.
+*
+* WHY: Capacitor and WebNative backends live above this package; contract tests and
+* pure-web shells need a dependency-free persistence model that matches the merge
+* invariant. Shells may register this as a temporary `web` fallback.
+*/
+function createMemorySettingsSyncArm(initial = {}, extras = {}) {
+	let store = { ...initial };
+	return {
+		get: async () => ({ ...store }),
+		patch: async (patch) => {
+			store = mergeSettingsPatch(store, patch);
+			return { ...store };
+		},
+		...extras
+	};
+}
+/** Current detected surface (exposed for diagnostics + arm selection). */
+function detectSettingsSurface() {
+	return surfaceDetector();
+}
+/**
+* Resolve the sync arm for the current surface, falling back to `web` (IDB-only, no backend
+* persistence — the historical browser/PWA behavior).
+*/
+function resolveSettingsSyncArm() {
+	return arms[surfaceDetector()] || arms.web || null;
+}
+/**
+* settings:get — read the persisted settings blob for the current surface.
+* Returns `{}` when no arm is registered (caller falls back to IDB / defaults).
+*/
+async function getSettingsSync() {
+	const arm = resolveSettingsSyncArm();
+	if (!arm) return {};
+	try {
+		return await arm.get();
+	} catch {
+		return {};
+	}
+}
+/**
+* settings:patch — shallow-merge a patch into persisted settings and trigger backend reload.
+* Returns the merged blob, or `{}` when no arm is registered (caller should persist to IDB).
+*/
+async function patchSettingsSync(patch) {
+	const arm = resolveSettingsSyncArm();
+	if (!arm) return {};
+	return arm.patch(patch);
+}
+/**
+* settings:defaults — config-driven defaults (DEFAULT_SETTINGS + resolved snapshot) for views
+* that render actual-config-derived values. Returns `{}` when the arm doesn't expose defaults.
+*/
+async function getSettingsDefaults() {
+	const arm = resolveSettingsSyncArm();
+	if (!arm?.defaults) return {};
+	try {
+		return await arm.defaults();
+	} catch {
+		return {};
+	}
+}
+/**
+* settings:snapshot — the actual resolved runtime config (ports, bridge, roles, endpointIDs, …)
+* for views (e.g. network-view) that display live config state. Returns `{}` when unavailable.
+*/
+async function getSettingsSnapshot() {
+	const arm = resolveSettingsSyncArm();
+	if (!arm?.snapshot) return {};
+	try {
+		return await arm.snapshot();
+	} catch {
+		return {};
+	}
+}
+//#endregion
+//#region ../../modules/views/settings-view/src/ts/settings-contributions.ts
+var TAB_LIST_SELECTOR = "[data-settings-tabs]";
+var BODY_SELECTOR = ".settings-screen__body";
+var isNativeApkHost = () => {
+	try {
+		const g = globalThis;
+		const platform = g.Capacitor?.getPlatform?.();
+		return Boolean(g.Capacitor?.isNativePlatform?.() || platform === "android" || platform === "ios" || g.__CWS_NATIVE__ === true);
+	} catch {
+		return false;
+	}
+};
+var resolveSettingsSurface = () => {
+	try {
+		const sku = readCwspSku();
+		if (sku === "document") return isNativeApkHost() ? "capacitor" : "markdown";
+		if (sku === "process" || sku === "explorer") return isNativeApkHost() ? "capacitor" : "web";
+		if (sku === "launcher") return isNativeApkHost() ? "capacitor" : "environment";
+		if (sku === "crx") return "crx";
+		const g = globalThis;
+		if (g?.chrome?.runtime?.id) return "crx";
+		if (g?.Capacitor?.isNativePlatform?.() || g?.Capacitor?.getPlatform?.() === "android" || g?.Capacitor?.getPlatform?.() === "ios") return "capacitor";
+		if (g?.__CWS_NATIVE__ === true) return "native";
+		if (typeof document !== "undefined") {
+			const surface = String(document.documentElement?.dataset?.cwspSurface || "").toLowerCase();
+			if (surface === "cw-markdown" || surface === "cw-document" || surface === "document") return "markdown";
+			if (surface === "environment" || surface === "cw-environment" || surface === "cwsp-shell") return "environment";
+			if (document.querySelector?.(".env-shell-root[data-shell='environment'], env-shell-container[data-shell='environment']")) return "environment";
+		}
+		if (typeof document !== "undefined") return "web";
+	} catch {}
+	return "unknown";
+};
+/** Hub `/settings/{area}` or launcher sibling section overrides SKU so contribs match that PWA. */
+var resolveSettingsContributionContext = (isExtension, hubSectionOverride) => {
+	const fromHub = resolveEffectiveHubSettingsSection();
+	const navMode = resolveSettingsAreaNavMode();
+	const fromAreaNav = navMode === "hub" || navMode === "launcher" ? hubSectionOverride || readSettingsAreaSection() || "hub" : null;
+	const hubSection = fromHub || fromAreaNav || hubSectionOverride || void 0;
+	const sku = hubSection ? skuForHubSettingsSection(hubSection) : readCwspSku();
+	let surface = resolveSettingsSurface();
+	if (hubSection === "document") surface = isNativeApkHost() ? "capacitor" : "markdown";
+	else if (hubSection === "transfer") surface = isNativeApkHost() ? "capacitor" : "web";
+	else if (hubSection === "process" || hubSection === "explorer") surface = isNativeApkHost() ? "capacitor" : "web";
+	else if (hubSection === "hub") surface = isNativeApkHost() ? "capacitor" : "environment";
+	return {
+		isExtension: Boolean(isExtension),
+		surface,
+		sku,
+		hubSection
+	};
+};
+var contributionVisible = (contribution, ctx) => {
+	if (contribution.requiresView && !isEnabledView(contribution.requiresView)) {
+		if (!(contribution.id === "workcenter" && (ctx.sku === "process" || ctx.hubSection === "process"))) return false;
+	}
+	const surfaces = contribution.surfaces;
+	if (surfaces?.length && !surfaces.includes(ctx.surface)) return false;
+	if (contribution.excludeSurfaces?.includes(ctx.surface)) return false;
+	if (contribution.id === "apk-update" && !isNativeApkHost()) return false;
+	if (contribution.id === "cwsp") {
+		const sku = ctx.sku || readCwspSku();
+		if (sku === "launcher" || sku === "explorer" || sku === "document" || sku === "process") return false;
+	}
+	return true;
+};
+var visibleContributions = (ctx) => getSettingsContributions().filter((c) => contributionVisible(c, ctx));
+var mountContributions = (root, ctx) => {
+	const tabList = root.querySelector(TAB_LIST_SELECTOR);
+	const body = root.querySelector(BODY_SELECTOR);
+	if (!tabList || !body) return;
+	for (const contribution of visibleContributions(ctx)) {
+		if (root.querySelector(`[data-tab-panel="${contribution.id}"]`)) continue;
+		if (contribution.id === "workspace") {
+			const appearance = root.querySelector("[data-tab-panel=\"appearance\"]");
+			if (appearance) {
+				let content = null;
+				try {
+					content = contribution.render(ctx);
+				} catch (error) {
+					console.warn(`[settings] contribution '${contribution.id}' render failed:`, error);
+				}
+				if (content) {
+					const wrap = document.createElement("div");
+					wrap.setAttribute("data-contribution", "workspace");
+					wrap.hidden = false;
+					if (content.matches?.("[data-tab-panel]")) {
+						content.removeAttribute("hidden");
+						content.removeAttribute("data-tab-panel");
+						content.classList.remove("settings-tab-panel");
+						wrap.append(...Array.from(content.childNodes));
+					} else {
+						content.removeAttribute("data-tab-panel");
+						content.classList.remove("settings-tab-panel");
+						wrap.appendChild(content);
+					}
+					appearance.appendChild(wrap);
+				}
+				continue;
+			}
+		}
+		const tab = document.createElement("button");
+		tab.className = "settings-tab-btn";
+		tab.type = "button";
+		tab.role = "tab";
+		tab.setAttribute("data-action", "switch-settings-tab");
+		tab.setAttribute("data-tab", contribution.id);
+		tab.setAttribute("data-contributed-tab", "");
+		tab.setAttribute("aria-selected", "false");
+		tab.textContent = contribution.label;
+		const extTab = tabList.querySelector("[data-extension-tab]");
+		if (extTab) tabList.insertBefore(tab, extTab);
+		else tabList.appendChild(tab);
+		let content = null;
+		try {
+			content = contribution.render(ctx);
+		} catch (error) {
+			console.warn(`[settings] contribution '${contribution.id}' render failed:`, error);
+		}
+		if (!content) continue;
+		let panel;
+		if (content.matches?.("[data-tab-panel]")) {
+			panel = content;
+			panel.classList.add("card", "settings-tab-panel");
+			panel.setAttribute("data-tab-panel", contribution.id);
+			panel.setAttribute("data-contributed-panel", "");
+			panel.hidden = true;
+		} else {
+			panel = document.createElement("section");
+			panel.className = "card settings-tab-panel";
+			panel.setAttribute("data-tab-panel", contribution.id);
+			panel.setAttribute("data-contributed-panel", "");
+			panel.hidden = true;
+			panel.appendChild(content);
+		}
+		body.appendChild(panel);
+	}
+};
+var forEachContributionPanel = (root, ctx, cb) => {
+	for (const contribution of visibleContributions(ctx)) {
+		const panel = root.querySelector(`[data-tab-panel="${contribution.id}"]`) || root.querySelector(`[data-contribution="${contribution.id}"]`);
+		if (panel) cb(contribution, panel);
+	}
+};
+var applyContributions = (root, settings, ctx) => {
+	forEachContributionPanel(root, ctx, (contribution, panel) => {
+		try {
+			if (!contribution.manualFields) bindContributionFields(panel, settings);
+			contribution.load?.(settings, panel, ctx);
+		} catch (error) {
+			console.warn(`[settings] contribution '${contribution.id}' load failed:`, error);
+		}
+	});
+};
+var collectContributions = (root, settings, ctx) => {
+	forEachContributionPanel(root, ctx, (contribution, panel) => {
+		try {
+			if (!contribution.manualFields) collectContributionFields(panel, settings);
+			contribution.save?.(settings, panel, ctx);
+		} catch (error) {
+			console.warn(`[settings] contribution '${contribution.id}' save failed:`, error);
+		}
+	});
+};
+var isPlainObject = (value) => Boolean(value) && typeof value === "object" && !Array.isArray(value);
+/**
+* Deep-merge backend settings:get into local AppSettings for form prefill.
+* INVARIANT: skip `[redacted]` placeholders so a redacted GET cannot wipe IDB values.
+* Backend non-empty values win (gateway/webnative SoT after login).
+*/
+var mergeSettingsFromSync = (base, remote) => {
+	if (!isPlainObject(remote) || !Object.keys(remote).length) return base;
+	const mergeValue = (local, incoming) => {
+		if (incoming === void 0 || incoming === null) return local;
+		if (typeof incoming === "string" && incoming === "[redacted]") return local;
+		if (Array.isArray(incoming)) return incoming.slice();
+		if (isPlainObject(incoming) && isPlainObject(local)) {
+			const out = { ...local };
+			for (const [key, value] of Object.entries(incoming)) out[key] = mergeValue(local[key], value);
+			return out;
+		}
+		if (isPlainObject(incoming)) return { ...incoming };
+		if (typeof incoming === "string" && !incoming.trim() && typeof local === "string" && local.trim()) return local;
+		return incoming;
+	};
+	return mergeValue(base, remote);
+};
+var isDesktopSettingsSurface = () => {
+	try {
+		const g = globalThis;
+		const crxWithBridge = typeof g.chrome?.runtime?.id === "string" && typeof g.__NEUTRALINO_AUTH__?.port === "number";
+		return Boolean(g.__CWS_WEBNATIVE_BOOT__ || g.__CWS_NEUTRALINO_BOOT__ || typeof g.__WEBNATIVE_AUTH__?.port === "number" || typeof g.__NEUTRALINO_AUTH__?.port === "number" || crxWithBridge);
+	} catch {
+		return false;
+	}
+};
+var remoteSettingsLooksUseful = (remote) => {
+	if (!remote || typeof remote !== "object") return false;
+	const core = remote.core;
+	const shell = remote.shell;
+	const bridge = remote.bridge;
+	const cwsp = remote.cwsp;
+	const control = remote.control;
+	return Boolean(typeof core?.endpointUrl === "string" && core.endpointUrl.trim() || typeof core?.userId === "string" && core.userId.trim() || typeof core?.ecosystemToken === "string" && core.ecosystemToken.trim() || typeof core?.userKey === "string" && core.userKey.trim() || typeof shell?.clipboardInboundMode === "string" && shell.clipboardInboundMode || typeof shell?.clipboardOutboundMode === "string" && shell.clipboardOutboundMode || typeof shell?.remoteHost === "string" && shell.remoteHost.trim() || typeof shell?.clientId === "string" && shell.clientId.trim() || typeof shell?.allowControlApi === "boolean" || typeof shell?.bridgeDaemonEnabled === "boolean" || typeof shell?.autoStartOnBoot === "boolean" || typeof bridge?.endpointUrl === "string" && bridge.endpointUrl.trim() || typeof bridge?.userId === "string" && String(bridge.userId).trim() || typeof cwsp?.clientId === "string" && String(cwsp.clientId).trim() || typeof cwsp?.endpointUrl === "string" && String(cwsp.endpointUrl).trim() || control?.surface === "capacitor-android");
+};
+var isCrxSettingsRuntime = () => {
+	try {
+		const id = globalThis.chrome?.runtime?.id;
+		return typeof id === "string" && id.length > 0;
+	} catch {
+		return false;
+	}
+};
+/**
+* INVARIANT (CRX): Extension wire `core.userId` = L-110-crx;
+* CWSP desk `shell.clientId` = L-110 (never *-crx).
+* WHY: polluted chrome.storage / portable swaps these on open without this pass.
+*/
+var reconcileCrxIdentityAfterHydrate = (settings) => {
+	if (!isCrxSettingsRuntime()) return settings;
+	const CRX_WIRE = "L-110-crx";
+	const DESK_DEFAULT = "L-110";
+	const isCrxWire = (v) => /^L-\d{1,3}-crx$/i.test(String(v ?? "").trim());
+	const pickDesk = (...cands) => {
+		for (const c of cands) {
+			const id = String(c ?? "").trim();
+			if (id && !isCrxWire(id)) return id;
+		}
+		return DESK_DEFAULT;
+	};
+	const deskId = pickDesk(settings.shell?.clientId, settings.core?.userId);
+	return {
+		...settings,
+		core: {
+			...settings.core || {},
+			userId: CRX_WIRE,
+			socket: {
+				...settings.core?.socket || {},
+				selfId: CRX_WIRE
+			}
+		},
+		shell: {
+			...settings.shell || {},
+			clientId: deskId
+		}
+	};
+};
+/** Load local settings then overlay the registered sync arm (gateway / webnative / …). */
+var loadSettingsHydratedFromSync = async (loadLocal) => {
+	const local = await loadLocal();
+	if ((local.core?.preferBackendSync ?? true) === false) return reconcileCrxIdentityAfterHydrate(local);
+	let remote = await getSettingsSync();
+	const crxControlLive = (() => {
+		try {
+			if (!isCrxSettingsRuntime()) return false;
+			const g = globalThis;
+			return String(globalThis.document?.documentElement?.dataset?.cwspBridge || "") === "live" || typeof g.__NEUTRALINO_AUTH__?.port === "number";
+		} catch {
+			return false;
+		}
+	})();
+	if ((isDesktopSettingsSurface() || crxControlLive) && !remoteSettingsLooksUseful(remote)) for (let i = 0; i < 8; i++) {
+		await new Promise((r) => setTimeout(r, 300));
+		remote = await getSettingsSync();
+		if (remoteSettingsLooksUseful(remote)) break;
+	}
+	return reconcileCrxIdentityAfterHydrate(mergeSettingsFromSync(local, remote));
+};
+/**
+* settings:get → applyContributions — hydrate contributed panels from the registered sync arm.
+*
+* NOTE: returns the merged blob used for binding so callers can keep a local settings copy
+* without a second get. When no arm is registered, `base` is applied unchanged.
+*/
+var hydrateContributionsFromSync = async (root, ctx, base = {}) => {
+	const settings = mergeSettingsFromSync(base, await getSettingsSync());
+	applyContributions(root, settings, ctx);
+	return settings;
+};
+/**
+* collectContributions → settings:patch — persist contributed field values through the sync arm.
+*
+* INVARIANT: callers pass the full settings object they intend to keep; the arm owns merge
+* semantics (see `createMemorySettingsSyncArm` / platform backends).
+*/
+var persistContributionsViaSync = async (root, settings, ctx) => {
+	collectContributions(root, settings, ctx);
+	return patchSettingsSync(settings);
+};
+var contributedTabIds = (ctx) => visibleContributions(ctx).map((c) => c.id);
+var isCapacitorNativeShell = () => isNativeApkHost();
+/** Resolve bare host/IP fields in `core.endpointUrl` / `core.ops.directUrl` before persist. */
+var resolveCwspSettingsBeforeSave = async (settings) => {
+	normalizeEcosystemToken(settings);
+	const core = settings.core;
+	if (!core || typeof core !== "object") return;
+	const { sanitizeFleetSelfWireNodeId } = await __vitePreload(async () => {
+		const { sanitizeFleetSelfWireNodeId } = await import("../chunks/airpad-cwsp-client-parity.js").then((n) => n.a);
+		return { sanitizeFleetSelfWireNodeId };
+	}, __vite__mapDeps([13,3,4]), import.meta.url);
+	const canonicalUserId = sanitizeFleetSelfWireNodeId(core.userId);
+	if (canonicalUserId) core.userId = canonicalUserId;
+	const isControlSpaHost = (host) => {
+		const h = host.toLowerCase();
+		return h === "cwsp.u2re.space" || h === "www.cwsp.u2re.space" || h === "md.u2re.space" || h === "www.md.u2re.space";
+	};
+	const stripControlSpaSegment = (url) => {
+		const raw = String(url || "").trim();
+		if (!raw) return "";
+		try {
+			const withScheme = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+			const host = new URL(withScheme).hostname.toLowerCase();
+			if (isControlSpaHost(host)) return "";
+		} catch {
+			if (/cwsp\.u2re\.space|md\.u2re\.space/i.test(raw)) return "";
+		}
+		return raw;
+	};
+	const stripControlSpa = (url) => {
+		const raw = String(url || "").trim();
+		if (!raw) return "";
+		if (/[,;\s]/.test(raw) && /:\/\//.test(raw)) return raw.split(/[,;\s]+/).map((part) => stripControlSpaSegment(part.trim())).filter(Boolean).join(";");
+		return stripControlSpaSegment(raw);
+	};
+	if (typeof core.endpointUrl === "string") {
+		const cleaned = stripControlSpa(core.endpointUrl);
+		if (cleaned !== core.endpointUrl.trim()) core.endpointUrl = cleaned;
+	}
+	const relay = typeof core.endpointUrl === "string" ? core.endpointUrl : "";
+	const direct = typeof core.ops?.directUrl === "string" ? core.ops.directUrl : "";
+	if (!relay.trim() && !direct.trim()) return;
+	const resolveOpts = isCapacitorNativeShell() ? {
+		discover: false,
+		timeoutMs: 1500
+	} : { timeoutMs: 3e3 };
+	const resolved = await resolveCwspUrlFields({
+		relayHttpsUrl: relay,
+		directHttpsUrl: direct
+	}, resolveOpts);
+	if (resolved.relayHttpsUrl !== void 0) core.endpointUrl = resolved.relayHttpsUrl;
+	if (resolved.directHttpsUrl !== void 0) core.ops = {
+		...core.ops || {},
+		directUrl: resolved.directHttpsUrl
+	};
+};
+//#endregion
+//#region ../../modules/views/settings-view/src/ts/Settings.ts
+/** PERF: reuse the built tree on reopen — first createSettingsView is the expensive click. */
+var cachedSettingsViewRoot = null;
+var resetSettingsViewCache = () => {
+	cachedSettingsViewRoot = null;
+};
+var HUB_SECTION_LABELS = [
+	{
+		id: "hub",
+		label: "Shell",
+		icon: "squares-four"
+	},
+	{
+		id: "explorer",
+		label: "Explorer",
+		icon: "folder"
+	},
+	{
+		id: "document",
+		label: "Document",
+		icon: "books"
+	},
+	{
+		id: "process",
+		label: "Process",
+		icon: "lightning"
+	},
+	{
+		id: "transfer",
+		label: "Transfer",
+		icon: "arrows-left-right"
+	}
+];
+var createSettingsView = (opts) => {
+	const hubSection = opts.hubSection || resolveEffectiveHubSettingsSection() || "hub";
+	if (cachedSettingsViewRoot) if (cachedSettingsViewRoot.dataset.hubSettingsSection !== hubSection) cachedSettingsViewRoot = null;
+	else {
+		if (opts.initialTab) cachedSettingsViewRoot.dispatchEvent(new CustomEvent("cwsp-settings-resync"));
+		return cachedSettingsViewRoot;
+	}
+	let note = null;
+	let noteTimer = null;
+	const noteClearMs = () => {
+		const surface = resolveSettingsSurface();
+		return surface === "capacitor" || surface === "native" ? 8e3 : 2500;
+	};
+	const setNote = (text, opts) => {
+		if (!note) return;
+		if (noteTimer) {
+			clearTimeout(noteTimer);
+			noteTimer = null;
+		}
+		note.textContent = text;
+		note.classList.remove("note--ok", "note--warn", "note--err");
+		if (opts?.tone === "ok") note.classList.add("note--ok");
+		if (opts?.tone === "warn") note.classList.add("note--warn");
+		if (opts?.tone === "err") note.classList.add("note--err");
+		if (text && !opts?.persist) noteTimer = setTimeout(() => {
+			if (note) {
+				note.textContent = "";
+				note.classList.remove("note--ok", "note--warn", "note--err");
+			}
+		}, noteClearMs());
+	};
+	const root = H`<div class="view-settings" data-view="settings">
+    ${createSettingsHeader()}
+    <div class="settings-screen__body">
+      ${createAppearanceSection()}
+      ${createMarkdownSection()}
+      ${createAiSection()}
+      ${createMcpSection()}
+      ${createServerSection()}
+      ${createInstructionsSection(setNote)}
+      ${createExtensionSection()}
+    </div>
+    ${createSettingsFooter()}
+  </div>`;
+	attachSettingsInlineStylesWhenConnected(root);
+	registerBuiltinSettingsContributions();
+	const navMode = resolveSettingsAreaNavMode();
+	const installedSiblings = peekInstalledSiblingSettingsSections();
+	const visibleAreas = visibleHubSettingsSections(navMode, installedSiblings);
+	const contributionCtx = resolveSettingsContributionContext(opts.isExtension, opts.hubSection);
+	if (navMode !== "none") {
+		const wanted = opts.hubSection || contributionCtx.hubSection || "hub";
+		contributionCtx.hubSection = visibleAreas.length && !visibleAreas.includes(wanted) ? "hub" : wanted;
+	}
+	const settingsProfile = resolveSettingsShellProfile(contributionCtx);
+	root.dataset.hubSettingsSection = contributionCtx.hubSection || hubSection;
+	mountContributions(root, contributionCtx);
+	if (visibleAreas.length > 1) {
+		const header = root.querySelector(".settings-screen__top");
+		const tabList = root.querySelector("[data-settings-tabs]");
+		if (header && tabList) {
+			const nav = document.createElement("nav");
+			nav.className = "settings-tab-actions settings-sku-nav";
+			nav.setAttribute("data-settings-sku-nav", "");
+			nav.setAttribute("aria-label", "Settings area");
+			for (const item of HUB_SECTION_LABELS) {
+				if (!visibleAreas.includes(item.id)) continue;
+				const btn = document.createElement("button");
+				btn.className = "settings-tab-btn";
+				btn.type = "button";
+				btn.setAttribute("data-action", "open-settings-section");
+				btn.setAttribute("data-section", item.id);
+				btn.append(H`<ui-icon class="settings-sku-nav__icon" icon="${item.icon}" icon-style="duotone" aria-hidden="true"></ui-icon>`, H`<span>${item.label}</span>`);
+				btn.classList.toggle("is-active", item.id === (contributionCtx.hubSection || "hub"));
+				nav.appendChild(btn);
+			}
+			header.insertBefore(nav, tabList);
+		}
+	}
+	if (navMode === "launcher" && installedSiblings === null) refreshInstalledSiblingSettingsSections().then((next) => {
+		if (!next.length) return;
+		resetSettingsViewCache();
+		globalThis.dispatchEvent(new CustomEvent("cwsp-settings-section"));
+	});
+	pruneBuiltInSettingsTabs(root, settingsProfile);
+	if (settingsProfile === "full" && (contributionCtx.surface === "capacitor" || contributionCtx.surface === "native")) {
+		root.querySelector("[data-tab-panel=\"server\"]")?.remove();
+		root.querySelector("[data-action=\"switch-settings-tab\"][data-tab=\"server\"]")?.remove();
+	}
+	const hasPanel = (panelId) => hasBuiltInSettingsPanel(root, panelId);
+	/** Launcher sibling section / fleet row updates that SKU's APK — not always the launcher package. */
+	const apkSkuFromEl = (el) => {
+		const raw = String(el?.getAttribute("data-apk-sku") || el?.closest("[data-apk-sku-row]")?.getAttribute("data-apk-sku-row") || "").trim();
+		return raw && isCwspSku(raw) && raw !== "crx" ? raw : "";
+	};
+	const apkUpdateTarget = (from) => {
+		const explicit = apkSkuFromEl(from || null);
+		const section = canonicalHubSettingsSection$1(root.dataset.hubSettingsSection || "hub");
+		const sku = explicit || (resolveSettingsAreaNavMode() !== "none" && section !== "hub" ? skuForHubSettingsSection(section) : readCwspSku() || "launcher");
+		return {
+			sku,
+			packageName: androidPackageForSku(sku) || "",
+			manifest: apkManifestForSku(sku)
+		};
+	};
+	const apkVersionCode = (value) => {
+		if (typeof value === "number" && Number.isFinite(value)) return value;
+		if (typeof value === "string" && value.trim() && value !== "?") {
+			const n = Number(value);
+			return Number.isFinite(n) ? n : null;
+		}
+		return null;
+	};
+	const compareApkVersionName = (remote, local) => {
+		const parts = (raw) => String(raw || "").trim().split(/[+-]/)[0].split(".").map((bit) => Number(String(bit).replace(/[^0-9]/g, "")) || 0);
+		const a = parts(remote);
+		const b = parts(local);
+		if (!String(remote || "").trim() && !String(local || "").trim()) return 0;
+		const n = Math.max(a.length, b.length);
+		for (let i = 0; i < n; i++) {
+			const av = a[i] || 0;
+			const bv = b[i] || 0;
+			if (av !== bv) return av < bv ? -1 : 1;
+		}
+		return 0;
+	};
+	const paintApkVersion = (el, echo, result) => {
+		if (!el) return;
+		const anyResult = result;
+		const name = String(echo.localVersionName || echo.versionName || anyResult?.versionName || "").trim();
+		const code = apkVersionCode(echo.localVersionCode ?? echo.versionCode ?? anyResult?.versionCode);
+		const sig = String(echo.localSignatureSha256 || echo.signatureSha256 || "").slice(0, 12);
+		const remoteName = String(echo.remoteVersionName || "").trim();
+		const remoteCode = apkVersionCode(echo.remoteVersionCode);
+		const installed = echo.installed === false || anyResult?.installed === false ? false : echo.installed === true || anyResult?.installed === true || Boolean(name && code != null && code !== 0);
+		const remoteBit = remoteCode != null ? ` · gateway ${remoteName || "?"} (${remoteCode})` : "";
+		if (!installed) {
+			el.textContent = `Not installed — Download & install to sideload.${remoteBit}`;
+			return;
+		}
+		el.textContent = `Installed: ${name || "?"} (${code ?? "?"})` + (sig ? ` · sig ${sig}…` : "") + remoteBit;
+	};
+	const apkBridgeFields = () => {
+		return {
+			srcEl: root.querySelector("[data-field=\"shell.apkUpdateSource\"]"),
+			endpointEl: root.querySelector("[data-field=\"core.endpointUrl\"]"),
+			tokenEl: root.querySelector("[data-field=\"core.ecosystemToken\"]"),
+			insecureEl: root.querySelector("[data-field=\"core.allowInsecureTls\"]")
+		};
+	};
+	const field = (sel) => root.querySelector(sel);
+	note = root.querySelector("[data-note]");
+	const apiUrl = field("[data-field=\"ai.baseUrl\"]");
+	const apiKey = field("[data-field=\"ai.apiKey\"]");
+	const showKey = field("[data-field=\"ui.showKey\"]");
+	const model = field("[data-field=\"ai.model\"]");
+	const customModel = field("[data-field=\"ai.customModel\"]");
+	const customModelGroup = root.querySelector("[data-field-group=\"ai.customModel\"]");
+	const defaultReasoningEffort = field("[data-field=\"ai.defaultReasoningEffort\"]");
+	const defaultVerbosity = field("[data-field=\"ai.defaultVerbosity\"]");
+	const maxOutputTokens = field("[data-field=\"ai.maxOutputTokens\"]");
+	const contextTruncation = field("[data-field=\"ai.contextTruncation\"]");
+	const promptCacheRetention = field("[data-field=\"ai.promptCacheRetention\"]");
+	const maxToolCalls = field("[data-field=\"ai.maxToolCalls\"]");
+	const parallelToolCalls = field("[data-field=\"ai.parallelToolCalls\"]");
+	const requestTimeoutLow = field("[data-field=\"ai.requestTimeout.low\"]");
+	const requestTimeoutMedium = field("[data-field=\"ai.requestTimeout.medium\"]");
+	const requestTimeoutHigh = field("[data-field=\"ai.requestTimeout.high\"]");
+	const maxRetries = field("[data-field=\"ai.maxRetries\"]");
+	const syncCustomModelVisibility = () => {
+		const isCustom = (model?.value || "").trim() === "custom";
+		if (customModelGroup) customModelGroup.hidden = !isCustom;
+		if (customModel) customModel.disabled = !isCustom;
+	};
+	if (model) {
+		model.replaceChildren();
+		for (const builtInModel of BUILTIN_AI_MODELS) {
+			const option = document.createElement("option");
+			option.value = builtInModel;
+			option.textContent = builtInModel;
+			model.append(option);
+		}
+		const customOption = document.createElement("option");
+		customOption.value = "custom";
+		customOption.textContent = "Custom...";
+		model.append(customOption);
+		model.addEventListener("change", syncCustomModelVisibility);
+	}
+	customModel?.addEventListener("focus", () => {
+		if (!model) return;
+		model.value = "custom";
+		syncCustomModelVisibility();
+	});
+	const responseLanguage = field("[data-field=\"ai.responseLanguage\"]");
+	const translateResults = field("[data-field=\"ai.translateResults\"]");
+	const generateSvgGraphics = field("[data-field=\"ai.generateSvgGraphics\"]");
+	const speechLanguage = field("[data-field=\"speech.language\"]");
+	const theme = field("[data-field=\"appearance.theme\"]");
+	const fontSize = field("[data-field=\"appearance.fontSize\"]");
+	const appearanceColorField = root.querySelector("[data-appearance-color]");
+	const appearanceColorSource = field("[data-field=\"appearance.colorSource\"]");
+	const appearanceHue = field("[data-field=\"appearance.hue\"]");
+	const appearanceColor = field("[data-field=\"appearance.color\"]");
+	const markdownPreset = field("[data-field=\"appearance.markdown.preset\"]");
+	const markdownFontFamily = field("[data-field=\"appearance.markdown.fontFamily\"]");
+	const markdownFontSizePx = field("[data-field=\"appearance.markdown.fontSizePx\"]");
+	const markdownLineHeight = field("[data-field=\"appearance.markdown.lineHeight\"]");
+	const markdownContentMaxWidthPx = field("[data-field=\"appearance.markdown.contentMaxWidthPx\"]");
+	const markdownPrintScale = field("[data-field=\"appearance.markdown.printScale\"]");
+	const markdownPageSize = field("[data-field=\"appearance.markdown.page.size\"]");
+	const markdownPageOrientation = field("[data-field=\"appearance.markdown.page.orientation\"]");
+	const markdownPageMarginMm = field("[data-field=\"appearance.markdown.page.marginMm\"]");
+	const markdownModuleTypography = field("[data-field=\"appearance.markdown.modules.typography\"]");
+	const markdownModuleLists = field("[data-field=\"appearance.markdown.modules.lists\"]");
+	const markdownModuleTables = field("[data-field=\"appearance.markdown.modules.tables\"]");
+	const markdownModuleCodeBlocks = field("[data-field=\"appearance.markdown.modules.codeBlocks\"]");
+	const markdownModuleBlockquotes = field("[data-field=\"appearance.markdown.modules.blockquotes\"]");
+	const markdownModuleMedia = field("[data-field=\"appearance.markdown.modules.media\"]");
+	const markdownModulePrintBreaks = field("[data-field=\"appearance.markdown.modules.printBreaks\"]");
+	const markdownPluginSmartTypography = field("[data-field=\"appearance.markdown.plugins.smartTypography\"]");
+	const markdownPluginSoftBreaks = field("[data-field=\"appearance.markdown.plugins.softBreaksAsBr\"]");
+	const markdownPluginExternalLinks = field("[data-field=\"appearance.markdown.plugins.externalLinksNewTab\"]");
+	const markdownCustomCss = root.querySelector("[data-field=\"appearance.markdown.customCss\"]");
+	const markdownPrintCss = root.querySelector("[data-field=\"appearance.markdown.printCss\"]");
+	const markdownExtensions = root.querySelector("[data-field=\"appearance.markdown.extensions\"]");
+	const ntpEnabled = field("[data-field=\"core.ntpEnabled\"]");
+	const coreMode = field("[data-field=\"core.mode\"]");
+	const coreEndpointUrl = field("[data-field=\"core.endpointUrl\"]");
+	const coreUserId = field("[data-field=\"core.userId\"]");
+	const coreUserKey = field("[data-field=\"core.userKey\"]");
+	const coreEcosystemToken = field("[data-field=\"core.ecosystemToken\"]");
+	const corePreferBackendSync = field("[data-field=\"core.preferBackendSync\"]");
+	const coreEncrypt = field("[data-field=\"core.encrypt\"]");
+	const coreAppClientId = field("[data-field=\"core.appClientId\"]");
+	const coreAllowInsecureTls = field("[data-field=\"core.allowInsecureTls\"]");
+	const coreOpsAllowUnencrypted = field("[data-field=\"core.ops.allowUnencrypted\"]");
+	const coreAdminHttps = field("[data-field=\"core.admin.httpsOrigin\"]");
+	const coreAdminHttp = field("[data-field=\"core.admin.httpOrigin\"]");
+	const coreAdminPath = field("[data-field=\"core.admin.path\"]");
+	const coreSocketAccessToken = field("[data-field=\"core.socket.accessToken\"]");
+	const coreSocketRouteTarget = field("[data-field=\"core.socket.routeTarget\"]");
+	const coreSocketClientAccessToken = field("[data-field=\"core.socket.clientAccessToken\"]");
+	const coreSocketAllowAccessWithoutUserKey = field("[data-field=\"core.socket.allowAccessTokenWithoutUserKey\"]");
+	const shellMaintainHubSocket = field("[data-field=\"shell.maintainHubSocketConnection\"]");
+	const shellClipboardBroadcastTargets = field("[data-field=\"shell.clipboardBroadcastTargets\"]");
+	const shellPushLocalClipboard = field("[data-field=\"shell.pushLocalClipboardToLan\"]");
+	const shellClipboardPushIntervalMs = field("[data-field=\"shell.clipboardPushIntervalMs\"]");
+	const shellClipboard = field("[data-field=\"shell.enableRemoteClipboardBridge\"]");
+	const shellAcceptInboundClipboard = field("[data-field=\"shell.acceptInboundClipboardData\"]");
+	const shellClipboardInboundAllowIds = field("[data-field=\"shell.clipboardInboundAllowIds\"]");
+	const shellAccessTokenBypassClipboardAllow = field("[data-field=\"shell.accessTokenBypassesClipboardAllowlist\"]");
+	const shellClipboardShareDestIds = field("[data-field=\"shell.clipboardShareDestinationIds\"]");
+	const shellApplyRemoteDevice = field("[data-field=\"shell.applyRemoteClipboardToDevice\"]");
+	const shellAcceptContactsBridge = field("[data-field=\"shell.acceptContactsBridgeData\"]");
+	const shellAcceptSmsBridge = field("[data-field=\"shell.acceptSmsBridgeData\"]");
+	const shellSms = field("[data-field=\"shell.enableNativeSms\"]");
+	const shellContacts = field("[data-field=\"shell.enableNativeContacts\"]");
+	const adminPreview = root.querySelector("[data-admin-preview]");
+	const mcpSection = root.querySelector("[data-mcp-section]");
+	const extSection = root.querySelector("[data-section=\"extension\"]");
+	const extTab = root.querySelector("[data-extension-tab]");
+	if (responseLanguage) {
+		responseLanguage.replaceChildren();
+		const autoOption = document.createElement("option");
+		autoOption.value = "auto";
+		autoOption.textContent = "Auto-detect";
+		responseLanguage.append(autoOption);
+		const followOption = document.createElement("option");
+		followOption.value = "follow";
+		followOption.textContent = "Follow source/context";
+		responseLanguage.append(followOption);
+		for (const lang of buildResponseLanguageOptions()) {
+			const option = document.createElement("option");
+			option.value = lang;
+			option.textContent = lang === "ru" ? "Russian" : lang === "en" ? "English" : lang;
+			responseLanguage.append(option);
+		}
+	}
+	if (speechLanguage) {
+		speechLanguage.replaceChildren();
+		for (const lang of buildSpeechLanguageOptions()) {
+			const option = document.createElement("option");
+			option.value = lang;
+			option.textContent = speechLanguageLabel(lang);
+			speechLanguage.append(option);
+		}
+	}
+	root.addEventListener("input", (ev) => {
+		if (ev.target?.matches?.("[data-field^=\"core.\"]")) refreshAdminDoorPreview();
+	});
+	root.addEventListener("change", (ev) => {
+		if (ev.target?.matches?.("[data-field^=\"core.\"]")) refreshAdminDoorPreview();
+	});
+	const switchSettingsTab = (tab) => {
+		const fallback = defaultSettingsTabForProfile(settingsProfile);
+		let nextTab = tab || fallback;
+		const bodyPanels = () => root.querySelectorAll(".settings-screen__body > [data-tab-panel]");
+		if (![...bodyPanels()].some((el) => el.getAttribute("data-tab-panel") === nextTab)) nextTab = bodyPanels()[0]?.getAttribute("data-tab-panel") || fallback;
+		root.querySelector("[data-settings-tabs]")?.setAttribute("data-active-tab", nextTab);
+		const tabButtons = root.querySelectorAll("[data-action=\"switch-settings-tab\"][data-tab]");
+		for (const tabButton of Array.from(tabButtons)) {
+			const btn = tabButton;
+			const isActive = btn.getAttribute("data-tab") === nextTab;
+			btn.classList.toggle("is-active", isActive);
+			btn.setAttribute("aria-selected", String(isActive));
+		}
+		const panels = bodyPanels();
+		for (const panel of Array.from(panels)) {
+			const el = panel;
+			const isActive = el.getAttribute("data-tab-panel") === nextTab;
+			if (isActive) el.removeAttribute("hidden");
+			else el.hidden = true;
+			el.classList.toggle("is-active", isActive);
+		}
+	};
+	root.addEventListener("click", (e) => {
+		const t = eventTargetElement(e);
+		const sectionBtn = t?.closest?.("[data-action=\"open-settings-section\"][data-section]");
+		if (sectionBtn && root.contains(sectionBtn)) {
+			e.preventDefault();
+			e.stopPropagation();
+			const next = String(sectionBtn.getAttribute("data-section") || "hub").toLowerCase();
+			rememberSettingsAreaSection(next);
+			resetSettingsViewCache();
+			if (resolveSettingsAreaNavMode() === "hub") {
+				const pathSeg = hubSettingsSectionPath$1(next);
+				navigateToView("settings", pathSeg ? { section: pathSeg } : {});
+			} else globalThis.dispatchEvent(new CustomEvent("cwsp-settings-section", { detail: { section: next } }));
+			return;
+		}
+		const tabBtn = t?.closest?.("[data-action=\"switch-settings-tab\"][data-tab]");
+		if (!tabBtn || !root.contains(tabBtn)) return;
+		e.preventDefault();
+		e.stopPropagation();
+		switchSettingsTab(tabBtn.getAttribute("data-tab") || defaultSettingsTabForProfile(settingsProfile));
+	}, true);
+	const resolveInitialTab = (raw) => {
+		const fallback = defaultSettingsTabForProfile(settingsProfile);
+		const normalized = (raw || "").trim().toLowerCase();
+		if (!normalized) return fallback;
+		if (normalized === "style" || normalized === "styles" || normalized === "styling") return hasPanel("markdown") ? "markdown" : fallback;
+		return (/* @__PURE__ */ new Set([
+			...hasPanel("appearance") ? ["appearance"] : [],
+			...hasPanel("markdown") ? ["markdown"] : [],
+			...hasPanel("ai") ? ["ai"] : [],
+			...hasPanel("mcp") ? ["mcp"] : [],
+			...hasPanel("server") ? ["server"] : [],
+			...hasPanel("instructions") ? ["instructions"] : [],
+			...hasPanel("extension") ? ["extension"] : [],
+			...contributedTabIds(contributionCtx)
+		])).has(normalized) ? normalized : fallback;
+	};
+	const buildCoreSnapshotForAdminPreview = () => {
+		const eco = coreEcosystemToken?.value?.trim() || coreUserKey?.value?.trim() || coreSocketAccessToken?.value?.trim() || "";
+		return {
+			mode: coreMode?.value || "native",
+			endpointUrl: coreEndpointUrl?.value?.trim() || "",
+			userId: coreUserId?.value?.trim() || "",
+			ecosystemToken: eco,
+			userKey: eco,
+			encrypt: Boolean(coreEncrypt?.checked),
+			preferBackendSync: (corePreferBackendSync?.checked ?? true) !== false,
+			appClientId: coreAppClientId?.value?.trim() || "",
+			allowInsecureTls: Boolean(coreAllowInsecureTls?.checked),
+			useCoreIdentityForAirPad: true,
+			socket: {
+				accessToken: eco,
+				routeTarget: coreSocketRouteTarget?.value?.trim() || "",
+				selfId: "",
+				clientAccessToken: coreSocketClientAccessToken?.value?.trim() || "",
+				allowAccessTokenWithoutUserKey: Boolean(coreSocketAllowAccessWithoutUserKey?.checked)
+			},
+			admin: {
+				httpsOrigin: coreAdminHttps?.value?.trim() || "",
+				httpOrigin: coreAdminHttp?.value?.trim() || "",
+				path: coreAdminPath?.value?.trim() || "/"
+			},
+			ops: { allowUnencrypted: Boolean(coreOpsAllowUnencrypted?.checked) }
+		};
+	};
+	const refreshAdminDoorPreview = () => {
+		if (!adminPreview) return;
+		const urls = resolveAdminDoorUrls(buildCoreSnapshotForAdminPreview());
+		adminPreview.textContent = `Resolved: ${urls.https} · ${urls.http}`;
+	};
+	const openExplorerPath = (path) => {
+		try {
+			setString(StorageKeys.EXPLORER_PATH, path);
+			navigateToView("explorer");
+			sendMessage({
+				type: "content-explorer",
+				destination: "explorer",
+				data: {
+					action: "view",
+					path
+				},
+				metadata: { source: "settings" }
+			});
+			setNote(`Explorer: ${path}`);
+		} catch (error) {
+			console.warn("[Settings] Failed to open explorer path:", error);
+			setNote("Failed to open Explorer path.");
+		}
+	};
+	const loadSettingsForView = async () => {
+		if (contributionCtx.surface === "capacitor" || contributionCtx.surface === "native") await ensureCapacitorCwspSettingsSeeded().catch(() => null);
+		if (contributionCtx.surface === "crx" || contributionCtx.isExtension) await ensureCrxCwspSettingsSeeded().catch(() => null);
+		return loadSettingsHydratedFromSync(() => loadSettings());
+	};
+	Promise.resolve(loadSettingsForView()).then((s) => {
+		if (apiUrl) apiUrl.value = (s?.ai?.baseUrl || "").trim();
+		if (apiKey) apiKey.value = (s?.ai?.apiKey || "").trim();
+		const savedModel = (s?.ai?.model || "gpt-5.6-luna").trim();
+		const savedCustomModel = (s?.ai?.customModel || "").trim();
+		if (model) {
+			const hasBuiltin = BUILTIN_AI_MODELS.includes(savedModel);
+			if (savedModel === "custom" || !hasBuiltin && !!savedModel) {
+				model.value = "custom";
+				if (customModel) customModel.value = savedCustomModel || savedModel;
+			} else {
+				model.value = hasBuiltin ? savedModel : "gpt-5.6-luna";
+				if (customModel) customModel.value = savedCustomModel;
+			}
+			syncCustomModelVisibility();
+		}
+		if (defaultReasoningEffort) defaultReasoningEffort.value = s?.ai?.defaultReasoningEffort || "medium";
+		if (defaultVerbosity) defaultVerbosity.value = s?.ai?.defaultVerbosity || "medium";
+		if (maxOutputTokens) maxOutputTokens.value = String(s?.ai?.maxOutputTokens ?? 4e5);
+		if (contextTruncation) contextTruncation.value = s?.ai?.contextTruncation || "disabled";
+		if (promptCacheRetention) promptCacheRetention.value = s?.ai?.promptCacheRetention || "in-memory";
+		if (maxToolCalls) maxToolCalls.value = String(s?.ai?.maxToolCalls ?? 8);
+		if (parallelToolCalls) parallelToolCalls.checked = (s?.ai?.parallelToolCalls ?? true) !== false;
+		if (requestTimeoutLow) requestTimeoutLow.value = String(s?.ai?.requestTimeout?.low ?? 6e4);
+		if (requestTimeoutMedium) requestTimeoutMedium.value = String(s?.ai?.requestTimeout?.medium ?? 3e5);
+		if (requestTimeoutHigh) requestTimeoutHigh.value = String(s?.ai?.requestTimeout?.high ?? 9e5);
+		if (maxRetries) maxRetries.value = String(s?.ai?.maxRetries ?? 2);
+		if (responseLanguage) responseLanguage.value = s?.ai?.responseLanguage || "auto";
+		if (translateResults) translateResults.checked = Boolean(s?.ai?.translateResults);
+		if (generateSvgGraphics) generateSvgGraphics.checked = Boolean(s?.ai?.generateSvgGraphics);
+		if (speechLanguage) speechLanguage.value = s?.speech?.language || "en-US";
+		if (theme) theme.value = s?.appearance?.theme || "auto";
+		if (fontSize) fontSize.value = s?.appearance?.fontSize || "medium";
+		if (appearanceColorField) {
+			appearanceColorField.hidden = false;
+			syncAppearanceColorSource(root, String(s?.appearance?.colorSource || "auto"));
+			syncAppearanceColorControls(root, String(s?.appearance?.color || ""));
+		}
+		if (markdownPreset) markdownPreset.value = s?.appearance?.markdown?.preset || "default";
+		if (markdownFontFamily) markdownFontFamily.value = s?.appearance?.markdown?.fontFamily || "system";
+		if (markdownFontSizePx) markdownFontSizePx.value = String(s?.appearance?.markdown?.fontSizePx ?? 16);
+		if (markdownLineHeight) markdownLineHeight.value = String(s?.appearance?.markdown?.lineHeight ?? 1.7);
+		if (markdownContentMaxWidthPx) markdownContentMaxWidthPx.value = String(s?.appearance?.markdown?.contentMaxWidthPx ?? 860);
+		if (markdownPrintScale) markdownPrintScale.value = String(s?.appearance?.markdown?.printScale ?? 1);
+		if (markdownPageSize) markdownPageSize.value = s?.appearance?.markdown?.page?.size || "auto";
+		if (markdownPageOrientation) markdownPageOrientation.value = s?.appearance?.markdown?.page?.orientation || "portrait";
+		if (markdownPageMarginMm) markdownPageMarginMm.value = String(s?.appearance?.markdown?.page?.marginMm ?? 12);
+		if (markdownModuleTypography) markdownModuleTypography.checked = (s?.appearance?.markdown?.modules?.typography ?? true) !== false;
+		if (markdownModuleLists) markdownModuleLists.checked = (s?.appearance?.markdown?.modules?.lists ?? true) !== false;
+		if (markdownModuleTables) markdownModuleTables.checked = (s?.appearance?.markdown?.modules?.tables ?? true) !== false;
+		if (markdownModuleCodeBlocks) markdownModuleCodeBlocks.checked = (s?.appearance?.markdown?.modules?.codeBlocks ?? true) !== false;
+		if (markdownModuleBlockquotes) markdownModuleBlockquotes.checked = (s?.appearance?.markdown?.modules?.blockquotes ?? true) !== false;
+		if (markdownModuleMedia) markdownModuleMedia.checked = (s?.appearance?.markdown?.modules?.media ?? true) !== false;
+		if (markdownModulePrintBreaks) markdownModulePrintBreaks.checked = (s?.appearance?.markdown?.modules?.printBreaks ?? true) !== false;
+		if (markdownPluginSmartTypography) markdownPluginSmartTypography.checked = Boolean(s?.appearance?.markdown?.plugins?.smartTypography);
+		if (markdownPluginSoftBreaks) markdownPluginSoftBreaks.checked = Boolean(s?.appearance?.markdown?.plugins?.softBreaksAsBr);
+		if (markdownPluginExternalLinks) markdownPluginExternalLinks.checked = (s?.appearance?.markdown?.plugins?.externalLinksNewTab ?? true) !== false;
+		if (markdownCustomCss) markdownCustomCss.value = (s?.appearance?.markdown?.customCss || "").trim();
+		if (markdownPrintCss) markdownPrintCss.value = (s?.appearance?.markdown?.printCss || "").trim();
+		if (markdownExtensions) {
+			const extensions = Array.isArray(s?.appearance?.markdown?.extensions) ? s.appearance?.markdown?.extensions : [];
+			markdownExtensions.value = extensions.length > 0 ? JSON.stringify(extensions, null, 2) : "";
+		}
+		if (ntpEnabled) ntpEnabled.checked = Boolean(s?.core?.ntpEnabled);
+		if (coreMode) coreMode.value = s?.core?.mode || "native";
+		if (coreEndpointUrl) coreEndpointUrl.value = (s?.core?.endpointUrl || "").trim();
+		if (coreUserId) coreUserId.value = (s?.core?.userId || "").trim();
+		{
+			const eco = String(s?.core?.ecosystemToken || "").trim() || String(s?.core?.userKey || "").trim() || String(s?.core?.socket?.accessToken || s?.core?.socket?.airpadAuthToken || "").trim();
+			if (coreEcosystemToken) coreEcosystemToken.value = eco;
+			if (coreUserKey) coreUserKey.value = eco;
+			if (coreSocketAccessToken) coreSocketAccessToken.value = eco;
+		}
+		if (corePreferBackendSync) corePreferBackendSync.checked = (s?.core?.preferBackendSync ?? true) !== false;
+		if (coreEncrypt) coreEncrypt.checked = Boolean(s?.core?.encrypt);
+		if (coreAppClientId) coreAppClientId.value = (s?.core?.appClientId || "").trim();
+		if (coreSocketRouteTarget) coreSocketRouteTarget.value = (s?.core?.socket?.routeTarget || s?.core?.socket?.selfId || "").trim();
+		if (coreSocketClientAccessToken) coreSocketClientAccessToken.value = (s?.core?.socket?.clientAccessToken || "").trim();
+		if (coreSocketAllowAccessWithoutUserKey) coreSocketAllowAccessWithoutUserKey.checked = (s?.core?.socket?.allowAccessTokenWithoutUserKey ?? false) === true;
+		if (coreAllowInsecureTls) coreAllowInsecureTls.checked = Boolean(s?.core?.allowInsecureTls);
+		if (coreOpsAllowUnencrypted) coreOpsAllowUnencrypted.checked = Boolean(s?.core?.ops?.allowUnencrypted);
+		if (coreAdminHttps) coreAdminHttps.value = (s?.core?.admin?.httpsOrigin || "").trim();
+		if (coreAdminHttp) coreAdminHttp.value = (s?.core?.admin?.httpOrigin || "").trim();
+		if (coreAdminPath) coreAdminPath.value = (s?.core?.admin?.path || "/").trim() || "/";
+		if (shellMaintainHubSocket) shellMaintainHubSocket.checked = Boolean(s?.shell?.maintainHubSocketConnection);
+		if (shellClipboardBroadcastTargets) shellClipboardBroadcastTargets.value = (s?.shell?.clipboardBroadcastTargets || "").trim();
+		if (shellPushLocalClipboard) shellPushLocalClipboard.checked = Boolean(s?.shell?.pushLocalClipboardToLan);
+		if (shellClipboardPushIntervalMs) {
+			const iv = Number(s?.shell?.clipboardPushIntervalMs);
+			shellClipboardPushIntervalMs.value = String(Number.isFinite(iv) && iv >= 800 ? Math.min(Math.round(iv), 6e4) : 2e3);
+		}
+		if (shellClipboard) shellClipboard.checked = (s?.shell?.enableRemoteClipboardBridge ?? true) !== false;
+		if (shellAcceptInboundClipboard) shellAcceptInboundClipboard.checked = (s?.shell?.acceptInboundClipboardData ?? true) !== false;
+		if (shellClipboardInboundAllowIds) shellClipboardInboundAllowIds.value = (s?.shell?.clipboardInboundAllowIds || "").trim();
+		if (shellAccessTokenBypassClipboardAllow) shellAccessTokenBypassClipboardAllow.checked = (s?.shell?.accessTokenBypassesClipboardAllowlist ?? false) === true;
+		if (shellClipboardShareDestIds) shellClipboardShareDestIds.value = (s?.shell?.clipboardShareDestinationIds || "").trim();
+		if (shellApplyRemoteDevice) shellApplyRemoteDevice.checked = (s?.shell?.applyRemoteClipboardToDevice ?? true) !== false;
+		if (shellAcceptContactsBridge) shellAcceptContactsBridge.checked = (s?.shell?.acceptContactsBridgeData ?? false) === true;
+		if (shellAcceptSmsBridge) shellAcceptSmsBridge.checked = isCapacitorNative() ? false : (s?.shell?.acceptSmsBridgeData ?? false) === true;
+		if (shellSms) shellSms.checked = isCapacitorNative() ? false : (s?.shell?.enableNativeSms ?? false) === true;
+		if (shellContacts) shellContacts.checked = (s?.shell?.enableNativeContacts ?? true) !== false;
+		refreshAdminDoorPreview();
+		renderMcpConfigurations(mcpSection, Array.isArray(s?.ai?.mcp) ? s.ai.mcp : []);
+		applyAirpadRuntimeFromAppSettings(s);
+		applyTheme(s);
+		applyContributions(root, s, contributionCtx);
+		opts.onTheme?.(s?.appearance?.theme || "auto");
+		if (isCapacitorNative()) __vitePreload(() => import("../chunks/cws-bridge.js").then((n) => n.n).then(async (m) => {
+			const hints = [...root.querySelectorAll("[data-apk-local-version]")];
+			if (!hints.length) return;
+			const { srcEl, endpointEl, tokenEl, insecureEl } = apkBridgeFields();
+			const source = (srcEl?.value || s.shell?.apkUpdateSource || "wan").trim();
+			const endpointUrl = (endpointEl?.value || s.core?.endpointUrl || "").trim();
+			const token = (tokenEl?.value || "").trim() || resolveEcosystemToken(s);
+			const allowInsecureTls = insecureEl?.checked ?? Boolean(s.core?.allowInsecureTls);
+			await Promise.all(hints.map(async (el) => {
+				const target = apkUpdateTarget(el);
+				try {
+					const result = await m.invokeCwsNative("app:update:check", {
+						...target,
+						source,
+						endpointUrl,
+						token,
+						ecosystemToken: token,
+						allowInsecureTls
+					});
+					const echo = result?.echo || {};
+					if (echo.error) {
+						const info = await m.invokeCwsNative("app:info", target);
+						paintApkVersion(el, info?.echo || {}, info);
+						return;
+					}
+					paintApkVersion(el, echo, result);
+				} catch {
+					const info = await m.invokeCwsNative("app:info", target);
+					paintApkVersion(el, info?.echo || {}, info);
+				}
+			}));
+		}), __vite__mapDeps([9,3,10,11,12,1,2,13,4,14,15,16]), import.meta.url).catch(() => {});
+	}).catch(() => {
+		renderMcpConfigurations(mcpSection, []);
+	});
+	showKey?.addEventListener("change", () => {
+		if (!apiKey || !showKey) return;
+		apiKey.type = showKey.checked ? "text" : "password";
+	});
+	const previewAppearanceColor = (patch) => {
+		(async () => {
+			try {
+				const cur = await loadSettings();
+				applyTheme({
+					...cur,
+					appearance: {
+						...cur.appearance || {},
+						...patch
+					}
+				});
+			} catch {
+				applyTheme({ appearance: {
+					theme: "auto",
+					fontSize: "medium",
+					...patch
+				} });
+			}
+		})();
+	};
+	appearanceColorField?.addEventListener("click", (ev) => {
+		const btn = ev.target?.closest?.(".appearance-swatch");
+		if (!btn) return;
+		const next = btn.dataset.color ?? "";
+		syncAppearanceColorSource(root, "custom");
+		syncAppearanceColorControls(root, next);
+		previewAppearanceColor({
+			color: next,
+			colorSource: "custom"
+		});
+	});
+	appearanceColorSource?.addEventListener("change", () => {
+		const next = readAppearanceColorSource(root);
+		syncAppearanceColorSource(root, next);
+		previewAppearanceColor({
+			colorSource: next,
+			color: next === "custom" ? readAppearanceColor(root) : void 0
+		});
+	});
+	appearanceHue?.addEventListener("input", () => {
+		const next = hexFromHue(Number(appearanceHue.value));
+		syncAppearanceColorSource(root, "custom");
+		syncAppearanceColorControls(root, next);
+		previewAppearanceColor({
+			color: next,
+			colorSource: "custom"
+		});
+	});
+	appearanceColor?.addEventListener("input", () => {
+		const next = appearanceColor.value || "";
+		syncAppearanceColorSource(root, "custom");
+		syncAppearanceColorControls(root, next);
+		previewAppearanceColor({
+			color: next,
+			colorSource: "custom"
+		});
+	});
+	theme?.addEventListener("change", () => {
+		const t = theme.value || "auto";
+		(async () => {
+			try {
+				const cur = await loadSettings();
+				applyTheme({
+					...cur,
+					appearance: {
+						...cur.appearance || {},
+						theme: t
+					}
+				});
+			} catch {
+				applyTheme({ appearance: {
+					theme: t,
+					fontSize: "medium"
+				} });
+			}
+			opts.onTheme?.(t);
+		})();
+	});
+	root.addEventListener("click", (e) => {
+		const t = eventTargetElement(e);
+		if (t?.closest?.("button[data-action=\"add-mcp-server\"]") && mcpSection) {
+			mcpSection.querySelector(".mcp-empty-note")?.remove();
+			mcpSection.appendChild(createMcpRow({
+				id: `mcp-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`,
+				serverLabel: "",
+				origin: "",
+				clientKey: "",
+				secretKey: ""
+			}));
+			return;
+		}
+		const removeMcpBtn = t?.closest?.("button[data-action=\"remove-mcp-server\"]");
+		if (removeMcpBtn) {
+			removeMcpBtn.closest(".mcp-row")?.remove();
+			if (mcpSection && !mcpSection.querySelector("[data-mcp-id]")) renderMcpConfigurations(mcpSection, []);
+			return;
+		}
+		if (t?.closest?.("button[data-action=\"open-user-styles\"]")) {
+			openExplorerPath("/user/styles/");
+			return;
+		}
+		if (t?.closest?.("button[data-action=\"open-assets-readonly\"]")) {
+			openExplorerPath("/assets/");
+			return;
+		}
+		if (t?.closest?.("button[data-action=\"open-admin-https\"]")) {
+			openAdminDoorFromCore(buildCoreSnapshotForAdminPreview(), "https");
+			return;
+		}
+		if (t?.closest?.("button[data-action=\"open-admin-http\"]")) {
+			openAdminDoorFromCore(buildCoreSnapshotForAdminPreview(), "http");
+			return;
+		}
+		if (t?.closest?.("button[data-action=\"copy-admin-https\"]")) {
+			const urls = resolveAdminDoorUrls(buildCoreSnapshotForAdminPreview());
+			navigator.clipboard?.writeText?.(urls.https).then(() => setNote("HTTPS admin URL copied."), () => setNote("Copy failed."));
+			return;
+		}
+		if (t?.closest?.("button[data-action=\"copy-admin-http\"]")) {
+			const urls = resolveAdminDoorUrls(buildCoreSnapshotForAdminPreview());
+			navigator.clipboard?.writeText?.(urls.http).then(() => setNote("HTTP admin URL copied."), () => setNote("Copy failed."));
+			return;
+		}
+		if (t?.closest?.("button[data-action=\"open-native-app-settings\"]")) {
+			__vitePreload(() => import("../chunks/clipboard-device.js").then((n) => n.t).then((m) => m.openAppClipboardRelatedSettings()), __vite__mapDeps([39,3,1,2,9,10,11,12,13,4,14,15,16]), import.meta.url).then(() => setNote("App settings opened (native shell only).")).catch(() => setNote("Native settings unavailable in this context."));
+			return;
+		}
+		if (t?.closest?.("button[data-action=\"open-native-notification-settings\"]")) {
+			__vitePreload(() => import("../chunks/clipboard-device.js").then((n) => n.t).then((m) => m.openNativeNotificationSettings?.()), __vite__mapDeps([39,3,1,2,9,10,11,12,13,4,14,15,16]), import.meta.url).then(() => setNote("Notification settings opened (native shell only).")).catch(() => setNote("Native settings unavailable in this context."));
+			return;
+		}
+		const crxPairBtn = t?.closest?.("button[data-action=\"crx-control-pair\"]");
+		const crxUnpairBtn = t?.closest?.("button[data-action=\"crx-control-unpair\"]");
+		if (crxPairBtn || crxUnpairBtn) {
+			(async () => {
+				const statusEl = root.querySelector("[data-crx-control-status]");
+				const notifySw = () => {
+					try {
+						globalThis.chrome?.runtime?.sendMessage?.({ type: "cwsp-control-session-changed" });
+					} catch {}
+				};
+				try {
+					const m = await __vitePreload(() => import("../chunks/crx-control-session.js"), __vite__mapDeps([37,1,2,3]), import.meta.url);
+					if (crxUnpairBtn) {
+						await m.clearCrxControlSession();
+						if (statusEl) statusEl.textContent = await m.formatCrxControlSessionStatus();
+						setNote("Control unpaired — Copy & Share / Paste by CWSP disabled.", { tone: "warn" });
+						notifySw();
+						return;
+					}
+					const localHub = String(root.querySelector("[data-field=\"shell.localHubUrl\"]")?.value || "").trim();
+					const preferredOrigin = String(document.documentElement.dataset.cwspControlOrigin || "").trim();
+					if (statusEl) statusEl.textContent = "Control: waiting for pairing dialog…";
+					setNote("Enter public token + device code in the pairing dialog…");
+					const result = await m.pairCrxControlWithModal({
+						localHubUrl: localHub,
+						preferredOrigins: preferredOrigin ? [preferredOrigin] : []
+					});
+					if (result.cancelled) {
+						if (statusEl) statusEl.textContent = await m.formatCrxControlSessionStatus();
+						setNote("Pairing cancelled.");
+						return;
+					}
+					if (statusEl) statusEl.textContent = result.ok ? await m.formatCrxControlSessionStatus() : `Control: ${result.error}`;
+					if (result.ok) {
+						setNote(`Paired Control at ${result.session.controlHost} (persistent).`);
+						notifySw();
+					} else setNote(result.error, { tone: "warn" });
+				} catch (err) {
+					setNote(`Control pairing unavailable: ${err instanceof Error ? err.message : String(err)}`, { tone: "warn" });
+				}
+			})();
+			return;
+		}
+		const pairRefreshBtn = t?.closest?.("button[data-action=\"control-pairing-refresh\"]");
+		const pairRegenBtn = t?.closest?.("button[data-action=\"control-public-token-regenerate\"]");
+		if (pairRefreshBtn || pairRegenBtn) {
+			const userClicked = Boolean(e?.isTrusted);
+			(async () => {
+				try {
+					const host = String(location.hostname || "");
+					if (location.protocol === "https:" && host !== "localhost" && host !== "127.0.0.1") {
+						if (userClicked) setNote("Pairing codes are shown on the device (phone/desk), not in the public Control SPA.", { tone: "warn" });
+						return;
+					}
+				} catch {}
+				const codeEl = root.querySelector("input[data-control-device-code], [data-control-device-code]");
+				const tokenEl = root.querySelector("input[data-control-public-token], [data-control-public-token]");
+				const codeMeta = root.querySelector("[data-secret-meta=\"control-device-code\"]");
+				const tokenMeta = root.querySelector("[data-secret-meta=\"control-public-token\"]");
+				const paint = (echo) => {
+					const code = String(echo.deviceCode || "").trim();
+					const left = Math.max(1, Math.round(Number(echo.expiresInMs || 0) / 1e3));
+					const pub = String(echo.publicToken || "").trim();
+					if (codeEl instanceof HTMLInputElement) codeEl.value = code;
+					else if (codeEl) codeEl.textContent = code ? `Code: ${code} (${left}s)` : "Code: …";
+					if (tokenEl instanceof HTMLInputElement) tokenEl.value = pub;
+					else if (tokenEl) tokenEl.textContent = pub ? `Public token: ${pub}` : "Public token: …";
+					if (codeMeta) codeMeta.textContent = code ? `Expires in ${left}s` : "";
+					if (tokenMeta) tokenMeta.textContent = pub ? "Stable until regenerated" : "";
+				};
+				try {
+					if (userClicked) setNote(pairRegenBtn ? "Regenerating public token…" : "Refreshing pairing code…", { tone: "warn" });
+					try {
+						const { invokeCwsNative } = await __vitePreload(async () => {
+							const { invokeCwsNative } = await import("../chunks/cws-bridge.js").then((n) => n.n);
+							return { invokeCwsNative };
+						}, __vite__mapDeps([9,3,10,11,12,1,2,13,4,14,15,16]), import.meta.url);
+						const result = await invokeCwsNative(pairRegenBtn ? "control:public-token:regenerate" : "control:pairing:status", {});
+						const echo = result?.controlPairing || result?.echo || {};
+						if (echo?.deviceCode || echo?.publicToken) {
+							paint(echo);
+							if (userClicked) setNote(pairRegenBtn ? "New public token generated — update the Control SPA." : "Pairing code refreshed.", { tone: "ok" });
+							return;
+						}
+					} catch {}
+					const g = globalThis;
+					const port = Number(g.__CWSP_CONTROL_PORT__ || 29110) || 29110;
+					const apiKey = String(g.__CWSP_CONTROL_API_KEY__ || "cwsp-neutralino-local").trim();
+					const res = await fetch(`http://127.0.0.1:${port}${pairRegenBtn ? "/service/pair/regenerate-public-token" : "/service/pair/display"}`, {
+						method: pairRegenBtn ? "POST" : "GET",
+						headers: {
+							Accept: "application/json",
+							"Content-Type": "application/json",
+							"X-API-Key": apiKey
+						},
+						body: pairRegenBtn ? "{}" : void 0
+					});
+					if (!res.ok) throw new Error(`Control HTTP ${res.status}`);
+					paint(await res.json());
+					if (userClicked) setNote(pairRegenBtn ? "New public token generated — update the Control SPA." : "Pairing code refreshed.", { tone: "ok" });
+				} catch (e) {
+					if (userClicked) setNote(String(e?.message || e || "Pairing status unavailable"), { tone: "err" });
+				}
+			})();
+			return;
+		}
+		const filesPickSaf = t?.closest?.("button[data-action=\"files-storage-pick-saf\"]");
+		const filesClearSaf = t?.closest?.("button[data-action=\"files-storage-clear-saf\"]");
+		const filesShowPaths = t?.closest?.("button[data-action=\"files-storage-show-paths\"]");
+		const filesShareReadme = t?.closest?.("button[data-action=\"files-storage-share-readme\"]");
+		const filesOpenExplorer = t?.closest?.("button[data-action=\"files-storage-open-explorer\"]");
+		const filesPermStatus = t?.closest?.("button[data-action=\"files-storage-perm-status\"]");
+		const filesRequestMedia = t?.closest?.("button[data-action=\"files-storage-request-media\"]");
+		const filesRequestAllFiles = t?.closest?.("button[data-action=\"files-storage-request-all-files\"]");
+		if (filesPickSaf || filesClearSaf || filesShowPaths || filesShareReadme || filesOpenExplorer || filesPermStatus || filesRequestMedia || filesRequestAllFiles) {
+			(async () => {
+				try {
+					const { invokeCwsNative } = await __vitePreload(async () => {
+						const { invokeCwsNative } = await import("../chunks/cws-bridge.js").then((n) => n.n);
+						return { invokeCwsNative };
+					}, __vite__mapDeps([9,3,10,11,12,1,2,13,4,14,15,16]), import.meta.url);
+					const s = await loadSettings();
+					const safEl = root.querySelector("[data-files-saf-uri]");
+					const pathsEl = root.querySelector("[data-files-storage-paths]");
+					const permEl = root.querySelector("[data-files-perm-status]");
+					const paintSaf = (uri) => {
+						if (!safEl) return;
+						const u = String(uri || "").trim();
+						safEl.textContent = u ? `SAF folder: ${u.length > 72 ? `${u.slice(0, 36)}…${u.slice(-28)}` : u}` : "SAF folder: (not set)";
+					};
+					const paintPerm = (echo) => {
+						if (!permEl) return;
+						permEl.textContent = `Media/storage runtime: ${echo.runtimeGranted === true ? "granted" : "missing"}` + (echo.missingRuntime ? ` (${echo.missingRuntime})` : "") + `\nAll-files access: ${echo.allFilesAccess === true ? "granted" : "not granted"}` + (echo.note ? `\n${echo.note}` : "");
+					};
+					if (filesClearSaf) {
+						s.shell = {
+							...s.shell || {},
+							filesIncomingDir: "",
+							filesLandingMode: s.shell?.filesLandingMode || "app"
+						};
+						await saveSettings(s);
+						paintSaf("");
+						setNote("SAF folder cleared.", { tone: "ok" });
+						return;
+					}
+					const channel = filesPickSaf ? "files:storage:pick-landing" : filesShareReadme ? "files:storage:share-readme" : filesOpenExplorer ? "files:storage:open-explorer" : filesRequestMedia ? "files:storage:request-media" : filesRequestAllFiles ? "files:storage:request-all-files" : filesPermStatus ? "files:storage:permissions-status" : "files:storage:status";
+					const stagingEl = root.querySelector("[data-field=\"shell.filesStagingRoot\"]");
+					const landingEl = root.querySelector("[data-field=\"shell.filesLandingMode\"]");
+					setNote(filesPickSaf ? "Opening folder picker…" : filesOpenExplorer ? "Opening CWSP Files…" : filesRequestMedia ? "Requesting media permission…" : filesRequestAllFiles ? "Opening all-files settings…" : "Reading storage…", { tone: "warn" });
+					const result = await invokeCwsNative(channel, {
+						stagingRoot: stagingEl?.value || s.shell?.filesStagingRoot || "app",
+						landingMode: landingEl?.value || s.shell?.filesLandingMode || "app",
+						incomingDir: s.shell?.filesIncomingDir || ""
+					});
+					const echo = result?.echo || result?.envelope?.payload || {};
+					const err = echo?.error || result?.error || (!result?.ok && !echo?.outgoingDir && !echo?.documentUri && echo?.runtimeGranted === void 0 ? "storage action failed" : "");
+					if (err) {
+						setNote(String(err), { tone: "err" });
+						return;
+					}
+					if (filesPickSaf && echo?.incomingDir) {
+						s.shell = {
+							...s.shell || {},
+							filesIncomingDir: String(echo.incomingDir),
+							filesLandingMode: "saf"
+						};
+						await saveSettings(s);
+						if (landingEl) landingEl.value = "saf";
+						paintSaf(String(echo.incomingDir));
+						setNote("SAF folder saved. Landing mode set to SAF.", { tone: "ok" });
+						return;
+					}
+					if (echo.runtimeGranted !== void 0 || echo.allFilesAccess !== void 0) paintPerm(echo);
+					if (pathsEl && (echo?.outgoingDir || echo?.incomingAppDir || echo?.readmePath || echo?.note)) pathsEl.textContent = `Outgoing temp: ${echo.outgoingDir || "?"}\nIncoming temp: ${echo.incomingAppDir || "?"}\nLanding mode: ${echo.landingMode || "?"}` + (echo?.incomingDir ? `\nSAF: ${echo.incomingDir}` : "") + (echo?.note && echo.runtimeGranted === void 0 ? `\n${echo.note}` : "");
+					setNote(filesShareReadme ? "Shared README — open it in another app to see the paths." : filesOpenExplorer ? "Opened document picker — look for CWSP Files (or Files app sidebar)." : filesRequestAllFiles ? "Enable “Allow access to manage all files”, then tap Refresh status." : filesRequestMedia ? "Media permission dialog finished — see status." : "Status updated.", { tone: "ok" });
+				} catch (e) {
+					setNote(String(e?.message || e || "Files storage action failed"), { tone: "err" });
+				}
+			})();
+			return;
+		}
+		const apkCheckBtn = t?.closest?.("button[data-action=\"apk-update-check\"]");
+		const apkInstallBtn = t?.closest?.("button[data-action=\"apk-update-install\"]");
+		if (apkCheckBtn || apkInstallBtn) {
+			const channel = apkInstallBtn ? "app:update:install" : "app:update:check";
+			(async () => {
+				setNote(apkInstallBtn ? "Downloading APK…" : "Checking for update…", { tone: "warn" });
+				try {
+					const s = await loadSettings();
+					const { srcEl, endpointEl, tokenEl, insecureEl } = apkBridgeFields();
+					const versionEl = root.querySelector("[data-apk-local-version]");
+					const source = (srcEl?.value || s.shell?.apkUpdateSource || "wan").trim();
+					const endpointUrl = (endpointEl?.value || s.core?.endpointUrl || "").trim();
+					const token = (tokenEl?.value || "").trim() || resolveEcosystemToken(s);
+					const allowInsecureTls = insecureEl?.checked ?? Boolean(s.core?.allowInsecureTls);
+					const { invokeCwsNative } = await __vitePreload(async () => {
+						const { invokeCwsNative } = await import("../chunks/cws-bridge.js").then((n) => n.n);
+						return { invokeCwsNative };
+					}, __vite__mapDeps([9,3,10,11,12,1,2,13,4,14,15,16]), import.meta.url);
+					const clicked = apkInstallBtn || apkCheckBtn;
+					const target = apkUpdateTarget(clicked);
+					const result = await invokeCwsNative(channel, {
+						...target,
+						source,
+						endpointUrl,
+						token,
+						ecosystemToken: token,
+						allowInsecureTls
+					});
+					const echo = result?.echo || result?.envelope?.payload || {};
+					const err = echo?.error || result?.error || (!result?.ok && !result?.echo ? "update failed" : "");
+					if (err) {
+						setNote(String(err), { tone: "err" });
+						return;
+					}
+					const hint = clicked.closest("[data-apk-sku-row]")?.querySelector("[data-apk-local-version]") || versionEl;
+					if (hint && (echo?.localVersionCode != null || echo?.localVersionName || echo?.versionName)) paintApkVersion(hint, echo, result);
+					if (apkInstallBtn) {
+						setNote(echo?.launchedInstaller ? "Installer launched — confirm on the system prompt." : "Install request sent.", { tone: "ok" });
+						return;
+					}
+					const local = apkVersionCode(echo?.localVersionCode);
+					const remote = apkVersionCode(echo?.remoteVersionCode);
+					const localName = String(echo?.localVersionName || "").trim();
+					const remoteName = String(echo?.remoteVersionName || "").trim();
+					const avail = echo?.updateAvailable === true || result?.updateAvailable === true || remote != null && local != null && remote > local || compareApkVersionName(remoteName, localName) > 0;
+					const sigOk = echo?.signatureCompatible !== false;
+					const installed = echo?.installed === true;
+					const reason = String(echo?.reason || "");
+					if (!sigOk) {
+						setNote(`Signature mismatch — remote APK not signed like this install (local ${local ?? "?"}, remote ${remote ?? "?"}).`, { tone: "err" });
+						return;
+					}
+					if (!installed) {
+						setNote(`${target.sku}: not installed — remote ${remote ?? "?"} (${remoteName || "?"}). Download & install to sideload.`, { tone: "warn" });
+						return;
+					}
+					if (reason === "gateway-older" || remote != null && local != null && remote < local && !avail) {
+						setNote(`${target.sku}: gateway older (local ${localName || "?"} ${local}, remote ${remoteName || "?"} ${remote}). Publish the newer APK.`, { tone: "warn" });
+						return;
+					}
+					if (local == null && remote == null) {
+						setNote(`${target.sku}: native echo missing versions — try Check again.`, { tone: "err" });
+						return;
+					}
+					setNote(avail ? `${target.sku}: update available ${localName || local} → ${remoteName || remote} (${local ?? "?"} → ${remote ?? "?"}).` : `${target.sku}: current (local ${localName || "?"} ${local ?? "?"}, remote ${remoteName || "?"} ${remote ?? "?"}) — Download & install will sideload.`, { tone: avail ? "warn" : "ok" });
+				} catch (e) {
+					setNote(String(e?.message || e), { tone: "err" });
+				}
+			})();
+			return;
+		}
+		if (!t?.closest?.("button[data-action=\"save\"]")) return;
+		(async () => {
+			setNote("Saving…", { tone: "warn" });
+			const current = await loadSettings();
+			let parsedMarkdownExtensions = current.appearance?.markdown?.extensions || [];
+			const rawExtensions = hasPanel("markdown") ? markdownExtensions?.value?.trim() || "" : "";
+			if (rawExtensions) try {
+				const parsed = JSON.parse(rawExtensions);
+				if (!Array.isArray(parsed)) throw new Error("Markdown extensions JSON must be an array.");
+				parsedMarkdownExtensions = parsed;
+			} catch (error) {
+				switchSettingsTab("markdown");
+				setNote(error?.message || "Invalid Markdown extensions JSON.");
+				return;
+			}
+			const next = {
+				...current,
+				ai: hasPanel("ai") ? (() => {
+					const nextAi = {
+						...current.ai || {},
+						baseUrl: apiUrl?.value?.trim?.() || "",
+						apiKey: apiKey?.value?.trim?.() || "",
+						model: model?.value || "gpt-5.6-luna",
+						customModel: model?.value === "custom" ? customModel?.value?.trim?.() || "" : "",
+						defaultReasoningEffort: defaultReasoningEffort?.value || "medium",
+						defaultVerbosity: defaultVerbosity?.value || "medium",
+						maxOutputTokens: parseNumberOrDefault(maxOutputTokens?.value, 4e5),
+						contextTruncation: contextTruncation?.value || "disabled",
+						promptCacheRetention: promptCacheRetention?.value || "in-memory",
+						maxToolCalls: parseNumberOrDefault(maxToolCalls?.value, 8),
+						parallelToolCalls: (parallelToolCalls?.checked ?? true) !== false,
+						requestTimeout: {
+							low: parseNumberOrDefault(requestTimeoutLow?.value, 6e4),
+							medium: parseNumberOrDefault(requestTimeoutMedium?.value, 3e5),
+							high: parseNumberOrDefault(requestTimeoutHigh?.value, 9e5)
+						},
+						maxRetries: parseNumberOrDefault(maxRetries?.value, 2),
+						responseLanguage: responseLanguage?.value || "auto",
+						translateResults: Boolean(translateResults?.checked),
+						generateSvgGraphics: Boolean(generateSvgGraphics?.checked),
+						mcp: hasPanel("mcp") ? collectMcpConfigurations(mcpSection) : current.ai?.mcp || [],
+						customInstructions: current.ai?.customInstructions || [],
+						activeInstructionId: current.ai?.activeInstructionId || "",
+						processIngress: current.ai?.processIngress
+					};
+					delete nextAi.shareTargetMode;
+					delete nextAi.autoProcessShared;
+					return nextAi;
+				})() : current.ai || {},
+				speech: hasPanel("ai") ? { language: speechLanguage?.value || "en-US" } : current.speech || {},
+				core: hasPanel("server") ? {
+					...current.core,
+					ntpEnabled: readCheckboxValue(ntpEnabled, Boolean(current.core?.ntpEnabled)),
+					mode: readTrimmedControlValue(coreMode, current.core?.mode || "native") || "native",
+					endpointUrl: readTrimmedControlValue(coreEndpointUrl, current.core?.endpointUrl || ""),
+					userId: readTrimmedControlValue(coreUserId, current.core?.userId || ""),
+					ecosystemToken: (() => {
+						return readTrimmedControlValue(coreEcosystemToken, current.core?.ecosystemToken || current.core?.userKey || current.core?.socket?.accessToken || "") || readTrimmedControlValue(coreUserKey, current.core?.userKey || "") || readTrimmedControlValue(coreSocketAccessToken, current.core?.socket?.accessToken || current.core?.socket?.airpadAuthToken || "");
+					})(),
+					userKey: (() => {
+						return readTrimmedControlValue(coreEcosystemToken, current.core?.ecosystemToken || current.core?.userKey || current.core?.socket?.accessToken || "") || readTrimmedControlValue(coreUserKey, current.core?.userKey || "") || readTrimmedControlValue(coreSocketAccessToken, current.core?.socket?.accessToken || current.core?.socket?.airpadAuthToken || "");
+					})(),
+					encrypt: readCheckboxValue(coreEncrypt, Boolean(current.core?.encrypt)),
+					preferBackendSync: readCheckboxValue(corePreferBackendSync, (current.core?.preferBackendSync ?? true) !== false),
+					appClientId: readTrimmedControlValue(coreAppClientId, current.core?.appClientId || ""),
+					allowInsecureTls: readCheckboxValue(coreAllowInsecureTls, Boolean(current.core?.allowInsecureTls)),
+					useCoreIdentityForAirPad: true,
+					socket: (() => {
+						const prev = { ...current.core?.socket || {} };
+						delete prev.airpadAuthToken;
+						const eco = readTrimmedControlValue(coreEcosystemToken, current.core?.ecosystemToken || current.core?.userKey || current.core?.socket?.accessToken || "") || readTrimmedControlValue(coreUserKey, current.core?.userKey || "") || readTrimmedControlValue(coreSocketAccessToken, current.core?.socket?.accessToken || current.core?.socket?.airpadAuthToken || "");
+						return {
+							...prev,
+							accessToken: eco,
+							routeTarget: readTrimmedControlValue(coreSocketRouteTarget, current.core?.socket?.routeTarget || ""),
+							selfId: "",
+							clientAccessToken: readTrimmedControlValue(coreSocketClientAccessToken, current.core?.socket?.clientAccessToken || ""),
+							allowAccessTokenWithoutUserKey: readCheckboxValue(coreSocketAllowAccessWithoutUserKey, Boolean(current.core?.socket?.allowAccessTokenWithoutUserKey))
+						};
+					})(),
+					admin: {
+						...current.core?.admin || {},
+						httpsOrigin: readTrimmedControlValue(coreAdminHttps, current.core?.admin?.httpsOrigin || ""),
+						httpOrigin: readTrimmedControlValue(coreAdminHttp, current.core?.admin?.httpOrigin || ""),
+						path: readTrimmedControlValue(coreAdminPath, current.core?.admin?.path || "/") || "/"
+					},
+					ops: {
+						...current.core?.ops || {},
+						allowUnencrypted: readCheckboxValue(coreOpsAllowUnencrypted, Boolean(current.core?.ops?.allowUnencrypted))
+					}
+				} : { ...current.core || {} },
+				shell: hasPanel("server") ? {
+					...current.shell || {},
+					maintainHubSocketConnection: readCheckboxValue(shellMaintainHubSocket, Boolean(current.shell?.maintainHubSocketConnection)),
+					clipboardBroadcastTargets: readTrimmedControlValue(shellClipboardBroadcastTargets, current.shell?.clipboardBroadcastTargets || ""),
+					pushLocalClipboardToLan: readCheckboxValue(shellPushLocalClipboard, Boolean(current.shell?.pushLocalClipboardToLan)),
+					clipboardPushIntervalMs: (() => {
+						const raw = shellClipboardPushIntervalMs?.value;
+						const n = parseNumberOrDefault(raw, current.shell?.clipboardPushIntervalMs ?? 2e3);
+						return Math.min(6e4, Math.max(800, Math.round(n)));
+					})(),
+					enableRemoteClipboardBridge: readCheckboxValue(shellClipboard, (current.shell?.enableRemoteClipboardBridge ?? true) !== false),
+					acceptInboundClipboardData: readCheckboxValue(shellAcceptInboundClipboard, (current.shell?.acceptInboundClipboardData ?? true) !== false),
+					clipboardInboundAllowIds: readTrimmedControlValue(shellClipboardInboundAllowIds, current.shell?.clipboardInboundAllowIds || ""),
+					accessTokenBypassesClipboardAllowlist: readCheckboxValue(shellAccessTokenBypassClipboardAllow, Boolean(current.shell?.accessTokenBypassesClipboardAllowlist)),
+					clipboardShareDestinationIds: readTrimmedControlValue(shellClipboardShareDestIds, current.shell?.clipboardShareDestinationIds || ""),
+					applyRemoteClipboardToDevice: readCheckboxValue(shellApplyRemoteDevice, (current.shell?.applyRemoteClipboardToDevice ?? true) !== false),
+					acceptContactsBridgeData: readCheckboxValue(shellAcceptContactsBridge, Boolean(current.shell?.acceptContactsBridgeData)),
+					acceptSmsBridgeData: isCapacitorNative() ? false : readCheckboxValue(shellAcceptSmsBridge, Boolean(current.shell?.acceptSmsBridgeData)),
+					enableNativeSms: isCapacitorNative() ? false : readCheckboxValue(shellSms, (current.shell?.enableNativeSms ?? false) === true),
+					enableNativeContacts: readCheckboxValue(shellContacts, (current.shell?.enableNativeContacts ?? true) !== false)
+				} : { ...current.shell || {} },
+				appearance: hasPanel("appearance") || hasPanel("markdown") ? {
+					theme: theme?.value || "auto",
+					fontSize: fontSize?.value || "medium",
+					color: readAppearanceColor(root),
+					colorSource: readAppearanceColorSource(root),
+					markdown: {
+						preset: markdownPreset?.value || "default",
+						fontFamily: markdownFontFamily?.value || "system",
+						fontSizePx: parseNumberOrDefault(markdownFontSizePx?.value, 16),
+						lineHeight: parseFloatInRange(markdownLineHeight?.value, 1.7, 1.1, 2.2),
+						contentMaxWidthPx: parseNumberOrDefault(markdownContentMaxWidthPx?.value, 860),
+						printScale: parseFloatInRange(markdownPrintScale?.value, 1, .5, 1.5),
+						page: {
+							size: markdownPageSize?.value || "auto",
+							orientation: markdownPageOrientation?.value || "portrait",
+							marginMm: parseNumberOrDefault(markdownPageMarginMm?.value, 12)
+						},
+						modules: {
+							typography: (markdownModuleTypography?.checked ?? true) !== false,
+							lists: (markdownModuleLists?.checked ?? true) !== false,
+							tables: (markdownModuleTables?.checked ?? true) !== false,
+							codeBlocks: (markdownModuleCodeBlocks?.checked ?? true) !== false,
+							blockquotes: (markdownModuleBlockquotes?.checked ?? true) !== false,
+							media: (markdownModuleMedia?.checked ?? true) !== false,
+							printBreaks: (markdownModulePrintBreaks?.checked ?? true) !== false
+						},
+						plugins: {
+							smartTypography: Boolean(markdownPluginSmartTypography?.checked),
+							softBreaksAsBr: Boolean(markdownPluginSoftBreaks?.checked),
+							externalLinksNewTab: (markdownPluginExternalLinks?.checked ?? true) !== false
+						},
+						customCss: markdownCustomCss?.value || "",
+						printCss: markdownPrintCss?.value || "",
+						extensions: parsedMarkdownExtensions || []
+					}
+				} : current.appearance || {}
+			};
+			collectContributions(root, next, contributionCtx);
+			await resolveCwspSettingsBeforeSave(next);
+			const settingsToSave = next;
+			const permPromise = contributionCtx.surface === "capacitor" || contributionCtx.surface === "native" ? requestCapacitorSettingsPermissionsAfterSave(settingsToSave).catch((e) => {
+				console.warn("[Settings] native permission flow failed:", e);
+				return {
+					lines: [],
+					results: []
+				};
+			}) : Promise.resolve({
+				lines: [],
+				results: []
+			});
+			const saved = await saveSettings(settingsToSave);
+			if (!saved) {
+				setNote("Settings save returned no data.", { tone: "err" });
+				return;
+			}
+			let publicControlSpa = false;
+			try {
+				publicControlSpa = String(document.documentElement?.dataset?.cwspSurface || "").toLowerCase() === "cwsp-control" || /^(www\.)?cwsp\.u2re\.space$/i.test(String(location.hostname || ""));
+			} catch {
+				publicControlSpa = false;
+			}
+			try {
+				if (publicControlSpa) {
+					const ensure = globalThis.__CWSP_ENSURE_CONTROL_FOR_SAVE__;
+					if (typeof ensure === "function") {
+						const ready = await ensure();
+						if (!ready?.ok) {
+							noteSettingsControlSync(false, ready?.error || "Control not paired");
+							setNote(ready?.error || "Pair phone Control (token + code + Accept) before Save", { tone: "warn" });
+							return;
+						}
+					}
+				}
+				await persistContributionsViaSync(root, saved, contributionCtx);
+				if (publicControlSpa) {
+					if (Boolean(globalThis.__CWSP_CONTROL_BRIDGE_LIVE__)) noteSettingsControlSync(true);
+				}
+			} catch (e) {
+				console.warn("[Settings] backend settings:patch failed:", e);
+				const msg = e instanceof Error ? e.message : String(e);
+				if (publicControlSpa) noteSettingsControlSync(false, msg);
+				if (/pairing|unauthorized|401|403|Control/i.test(msg)) {
+					setNote(msg, { tone: "warn" });
+					return;
+				}
+			}
+			applyContributions(root, saved, contributionCtx);
+			const report = getLastSettingsSaveReport();
+			const permReport = await permPromise;
+			const permLines = permReport.lines;
+			const permDenied = permReport.results.some((r) => r.granted === false);
+			__vitePreload(() => import("../chunks/hub-socket-boot.js").then((n) => n.n).then(async (m) => {
+				if (publicControlSpa) {
+					try {
+						if (!Boolean(globalThis.__CWSP_CONTROL_BRIDGE_LIVE__)) console.warn("[Settings] Control not paired — settings saved locally only; pair to push to device");
+					} catch {}
+					return;
+				}
+				if (typeof m.nodeClipboardHubOwnsExclusiveWebsocket === "function" && m.nodeClipboardHubOwnsExclusiveWebsocket()) {
+					try {
+						const g = globalThis;
+						if (g.__CWS_NODE_CLIPBOARD_HUB__ === false) return;
+						const auth = g.__WEBNATIVE_AUTH__ || g.__NEUTRALINO_AUTH__;
+						const port = Number(auth?.port) || 29110;
+						const host = String(auth?.host || "127.0.0.1").trim() || "127.0.0.1";
+						if (port === 8434 && host !== "127.0.0.1" && host !== "localhost") return;
+						if (port !== 29110) return;
+						const key = String(auth?.key || "cwsp-neutralino-local");
+						const core = saved.core;
+						const token = String(core?.ecosystemToken || core?.userKey || core?.socket?.accessToken || "").trim();
+						const body = {};
+						if (core?.endpointUrl) body.remoteHost = String(core.endpointUrl).trim();
+						if (token) {
+							body.accessToken = token;
+							body.clientToken = token;
+						}
+						if (core?.userId) body.clientId = String(core.userId).trim();
+						body.force = true;
+						await fetch(`http://${host}:${port}/service/clipboard-hub`, {
+							method: "POST",
+							headers: {
+								"Content-Type": "application/json",
+								"X-API-Key": key
+							},
+							body: JSON.stringify(body),
+							cache: "no-store"
+						});
+					} catch (e) {
+						console.warn("[Settings] Node clipboard-hub reload skipped", e);
+					}
+					return;
+				}
+				if (typeof m.nativeShellOwnsExclusiveHubWebsocket === "function" && m.nativeShellOwnsExclusiveHubWebsocket()) {
+					try {
+						const { invokeCwsNative } = await __vitePreload(async () => {
+							const { invokeCwsNative } = await import("../chunks/cws-bridge.js").then((n) => n.n);
+							return { invokeCwsNative };
+						}, __vite__mapDeps([9,3,10,11,12,1,2,13,4,14,15,16]), import.meta.url);
+						await invokeCwsNative("runtime:reload-settings", {});
+					} catch (e) {
+						console.warn("[Settings] Java /ws reload skipped", e);
+					}
+					return;
+				}
+				await m.applyHubSocketFromSettings(saved);
+				__vitePreload(() => import("../chunks/hub-socket-boot.js").then((n) => n.c).then((ws) => {
+					if (typeof ws.reconnectTransportAfterLifecycleResume === "function") ws.reconnectTransportAfterLifecycleResume("settings-save");
+				}), __vite__mapDeps([40,3,10,11,13,4,9,12,1,2,14,15,16,27,41,19,20,21,22,42,43,29,17,39]), import.meta.url).catch(() => void 0);
+			}), __vite__mapDeps([40,3,10,11,13,4,9,12,1,2,14,15,16,27,41,19,20,21,22,42,43,29,17,39]), import.meta.url);
+			applyTheme(saved);
+			opts.onTheme?.(saved.appearance?.theme || "auto");
+			const parts = ["Saved locally"];
+			if (report.nativeSynced === true) parts.push("synced to Android");
+			else if (report.nativeSynced === false && !permDenied) console.warn("[Settings] native settings patch:", report.nativeError || "not confirmed");
+			else if (report.nativeSynced === false) parts.push(`native sync failed${report.nativeError ? `: ${report.nativeError}` : ""}`);
+			const controlVia = (() => {
+				try {
+					return String(globalThis.__CWSP_CONTROL_VIA__ || "");
+				} catch {
+					return "";
+				}
+			})();
+			const controlLabel = controlVia === "android" ? "phone Control (Capacitor)" : controlVia === "neutralino" ? "desk Control (Neutralino)" : publicControlSpa ? "Control" : "desk Control";
+			if (report.webnativeSynced === true) parts.push(`synced to ${controlLabel}`);
+			else if (report.webnativeSynced === false) parts.push(`${controlLabel} sync failed${report.webnativeError ? `: ${report.webnativeError}` : ""}`);
+			if (permLines.length) parts.push(...permLines);
+			let tone = "ok";
+			if (permDenied || report.webnativeSynced === false) tone = "warn";
+			setNote(parts.join(" · "), { tone });
+		})().catch((err) => setNote(String(err), { tone: "err" }));
+	});
+	if (opts.isExtension) {
+		if (extSection) extSection.hidden = false;
+		if (extTab) extTab.hidden = false;
+		const extNote = H`<div class="ext-note">Extension mode: settings are stored in <code>chrome.storage.local</code>.</div>`;
+		const hasFooter = root.querySelector(".settings-screen__footer");
+		if (hasFooter) hasFooter?.insertAdjacentElement?.("beforebegin", extNote);
+		else root.append(extNote);
+	}
+	const initialTab = resolveInitialTab(opts.initialTab);
+	switchSettingsTab(initialTab);
+	if (!root.querySelector(`.settings-screen__body > [data-tab-panel="${initialTab}"]:not([hidden])`)) {
+		const firstPanel = root.querySelector(".settings-screen__body > [data-tab-panel]");
+		if (firstPanel) switchSettingsTab(firstPanel.getAttribute("data-tab-panel") || initialTab);
+	}
+	syncCustomModelVisibility();
+	const panelCount = root.querySelectorAll(".settings-screen__body > [data-tab-panel]").length;
+	const tabCount = root.querySelectorAll("[data-action=\"switch-settings-tab\"][data-tab]").length;
+	try {
+		globalThis.__CWSP_FRONTEND_DEBUG__?.log("settings-view", "info", `mounted profile=${settingsProfile} surface=${contributionCtx.surface} tabs=${tabCount} panels=${panelCount} active=${root.querySelector("[data-settings-tabs]")?.getAttribute("data-active-tab")}`);
+	} catch {}
+	if (panelCount === 0) {
+		const empty = document.createElement("section");
+		empty.className = "card settings-tab-panel";
+		empty.setAttribute("data-tab-panel", "cwsp");
+		empty.innerHTML = "<h3>CWSP</h3><p class=\"field-hint\">Settings panels failed to mount. Check logcat tag CwspWebView or __CWSP_FRONTEND_DEBUG__.tail().</p>";
+		root.querySelector(".settings-screen__body")?.appendChild(empty);
+		switchSettingsTab("cwsp");
+	}
+	root.addEventListener("cwsp-settings-resync", () => {
+		attachSettingsInlineStylesWhenConnected(root);
+		switchSettingsTab(root.querySelector("[data-settings-tabs]")?.getAttribute("data-active-tab") || initialTab);
+	});
+	cachedSettingsViewRoot = root;
+	return root;
+};
+//#endregion
+//#region ../../modules/views/settings-view/src/index.ts
+var defaultSettings = {
+	appearance: {
+		theme: "auto",
+		fontSize: "medium"
+	},
+	ai: { autoProcess: true },
+	general: {
+		autosave: true,
+		notifications: true
+	}
+};
+var SettingsView = class {
+	id = "settings";
+	name = "Settings";
+	icon = "gear";
+	options;
+	shellContext;
+	element = null;
+	settings = ref(defaultSettings);
+	/** Document-level adopted sheet (PWA / no shadow). */
+	_sheet = null;
+	/** Shell open-shadow: same CSS must be on `shadowRoot.adoptedStyleSheets` — document rules do not pierce. */
+	_shadowSheet = null;
+	/** Fallback if constructable stylesheet fails in a shadow root. */
+	_styleEl = null;
+	lifecycle = {
+		onUnmount: () => {
+			unbakeScreenColors(this.element);
+			this.clearSettingsStylesheet();
+		},
+		onShow: () => {
+			this.applySettingsStylesheet();
+			this.syncHubSectionFromLocation();
+			this.refreshLauncherSiblingNav();
+			this.element?.dispatchEvent(new CustomEvent("cwsp-settings-resync", { bubbles: false }));
+			scheduleBakeScreenColors(this.element);
+		},
+		onHide: () => {
+			unbakeScreenColors(this.element);
+		}
+	};
+	constructor(options = {}) {
+		this.options = options;
+		this.shellContext = options.shellContext;
+		try {
+			globalThis.addEventListener("route-change", this.onHubSettingsRoute);
+			globalThis.addEventListener("popstate", this.onHubSettingsRoute);
+			globalThis.addEventListener("cwsp-settings-section", this.onHubSettingsRoute);
+		} catch {}
+	}
+	onHubSettingsRoute = () => {
+		this.syncHubSectionFromLocation();
+	};
+	render(options) {
+		if (options) {
+			this.options = {
+				...this.options,
+				...options
+			};
+			this.shellContext = options.shellContext || this.shellContext;
+		}
+		this.loadSettings();
+		const isExtensionRuntime = this.isExtensionRuntime();
+		const hubSection = this.resolveAreaSection(options?.params?.section);
+		if (hubSection && this.element && this.element.dataset.hubSettingsSection !== hubSection) {
+			resetSettingsViewCache();
+			this.element = null;
+		}
+		if (this.element) return this.element;
+		this.element = createSettingsView({
+			isExtension: isExtensionRuntime,
+			initialTab: options?.params?.tab || options?.params?.focus,
+			hubSection,
+			onTheme: (theme) => {
+				this.options.onThemeChange?.(theme);
+			}
+		});
+		queueMicrotask(() => attachSettingsInlineStylesWhenConnected(this.element));
+		return this.element;
+	}
+	getToolbar() {
+		return null;
+	}
+	isExtensionRuntime() {
+		return typeof globalThis.chrome !== "undefined" && Boolean(globalThis.chrome?.runtime?.id);
+	}
+	resolveAreaSection(explicit) {
+		const fromHub = resolveEffectiveHubSettingsSection();
+		if (fromHub) return canonicalHubSettingsSection$1(explicit || fromHub);
+		if (resolveSettingsAreaNavMode() === "launcher") return canonicalHubSettingsSection$1(explicit || readSettingsAreaSection() || "hub");
+	}
+	async refreshLauncherSiblingNav() {
+		if (resolveSettingsAreaNavMode() !== "launcher") return;
+		if (sameSiblingSectionSet(peekInstalledSiblingSettingsSections(), await refreshInstalledSiblingSettingsSections())) return;
+		this.remountSettings(this.resolveAreaSection() || "hub");
+	}
+	remountSettings(section) {
+		if (!this.element) return;
+		const parent = this.element.parentNode;
+		resetSettingsViewCache();
+		const nextEl = createSettingsView({
+			isExtension: this.isExtensionRuntime(),
+			hubSection: section,
+			initialTab: this.options.params?.tab || this.options.params?.focus,
+			onTheme: (theme) => {
+				this.options.onThemeChange?.(theme);
+			}
+		});
+		parent?.replaceChild(nextEl, this.element);
+		this.element = nextEl;
+		queueMicrotask(() => attachSettingsInlineStylesWhenConnected(this.element));
+	}
+	/** Hub `/settings/{area}` or launcher sibling section changed — rebuild contribs. */
+	syncHubSectionFromLocation() {
+		if (!this.element) return;
+		const next = this.resolveAreaSection();
+		if (!next) return;
+		if (this.element.dataset.hubSettingsSection === next) return;
+		this.remountSettings(next);
+	}
+	setupEventHandlers() {}
+	loadSettings() {
+		this.settings.value = { ...defaultSettings };
+	}
+	saveSettings() {
+		this.options.onSettingsChange?.(this.settings.value);
+	}
+	resetSettings() {
+		this.settings.value = { ...defaultSettings };
+		this.updateUI();
+	}
+	updateUI() {
+		if (!this.element) return;
+		const inputs = this.element.querySelectorAll("[data-setting]");
+		for (const input of inputs) {
+			const [section, key] = input.dataset.setting.split(".");
+			const value = this.settings.value[section][key];
+			if (input.type === "checkbox") input.checked = Boolean(value);
+			else input.value = value || "";
+		}
+	}
+	showMessage(message) {
+		this.shellContext?.showMessage(message);
+	}
+	applySettingsStylesheet() {
+		attachSettingsInlineStylesWhenConnected(this.element);
+	}
+	clearSettingsStylesheet() {
+		try {
+			this.element?.querySelector("style[data-settings-view-css]")?.remove();
+			if (this._styleEl) {
+				this._styleEl.remove();
+				this._styleEl = null;
+			}
+			if (this._shadowSheet) {
+				const { sheet, root } = this._shadowSheet;
+				root.adoptedStyleSheets = root.adoptedStyleSheets.filter((s) => s !== sheet);
+				this._shadowSheet = null;
+			}
+			if (this._sheet) {
+				removeAdopted(this._sheet);
+				this._sheet = null;
+			}
+		} catch {}
+	}
+	canHandleMessage(messageType) {
+		return messageType === "settings-update";
+	}
+	async handleMessage(message) {
+		const msg = message;
+		if (msg.data) {
+			this.settings.value = {
+				...this.settings.value,
+				...msg.data
+			};
+			this.updateUI();
+		}
+	}
+	invokeChannelApi(action, payload) {
+		if (action === SettingsChannelAction.Patch || action === SettingsChannelAction.SettingsUpdate) {
+			this.handleMessage({ data: payload });
+			(async () => {
+				try {
+					const [{ loadSettings }, { applyTheme }] = await Promise.all([__vitePreload(() => import("../vendor/jsox.js").then((n) => n.t), __vite__mapDeps([23,3,1,2,19,20,11,21,22,12,24,25,26,13,4,9,10,14,15,16,27]), import.meta.url), __vitePreload(() => import("../chunks/Theme.js").then((n) => n.t), __vite__mapDeps([44,3,1,2,19,20,11,21,22,12,23,24,25,26,13,4,9,10,14,15,16,27,45,46,47,48]), import.meta.url)]);
+					const cur = await loadSettings();
+					const patch = payload;
+					applyTheme({
+						...cur,
+						...patch,
+						appearance: {
+							...cur.appearance || {},
+							...patch.appearance || {}
+						}
+					});
+				} catch (e) {
+					console.warn("[SettingsView] channel applyTheme failed:", e);
+				}
+			})();
+			return true;
+		}
+	}
+};
+function createView(options) {
+	return new SettingsView(options);
+}
+//#endregion
+export { SettingsView, applyContributions, clearSettingsSyncArms, collectContributions, createMemorySettingsSyncArm, createSettingsView, createView, createView as default, detectSettingsSurface, getSettingsContributions, getSettingsDefaults, getSettingsSnapshot, getSettingsSync, hydrateContributionsFromSync, mergeSettingsPatch, mountContributions, patchSettingsSync, persistContributionsViaSync, refreshInstalledSiblingSettingsSections, registerBuiltinSettingsContributions, registerCwspSettingsContribution, registerDeviceSettingsContribution, registerReaderSettingsContribution, registerSettingsContribution, registerSettingsSyncArm, registerWorkcenterSettingsContribution, resetSettingsViewCache, resolveSettingsSurface, resolveSettingsSyncArm, setSurfaceDetector, unregisterSettingsSyncArm };

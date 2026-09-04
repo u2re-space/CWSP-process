@@ -1,10 +1,10 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./CustomInstructions.js","./rolldown-runtime.js","../shells/boot-index.js","../com/app.js","../fest/core.js","../shells/boot-history-base.js","../com/service.js","../fest/veela.js","./utils.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./CustomInstructions.js","./rolldown-runtime.js","../vendor/jsox.js","../assets/index-C9QTqpCS.js","../fest/core4.js","../fest/core.js","../fest/core2.js","../fest/object.js","../fest/core5.js","../fest/uniform.js","./open-policy.js","./ecosystem-skus.js","./SettingsTypes.js","./process-ingress.js","./airpad-cwsp-client-parity.js","./multi-value-list.js","./cws-bridge.js","../fest/core3.js","../vendor/@capacitor_core.js","./UniformInterop2.js","./names.js","./remote-connection-runtime.js","./utils.js"])))=>i.map(i=>d[i]);
 import { r as __exportAll } from "./rolldown-runtime.js";
-const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
-import { Nt as loadSettings } from "../shells/boot-index.js";
+import { t as __vitePreload } from "../assets/index-C9QTqpCS.js";
+import { a as loadSettings } from "../vendor/jsox.js";
 import { i as buildInstructionPrompt, n as SVG_GRAPHICS_ADDON, o as getIntermediateRecognitionInstruction, r as TRANSLATE_INSTRUCTION, s as getOutputFormatInstruction, t as LANGUAGE_INSTRUCTIONS } from "./utils.js";
 import "./core.js";
-import { a as unwrapUnwantedCodeBlocks, i as isImageData, n as getGPTInstance, r as getResponseFormat } from "./entities.js";
+import { a as unwrapUnwantedCodeBlocks, i as isImageData, n as getGPTInstance, r as getResponseFormat } from "../vendor/@toon-format_toon.js";
 import { n as getRuntimeSettings } from "./RuntimeSettings.js";
 //#region src/service/processing/adapters.ts
 var detectPlatform = () => {
@@ -34,7 +34,7 @@ var getActiveCustomInstruction = async () => {
 		const { getActiveInstructionText } = await __vitePreload(async () => {
 			const { getActiveInstructionText } = await import("./CustomInstructions.js").then((n) => n.t);
 			return { getActiveInstructionText };
-		}, __vite__mapDeps([0,1,2,3,4,5,6,7,8]), import.meta.url);
+		}, __vite__mapDeps([0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22]), import.meta.url);
 		return await getActiveInstructionText();
 	} catch {
 		return "";
@@ -64,7 +64,7 @@ var getSvgGraphicsAddon = async () => {
 var RecognitionCache = class {
 	cache = /* @__PURE__ */ new Map();
 	maxEntries = 100;
-	ttl = 864e5;
+	ttl = 1440 * 60 * 1e3;
 	generateDataHash(data) {
 		if (data instanceof File) return `${data.name}-${data.size}-${data.lastModified}`;
 		if (typeof data === "string") return btoa(data).substring(0, 32);
@@ -252,11 +252,10 @@ var processDataWithInstruction = async (input, options = {}, sendResponse) => {
 	let finalData = cleanedResponse;
 	if (cleanedResponse && instruction?.includes("Recognize data from image")) try {
 		const parsedJson = JSON.parse(cleanedResponse);
-		if (parsedJson?.recognized_data) {
-			if (Array.isArray(parsedJson.recognized_data)) finalData = parsedJson.recognized_data.join("\n");
-			else if (typeof parsedJson.recognized_data === "string") finalData = parsedJson.recognized_data;
-			else finalData = JSON.stringify(parsedJson.recognized_data);
-		} else if (parsedJson?.ok === false) finalData = null;
+		if (parsedJson?.recognized_data) if (Array.isArray(parsedJson.recognized_data)) finalData = parsedJson.recognized_data.join("\n");
+		else if (typeof parsedJson.recognized_data === "string") finalData = parsedJson.recognized_data;
+		else finalData = JSON.stringify(parsedJson.recognized_data);
+		else if (parsedJson?.ok === false) finalData = null;
 		else finalData = cleanedResponse;
 	} catch {
 		finalData = cleanedResponse;

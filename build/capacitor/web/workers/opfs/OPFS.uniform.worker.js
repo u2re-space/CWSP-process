@@ -308,12 +308,10 @@ var PromiseHandler = class {
 			this.#reject = null;
 			return result;
 		};
-		if (prop == "then" || prop == "catch" || prop == "finally") {
-			if (target instanceof Promise) return target?.[prop]?.bind?.(target);
-			else {
-				const $tmp = Promise.try(() => target);
-				return $tmp?.[prop]?.bind?.($tmp);
-			}
+		if (prop == "then" || prop == "catch" || prop == "finally") if (target instanceof Promise) return target?.[prop]?.bind?.(target);
+		else {
+			const $tmp = Promise.try(() => target);
+			return $tmp?.[prop]?.bind?.($tmp);
 		}
 		let result = void 0;
 		if (resolvedMap?.has?.(target) && (result = resolvedMap?.get?.(target))?.[prop] != null) result = resolvedMap?.get?.(target)?.[prop];
@@ -1263,7 +1261,9 @@ var UnifiedChannel = class {
 				this._handleResponse(data);
 				break;
 			case "event": break;
-			case "signal": this._handleSignal(data);
+			case "signal":
+				this._handleSignal(data);
+				break;
 		}
 	}
 	_handleResponse(data) {
@@ -1821,10 +1821,14 @@ const writeByPath = (path, data) => {
 const removeByPath = (path) => {
 	if (path != null && !Array.isArray(path)) path = [path];
 	if (path == null || path?.length < 1) return false;
-	if (!(storedData?.get?.(path?.[0]) ?? null) && path?.length <= 1) {
+	const root = storedData?.get?.(path?.[0]) ?? null;
+	if (!root && path?.length <= 1) {
 		storedData?.delete?.(path?.[0]);
 		return true;
 	} else return false;
+	delete traverseByPath(root, path?.slice?.(1, -1))[path?.[path?.length - 1]];
+	if ((typeof root == "object" || typeof root == "function") && path?.length <= 1) registeredInPath?.delete?.(root);
+	return true;
 };
 const removeByData = (data) => {
 	const $desc = data?.[$descriptor] ?? (data?.$isDescriptor ? data : null);
@@ -1972,7 +1976,9 @@ function executeAction(action, path, args, options = {}) {
 			result = reflect.isExtensible?.(obj) ?? (isObject(obj) ? Object.isExtensible(obj) : true);
 			break;
 		case "preventextensions":
-		case WReflectAction.PREVENT_EXTENSIONS: result = reflect.preventExtensions?.(obj) ?? (isObject(obj) ? Object.preventExtensions(obj) : false);
+		case WReflectAction.PREVENT_EXTENSIONS:
+			result = reflect.preventExtensions?.(obj) ?? (isObject(obj) ? Object.preventExtensions(obj) : false);
+			break;
 	}
 	return {
 		result,
@@ -1987,12 +1993,10 @@ async function buildResponse(reqId, action, channel, sender, path, rawResult, to
 	const result = await rawResult;
 	const canBeReturn = isCanTransfer(result) && toTransfer.includes(result) || isCanJustReturn(result);
 	let finalPath = path;
-	if (!canBeReturn && action !== "get" && action !== WReflectAction.GET && (typeof result === "object" || typeof result === "function")) {
-		if (hasNoPath(result)) {
-			finalPath = [UUIDv4()];
-			writeByPath(finalPath, result);
-		} else finalPath = registeredInPath.get(result) ?? [];
-	}
+	if (!canBeReturn && action !== "get" && action !== WReflectAction.GET && (typeof result === "object" || typeof result === "function")) if (hasNoPath(result)) {
+		finalPath = [UUIDv4()];
+		writeByPath(finalPath, result);
+	} else finalPath = registeredInPath.get(result) ?? [];
 	const ctx = readByPath(finalPath);
 	const ctxKey = action === "get" || action === WReflectAction.GET ? finalPath?.at(-1) : void 0;
 	const obj = readByPath(path);
@@ -2781,15 +2785,17 @@ var ChannelStorage = class {
 					case "delete":
 						if (op.key !== void 0) store.delete(op.key);
 						break;
-					case "update": if (op.key !== void 0) {
-						const getReq = store.get(op.key);
-						getReq.onsuccess = () => {
-							if (getReq.result && op.value) store.put({
-								...getReq.result,
-								...op.value
-							});
-						};
-					}
+					case "update":
+						if (op.key !== void 0) {
+							const getReq = store.get(op.key);
+							getReq.onsuccess = () => {
+								if (getReq.result && op.value) store.put({
+									...getReq.result,
+									...op.value
+								});
+							};
+						}
+						break;
 				}
 			}
 			tx.oncomplete = () => resolve();

@@ -1,9 +1,12 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./launcher-bridge.js","../shells/boot-index.js","./rolldown-runtime.js","../com/app.js","../fest/core.js","../shells/boot-history-base.js","../com/service.js","../fest/veela.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./launcher-bridge.js","./cws-bridge.js","./rolldown-runtime.js","../fest/core3.js","../fest/core2.js","../fest/uniform.js","../assets/index-C9QTqpCS.js","./airpad-cwsp-client-parity.js","./multi-value-list.js","../vendor/@capacitor_core.js","./UniformInterop2.js","./names.js"])))=>i.map(i=>d[i]);
 import { r as __exportAll } from "./rolldown-runtime.js";
-const __vitePreload = (baseModule) => Promise.resolve().then(() => baseModule());
-import { m as skuIngressHint, o as holdIngressFiles } from "../views/viewer.js";
-import { $n as peekProcessIngressSettings, Cr as normalizeDestination, Gr as surfaceForSku, Mr as normalizeOpenSink, Or as classifyOpenKindFromPayload, Pr as peekOpenPolicy, Ur as skuForOpenSink, Vr as sinkToDestination, _r as sendProtocolMessage, dr as enqueuePendingMessage, kr as inferIngressChannels, wr as viewBroadcastChannelName, zr as resolveOpenPolicy } from "../shells/boot-index.js";
-import { _ as siblingSkuForView, c as inferCwspSkuFromLocation, g as shouldHandoffViewToSibling, h as readCwspSku, l as isCwspNativeHost, p as publicHrefForSku, r as androidPackageForSku, s as ensureCwspSkuFromLocation, t as ECOSYSTEM_SKUS, v as stashSkuHandoff } from "../shells/boot-history-base.js";
+import { t as __vitePreload } from "../assets/index-C9QTqpCS.js";
+import { _ as siblingSkuForView, c as inferCwspSkuFromLocation, g as shouldHandoffViewToSibling, h as readCwspSku, l as isCwspNativeHost, p as publicHrefForSku, r as androidPackageForSku, s as ensureCwspSkuFromLocation, t as ECOSYSTEM_SKUS, v as stashSkuHandoff } from "./ecosystem-skus.js";
+import { C as surfaceForSku, _ as resolveOpenPolicy, a as classifyOpenKindFromPayload, f as peekOpenPolicy, o as inferIngressChannels, u as normalizeOpenSink, x as skuForOpenSink, y as sinkToDestination } from "./open-policy.js";
+import { d as normalizeDestination, p as viewBroadcastChannelName } from "./names.js";
+import { r as enqueuePendingMessage, u as sendProtocolMessage } from "./UnifiedMessaging.js";
+import { c as peekProcessIngressSettings } from "./process-ingress.js";
+import { a as holdIngressFiles, p as skuIngressHint } from "./sku-ingress.js";
 import { t as summarizeForLog } from "./log-sanitizer.js";
 //#region src/shared/routing/channel/ViewTransferRouting.ts
 var ViewTransferRouting_exports = /* @__PURE__ */ __exportAll({
@@ -185,8 +188,7 @@ var mirrorTransferToViewChannel = (resolved, message) => {
 	}
 };
 var payloadSink = (payload, resolved) => {
-	const hinted = payload.hint?.sink ?? (resolved.metadata?.hint)?.sink;
-	return normalizeOpenSink(hinted, "ask");
+	return normalizeOpenSink(payload.hint?.sink ?? (resolved.metadata?.hint)?.sink, "ask");
 };
 var openResolvedWithSystem = async (payload, chooser) => {
 	const file = Array.isArray(payload.files) ? payload.files[0] : void 0;
@@ -195,7 +197,7 @@ var openResolvedWithSystem = async (payload, chooser) => {
 		const { launcherOpenUri } = await __vitePreload(async () => {
 			const { launcherOpenUri } = await import("./launcher-bridge.js");
 			return { launcherOpenUri };
-		}, __vite__mapDeps([0,1,2,3,4,5,6,7]), import.meta.url);
+		}, __vite__mapDeps([0,1,2,3,4,5,6,7,8,9,10,11]), import.meta.url);
 		if (typeof launcherOpenUri === "function") {
 			const openable = /^(file|content|https?):/i.test(uri) ? uri : uri.startsWith("/") ? uri : "";
 			if (openable && await launcherOpenUri(openable, {
@@ -232,7 +234,7 @@ var launchSinkSku = async (sink, payload, resolved) => {
 		const { launcherOpenUri } = await __vitePreload(async () => {
 			const { launcherOpenUri } = await import("./launcher-bridge.js");
 			return { launcherOpenUri };
-		}, __vite__mapDeps([0,1,2,3,4,5,6,7]), import.meta.url);
+		}, __vite__mapDeps([0,1,2,3,4,5,6,7,8,9,10,11]), import.meta.url);
 		if (await launcherOpenUri(src, {
 			packageName: pkg,
 			chooser: false,
@@ -240,7 +242,7 @@ var launchSinkSku = async (sink, payload, resolved) => {
 		})) return true;
 	} catch {}
 	if (pkg) try {
-		if (await (await __vitePreload(() => import("./launcher-bridge.js"), __vite__mapDeps([0,1,2,3,4,5,6,7]), import.meta.url)).launcherLaunch?.(pkg)) return true;
+		if (await (await __vitePreload(() => import("./launcher-bridge.js"), __vite__mapDeps([0,1,2,3,4,5,6,7,8,9,10,11]), import.meta.url)).launcherLaunch?.(pkg)) return true;
 	} catch {}
 	try {
 		if (isCwspNativeHost()) return false;
@@ -274,7 +276,7 @@ var dispatchViewTransfer = async (payload) => {
 		const pkg = androidPackageForSku(sibling);
 		let handedOff = false;
 		if (pkg) try {
-			const bridge = await __vitePreload(() => import("./launcher-bridge.js"), __vite__mapDeps([0,1,2,3,4,5,6,7]), import.meta.url);
+			const bridge = await __vitePreload(() => import("./launcher-bridge.js"), __vite__mapDeps([0,1,2,3,4,5,6,7,8,9,10,11]), import.meta.url);
 			handedOff = Boolean(await bridge.launcherLaunch?.(pkg));
 		} catch {}
 		if (!handedOff && typeof location !== "undefined") try {

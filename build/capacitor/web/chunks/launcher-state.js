@@ -1,5 +1,9 @@
 import { r as __exportAll } from "./rolldown-runtime.js";
-import { Ar as __vitePreload, Dn as JSOX, En as saveUIState, Ft as subscribeFsBackendRegister, On as decodeDesktopState, Pt as resolveFsBackend, Tn as makeUIState, _r as safe, fr as observe, gr as makeObjectAssignable, hr as stringRef, kn as loadDesktopRaw, or as resolveEntryIcon } from "../com/app.js";
+import { t as __vitePreload } from "../assets/index-CU5eF_0S.js";
+import { F as saveUIState, I as JSOX, L as decodeDesktopState, P as makeUIState, R as loadDesktopRaw } from "../fest/core4.js";
+import { _ as safe, p as stringRef, u as observe } from "../fest/object.js";
+import { t as makeObjectAssignable } from "../fest/object2.js";
+import { d as resolveEntryIcon, i as subscribeFsBackendRegister, r as resolveFsBackend } from "../com/app.js";
 //#region ../../modules/views/home-view/src/ts/layout.ts
 var DEFAULT_LAYOUT = [4, 8];
 var clamp = (value, min, max) => {
@@ -1411,7 +1415,7 @@ var createStatefulItem = (config) => {
 };
 var createInitialState = () => observe(DEFAULT_SPEED_DIAL_RECORDS.map(createStatefulItem));
 var unpackState = (raw) => {
-	const records = (Array.isArray(raw) && raw.length ? raw : DEFAULT_SPEED_DIAL_DATA).filter((entry) => isSpeedDialViewAllowed(entry.meta, entry.id) && !isCoreRailPersistedEntry(entry)).map((entry) => {
+	return observe((Array.isArray(raw) && raw.length ? raw : DEFAULT_SPEED_DIAL_DATA).filter((entry) => isSpeedDialViewAllowed(entry.meta, entry.id) && !isCoreRailPersistedEntry(entry)).map((entry) => {
 		const { meta, ...record } = entry;
 		if (meta) legacyMetaBuffer.push([entry.id, {
 			action: entry.action,
@@ -1419,8 +1423,7 @@ var unpackState = (raw) => {
 		}]);
 		else legacyMetaBuffer.push([entry.id, { action: entry.action }]);
 		return record;
-	});
-	return observe(records.map(createStatefulItem));
+	}).map(createStatefulItem));
 };
 var packState = (collection) => collection.filter((item) => {
 	try {
@@ -1489,10 +1492,8 @@ function setSpeedDialMirrorPath(path) {
 	markUserEditedBeforeHydrate();
 	mirrorPathState.value = normalized;
 	try {
-		if (typeof localStorage !== "undefined") {
-			if (normalized) localStorage.setItem(MIRROR_PATH_LS_KEY, normalized);
-			else localStorage.removeItem(MIRROR_PATH_LS_KEY);
-		}
+		if (typeof localStorage !== "undefined") if (normalized) localStorage.setItem(MIRROR_PATH_LS_KEY, normalized);
+		else localStorage.removeItem(MIRROR_PATH_LS_KEY);
 	} catch {}
 	persistSpeedDialMeta();
 	refreshSpeedDialMirror();
