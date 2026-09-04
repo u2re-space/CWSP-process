@@ -1,7 +1,7 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../chunks/crx-control-session.js","../assets/index-C9QTqpCS.js","../fest/core4.js","../chunks/rolldown-runtime.js","../fest/core.js","../fest/core2.js","../fest/object.js","../fest/core5.js","../fest/uniform.js"])))=>i.map(i=>d[i]);
 import { r as __exportAll } from "../chunks/rolldown-runtime.js";
 import { t as __vitePreload } from "../assets/index-C9QTqpCS.js";
-import { v as writeFileSmart } from "../fest/core4.js";
+import { g as writeFileSmart } from "../fest/core4.js";
 import { T as detectSettingsHost, c as mergeOpenPolicy, h as resolveHostOpenPolicy, l as mergeOpenPolicyByHost, p as rememberOpenPolicyFromSettings } from "../chunks/open-policy.js";
 import { n as DEFAULT_SETTINGS, r as normalizeEcosystemToken } from "../chunks/SettingsTypes.js";
 import { s as mergeProcessIngress, u as rememberProcessIngressSettings } from "../chunks/process-ingress.js";

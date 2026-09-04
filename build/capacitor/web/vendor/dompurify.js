@@ -2316,6 +2316,7 @@ var normalizeFenceLanguage = (raw) => {
 	return LANGUAGE_TOKEN.test(token) ? token : "";
 };
 var MATH_DELIMITER_PATTERN = /\$\$[\s\S]*?\$\$|\\\[[\s\S]*?\\\]|(?<!\$)\$[^$\n]+\$|\\\([\s\S]*?\\\)/;
+var MATH_TOKEN_PATTERN = /(\$\$[\s\S]*?\$\$|\\\[[\s\S]*?\\\]|(?<!\$)\$[^$\n]+\$|\\\([\s\S]*?\\\))/g;
 var FENCED_CODE_PATTERN = /(^|\n)(`{3,}|~{3,})[^\n]*\n[\s\S]*?\n\2(?=\n|$)/g;
 var INLINE_CODE_PATTERN = /`[^`\n]+`/g;
 var MARKDOWN_SANITIZE_OPTIONS = {
@@ -2402,13 +2403,10 @@ var markedKatexExtension = () => {
 		return null;
 	}
 };
-var preprocessMathInMarkdown = (markdown) => {
-	if (!MATH_DELIMITER_PATTERN.test(markdown)) return markdown;
-	if (typeof document === "undefined") return markdown;
-	const { masked, restore } = maskCodeSegments(markdown);
-	const katexNode = document.createElement("div");
-	katexNode.textContent = masked;
-	renderMathInElement(katexNode, {
+var renderMathSnippet = (snippet) => {
+	const node = document.createElement("span");
+	node.textContent = snippet;
+	renderMathInElement(node, {
 		...KATEX_MARKED_OPTIONS,
 		delimiters: [
 			{
@@ -2433,7 +2431,14 @@ var preprocessMathInMarkdown = (markdown) => {
 			}
 		]
 	});
-	return restore(katexNode.innerHTML);
+	return node.innerHTML;
+};
+var preprocessMathInMarkdown = (markdown) => {
+	const { masked, restore } = maskCodeSegments(markdown);
+	if (!MATH_DELIMITER_PATTERN.test(masked)) return markdown;
+	if (typeof document === "undefined") return markdown;
+	MATH_TOKEN_PATTERN.lastIndex = 0;
+	return restore(masked.replace(MATH_TOKEN_PATTERN, (match) => renderMathSnippet(match)));
 };
 var fenceAndMathHooks = {
 	hooks: { preprocess: preprocessMathInMarkdown },

@@ -1,5 +1,5 @@
 import { Tt as removeAdopted, gt as loadAsAdopted } from "../fest/core.js";
-import { $ as H } from "../fest/core4.js";
+import { Z as H } from "../fest/core4.js";
 import { n as HistoryChannelAction } from "./channel-actions.js";
 import { a as transferProgressRatio, dispatchHistoryAction, getTransferHistoryStore, historyImageSrc, i as isMutedHistoryStatus, n as formatTransferBytes, r as formatTransferSpeed, setTransferHistoryUiActive, startCapacitorTransferHistory, startNeutralinoTransferHistory, t as actionsForEntry } from "./transfer-history-runtime.js";
 //#region ../../modules/views/history-view/src/scss/history.scss?inline

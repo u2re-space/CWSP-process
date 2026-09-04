@@ -1,7 +1,7 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../chunks/launcher-bridge.js","../chunks/cws-bridge.js","../chunks/rolldown-runtime.js","./core3.js","./core2.js","./uniform.js","../assets/index-CU5eF_0S.js","../chunks/ecosystem-skus.js","../chunks/airpad-cwsp-client-parity.js","../chunks/multi-value-list.js","../vendor/@capacitor_core.js","../chunks/UniformInterop2.js","../chunks/names.js","../com/app.js"])))=>i.map(i=>d[i]);
 import { t as __vitePreload } from "../assets/index-CU5eF_0S.js";
 import { St as preloadStyle, gt as loadAsAdopted } from "./core.js";
-import { $ as H, G as elementPointerMap, M as pointerAnchorRef, St as isInFocus, _t as orientationNumberMap, bt as MOCElement, et as vector2Ref, gt as getCorrectOrientation, lt as M, mt as ensureVirtualKeyboardOverlay, ot as registerModal, pt as DOMMixin, st as navigate, vt as updateVP } from "./core4.js";
+import { A as pointerAnchorRef, Q as vector2Ref, U as elementPointerMap, Z as H, at as navigate, bt as isInFocus, dt as DOMMixin, ft as ensureVirtualKeyboardOverlay, gt as updateVP, ht as orientationNumberMap, it as registerModal, mt as getCorrectOrientation, st as M, vt as MOCElement } from "./core4.js";
 import { E as handleIncomingEntries } from "./core5.js";
 import { d as propRef, i as affected, l as numberRef, u as observe } from "./object.js";
 import { n as listVirtualRootEntriesFromRouter, r as resolveFsBackend } from "../com/app2.js";

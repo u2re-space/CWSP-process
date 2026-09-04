@@ -1,6 +1,6 @@
 import { y as takeSkuHandoff } from "./ecosystem-skus.js";
 import { Tt as removeAdopted, gt as loadAsAdopted } from "../fest/core.js";
-import { Z as defineElement } from "../fest/core4.js";
+import { Y as defineElement } from "../fest/core4.js";
 import { c as __decorate, o as UIElement } from "../com/app3.js";
 import "../fest/veela3.js";
 import { r as queryLiveWorkCenterChats, t as WorkCenterManager } from "../com/app7.js";

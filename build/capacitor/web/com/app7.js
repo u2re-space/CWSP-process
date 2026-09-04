@@ -2,7 +2,7 @@ const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../chunks/WorkCenterSt
 import { o as __toESM, r as __exportAll } from "../chunks/rolldown-runtime.js";
 import { g as shouldHandoffViewToSibling, v as stashSkuHandoff } from "../chunks/ecosystem-skus.js";
 import { t as __vitePreload } from "../assets/index-CU5eF_0S.js";
-import { $ as H, H as writeText, S as parseDataUrl, T as createContentAddressedStore, b as isBase64Like, x as normalizeDataAsset } from "../fest/core4.js";
+import { B as writeText, C as createContentAddressedStore, Z as H, b as parseDataUrl, v as isBase64Like, y as normalizeDataAsset } from "../fest/core4.js";
 import { a as loadSettings } from "../vendor/jsox.js";
 import "../chunks/Clipboard.js";
 import { n as BROADCAST_CHANNELS, o as ROUTE_HASHES, p as viewBroadcastChannelName } from "../chunks/names.js";

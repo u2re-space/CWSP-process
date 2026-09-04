@@ -1,6 +1,6 @@
 import { v as stashSkuHandoff, y as takeSkuHandoff } from "./ecosystem-skus.js";
 import { Tt as removeAdopted, gt as loadAsAdopted } from "../fest/core.js";
-import { $ as H, d as pickMarkdownFile, g as saveMarkdownBlob } from "../fest/core4.js";
+import { Z as H, l as pickMarkdownFile, m as saveMarkdownBlob } from "../fest/core4.js";
 import { f as ref } from "../fest/object.js";
 import { t as createViewState } from "./types.js";
 //#region ../../modules/views/editor-view/src/editor.scss?inline

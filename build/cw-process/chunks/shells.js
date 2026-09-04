@@ -1,5 +1,5 @@
 import { St as preloadStyle, vt as loadInlineStyle } from "../fest/core.js";
-import { k as dynamicTheme } from "../fest/core4.js";
+import { D as dynamicTheme } from "../fest/core4.js";
 import { f as ref } from "../fest/object.js";
 import { l as serviceChannels, n as ViewRegistry, p as isEnabledView } from "../fest/uniform2.js";
 import { a as loadSettings, s as saveSettings } from "../vendor/jsox.js";

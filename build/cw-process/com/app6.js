@@ -1,5 +1,5 @@
 import { r as __exportAll } from "../chunks/rolldown-runtime.js";
-import { at as registerCloseable, it as initBackNavigation, nt as closeHighestPriority, rt as hasActiveCloseable, tt as ClosePriority } from "../fest/core4.js";
+import { $ as ClosePriority, et as closeHighestPriority, nt as initBackNavigation, rt as registerCloseable, tt as hasActiveCloseable } from "../fest/core4.js";
 import { l as closeUnifiedContextMenu, t as closeExplorerSettings } from "./app3.js";
 //#region ../../modules/projects/fl.ui/src/ui/navigation/overlay-back.ts
 var overlay_back_exports = /* @__PURE__ */ __exportAll({

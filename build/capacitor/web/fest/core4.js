@@ -24159,10 +24159,17 @@ var pickFilesViaInput = (options) => new Promise((resolve) => {
 	input.addEventListener("cancel", () => finish([]), { once: true });
 	input.click();
 });
+var isExtensionPage = () => {
+	try {
+		return globalThis.location?.protocol === "chrome-extension:";
+	} catch {
+		return false;
+	}
+};
 /** FSA when present; Capacitor / CRX / Firefox fall back to `<input type=file>`. */
 var pickMarkdownFile = async () => {
 	const pickFile = globalThis.showOpenFilePicker;
-	if (typeof pickFile === "function") try {
+	if (!isExtensionPage() && typeof pickFile === "function") try {
 		const [handle] = await pickFile({
 			multiple: false,
 			types: [{
@@ -25137,4 +25144,4 @@ var src_exports = /* @__PURE__ */ __exportAll({
 	writeText: () => writeText
 });
 //#endregion
-export { H as $, placeOverlay as A, initClipboardReceiver as B, StorageKeys as C, makeRAFCycle as Ct, parse as D, oklch as E, saveUIState as F, elementPointerMap as G, writeText as H, JSOX as I, getBy as J, bindOutsideDismiss as K, decodeDesktopState as L, pointerAnchorRef as M, getSpeechPrompt as N, converter as O, makeUIState as P, property as Q, loadDesktopRaw as R, parseDataUrl as S, isInFocus as St, createContentAddressedStore as T, registerTransientOverlay as U, initGlobalClipboard as V, resolveOverlayHost as W, GLitElement as X, navigationEnable as Y, defineElement as Z, createFileHandler as _, orientationNumberMap as _t, indexDirectoryFiles as a, registerCloseable as at, isBase64Like as b, MOCElement as bt, observeFileSystemHandle as c, E as ct, pickMarkdownFile as d, bindWith as dt, vector2Ref as et, pickSidecarDirectoryFiles as f, handleStyleChange as ft, saveMarkdownBlob as g, getCorrectOrientation as gt, resolveFileUnderDirectory as h, fixOrientToScreen as ht, findEntryRelPath as i, initBackNavigation as it, createTemplateManager as j, dynamicTheme as k, originalRelFromRef as l, M$1 as lt, relPathCandidates as m, ensureVirtualKeyboardOverlay as mt, getCachedComponent as n, closeHighestPriority as nt, isMarkdownRelativeRef as o, registerModal as ot, provideBoundRelative as p, DOMMixin as pt, makeTask as q, bindDirectoryForLaunchedFiles as r, hasActiveCloseable as rt, mountPickedDirectory as s, navigate as st, src_exports as t, ClosePriority as tt, pickAssetDirectory as u, Q as ut, writeFileSmart as v, updateVP as vt, setString as w, normalizeDataAsset as x, addEvent as xt, decodeBase64ToBytes as y, whenAnyScreenChanges as yt, copy as z };
+export { ClosePriority as $, pointerAnchorRef as A, writeText as B, createContentAddressedStore as C, dynamicTheme as D, converter as E, decodeDesktopState as F, makeTask as G, resolveOverlayHost as H, loadDesktopRaw as I, GLitElement as J, getBy as K, copy as L, makeUIState as M, saveUIState as N, placeOverlay as O, JSOX as P, vector2Ref as Q, initClipboardReceiver as R, setString as S, parse as T, elementPointerMap as U, registerTransientOverlay as V, bindOutsideDismiss as W, property as X, defineElement as Y, H as Z, decodeBase64ToBytes as _, whenAnyScreenChanges as _t, isMarkdownRelativeRef as a, navigate as at, parseDataUrl as b, isInFocus as bt, originalRelFromRef as c, Q as ct, provideBoundRelative as d, DOMMixin as dt, closeHighestPriority as et, relPathCandidates as f, ensureVirtualKeyboardOverlay as ft, writeFileSmart as g, updateVP as gt, createFileHandler as h, orientationNumberMap as ht, indexDirectoryFiles as i, registerModal as it, getSpeechPrompt as j, createTemplateManager as k, pickMarkdownFile as l, bindWith as lt, saveMarkdownBlob as m, getCorrectOrientation as mt, getCachedComponent as n, initBackNavigation as nt, mountPickedDirectory as o, E as ot, resolveFileUnderDirectory as p, fixOrientToScreen as pt, navigationEnable as q, bindDirectoryForLaunchedFiles as r, registerCloseable as rt, observeFileSystemHandle as s, M$1 as st, src_exports as t, hasActiveCloseable as tt, pickSidecarDirectoryFiles as u, handleStyleChange as ut, isBase64Like as v, MOCElement as vt, oklch as w, StorageKeys as x, makeRAFCycle as xt, normalizeDataAsset as y, addEvent as yt, initGlobalClipboard as z };
