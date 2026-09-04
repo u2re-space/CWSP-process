@@ -3,7 +3,8 @@ import { t as __vitePreload } from "../assets/index-CU5eF_0S.js";
 import { F as saveUIState, I as JSOX, L as decodeDesktopState, P as makeUIState, R as loadDesktopRaw } from "../fest/core4.js";
 import { _ as safe, p as stringRef, u as observe } from "../fest/object.js";
 import { t as makeObjectAssignable } from "../fest/object2.js";
-import { d as resolveEntryIcon, i as subscribeFsBackendRegister, r as resolveFsBackend } from "../com/app.js";
+import { y as resolveEntryIcon } from "../com/app.js";
+import { i as subscribeFsBackendRegister, r as resolveFsBackend } from "../com/app2.js";
 //#region ../../modules/views/home-view/src/ts/layout.ts
 var DEFAULT_LAYOUT = [4, 8];
 var clamp = (value, min, max) => {

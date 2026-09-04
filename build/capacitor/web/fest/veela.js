@@ -1,4 +1,4 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../chunks/launcher-bridge.js","../chunks/cws-bridge.js","../chunks/rolldown-runtime.js","./core3.js","./core2.js","./uniform.js","../assets/index-CU5eF_0S.js","../chunks/ecosystem-skus.js","../chunks/airpad-cwsp-client-parity.js","../chunks/multi-value-list.js","../vendor/@capacitor_core.js","../chunks/UniformInterop2.js","../chunks/names.js","../com/app2.js","./core4.js","./core.js","./object.js","./core5.js","../com/app6.js","../com/app3.js","../com/app.js","../com/app5.js","./object2.js","./icon.js","./icon2.js","./icon3.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../chunks/launcher-bridge.js","../chunks/cws-bridge.js","../chunks/rolldown-runtime.js","./core3.js","./core2.js","./uniform.js","../assets/index-CU5eF_0S.js","../chunks/ecosystem-skus.js","../chunks/airpad-cwsp-client-parity.js","../chunks/multi-value-list.js","../vendor/@capacitor_core.js","../chunks/UniformInterop2.js","../chunks/names.js","../com/app.js","./core4.js","./core.js","./object.js","./core5.js","../com/app6.js","../com/app3.js","../com/app2.js","../com/app5.js","./object2.js","./icon.js","./icon2.js","./icon3.js"])))=>i.map(i=>d[i]);
 import { g as shouldHandoffViewToSibling, l as isCwspNativeHost, m as publicHrefForView, p as publicHrefForSku, r as androidPackageForSku, v as stashSkuHandoff, y as takeSkuHandoff } from "../chunks/ecosystem-skus.js";
 import { t as __vitePreload } from "../assets/index-CU5eF_0S.js";
 import { n as createViewConstructor, t as sendViewProtocolMessage } from "../chunks/UniformViewTransport.js";
@@ -6,7 +6,8 @@ import { $ as unbakeScreenColors, St as preloadStyle, Tt as removeAdopted, Z as 
 import { $ as H, Q as property, V as initGlobalClipboard, Z as defineElement, dt as bindWith, ft as handleStyleChange, xt as addEvent } from "./core4.js";
 import { g as getDir } from "./core5.js";
 import { d as propRef, f as ref, i as affected, u as observe } from "./object.js";
-import { d as resolveEntryIcon, f as toExplorerStoragePath, r as resolveFsBackend, t as ensureDefaultFsBackends } from "../com/app.js";
+import { b as toExplorerStoragePath, y as resolveEntryIcon } from "../com/app.js";
+import { r as resolveFsBackend, t as ensureDefaultFsBackends } from "../com/app2.js";
 import { a as loadSettings } from "../vendor/jsox.js";
 import { a as persistSpeedDialItems, i as ensureSpeedDialMeta, o as persistSpeedDialMeta, r as createEmptySpeedDialItem, s as speedDialItems, t as addSpeedDialItem } from "../chunks/StateStorage.js";
 import { _ as FileOperative, a as sortExplorerEntries, c as __decorate, d as openUnifiedContextMenu, f as entryKey, g as iconFor, h as formatSize, i as peekExplorerSort, m as formatDate, n as openExplorerSettings, o as UIElement, p as entryKind, r as EXPLORER_SORT_EVENT, t as closeExplorerSettings, u as createItemCtxMenu, v as isBookmarksPath } from "../com/app3.js";
@@ -166,7 +167,7 @@ var openFileWithSystem = async (file, sourcePath, chooser) => {
 			})) return true;
 			if (isNativeStorageVirtualPath(href)) {
 				const { openNativeStorageFile } = await __vitePreload(async () => {
-					const { openNativeStorageFile } = await import("../com/app2.js").then((n) => n.m);
+					const { openNativeStorageFile } = await import("../com/app.js").then((n) => n.m);
 					return { openNativeStorageFile };
 				}, __vite__mapDeps([13,2,6,7]), import.meta.url);
 				if (await openNativeStorageFile(href, {
@@ -226,7 +227,7 @@ var openExplorerSrcInTab = (sourcePath) => {
 /** WHY: `/sdcard/` `/saf/` open in one native IPC — no JS read, no WebView hop. */
 var openNativeStorageByPolicy = async (sourcePath, sink, mimeType) => {
 	const { openNativeStorageFile } = await __vitePreload(async () => {
-		const { openNativeStorageFile } = await import("../com/app2.js").then((n) => n.m);
+		const { openNativeStorageFile } = await import("../com/app.js").then((n) => n.m);
 		return { openNativeStorageFile };
 	}, __vite__mapDeps([13,2,6,7]), import.meta.url);
 	const mime = String(mimeType || "").trim() || guessMimeFromName(sourcePath);
@@ -256,7 +257,7 @@ var nativeViewUri = async (sourcePath) => {
 	if (/^(content|file|https?):/i.test(p)) return p;
 	try {
 		const { resolveNativeStorageUri } = await __vitePreload(async () => {
-			const { resolveNativeStorageUri } = await import("../com/app2.js").then((n) => n.m);
+			const { resolveNativeStorageUri } = await import("../com/app.js").then((n) => n.m);
 			return { resolveNativeStorageUri };
 		}, __vite__mapDeps([13,2,6,7]), import.meta.url);
 		const uri = await resolveNativeStorageUri(p);
@@ -872,7 +873,7 @@ function wireExplorerSubtree(shellRoot, wireOpts) {
 		const rebakeRows = () => scheduleBakeScreenColors(shellRoot);
 		fm.addEventListener("entries-updated", rebakeRows, { signal });
 		fm.addEventListener("rs-navigate", rebakeRows, { signal });
-		__vitePreload(() => import("../com/app6.js").then((n) => n.n).then((m) => m.installExplorerBackStack()), __vite__mapDeps([18,2,14,6,7,15,4,16,17,5,19,20,13,21,22,23,24,25]), import.meta.url).catch(() => {});
+		__vitePreload(() => import("../com/app6.js").then((n) => n.n).then((m) => m.installExplorerBackStack()), __vite__mapDeps([18,2,14,6,7,15,4,16,17,5,19,13,20,21,22,23,24,25]), import.meta.url).catch(() => {});
 		return {
 			cleanup: () => {
 				writePersistedExplorerPath(fm.path || "/user/");

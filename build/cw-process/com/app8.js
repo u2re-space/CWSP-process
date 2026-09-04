@@ -54,18 +54,58 @@ var hostPaint = /* @__PURE__ */ new Map();
 var selectionBound = false;
 var supportsAnchorPositioning = () => {
 	try {
-		return typeof CSS !== "undefined" && CSS.supports?.("anchor-name: --x") === true;
+		const cap = globalThis.Capacitor;
+		if (typeof cap?.isNativePlatform === "function" && cap.isNativePlatform()) return false;
+		return typeof CSS !== "undefined" && CSS.supports?.("anchor-name: --x") === true && CSS.supports?.("block-size: anchor-size(block)") === true;
 	} catch {
 		return false;
 	}
 };
+/** Used line-height, never 0px (Capacitor getComputedStyle before layout). */
+var usedLineHeight = (style, frozen = "") => {
+	const fontSize = parseFloat(style.fontSize);
+	const floor = (Number.isFinite(fontSize) && fontSize > 0 ? fontSize : 16) * 1.35;
+	const frozenPx = parseFloat(frozen);
+	if (Number.isFinite(frozenPx) && frozenPx >= floor * .85) return frozen;
+	const px = parseFloat(style.lineHeight);
+	const used = Number.isFinite(px) && px >= floor * .85 ? px : floor;
+	return `${Math.round(used)}px`;
+};
 var makeAnchorName = () => `--hl${Math.random().toString(36).slice(2, 10).replace(/[0-9]/g, "x")}`;
-/** Leaf overlay: CSS anchors when available, otherwise absolute fill. No lure barrel. */
+/** Pin overlay to the host border box. `inset:0` on `pre` misses `pre` padding — selection drifts. */
+var pinOverlayToHost = (host, overlay) => {
+	overlay.style.position = "absolute";
+	overlay.style.boxSizing = "border-box";
+	overlay.style.inset = "auto";
+	overlay.style.right = "auto";
+	overlay.style.bottom = "auto";
+	overlay.style.margin = "0";
+	if (host.offsetParent && host.offsetParent === overlay.offsetParent) {
+		const top = `${host.offsetTop}px`;
+		const left = `${host.offsetLeft}px`;
+		const width = `${host.offsetWidth}px`;
+		const height = `${host.offsetHeight}px`;
+		if (overlay.style.top === top && overlay.style.left === left && overlay.style.width === width && overlay.style.height === height) return;
+		overlay.style.top = top;
+		overlay.style.left = left;
+		overlay.style.width = width;
+		overlay.style.height = height;
+		return;
+	}
+	const parent = overlay.parentElement;
+	if (!parent) return;
+	const parentRect = parent.getBoundingClientRect();
+	const hostRect = host.getBoundingClientRect();
+	overlay.style.top = `${hostRect.top - parentRect.top + parent.scrollTop}px`;
+	overlay.style.left = `${hostRect.left - parentRect.left + parent.scrollLeft}px`;
+	overlay.style.width = `${hostRect.width}px`;
+	overlay.style.height = `${hostRect.height}px`;
+};
+/** Leaf overlay: CSS anchors when available, otherwise pin to the host box. */
 var placeCodeOverlay = (host, overlay) => {
 	overlay.style.pointerEvents = "none";
 	overlay.style.userSelect = "none";
 	overlay.style.position = "absolute";
-	overlay.style.inset = "0";
 	overlay.style.zIndex = "1";
 	overlay.style.margin = "0";
 	const parent = host.parentElement;
@@ -81,8 +121,11 @@ var placeCodeOverlay = (host, overlay) => {
 		overlay.style.setProperty("inset-inline-end", "anchor(end)");
 		overlay.style.setProperty("inline-size", "anchor-size(inline)");
 		overlay.style.setProperty("block-size", "anchor-size(block)");
+		host.after(overlay);
+		return;
 	}
 	host.after(overlay);
+	pinOverlayToHost(host, overlay);
 };
 var watchHostRemoval = (host, onGone) => {
 	let observer = null;
@@ -107,6 +150,8 @@ var watchHostRemoval = (host, onGone) => {
 	return () => observer?.disconnect();
 };
 var highlightsRegistry = () => {
+	const cap = globalThis.Capacitor;
+	if (typeof cap?.isNativePlatform === "function" && cap.isNativePlatform()) return null;
 	return globalThis.CSS?.highlights ?? null;
 };
 var collectTextNodes = (root) => {
@@ -169,6 +214,7 @@ var syncCodeSelectionHighlight = () => {
 		if (!host.isConnected || !paint.isConnected) continue;
 		const offsets = hostSelectionOffsets(host);
 		if (!offsets) continue;
+		if ((host.textContent?.length ?? 0) !== (paint.textContent?.length ?? 0)) continue;
 		const nodes = collectTextNodes(paint);
 		const start = pointAtOffset(nodes, offsets.start);
 		const end = pointAtOffset(nodes, offsets.end);
@@ -198,8 +244,8 @@ var copyCodeMetrics = (source, target, box = false) => {
 		const value = style.getPropertyValue(property);
 		if (value) target.style.setProperty(property, value);
 	}
-	const lineHeight = style.lineHeight;
-	if (source.style.lineHeight !== lineHeight) source.style.lineHeight = lineHeight;
+	const lineHeight = usedLineHeight(style, source.style.lineHeight);
+	if (source.offsetHeight > 0 && source.style.lineHeight !== lineHeight) source.style.lineHeight = lineHeight;
 	target.style.setProperty("line-height", lineHeight);
 	(source.parentElement ?? source).style.setProperty("--code-line-height", lineHeight);
 	target.style.setProperty("font-synthesis", "none");
@@ -208,7 +254,7 @@ var copyCodeMetrics = (source, target, box = false) => {
 	target.style.setProperty("font-feature-settings", "\"liga\" 0, \"clig\" 0, \"calt\" 0, \"dlig\" 0");
 	target.style.setProperty("-webkit-text-fill-color", "currentColor");
 	if (box) {
-		target.style.boxSizing = style.boxSizing;
+		target.style.boxSizing = "border-box";
 		target.style.paddingTop = style.paddingTop;
 		target.style.paddingRight = style.paddingRight;
 		target.style.paddingBottom = style.paddingBottom;
@@ -226,17 +272,34 @@ var attachCodeOverlay = (host, overlay, options = {}) => {
 	overlay.setAttribute("aria-hidden", "true");
 	overlay.style.pointerEvents = "none";
 	overlay.style.userSelect = "none";
-	const updateMetrics = () => {
-		copyCodeMetrics(host, overlay, true);
-		if (paint !== overlay) copyCodeMetrics(host, paint, false);
+	let metricsLocked = false;
+	let metricsBusy = false;
+	const updateMetrics = (force = false) => {
+		if (metricsBusy) return;
+		metricsBusy = true;
+		try {
+			if (!(host.offsetHeight > 0 || host.offsetWidth > 0)) {
+				metricsLocked = false;
+				return;
+			}
+			if (force || !metricsLocked) {
+				copyCodeMetrics(host, overlay, true);
+				if (paint !== overlay) copyCodeMetrics(host, paint, false);
+				metricsLocked = parseFloat(host.style.lineHeight) > 0;
+			}
+			if (!supportsAnchorPositioning()) pinOverlayToHost(host, overlay);
+		} finally {
+			queueMicrotask(() => {
+				metricsBusy = false;
+			});
+		}
 	};
-	updateMetrics();
+	updateMetrics(true);
 	document.fonts?.ready?.then(() => {
-		if (host.isConnected) updateMetrics();
+		if (host.isConnected) updateMetrics(true);
 	});
 	const resize = typeof ResizeObserver === "function" ? new ResizeObserver(() => updateMetrics()) : null;
 	resize?.observe(host);
-	if (host.parentElement) resize?.observe(host.parentElement);
 	placeCodeOverlay(host, overlay);
 	const syncScroll = () => {
 		if (scroller === host && host instanceof HTMLTextAreaElement) {
@@ -299,6 +362,37 @@ var loadHljs = () => {
 	});
 	return hljsPromise;
 };
+var FILENAME_LANGUAGE = {
+	ts: "typescript",
+	tsx: "typescript",
+	mts: "typescript",
+	cts: "typescript",
+	js: "javascript",
+	jsx: "javascript",
+	mjs: "javascript",
+	cjs: "javascript",
+	json: "json",
+	css: "css",
+	scss: "scss",
+	html: "xml",
+	htm: "xml",
+	svg: "xml",
+	md: "markdown",
+	markdown: "markdown",
+	py: "python",
+	sh: "bash",
+	bash: "bash",
+	yml: "yaml",
+	yaml: "yaml",
+	xml: "xml"
+};
+/** WHY: Viewer raw `</>` is a bare `<pre>`, not a fence — language comes from the file name. */
+var languageFromFilename = (pathOrName) => {
+	const base = String(pathOrName || "").split(/[?#]/)[0].split(/[/\\]/).pop() || "";
+	const dot = base.lastIndexOf(".");
+	const ext = dot >= 0 ? base.slice(dot + 1).toLowerCase() : "";
+	return normalizeFenceLanguage(FILENAME_LANGUAGE[ext] || ext);
+};
 var resolveCodeLanguage = (el) => {
 	const direct = el.getAttribute("data-language") || el.getAttribute("data-lang") || "";
 	if (direct) return normalizeFenceLanguage(direct);
@@ -343,6 +437,14 @@ var highlightText = async (text, language) => {
 		language: auto.language || language || ""
 	};
 };
+var isCapacitorNative = () => {
+	try {
+		const cap = globalThis.Capacitor;
+		return typeof cap?.isNativePlatform === "function" && cap.isNativePlatform();
+	} catch {
+		return false;
+	}
+};
 var buildOverlay = (lineCount, showGutter) => {
 	const overlay = document.createElement("div");
 	overlay.className = "code-highlight-overlay";
@@ -374,11 +476,17 @@ var attachCodeHighlight = (host, options = {}) => {
 	const digits = String(lineCount).length;
 	(host?.parentElement?.style ?? host.style)?.setProperty("--code-gutter", showGutter ? `calc(${digits} * 1ch + 0.75rem)` : "0px");
 	host?.classList?.add("code-highlight-source");
+	host.style.whiteSpace = "pre";
+	host.style.wordBreak = "normal";
+	host.style.overflowWrap = "normal";
+	const inplace = isCapacitorNative() && !(host instanceof HTMLTextAreaElement) && host.contentEditable !== "true";
+	if (inplace) host.classList.add("code-highlight-inplace");
 	const { overlay, paint, gutter } = buildOverlay(lineCount, showGutter);
-	const handle = attachCodeOverlay(host, overlay, {
-		paint,
+	if (inplace) paint.remove();
+	const handle = showGutter || !inplace ? attachCodeOverlay(host, overlay, {
+		paint: inplace ? overlay : paint,
 		scroller: host instanceof HTMLTextAreaElement ? host : host.closest("pre")
-	});
+	}) : null;
 	const updatePaint = async () => {
 		const next = readHostText(host);
 		const nextLanguage = normalizeFenceLanguage(options.language || resolveCodeLanguage(host));
@@ -391,23 +499,29 @@ var attachCodeHighlight = (host, options = {}) => {
 		}
 		const painted = await highlightText(next, nextLanguage);
 		if (painted.language && painted.language !== nextLanguage) stampCodeLanguage(host, painted.language);
-		paint.innerHTML = painted.html;
-		if (next && (paint.textContent?.length ?? 0) < Math.max(1, Math.floor(next.length * .5))) paint.textContent = next;
-		host.classList.toggle("code-highlight-painted", (paint.textContent?.length ?? 0) > 0);
-		handle.updateMetrics();
-		handle.syncScroll();
+		const target = inplace ? host : paint;
+		target.innerHTML = painted.html;
+		if (next && (target.textContent?.length ?? 0) < Math.max(1, Math.floor(next.length * .5))) target.textContent = next;
+		host.classList.toggle("code-highlight-painted", !inplace && (paint.textContent?.length ?? 0) > 0);
+		handle?.updateMetrics();
+		handle?.syncScroll();
 	};
 	const onInput = () => {
 		updatePaint();
 	};
 	host.addEventListener("input", onInput);
 	const wrapped = {
-		...handle,
+		overlay: handle?.overlay ?? overlay,
+		paint: inplace ? host : paint,
+		updateMetrics: handle?.updateMetrics ?? (() => void 0),
+		syncScroll: handle?.syncScroll ?? (() => void 0),
 		updatePaint,
 		disconnect: () => {
 			host.removeEventListener("input", onInput);
-			host.classList.remove("code-highlight-painted");
-			handle.disconnect();
+			host.classList.remove("code-highlight-painted", "code-highlight-inplace");
+			if (inplace) host.textContent = host.textContent ?? "";
+			handle?.disconnect();
+			overlay.remove();
 			attached.delete(host);
 		}
 	};
@@ -423,9 +537,10 @@ var highlightCodeTree = (root) => {
 		if (!(code instanceof HTMLElement)) continue;
 		if (code.closest(".code-highlight-overlay")) continue;
 		if (code.nextElementSibling?.classList.contains("code-highlight-overlay")) continue;
+		if (code.classList.contains("code-highlight-inplace") && attached.get(code)) continue;
 		attached.get(code)?.disconnect();
 		attachCodeHighlight(code);
 	}
 };
 //#endregion
-export { highlightCodeTree as t };
+export { highlightCodeTree as n, languageFromFilename as r, attachCodeHighlight as t };

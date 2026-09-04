@@ -1,4 +1,4 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./capacitor-share-intent.js","../assets/index-CU5eF_0S.js","./ecosystem-skus.js","./rolldown-runtime.js","./multi-value-list.js","./capacitor-permissions.js","./capacitor-clipboard-asset.js","../com/app2.js","./frontend-debug-capture.js","../vendor/@capacitor_core.js","./cws-bridge.js","../fest/core3.js","../fest/core2.js","../fest/uniform.js","./airpad-cwsp-client-parity.js","./UniformInterop2.js","./names.js","./sw-handling.js","../fest/core4.js","../fest/core.js","../fest/object.js","../fest/core5.js","../vendor/jsox.js","./open-policy.js","./SettingsTypes.js","./process-ingress.js","./remote-connection-runtime.js","./UnifiedMessaging.js","./UniformInterop.js","./process-api-result.js","./ShareTargetGateway.js","./UnifiedMessaging2.js","./sku-ingress.js","./log-sanitizer.js","./ViewTransferRouting.js","./workcenter-command-wire.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./capacitor-share-intent.js","../assets/index-CU5eF_0S.js","./ecosystem-skus.js","./rolldown-runtime.js","./multi-value-list.js","./capacitor-permissions.js","./capacitor-clipboard-asset.js","../com/app.js","./frontend-debug-capture.js","../vendor/@capacitor_core.js","./cws-bridge.js","../fest/core3.js","../fest/core2.js","../fest/uniform.js","./airpad-cwsp-client-parity.js","./UniformInterop2.js","./names.js","./sw-handling.js","../fest/core4.js","../fest/core.js","../fest/object.js","../fest/core5.js","../vendor/jsox.js","./open-policy.js","./SettingsTypes.js","./process-ingress.js","./remote-connection-runtime.js","./UnifiedMessaging.js","./UniformInterop.js","./process-api-result.js","./ShareTargetGateway.js","./UnifiedMessaging2.js","./sku-ingress.js","./log-sanitizer.js","./ViewTransferRouting.js","./workcenter-command-wire.js"])))=>i.map(i=>d[i]);
 import { t as __vitePreload } from "../assets/index-CU5eF_0S.js";
 import { gt as loadAsAdopted } from "../fest/core.js";
 import { t as withTimeout } from "../fest/core3.js";
@@ -1957,7 +1957,7 @@ var bootLoader = class BootLoader {
 			if (isCapacitorCwsNativeShell()) {
 				__vitePreload(() => import("./capacitor-share-intent.js").then((mod) => mod.installCapacitorShareIntentBridge()), __vite__mapDeps([0,1,2,3,4,5]), import.meta.url).catch(() => void 0);
 				__vitePreload(() => import("./capacitor-clipboard-asset.js").then((mod) => mod.installCapacitorClipboardAssetBridge()), __vite__mapDeps([6,5,3]), import.meta.url).catch(() => void 0);
-				__vitePreload(() => import("../com/app2.js").then((n) => n.m).then((mod) => mod.ensureNativeStorageProvide()), __vite__mapDeps([7,3,1,2]), import.meta.url).catch(() => void 0);
+				__vitePreload(() => import("../com/app.js").then((n) => n.m).then((mod) => mod.ensureNativeStorageProvide()), __vite__mapDeps([7,3,1,2]), import.meta.url).catch(() => void 0);
 			}
 			try {
 				const { initFrontendDebugCapture } = await __vitePreload(async () => {

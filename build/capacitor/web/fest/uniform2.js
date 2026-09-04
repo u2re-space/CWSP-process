@@ -1039,7 +1039,7 @@ function registerDefaultViews() {
 		id: "viewer",
 		name: "Viewer",
 		icon: "eye",
-		loader: () => __vitePreload(() => import("../chunks/src6.js"), __vite__mapDeps([51,4,2,3,52,1,5,6,7,8,9,53,21,54,11,12,13,14,15,16,17,18,19,20,22,55,23,24,25,56,46,47,48,57,58,59]), import.meta.url)
+		loader: () => __vitePreload(() => import("../chunks/src6.js"), __vite__mapDeps([51,4,2,3,52,1,5,6,7,8,9,53,21,54,40,11,12,13,14,15,16,17,18,19,20,22,55,23,24,25,56,46,47,48,57,58,59]), import.meta.url)
 	});
 	ViewRegistry.register({
 		id: "workcenter",
@@ -1081,13 +1081,13 @@ function registerDefaultViews() {
 		id: "home",
 		name: "Home",
 		icon: "house",
-		loader: () => __vitePreload(() => import("./veela5.js"), __vite__mapDeps([93,3,4,2,5,6,7,1,8,9,40,41,38,39,42,28,23,24,25,55,43,45,94]), import.meta.url)
+		loader: () => __vitePreload(() => import("./veela5.js"), __vite__mapDeps([93,3,4,2,5,6,7,1,8,9,41,40,38,39,42,28,23,24,25,55,43,45,94]), import.meta.url)
 	});
 	ViewRegistry.register({
 		id: "print",
 		name: "Print",
 		icon: "printer",
-		loader: () => __vitePreload(() => import("../chunks/src6.js"), __vite__mapDeps([51,4,2,3,52,1,5,6,7,8,9,53,21,54,11,12,13,14,15,16,17,18,19,20,22,55,23,24,25,56,46,47,48,57,58,59]), import.meta.url)
+		loader: () => __vitePreload(() => import("../chunks/src6.js"), __vite__mapDeps([51,4,2,3,52,1,5,6,7,8,9,53,21,54,40,11,12,13,14,15,16,17,18,19,20,22,55,23,24,25,56,46,47,48,57,58,59]), import.meta.url)
 	});
 }
 var defaultTheme = {

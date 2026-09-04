@@ -14,7 +14,7 @@ import { a as replayQueuedMessagesForDestination, c as isProcessApiUnavailable, 
 import { i as renderSafeMarkdown, n as configureMarkdownRendering } from "../vendor/dompurify.js";
 import { t as f } from "../vendor/marked2.js";
 import { c as isAndroidLocalShareUri, h as takeHeldIngressFiles, l as onHeldIngressFiles, r as dropHeldIngressFiles } from "../chunks/sku-ingress.js";
-import { t as highlightCodeTree } from "./app8.js";
+import { n as highlightCodeTree } from "./app8.js";
 import { i as buildInstructionPrompt } from "../chunks/utils.js";
 import { a as getCustomInstructions, o as getInstructionRegistry, s as setActiveInstruction } from "../chunks/CustomInstructions.js";
 import { o as extractJSONFromAIResponse } from "../vendor/@toon-format_toon.js";

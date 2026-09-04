@@ -4,7 +4,7 @@ import { D as bindStyle, E as S, St as preloadStyle, gt as loadAsAdopted } from 
 import { $ as H, Q as property, Z as defineElement, xt as addEvent } from "./core4.js";
 import { W as registerDirectoryRoot } from "./core5.js";
 import { l as numberRef } from "./object.js";
-import { r as resolveFsBackend$1 } from "../com/app.js";
+import { r as resolveFsBackend$1 } from "../com/app2.js";
 import "../vendor/culori.js";
 import { c as __decorate, o as UIElement, s as UIElement_default } from "../com/app3.js";
 import { c as captureSpeedDialSnapshot, h as persistSpeedDialIconBlob, n as SPEED_DIAL_MUTATION_EVENT, o as applySpeedDialSnapshot, u as getSpeedDialMeta, v as speedDialItems } from "../com/app5.js";
@@ -167,6 +167,38 @@ function normalizeVirtualPath(path, asDirectory = true) {
 	if (p !== "/" && asDirectory && !p.endsWith("/")) p += "/";
 	if (p !== "/" && !asDirectory && p.endsWith("/")) p = p.slice(0, -1);
 	return p;
+}
+/**
+* WHY: Transfer / Android send `/storage/emulated/0/…`, `file://`, or
+* `content://…/primary:Download/…`. Explorer lists that as `/sdcard/…`.
+* Do not map `/saf/` — that is Explorer's own tree, not Transfer landing.
+*/
+function toExplorerStoragePath(path, asDirectory = true) {
+	let p = String(path || "").trim();
+	if (!p) return "";
+	try {
+		if (/^file:/i.test(p)) {
+			const u = new URL(p);
+			p = decodeURIComponent(u.pathname || p);
+		}
+	} catch {}
+	if (/^content:/i.test(p)) {
+		let decoded = p;
+		try {
+			decoded = decodeURIComponent(p);
+		} catch {
+			decoded = p;
+		}
+		const id = decoded.match(/(?:primary|home):([^?#]*)/i);
+		if (!id) return "";
+		const rel = String(id[1] || "").replace(/^\/+/, "");
+		p = rel ? `/sdcard/${rel}` : "/sdcard/";
+	}
+	p = p.replace(/\\/g, "/");
+	p = p.replace(/^(?:\/storage\/emulated\/0|\/mnt\/sdcard|storage\/emulated\/0|mnt\/sdcard)(?=\/|$)/i, "/sdcard");
+	p = p.replace(/^\/sdcard\/sdcard(?=\/|$)/i, "/sdcard");
+	if (!p.startsWith("/")) p = `/${p}`;
+	return normalizeVirtualPath(p, asDirectory);
 }
 //#endregion
 //#region ../../modules/projects/fl.ui/src/ui/navigation/explorer/backends/chrome-bookmarks-backend.ts
@@ -386,14 +418,36 @@ var createChromeDownloadsBackend = (downloads) => {
 //#endregion
 //#region ../../modules/projects/fl.ui/src/ui/navigation/explorer/storage-bridge.ts
 var api = null;
+var INVOKE_MS = 12e3;
+var withTimeout = async (task, ms, fallback) => {
+	let timer;
+	try {
+		return await Promise.race([task, new Promise((resolve) => {
+			timer = setTimeout(() => resolve(fallback), ms);
+		})]);
+	} finally {
+		if (timer) clearTimeout(timer);
+	}
+};
 var capacitorInvoke = async (channel, payload = {}) => {
-	const plugin = globalThis.Capacitor?.Plugins?.CwsBridge;
-	if (typeof plugin?.invoke !== "function") return { ok: false };
-	const r = await plugin.invoke({
+	const g = globalThis;
+	const plugin = g.__CWS_BRIDGE_PLUGIN__ || g.Capacitor?.Plugins?.CwsBridge;
+	if (typeof plugin?.invoke !== "function") return {
+		ok: false,
+		error: "no-bridge"
+	};
+	const r = await withTimeout(Promise.resolve(plugin.invoke({
 		channel,
 		payload
+	})), INVOKE_MS, {
+		ok: false,
+		error: "timeout"
 	});
-	return r?.echo || r || {};
+	const echo = r?.echo && typeof r.echo === "object" ? r.echo : {};
+	return {
+		...r || {},
+		...echo
+	};
 };
 /**
 * WHY: Speed Dial / shortcuts store `file:///storage/emulated/0/…`, `/mnt/sdcard/…`,
@@ -405,11 +459,8 @@ var toNativeStorageVirtualPath = (raw) => {
 	try {
 		s = decodeURIComponent(s);
 	} catch {}
-	s = s.replace(/^file:\/\/(?:localhost)?/i, "");
-	if (/^\/(?:sdcard|saf)(?:\/|$)/i.test(s)) return s;
-	if (/^(?:sdcard|saf)(?:\/|$)/i.test(s)) return `/${s}`;
-	const mapped = s.replace(/^(?:\/storage\/emulated\/0|\/mnt\/sdcard|storage\/emulated\/0|mnt\/sdcard)(?=\/|$)/i, "/sdcard");
-	return /^\/sdcard(?:\/|$)/i.test(mapped) ? mapped : "";
+	const mapped = toExplorerStoragePath(s, false);
+	return /^\/(?:sdcard|saf)(?:\/|$)/i.test(mapped) ? mapped : "";
 };
 var parseNativeStoragePath = (virtualPath) => {
 	const raw = toNativeStorageVirtualPath(virtualPath) || String(virtualPath || "").trim();
@@ -447,24 +498,78 @@ var listNativeStorage = async (root, path = "/") => {
 var dataUrlToFile = async (dataUrl, name, mime) => {
 	const src = String(dataUrl || "").trim();
 	if (!src) return null;
+	const fileName = name || "file";
+	const fallbackType = mime || "application/octet-stream";
+	if (src.startsWith("data:")) {
+		const comma = src.indexOf(",");
+		if (comma < 0) return null;
+		const meta = src.slice(5, comma);
+		const payload = src.slice(comma + 1);
+		const type = meta.split(";")[0] || fallbackType;
+		try {
+			if (/;base64/i.test(meta)) {
+				const bin = atob(payload);
+				const bytes = new Uint8Array(bin.length);
+				for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+				return new File([bytes], fileName, { type });
+			}
+			return new File([decodeURIComponent(payload)], fileName, { type });
+		} catch {
+			return null;
+		}
+	}
+	if (/^[A-Za-z0-9+/=\s]+$/.test(src) && src.length > 16) try {
+		const bin = atob(src.replace(/\s/g, ""));
+		const bytes = new Uint8Array(bin.length);
+		for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+		return new File([bytes], fileName, { type: fallbackType });
+	} catch {}
 	try {
 		const blob = await (await fetch(src)).blob();
-		return new File([blob], name || "file", { type: blob.type || mime || "application/octet-stream" });
+		return new File([blob], fileName, { type: blob.type || fallbackType });
 	} catch {
 		return null;
 	}
 };
 /** Read one `/sdcard/` or `/saf/` file through CwsBridge (`storage:read`). */
-var readNativeStorageFile = async (virtualPath) => {
+var readNativeStorageFile = async (virtualPath, opts) => {
 	const parsed = parseNativeStoragePath(virtualPath);
 	if (!parsed) return null;
-	const echo = await capacitorInvoke("storage:read", {
-		root: parsed.root,
-		path: parsed.rel
-	});
-	const data = String(echo.data || echo.dataUrl || "");
-	if (!data) return null;
-	return dataUrlToFile(data, String(echo.name || virtualPath.split("/").filter(Boolean).pop() || "file"), String(echo.mime || echo.mimeType || "application/octet-stream"));
+	const readOnce = async () => {
+		const echo = await capacitorInvoke("storage:read", {
+			root: parsed.root,
+			path: parsed.rel
+		});
+		const name = String(echo.name || virtualPath.split("/").filter(Boolean).pop() || "file");
+		const mime = String(echo.mime || echo.mimeType || "application/octet-stream");
+		const error = String(echo.error || "");
+		const text = String(echo.text || echo.content || "");
+		if (text) return {
+			file: new File([text], name, { type: mime || "text/markdown" }),
+			error
+		};
+		const data = String(echo.data || echo.dataUrl || "");
+		if (data) return {
+			file: await dataUrlToFile(data, name, mime),
+			error
+		};
+		return {
+			file: null,
+			error
+		};
+	};
+	let got = await readOnce();
+	if (got.file) return got.file;
+	if (opts?.requestAccess === false) return null;
+	if (parsed.root === "sdcard") {
+		const denied = /all-files-required|permission|EACCES|denied|timeout/i.test(got.error);
+		const status = await getAllFilesStatus();
+		if (denied || !status.allFilesAccess) {
+			await requestAllFilesAccess();
+			got = await readOnce();
+		}
+	}
+	return got.file;
 };
 /** Delete a `/sdcard/` or `/saf/` file or folder through CwsBridge (`storage:delete`). */
 var removeNativeStorage = async (virtualPath) => {
@@ -481,6 +586,20 @@ var removeNativeStorage = async (virtualPath) => {
 	});
 	const echo = r?.echo || {};
 	if (r?.ok === false || echo.deleted !== true) throw new Error(String(echo.error || "delete failed"));
+};
+var getAllFilesStatus = async () => {
+	if (api?.allFilesStatus) return api.allFilesStatus();
+	const echo = await capacitorInvoke("storage:all-files-status", {});
+	return {
+		allFilesAccess: echo.allFilesAccess === true,
+		runtimeGranted: echo.runtimeGranted === true,
+		note: echo.note ? String(echo.note) : void 0
+	};
+};
+var requestAllFilesAccess = async () => {
+	if (api?.requestAllFiles) return api.requestAllFiles();
+	const echo = await capacitorInvoke("storage:all-files-request", {});
+	return echo.ok === true || echo.opened === true;
 };
 //#endregion
 //#region ../../modules/projects/fl.ui/src/ui/navigation/explorer/backends/native-fs-backend.ts

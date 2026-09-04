@@ -1453,6 +1453,38 @@ function normalizeVirtualPath(path, asDirectory = true) {
 	if (p !== "/" && !asDirectory && p.endsWith("/")) p = p.slice(0, -1);
 	return p;
 }
+/**
+* WHY: Transfer / Android send `/storage/emulated/0/…`, `file://`, or
+* `content://…/primary:Download/…`. Explorer lists that as `/sdcard/…`.
+* Do not map `/saf/` — that is Explorer's own tree, not Transfer landing.
+*/
+function toExplorerStoragePath(path, asDirectory = true) {
+	let p = String(path || "").trim();
+	if (!p) return "";
+	try {
+		if (/^file:/i.test(p)) {
+			const u = new URL(p);
+			p = decodeURIComponent(u.pathname || p);
+		}
+	} catch {}
+	if (/^content:/i.test(p)) {
+		let decoded = p;
+		try {
+			decoded = decodeURIComponent(p);
+		} catch {
+			decoded = p;
+		}
+		const id = decoded.match(/(?:primary|home):([^?#]*)/i);
+		if (!id) return "";
+		const rel = String(id[1] || "").replace(/^\/+/, "");
+		p = rel ? `/sdcard/${rel}` : "/sdcard/";
+	}
+	p = p.replace(/\\/g, "/");
+	p = p.replace(/^(?:\/storage\/emulated\/0|\/mnt\/sdcard|storage\/emulated\/0|mnt\/sdcard)(?=\/|$)/i, "/sdcard");
+	p = p.replace(/^\/sdcard\/sdcard(?=\/|$)/i, "/sdcard");
+	if (!p.startsWith("/")) p = `/${p}`;
+	return normalizeVirtualPath(p, asDirectory);
+}
 //#endregion
 //#region src/frontend/shells/environment/components/explorer/backends/chrome-bookmarks-backend.ts
 var BOOKMARKS_ROOT = "/bookmarks/";
@@ -1671,14 +1703,36 @@ var createChromeDownloadsBackend = (downloads) => {
 //#endregion
 //#region src/frontend/shells/environment/components/explorer/storage-bridge.ts
 var api = null;
+var INVOKE_MS = 12e3;
+var withTimeout = async (task, ms, fallback) => {
+	let timer;
+	try {
+		return await Promise.race([task, new Promise((resolve) => {
+			timer = setTimeout(() => resolve(fallback), ms);
+		})]);
+	} finally {
+		if (timer) clearTimeout(timer);
+	}
+};
 var capacitorInvoke = async (channel, payload = {}) => {
-	const plugin = globalThis.Capacitor?.Plugins?.CwsBridge;
-	if (typeof plugin?.invoke !== "function") return { ok: false };
-	const r = await plugin.invoke({
+	const g = globalThis;
+	const plugin = g.__CWS_BRIDGE_PLUGIN__ || g.Capacitor?.Plugins?.CwsBridge;
+	if (typeof plugin?.invoke !== "function") return {
+		ok: false,
+		error: "no-bridge"
+	};
+	const r = await withTimeout(Promise.resolve(plugin.invoke({
 		channel,
 		payload
+	})), INVOKE_MS, {
+		ok: false,
+		error: "timeout"
 	});
-	return r?.echo || r || {};
+	const echo = r?.echo && typeof r.echo === "object" ? r.echo : {};
+	return {
+		...r || {},
+		...echo
+	};
 };
 /**
 * WHY: Speed Dial / shortcuts store `file:///storage/emulated/0/…`, `/mnt/sdcard/…`,
@@ -1690,11 +1744,8 @@ var toNativeStorageVirtualPath = (raw) => {
 	try {
 		s = decodeURIComponent(s);
 	} catch {}
-	s = s.replace(/^file:\/\/(?:localhost)?/i, "");
-	if (/^\/(?:sdcard|saf)(?:\/|$)/i.test(s)) return s;
-	if (/^(?:sdcard|saf)(?:\/|$)/i.test(s)) return `/${s}`;
-	const mapped = s.replace(/^(?:\/storage\/emulated\/0|\/mnt\/sdcard|storage\/emulated\/0|mnt\/sdcard)(?=\/|$)/i, "/sdcard");
-	return /^\/sdcard(?:\/|$)/i.test(mapped) ? mapped : "";
+	const mapped = toExplorerStoragePath(s, false);
+	return /^\/(?:sdcard|saf)(?:\/|$)/i.test(mapped) ? mapped : "";
 };
 var parseNativeStoragePath = (virtualPath) => {
 	const raw = toNativeStorageVirtualPath(virtualPath) || String(virtualPath || "").trim();
@@ -1732,24 +1783,78 @@ var listNativeStorage = async (root, path = "/") => {
 var dataUrlToFile = async (dataUrl, name, mime) => {
 	const src = String(dataUrl || "").trim();
 	if (!src) return null;
+	const fileName = name || "file";
+	const fallbackType = mime || "application/octet-stream";
+	if (src.startsWith("data:")) {
+		const comma = src.indexOf(",");
+		if (comma < 0) return null;
+		const meta = src.slice(5, comma);
+		const payload = src.slice(comma + 1);
+		const type = meta.split(";")[0] || fallbackType;
+		try {
+			if (/;base64/i.test(meta)) {
+				const bin = atob(payload);
+				const bytes = new Uint8Array(bin.length);
+				for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+				return new File([bytes], fileName, { type });
+			}
+			return new File([decodeURIComponent(payload)], fileName, { type });
+		} catch {
+			return null;
+		}
+	}
+	if (/^[A-Za-z0-9+/=\s]+$/.test(src) && src.length > 16) try {
+		const bin = atob(src.replace(/\s/g, ""));
+		const bytes = new Uint8Array(bin.length);
+		for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+		return new File([bytes], fileName, { type: fallbackType });
+	} catch {}
 	try {
 		const blob = await (await fetch(src)).blob();
-		return new File([blob], name || "file", { type: blob.type || mime || "application/octet-stream" });
+		return new File([blob], fileName, { type: blob.type || fallbackType });
 	} catch {
 		return null;
 	}
 };
 /** Read one `/sdcard/` or `/saf/` file through CwsBridge (`storage:read`). */
-var readNativeStorageFile = async (virtualPath) => {
+var readNativeStorageFile = async (virtualPath, opts) => {
 	const parsed = parseNativeStoragePath(virtualPath);
 	if (!parsed) return null;
-	const echo = await capacitorInvoke("storage:read", {
-		root: parsed.root,
-		path: parsed.rel
-	});
-	const data = String(echo.data || echo.dataUrl || "");
-	if (!data) return null;
-	return dataUrlToFile(data, String(echo.name || virtualPath.split("/").filter(Boolean).pop() || "file"), String(echo.mime || echo.mimeType || "application/octet-stream"));
+	const readOnce = async () => {
+		const echo = await capacitorInvoke("storage:read", {
+			root: parsed.root,
+			path: parsed.rel
+		});
+		const name = String(echo.name || virtualPath.split("/").filter(Boolean).pop() || "file");
+		const mime = String(echo.mime || echo.mimeType || "application/octet-stream");
+		const error = String(echo.error || "");
+		const text = String(echo.text || echo.content || "");
+		if (text) return {
+			file: new File([text], name, { type: mime || "text/markdown" }),
+			error
+		};
+		const data = String(echo.data || echo.dataUrl || "");
+		if (data) return {
+			file: await dataUrlToFile(data, name, mime),
+			error
+		};
+		return {
+			file: null,
+			error
+		};
+	};
+	let got = await readOnce();
+	if (got.file) return got.file;
+	if (opts?.requestAccess === false) return null;
+	if (parsed.root === "sdcard") {
+		const denied = /all-files-required|permission|EACCES|denied|timeout/i.test(got.error);
+		const status = await getAllFilesStatus();
+		if (denied || !status.allFilesAccess) {
+			await requestAllFilesAccess();
+			got = await readOnce();
+		}
+	}
+	return got.file;
 };
 /** Delete a `/sdcard/` or `/saf/` file or folder through CwsBridge (`storage:delete`). */
 var removeNativeStorage = async (virtualPath) => {
@@ -1766,6 +1871,20 @@ var removeNativeStorage = async (virtualPath) => {
 	});
 	const echo = r?.echo || {};
 	if (r?.ok === false || echo.deleted !== true) throw new Error(String(echo.error || "delete failed"));
+};
+var getAllFilesStatus = async () => {
+	if (api?.allFilesStatus) return api.allFilesStatus();
+	const echo = await capacitorInvoke("storage:all-files-status", {});
+	return {
+		allFilesAccess: echo.allFilesAccess === true,
+		runtimeGranted: echo.runtimeGranted === true,
+		note: echo.note ? String(echo.note) : void 0
+	};
+};
+var requestAllFilesAccess = async () => {
+	if (api?.requestAllFiles) return api.requestAllFiles();
+	const echo = await capacitorInvoke("storage:all-files-request", {});
+	return echo.ok === true || echo.opened === true;
 };
 //#endregion
 //#region src/frontend/shells/environment/components/explorer/backends/native-fs-backend.ts
@@ -7237,12 +7356,12 @@ var CWSP_VIEW_LOADERS = {
 	network: () => __vitePreload(() => import("../chunks/src5.js"), __vite__mapDeps([17,4,5,6,0,1,2,3,7,8,18,19,20,21,12,13,10,11,14,15,16,22,23,24,25,26,27,28,29,30]), import.meta.url),
 	settings: () => __vitePreload(() => import("../shells/boot-history-base.js"), __vite__mapDeps([31,3,1,2,4,5,6,0,7,8,32,16,33,29,15,34,35,36,37,18,19,20,21,12,13,10,11,14,22,38,39,40,41,42,43,44,45,26,27,28,30,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,25,23]), import.meta.url),
 	explorer: () => __vitePreload(() => import("../fest/veela.js"), __vite__mapDeps([69,3,1,2,70,0,4,5,6,7,8,33,16,29,39,40,18,19,20,21,12,13,10,11,14,15,22,48,42,49,50,38,41,43,44,45,46]), import.meta.url),
-	viewer: () => __vitePreload(() => import("../chunks/src6.js"), __vite__mapDeps([71,3,1,2,70,0,4,5,6,7,8,33,16,29,32,15,34,35,36,37,18,19,20,21,12,13,10,11,14,22,46,43,44,45,56,57,58,72,73,74]), import.meta.url),
-	markdown: () => __vitePreload(() => import("../chunks/src6.js"), __vite__mapDeps([71,3,1,2,70,0,4,5,6,7,8,33,16,29,32,15,34,35,36,37,18,19,20,21,12,13,10,11,14,22,46,43,44,45,56,57,58,72,73,74]), import.meta.url),
+	viewer: () => __vitePreload(() => import("../chunks/src6.js"), __vite__mapDeps([71,3,1,2,70,0,4,5,6,7,8,33,16,29,39,32,15,34,35,36,37,18,19,20,21,12,13,10,11,14,22,46,43,44,45,56,57,58,72,73,74]), import.meta.url),
+	markdown: () => __vitePreload(() => import("../chunks/src6.js"), __vite__mapDeps([71,3,1,2,70,0,4,5,6,7,8,33,16,29,39,32,15,34,35,36,37,18,19,20,21,12,13,10,11,14,22,46,43,44,45,56,57,58,72,73,74]), import.meta.url),
 	history: () => __vitePreload(() => import("../chunks/src4.js"), __vite__mapDeps([75,4,5,6,0,1,2,3,7,8,46,76]), import.meta.url),
 	workcenter: () => __vitePreload(() => import("../chunks/src7.js"), __vite__mapDeps([77,3,1,4,5,6,0,2,7,8,38,39,40,41,42,43,44,45,52,53,54,55,56,57,58,78,18,19,20,21,12,13,10,11,14,15,16,22,49,33,29,79,35,37,73,74,63,62,80,50,65,81,82,83,84,85]), import.meta.url),
 	editor: () => __vitePreload(() => import("../chunks/src3.js"), __vite__mapDeps([86,3,1,4,5,6,0,2,7,8,72]), import.meta.url),
-	home: () => __vitePreload(() => import("../fest/veela5.js"), __vite__mapDeps([87,2,3,1,4,5,6,0,7,8,39,40,53,38,41,42,43,44,45,46,54,55,88]), import.meta.url)
+	home: () => __vitePreload(() => import("../fest/veela5.js"), __vite__mapDeps([87,2,3,1,4,5,6,0,7,8,40,39,53,38,41,42,43,44,45,46,54,55,88]), import.meta.url)
 };
 /** Views allowed as Speed Dial / floating windows (no airpad). */
 var CWSP_LAUNCHER_VIEWS = [
@@ -7521,7 +7640,7 @@ var EnvironmentShell = class extends ShellBase {
 		} else this.mountHomeDesktop(homeMount, shellContext);
 	}
 	mountHomeDesktop(homeMount, shellContext) {
-		mountViewModule(() => __vitePreload(() => import("../fest/veela5.js"), __vite__mapDeps([87,2,3,1,4,5,6,0,7,8,39,40,53,38,41,42,43,44,45,46,54,55,88]), import.meta.url), homeMount, { shellContext }).then((unmount) => {
+		mountViewModule(() => __vitePreload(() => import("../fest/veela5.js"), __vite__mapDeps([87,2,3,1,4,5,6,0,7,8,40,39,53,38,41,42,43,44,45,46,54,55,88]), import.meta.url), homeMount, { shellContext }).then((unmount) => {
 			this.homeUnmount = unmount;
 		}).catch((err) => {
 			console.warn("[EnvironmentShell] home-view failed", err);

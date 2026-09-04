@@ -1,4 +1,4 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./cws-bridge.js","./rolldown-runtime.js","../fest/core3.js","../fest/core2.js","../fest/uniform.js","../assets/index-CU5eF_0S.js","./ecosystem-skus.js","./airpad-cwsp-client-parity.js","./multi-value-list.js","../vendor/@capacitor_core.js","./UniformInterop2.js","./names.js","./sku-ingress.js","./open-policy.js","./process-ingress.js","../com/app2.js","./sw-handling.js","../fest/core4.js","../fest/core.js","../fest/object.js","../fest/core5.js","../vendor/jsox.js","./SettingsTypes.js","./remote-connection-runtime.js","./UnifiedMessaging.js","./UniformInterop.js","./process-api-result.js","./ShareTargetGateway.js","./UnifiedMessaging2.js","./log-sanitizer.js","./ViewTransferRouting.js","./workcenter-command-wire.js","./hub-socket-boot.js","./packet-wire-hash.js","./ecosystem-skus2.js","./cws-bridge2.js","../vendor/@capacitor_core2.js","./clipboard-device.js","./capacitor-settings-permissions3.js","./capacitor-permissions3.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./cws-bridge.js","./rolldown-runtime.js","../fest/core3.js","../fest/core2.js","../fest/uniform.js","../assets/index-CU5eF_0S.js","./ecosystem-skus.js","./airpad-cwsp-client-parity.js","./multi-value-list.js","../vendor/@capacitor_core.js","./UniformInterop2.js","./names.js","./sku-ingress.js","./open-policy.js","./process-ingress.js","../com/app.js","./sw-handling.js","../fest/core4.js","../fest/core.js","../fest/object.js","../fest/core5.js","../vendor/jsox.js","./SettingsTypes.js","./remote-connection-runtime.js","./UnifiedMessaging.js","./UniformInterop.js","./process-api-result.js","./ShareTargetGateway.js","./UnifiedMessaging2.js","./log-sanitizer.js","./ViewTransferRouting.js","./workcenter-command-wire.js","./hub-socket-boot.js","./packet-wire-hash.js","./ecosystem-skus2.js","./cws-bridge2.js","../vendor/@capacitor_core2.js","./clipboard-device.js","./capacitor-settings-permissions3.js","./capacitor-permissions3.js"])))=>i.map(i=>d[i]);
 import { t as __vitePreload } from "../assets/index-CU5eF_0S.js";
 import { t as splitMultiValueList } from "./multi-value-list.js";
 import { t as isCapacitorNative } from "./capacitor-permissions3.js";
@@ -130,7 +130,7 @@ var consumeNativePendingShare = async () => {
 			const virtual = String(url || text || "").trim().replace(/^file:\/\/(?:localhost)?/i, "").replace(/^(?:\/storage\/emulated\/0|\/mnt\/sdcard)(?=\/|$)/i, "/sdcard");
 			if (/^\/(?:sdcard|saf)(?:\/|$)/i.test(virtual)) try {
 				const { readNativeStorageFile } = await __vitePreload(async () => {
-					const { readNativeStorageFile } = await import("../com/app2.js").then((n) => n.m);
+					const { readNativeStorageFile } = await import("../com/app.js").then((n) => n.m);
 					return { readNativeStorageFile };
 				}, __vite__mapDeps([15,1,5,6]), import.meta.url);
 				const file = await readNativeStorageFile(virtual);

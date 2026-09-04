@@ -1703,13 +1703,30 @@ var createChromeDownloadsBackend = (downloads) => {
 //#endregion
 //#region src/frontend/shells/environment/components/explorer/storage-bridge.ts
 var api = null;
+var INVOKE_MS = 12e3;
+var withTimeout = async (task, ms, fallback) => {
+	let timer;
+	try {
+		return await Promise.race([task, new Promise((resolve) => {
+			timer = setTimeout(() => resolve(fallback), ms);
+		})]);
+	} finally {
+		if (timer) clearTimeout(timer);
+	}
+};
 var capacitorInvoke = async (channel, payload = {}) => {
 	const g = globalThis;
 	const plugin = g.__CWS_BRIDGE_PLUGIN__ || g.Capacitor?.Plugins?.CwsBridge;
-	if (typeof plugin?.invoke !== "function") return { ok: false };
-	const r = await plugin.invoke({
+	if (typeof plugin?.invoke !== "function") return {
+		ok: false,
+		error: "no-bridge"
+	};
+	const r = await withTimeout(Promise.resolve(plugin.invoke({
 		channel,
 		payload
+	})), INVOKE_MS, {
+		ok: false,
+		error: "timeout"
 	});
 	const echo = r?.echo && typeof r.echo === "object" ? r.echo : {};
 	return {
@@ -1800,7 +1817,7 @@ var dataUrlToFile = async (dataUrl, name, mime) => {
 	}
 };
 /** Read one `/sdcard/` or `/saf/` file through CwsBridge (`storage:read`). */
-var readNativeStorageFile = async (virtualPath) => {
+var readNativeStorageFile = async (virtualPath, opts) => {
 	const parsed = parseNativeStoragePath(virtualPath);
 	if (!parsed) return null;
 	const readOnce = async () => {
@@ -1811,14 +1828,14 @@ var readNativeStorageFile = async (virtualPath) => {
 		const name = String(echo.name || virtualPath.split("/").filter(Boolean).pop() || "file");
 		const mime = String(echo.mime || echo.mimeType || "application/octet-stream");
 		const error = String(echo.error || "");
-		const data = String(echo.data || echo.dataUrl || "");
-		if (data) return {
-			file: await dataUrlToFile(data, name, mime),
-			error
-		};
 		const text = String(echo.text || echo.content || "");
 		if (text) return {
 			file: new File([text], name, { type: mime || "text/markdown" }),
+			error
+		};
+		const data = String(echo.data || echo.dataUrl || "");
+		if (data) return {
+			file: await dataUrlToFile(data, name, mime),
 			error
 		};
 		return {
@@ -1828,8 +1845,9 @@ var readNativeStorageFile = async (virtualPath) => {
 	};
 	let got = await readOnce();
 	if (got.file) return got.file;
+	if (opts?.requestAccess === false) return null;
 	if (parsed.root === "sdcard") {
-		const denied = /all-files-required|permission|EACCES|denied/i.test(got.error);
+		const denied = /all-files-required|permission|EACCES|denied|timeout/i.test(got.error);
 		const status = await getAllFilesStatus();
 		if (denied || !status.allFilesAccess) {
 			await requestAllFilesAccess();

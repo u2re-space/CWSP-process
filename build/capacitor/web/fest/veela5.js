@@ -1,10 +1,10 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../chunks/launcher-bridge.js","../chunks/cws-bridge.js","../chunks/rolldown-runtime.js","./core3.js","./core2.js","./uniform.js","../assets/index-CU5eF_0S.js","../chunks/ecosystem-skus.js","../chunks/airpad-cwsp-client-parity.js","../chunks/multi-value-list.js","../vendor/@capacitor_core.js","../chunks/UniformInterop2.js","../chunks/names.js","../com/app2.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../chunks/launcher-bridge.js","../chunks/cws-bridge.js","../chunks/rolldown-runtime.js","./core3.js","./core2.js","./uniform.js","../assets/index-CU5eF_0S.js","../chunks/ecosystem-skus.js","../chunks/airpad-cwsp-client-parity.js","../chunks/multi-value-list.js","../vendor/@capacitor_core.js","../chunks/UniformInterop2.js","../chunks/names.js","../com/app.js"])))=>i.map(i=>d[i]);
 import { t as __vitePreload } from "../assets/index-CU5eF_0S.js";
 import { St as preloadStyle, gt as loadAsAdopted } from "./core.js";
 import { $ as H, G as elementPointerMap, M as pointerAnchorRef, St as isInFocus, _t as orientationNumberMap, bt as MOCElement, et as vector2Ref, gt as getCorrectOrientation, lt as M, mt as ensureVirtualKeyboardOverlay, ot as registerModal, pt as DOMMixin, st as navigate, vt as updateVP } from "./core4.js";
 import { E as handleIncomingEntries } from "./core5.js";
 import { d as propRef, i as affected, l as numberRef, u as observe } from "./object.js";
-import { n as listVirtualRootEntriesFromRouter, r as resolveFsBackend } from "../com/app.js";
+import { n as listVirtualRootEntriesFromRouter, r as resolveFsBackend } from "../com/app2.js";
 import { o as setAppWallpaperFromBlob, r as getWallpaperStoragePointer } from "../vendor/culori.js";
 import { d as openUnifiedContextMenu } from "../com/app3.js";
 import "../com/app5.js";
@@ -1010,7 +1010,7 @@ var openNativeStorageByLinkTarget = async (path, linkTarget, mimeType) => {
 	if (!virtual) return false;
 	try {
 		const { openNativeStorageFile } = await __vitePreload(async () => {
-			const { openNativeStorageFile } = await import("../com/app2.js").then((n) => n.m);
+			const { openNativeStorageFile } = await import("../com/app.js").then((n) => n.m);
 			return { openNativeStorageFile };
 		}, __vite__mapDeps([13,2,6,7]), import.meta.url);
 		const declared = String(mimeType || "").trim();
