@@ -1,8 +1,8 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../fest/core4.js","../chunks/rolldown-runtime.js","../assets/index-C9QTqpCS.js","../fest/core.js","../fest/core2.js","../fest/object.js","../fest/core5.js","../fest/uniform.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../fest/core4.js","../chunks/rolldown-runtime.js","../assets/index-C9QTqpCS.js","../fest/core.js","../fest/core2.js","../fest/object.js","../fest/core5.js","../fest/uniform.js","../vendor/jsox.js"])))=>i.map(i=>d[i]);
 import { t as __vitePreload } from "../assets/index-C9QTqpCS.js";
 import "../fest/core4.js";
 import { W as registerDirectoryRoot, Z as unregisterDirectoryRoot } from "../fest/core5.js";
-import { a as listNativeStorage, c as readNativeStorageFile, i as isNativeStorageAvailable, l as removeNativeStorage, v as normalizeVirtualPath } from "./app.js";
+import { C as normalizeVirtualPath, d as readNativeStorageFile, f as removeNativeStorage, o as isNativeStorageAvailable, s as listNativeStorage } from "./app.js";
 //#region ../../modules/projects/fl.ui/src/ui/explorer/backends/chrome-bookmarks-backend.ts
 var BOOKMARKS_ROOT = "/bookmarks/";
 /**
@@ -649,7 +649,7 @@ var bindFsBackendToProvide = (backend) => {
 	__vitePreload(async () => {
 		const { registerProvideBackend } = await import("../fest/core4.js").then((n) => n.t);
 		return { registerProvideBackend };
-	}, __vite__mapDeps([0,1,2,3,4,5,6,7]), import.meta.url).then(({ registerProvideBackend }) => {
+	}, __vite__mapDeps([0,1,2,3,4,5,6,7,8]), import.meta.url).then(({ registerProvideBackend }) => {
 		registerProvideBackend({
 			root: backend.root,
 			list: async (path) => {
@@ -677,7 +677,7 @@ var loadIdbRoot = async () => {
 		const { getIdbRoot } = await __vitePreload(async () => {
 			const { getIdbRoot } = await import("../fest/core4.js").then((n) => n.t);
 			return { getIdbRoot };
-		}, __vite__mapDeps([0,1,2,3,4,5,6,7]), import.meta.url);
+		}, __vite__mapDeps([0,1,2,3,4,5,6,7,8]), import.meta.url);
 		return await getIdbRoot();
 	} catch {
 		return null;
@@ -740,7 +740,7 @@ function ensureDefaultFsBackends() {
 		__vitePreload(async () => {
 			const { unregisterProvideBackend } = await import("../fest/core4.js").then((n) => n.t);
 			return { unregisterProvideBackend };
-		}, __vite__mapDeps([0,1,2,3,4,5,6,7]), import.meta.url).then(({ unregisterProvideBackend }) => {
+		}, __vite__mapDeps([0,1,2,3,4,5,6,7,8]), import.meta.url).then(({ unregisterProvideBackend }) => {
 			unregisterProvideBackend("/idb/");
 		}).catch(() => {});
 	}
@@ -752,7 +752,7 @@ function ensureDefaultFsBackends() {
 				const { tryRemoteMountedList } = await __vitePreload(async () => {
 					const { tryRemoteMountedList } = await import("../fest/core4.js").then((n) => n.t);
 					return { tryRemoteMountedList };
-				}, __vite__mapDeps([0,1,2,3,4,5,6,7]), import.meta.url);
+				}, __vite__mapDeps([0,1,2,3,4,5,6,7,8]), import.meta.url);
 				return await tryRemoteMountedList(path) ?? [];
 			} catch {
 				return [];
@@ -765,7 +765,7 @@ function ensureDefaultFsBackends() {
 				const { tryRemoteMountedRead } = await __vitePreload(async () => {
 					const { tryRemoteMountedRead } = await import("../fest/core4.js").then((n) => n.t);
 					return { tryRemoteMountedRead };
-				}, __vite__mapDeps([0,1,2,3,4,5,6,7]), import.meta.url);
+				}, __vite__mapDeps([0,1,2,3,4,5,6,7,8]), import.meta.url);
 				const remote = await tryRemoteMountedRead(p);
 				if (remote) return remote;
 			} catch {}
@@ -783,7 +783,7 @@ function ensureDefaultFsBackends() {
 	__vitePreload(async () => {
 		const { ensureRemoteMountedFs } = await import("../fest/core4.js").then((n) => n.t);
 		return { ensureRemoteMountedFs };
-	}, __vite__mapDeps([0,1,2,3,4,5,6,7]), import.meta.url).then(({ ensureRemoteMountedFs }) => {
+	}, __vite__mapDeps([0,1,2,3,4,5,6,7,8]), import.meta.url).then(({ ensureRemoteMountedFs }) => {
 		ensureRemoteMountedFs();
 	}).catch(() => {});
 	if (!resolveFsBackend("/bookmarks/")) {

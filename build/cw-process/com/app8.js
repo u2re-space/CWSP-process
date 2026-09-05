@@ -249,6 +249,8 @@ var copyCodeMetrics = (source, target, box = false) => {
 	target.style.setProperty("line-height", lineHeight);
 	(source.parentElement ?? source).style.setProperty("--code-line-height", lineHeight);
 	target.style.setProperty("font-synthesis", "none");
+	target.style.setProperty("font-weight", "400");
+	target.style.setProperty("font-style", "normal");
 	target.style.setProperty("font-kerning", "none");
 	target.style.setProperty("font-variant-ligatures", "none");
 	target.style.setProperty("font-feature-settings", "\"liga\" 0, \"clig\" 0, \"calt\" 0, \"dlig\" 0");
@@ -339,6 +341,84 @@ var attachCodeOverlay = (host, overlay, options = {}) => {
 	};
 };
 //#endregion
+//#region ../../modules/projects/fl.ui/src/ui/markdown/code-editor-keys.ts
+/**
+* Tab indent + Esc blur for highlighted code fields (Settings CSS/JSON, viewer RAW).
+*
+* FIND:code-editor-keys
+* TAG:code-highlight
+* WHY: While the source is focused, Tab must insert spaces (not move chrome).
+* Esc blurs and parks focus on the frame so Tab is navigation again; click / tap
+* / Enter on the frame re-arms the editor.
+*/
+var indentUnit = (el) => {
+	const n = Number.parseInt(getComputedStyle(el).tabSize || "4", 10);
+	return " ".repeat(n === 2 ? 2 : 4);
+};
+var insertAtCaret = (el, text) => {
+	if (el instanceof HTMLTextAreaElement) {
+		const start = el.selectionStart ?? 0;
+		const end = el.selectionEnd ?? start;
+		el.setRangeText(text, start, end, "end");
+		el.dispatchEvent(new Event("input", { bubbles: true }));
+		return true;
+	}
+	if (!el.isContentEditable) return false;
+	el.focus();
+	return document.execCommand("insertText", false, text);
+};
+var editorFrame = (source) => {
+	const frame = source.closest("pre[data-raw-target], .code-highlight-host, pre, [data-raw-target]");
+	return frame instanceof HTMLElement ? frame : source;
+};
+/** Bind Tab / Esc / re-arm on one editable highlight host. */
+var bindCodeEditorKeys = (source) => {
+	if (!(source instanceof HTMLTextAreaElement || source.isContentEditable)) return () => void 0;
+	const frame = editorFrame(source);
+	const arm = () => {
+		if (source instanceof HTMLTextAreaElement) source.tabIndex = 0;
+		if (document.activeElement !== source) source.focus({ preventScroll: true });
+	};
+	const disarm = () => {
+		if (source instanceof HTMLTextAreaElement) source.tabIndex = -1;
+		source.blur();
+		if (frame !== source) {
+			if (!frame.hasAttribute("tabindex")) frame.tabIndex = 0;
+			frame.focus({ preventScroll: true });
+		}
+	};
+	const onSourceKey = (event) => {
+		if (event.defaultPrevented || event.altKey || event.metaKey || event.ctrlKey) return;
+		if (event.key === "Escape") {
+			event.preventDefault();
+			disarm();
+			return;
+		}
+		if (event.key !== "Tab" || event.shiftKey) return;
+		event.preventDefault();
+		insertAtCaret(source, indentUnit(source));
+	};
+	const onFrameKey = (event) => {
+		if (event.defaultPrevented || event.altKey || event.metaKey || event.ctrlKey) return;
+		if (document.activeElement === source) return;
+		if (event.key !== "Enter") return;
+		event.preventDefault();
+		arm();
+	};
+	const onPointerArm = () => {
+		arm();
+	};
+	source.addEventListener("keydown", onSourceKey);
+	frame.addEventListener("keydown", onFrameKey);
+	frame.addEventListener("pointerdown", onPointerArm);
+	return () => {
+		source.removeEventListener("keydown", onSourceKey);
+		frame.removeEventListener("keydown", onFrameKey);
+		frame.removeEventListener("pointerdown", onPointerArm);
+		if (source instanceof HTMLTextAreaElement && source.tabIndex < 0) source.tabIndex = 0;
+	};
+};
+//#endregion
 //#region ../../modules/projects/fl.ui/src/ui/markdown/highlight.ts
 /**
 * highlight.js paint layer for fenced code, textarea, and contenteditable hosts.
@@ -356,7 +436,11 @@ var attached = /* @__PURE__ */ new WeakMap();
 var hljsPromise = null;
 var loadHljs = () => {
 	if (hljsPromise) return hljsPromise;
-	hljsPromise = __vitePreload(() => import("../vendor/highlight.js.js").then((mod) => mod.default ?? mod), __vite__mapDeps([0,1]), import.meta.url).catch((error) => {
+	hljsPromise = Promise.all([__vitePreload(() => import("../vendor/highlight.js.js"), __vite__mapDeps([0,1]), import.meta.url), __vitePreload(() => import("../vendor/highlight2.js.js"), [], import.meta.url)]).then(([mod, jsonLang]) => {
+		const hljs = mod.default ?? mod;
+		if (!hljs.getLanguage("json") && jsonLang && hljs.registerLanguage) hljs.registerLanguage("json", jsonLang.default ?? jsonLang);
+		return hljs;
+	}).catch((error) => {
 		console.warn("[code-highlight] highlight.js failed to load", error);
 		return null;
 	});
@@ -409,9 +493,10 @@ var stampCodeLanguage = (el, language) => {
 	if (pre && !pre.getAttribute("data-language")) pre.setAttribute(CODE_LANGUAGE_ATTR, language);
 };
 var readHostText = (host) => {
-	if (host instanceof HTMLTextAreaElement) return host.value;
+	if (host instanceof HTMLTextAreaElement) return host.value || host.placeholder || "";
 	return host.textContent ?? "";
 };
+var isPlaceholderPaint = (host) => host instanceof HTMLTextAreaElement && !host.value && Boolean(host.placeholder);
 var countLines = (text) => {
 	if (!text) return 1;
 	const parts = text.split("\n");
@@ -437,6 +522,102 @@ var highlightText = async (text, language) => {
 		language: auto.language || language || ""
 	};
 };
+var HighlightRef = globalThis.Highlight;
+var cssHighlights = globalThis.CSS?.highlights;
+var tokenHighlightBags = /* @__PURE__ */ new Map();
+var hostTokenRanges = /* @__PURE__ */ new WeakMap();
+var canPaintCssTokenHighlights = () => typeof HighlightRef === "function" && !!cssHighlights;
+var tokenHighlightBag = (name) => {
+	if (!canPaintCssTokenHighlights() || !HighlightRef || !cssHighlights) return null;
+	let bag = tokenHighlightBags.get(name);
+	if (!bag) {
+		bag = new HighlightRef();
+		tokenHighlightBags.set(name, bag);
+		cssHighlights.set(name, bag);
+	}
+	return bag;
+};
+var collectHostTextNodes = (host) => {
+	const out = [];
+	const walk = (node) => {
+		if (node.nodeType === Node.TEXT_NODE) out.push(node);
+		else for (const child of node.childNodes) walk(child);
+	};
+	walk(host);
+	return out;
+};
+var rangeFromHostOffsets = (nodes, start, end) => {
+	if (end <= start || !nodes.length) return null;
+	let seen = 0;
+	let startNode = null;
+	let startOff = 0;
+	let endNode = null;
+	let endOff = 0;
+	for (const node of nodes) {
+		const len = node.data.length;
+		if (!startNode && start <= seen + len) {
+			startNode = node;
+			startOff = Math.max(0, start - seen);
+		}
+		if (end <= seen + len) {
+			endNode = node;
+			endOff = Math.max(0, end - seen);
+			break;
+		}
+		seen += len;
+	}
+	if (!startNode || !endNode) return null;
+	const range = document.createRange();
+	range.setStart(startNode, Math.min(startOff, startNode.data.length));
+	range.setEnd(endNode, Math.min(endOff, endNode.data.length));
+	return range;
+};
+var nearestHljsClass = (el) => {
+	while (el) {
+		const found = Array.from(el.classList).find((name) => name.startsWith("hljs-"));
+		if (found) return found;
+		el = el.parentElement;
+	}
+	return "";
+};
+var clearHostTokenHighlights = (host) => {
+	const prev = hostTokenRanges.get(host);
+	if (!prev?.length) return;
+	for (const range of prev) for (const bag of tokenHighlightBags.values()) try {
+		bag.delete(range);
+	} catch {}
+	hostTokenRanges.set(host, []);
+};
+/** WHY: Android RAW cannot use overlay (caret X-desync) or innerHTML (plaintext-only). */
+var applyCssTokenHighlights = (host, html) => {
+	clearHostTokenHighlights(host);
+	if (!canPaintCssTokenHighlights() || !html || host instanceof HTMLTextAreaElement) return;
+	const wrap = document.createElement("div");
+	wrap.innerHTML = html;
+	const nodes = collectHostTextNodes(host);
+	if (!nodes.length) return;
+	const painted = [];
+	let offset = 0;
+	const walk = (node) => {
+		if (node.nodeType === Node.TEXT_NODE) {
+			const len = node.textContent?.length ?? 0;
+			const token = nearestHljsClass(node.parentElement);
+			if (token && len) {
+				const range = rangeFromHostOffsets(nodes, offset, offset + len);
+				const bag = range ? tokenHighlightBag(token) : null;
+				if (range && bag) {
+					bag.add(range);
+					painted.push(range);
+				}
+			}
+			offset += len;
+			return;
+		}
+		for (const child of node.childNodes) walk(child);
+	};
+	walk(wrap);
+	hostTokenRanges.set(host, painted);
+};
 var isCapacitorNative = () => {
 	try {
 		const cap = globalThis.Capacitor;
@@ -445,6 +626,16 @@ var isCapacitorNative = () => {
 		return false;
 	}
 };
+/** WebView / Android caret is measured on the source glyphs, not the overlay. */
+var isAndroidCaretHost = () => {
+	if (isCapacitorNative()) return true;
+	try {
+		return /Android/i.test(String(navigator.userAgent || ""));
+	} catch {
+		return false;
+	}
+};
+var isEditableCodeHost = (host) => host instanceof HTMLTextAreaElement || host.isContentEditable;
 var buildOverlay = (lineCount, showGutter) => {
 	const overlay = document.createElement("div");
 	overlay.className = "code-highlight-overlay";
@@ -479,15 +670,35 @@ var attachCodeHighlight = (host, options = {}) => {
 	host.style.whiteSpace = "pre";
 	host.style.wordBreak = "normal";
 	host.style.overflowWrap = "normal";
-	const inplace = isCapacitorNative() && !(host instanceof HTMLTextAreaElement) && host.contentEditable !== "true";
+	if (!(host instanceof HTMLTextAreaElement)) {
+		host.style.display = "block";
+		host.style.backgroundColor = "transparent";
+	}
+	const editable = isEditableCodeHost(host);
+	const sourceOnly = isAndroidCaretHost() && editable;
+	const inplace = isCapacitorNative() && !editable;
 	if (inplace) host.classList.add("code-highlight-inplace");
+	if (sourceOnly) host.classList.add("code-highlight-source-only");
 	const { overlay, paint, gutter } = buildOverlay(lineCount, showGutter);
-	if (inplace) paint.remove();
-	const handle = showGutter || !inplace ? attachCodeOverlay(host, overlay, {
+	if (inplace || sourceOnly) paint.remove();
+	const handle = !sourceOnly && (showGutter || !inplace) ? attachCodeOverlay(host, overlay, {
 		paint: inplace ? overlay : paint,
 		scroller: host instanceof HTMLTextAreaElement ? host : host.closest("pre")
 	}) : null;
+	if (sourceOnly) {
+		overlay.remove();
+		(host.parentElement?.style ?? host.style).setProperty("--code-gutter", "0px");
+	}
 	const updatePaint = async () => {
+		if (sourceOnly) {
+			host.classList.remove("code-highlight-painted");
+			const nextLanguage = normalizeFenceLanguage(options.language || resolveCodeLanguage(host));
+			stampCodeLanguage(host, nextLanguage);
+			const painted = await highlightText(readHostText(host), nextLanguage);
+			if (painted.language && painted.language !== nextLanguage) stampCodeLanguage(host, painted.language);
+			applyCssTokenHighlights(host, painted.html);
+			return;
+		}
 		const next = readHostText(host);
 		const nextLanguage = normalizeFenceLanguage(options.language || resolveCodeLanguage(host));
 		const nextLines = countLines(next);
@@ -503,6 +714,7 @@ var attachCodeHighlight = (host, options = {}) => {
 		target.innerHTML = painted.html;
 		if (next && (target.textContent?.length ?? 0) < Math.max(1, Math.floor(next.length * .5))) target.textContent = next;
 		host.classList.toggle("code-highlight-painted", !inplace && (paint.textContent?.length ?? 0) > 0);
+		host.classList.toggle("code-highlight-placeholder", isPlaceholderPaint(host));
 		handle?.updateMetrics();
 		handle?.syncScroll();
 	};
@@ -510,6 +722,7 @@ var attachCodeHighlight = (host, options = {}) => {
 		updatePaint();
 	};
 	host.addEventListener("input", onInput);
+	const unbindKeys = bindCodeEditorKeys(host);
 	const wrapped = {
 		overlay: handle?.overlay ?? overlay,
 		paint: inplace ? host : paint,
@@ -518,7 +731,9 @@ var attachCodeHighlight = (host, options = {}) => {
 		updatePaint,
 		disconnect: () => {
 			host.removeEventListener("input", onInput);
-			host.classList.remove("code-highlight-painted", "code-highlight-inplace");
+			unbindKeys();
+			clearHostTokenHighlights(host);
+			host.classList.remove("code-highlight-painted", "code-highlight-inplace", "code-highlight-source-only", "code-highlight-placeholder");
 			if (inplace) host.textContent = host.textContent ?? "";
 			handle?.disconnect();
 			overlay.remove();
@@ -528,6 +743,22 @@ var attachCodeHighlight = (host, options = {}) => {
 	attached.set(host, wrapped);
 	updatePaint();
 	return wrapped;
+};
+/**
+* Attach highlight.js overlays to settings / form code fields.
+* WHY: `highlightCodeTree` only walks `pre > code`. User-defined CSS/JSON
+* editors are `textarea[data-language]`.
+*/
+var highlightCodeFields = (root) => {
+	if (!root || typeof document === "undefined") return;
+	const hosts = root.querySelectorAll("textarea[data-language], textarea.code-highlight-source");
+	for (const host of hosts) {
+		if (!(host instanceof HTMLTextAreaElement)) continue;
+		attachCodeHighlight(host, {
+			language: host.getAttribute("data-language") || void 0,
+			lineNumbers: false
+		});
+	}
 };
 /** Walk a rendered markdown/result tree and overlay every fenced `pre > code`. */
 var highlightCodeTree = (root) => {
@@ -543,4 +774,4 @@ var highlightCodeTree = (root) => {
 	}
 };
 //#endregion
-export { highlightCodeTree as n, languageFromFilename as r, attachCodeHighlight as t };
+export { languageFromFilename as i, highlightCodeFields as n, highlightCodeTree as r, attachCodeHighlight as t };

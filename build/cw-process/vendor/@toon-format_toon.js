@@ -1,5 +1,5 @@
 import { r as __exportAll } from "../chunks/rolldown-runtime.js";
-import { a as loadSettings, c as JSOX } from "./jsox.js";
+import { a as loadSettings, c as JSOX } from "./jsox2.js";
 import { t as canParseURL } from "../chunks/Runtime.js";
 import { t as CORE_ENTITY_EXTRACTION_INSTRUCTION } from "../chunks/core.js";
 //#region src/service/model/GPT-Config.ts

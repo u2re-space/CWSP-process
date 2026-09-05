@@ -1,4 +1,4 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./workcenter-command-wire.js","./rolldown-runtime.js","../com/app5.js","../assets/index-C9QTqpCS.js","../fest/core4.js","../fest/core.js","../fest/core2.js","../fest/object.js","../fest/core5.js","../fest/uniform.js","../fest/object2.js","../com/app.js","../com/app2.js","../vendor/culori.js","./ViewTransferRouting.js","./ecosystem-skus.js","./open-policy.js","./names.js","./UnifiedMessaging.js","./UniformInterop.js","./process-ingress.js","./log-sanitizer.js","../vendor/jsox.js","./SettingsTypes.js","./airpad-cwsp-client-parity.js","./multi-value-list.js","./cws-bridge.js","../fest/core3.js","../vendor/@capacitor_core.js","./UniformInterop2.js","./remote-connection-runtime.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./workcenter-command-wire.js","./rolldown-runtime.js","../com/app5.js","../assets/index-C9QTqpCS.js","../fest/core4.js","../fest/core.js","../fest/core2.js","../fest/object.js","../fest/core5.js","../fest/uniform.js","../vendor/jsox.js","../fest/object2.js","../com/app.js","../com/app2.js","../vendor/culori.js","./ViewTransferRouting.js","./ecosystem-skus.js","./open-policy.js","./names.js","./UnifiedMessaging.js","./UniformInterop.js","./process-ingress.js","./log-sanitizer.js","../vendor/jsox2.js","./SettingsTypes.js","./airpad-cwsp-client-parity.js","./multi-value-list.js","./cws-bridge.js","../fest/core3.js","../vendor/@capacitor_core.js","./UniformInterop2.js","./remote-connection-runtime.js"])))=>i.map(i=>d[i]);
 import { r as __exportAll } from "./rolldown-runtime.js";
 import { t as __vitePreload } from "../assets/index-C9QTqpCS.js";
 import { c as inferCwspSkuFromLocation } from "./ecosystem-skus.js";
@@ -162,7 +162,7 @@ var onHeldIngressFiles = (listener) => {
 		heldIngressListeners.delete(listener);
 	};
 };
-var loadLauncherState = () => __vitePreload(() => import("../com/app5.js").then((n) => n.f), __vite__mapDeps([2,1,3,4,5,6,7,8,9,10,11,12]), import.meta.url);
+var loadLauncherState = () => __vitePreload(() => import("../com/app5.js").then((n) => n.f), __vite__mapDeps([2,1,3,4,5,6,7,8,9,10,11,12,13]), import.meta.url);
 var WALLPAPER_EXT = /* @__PURE__ */ new Set([
 	"png",
 	"jpg",
@@ -392,7 +392,7 @@ var applyLauncherIngress = async (payload) => {
 				getWallpaperStoragePointer,
 				WALLPAPER_IDB_MARKER
 			};
-		}, __vite__mapDeps([13,1,5,6,7,4,3,8,9]), import.meta.url);
+		}, __vite__mapDeps([14,1,5,6,7,4,3,8,9,10]), import.meta.url);
 		const { wallpaperState, persistWallpaper } = await loadLauncherState();
 		await setAppWallpaperFromBlob(image);
 		wallpaperState.src = getWallpaperStoragePointer() || WALLPAPER_IDB_MARKER;
@@ -448,7 +448,7 @@ var openShellImageInViewer = async (file) => {
 	const { dispatchViewTransfer } = await __vitePreload(async () => {
 		const { dispatchViewTransfer } = await import("./ViewTransferRouting.js").then((n) => n.t);
 		return { dispatchViewTransfer };
-	}, __vite__mapDeps([14,1,3,15,16,17,18,9,6,19,20,21]), import.meta.url);
+	}, __vite__mapDeps([15,1,3,16,17,18,19,9,6,20,21,22]), import.meta.url);
 	await dispatchViewTransfer({
 		source: "clipboard",
 		route: "clipboard",
@@ -472,7 +472,7 @@ var applyShellWallpaper = async (file) => {
 			getWallpaperStoragePointer,
 			WALLPAPER_IDB_MARKER
 		};
-	}, __vite__mapDeps([13,1,5,6,7,4,3,8,9]), import.meta.url);
+	}, __vite__mapDeps([14,1,5,6,7,4,3,8,9,10]), import.meta.url);
 	const { wallpaperState, persistWallpaper } = await loadLauncherState();
 	await setAppWallpaperFromBlob(file);
 	wallpaperState.src = getWallpaperStoragePointer() || WALLPAPER_IDB_MARKER;
@@ -493,9 +493,9 @@ var installShellImageOpenListener = () => {
 		(async () => {
 			try {
 				const { loadSettings } = await __vitePreload(async () => {
-					const { loadSettings } = await import("../vendor/jsox.js").then((n) => n.t);
+					const { loadSettings } = await import("../vendor/jsox2.js").then((n) => n.t);
 					return { loadSettings };
-				}, __vite__mapDeps([22,1,3,4,5,6,7,8,9,16,15,23,20,24,25,26,27,28,29,17,30]), import.meta.url);
+				}, __vite__mapDeps([23,1,3,17,16,24,21,25,26,27,28,6,9,29,30,18,31]), import.meta.url);
 				const { peekOpenPolicy, rememberOpenPolicyFromSettings, resolveOpenPolicy } = await __vitePreload(async () => {
 					const { peekOpenPolicy, rememberOpenPolicyFromSettings, resolveOpenPolicy } = await import("./open-policy.js").then((n) => n.d);
 					return {
@@ -503,7 +503,7 @@ var installShellImageOpenListener = () => {
 						rememberOpenPolicyFromSettings,
 						resolveOpenPolicy
 					};
-				}, __vite__mapDeps([16,1,15]), import.meta.url);
+				}, __vite__mapDeps([17,1,16]), import.meta.url);
 				const settings = await loadSettings().catch(() => null);
 				rememberOpenPolicyFromSettings(settings);
 				const sink = resolveOpenPolicy(settings?.openPolicy ?? peekOpenPolicy(), "shell", "image", "open");
@@ -515,7 +515,7 @@ var installShellImageOpenListener = () => {
 					const { dispatchViewTransfer } = await __vitePreload(async () => {
 						const { dispatchViewTransfer } = await import("./ViewTransferRouting.js").then((n) => n.t);
 						return { dispatchViewTransfer };
-					}, __vite__mapDeps([14,1,3,15,16,17,18,9,6,19,20,21]), import.meta.url);
+					}, __vite__mapDeps([15,1,3,16,17,18,19,9,6,20,21,22]), import.meta.url);
 					await dispatchViewTransfer({
 						source: "clipboard",
 						route: "clipboard",
@@ -535,7 +535,7 @@ var installShellImageOpenListener = () => {
 					const { dispatchViewTransfer } = await __vitePreload(async () => {
 						const { dispatchViewTransfer } = await import("./ViewTransferRouting.js").then((n) => n.t);
 						return { dispatchViewTransfer };
-					}, __vite__mapDeps([14,1,3,15,16,17,18,9,6,19,20,21]), import.meta.url);
+					}, __vite__mapDeps([15,1,3,16,17,18,19,9,6,20,21,22]), import.meta.url);
 					await dispatchViewTransfer({
 						source: "clipboard",
 						route: "clipboard",

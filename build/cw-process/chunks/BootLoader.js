@@ -1,4 +1,4 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./capacitor-share-intent.js","../assets/index-C9QTqpCS.js","./multi-value-list.js","./capacitor-permissions.js","./rolldown-runtime.js","./capacitor-clipboard-asset.js","../com/app.js","./frontend-debug-capture.js","../vendor/@capacitor_core.js","./cws-bridge.js","../fest/core3.js","../fest/core2.js","../fest/uniform.js","./airpad-cwsp-client-parity.js","./UniformInterop2.js","./names.js","./sw-handling.js","../fest/core4.js","../fest/core.js","../fest/object.js","../fest/core5.js","../vendor/jsox.js","./open-policy.js","./ecosystem-skus.js","./SettingsTypes.js","./process-ingress.js","./remote-connection-runtime.js","./UnifiedMessaging.js","./UniformInterop.js","./process-api-result.js","./ShareTargetGateway.js","./UnifiedMessaging2.js","./sku-ingress.js","./log-sanitizer.js","./sw-page-bridge.js","./workcenter-command-wire.js","./ViewTransferRouting.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./capacitor-share-intent.js","../assets/index-C9QTqpCS.js","./multi-value-list.js","./capacitor-permissions.js","./rolldown-runtime.js","./capacitor-clipboard-asset.js","../com/app.js","./frontend-debug-capture.js","../vendor/@capacitor_core.js","./cws-bridge.js","../fest/core3.js","../fest/core2.js","../fest/uniform.js","./airpad-cwsp-client-parity.js","./UniformInterop2.js","./names.js","../vendor/@fest-lib_lure.js","../fest/core4.js","../fest/core.js","../fest/object.js","../fest/core5.js","../vendor/jsox.js","../vendor/jsox2.js","./open-policy.js","./ecosystem-skus.js","./SettingsTypes.js","./process-ingress.js","./remote-connection-runtime.js","./UnifiedMessaging.js","./UniformInterop.js","./process-api-result.js","./ShareTargetGateway.js","./UnifiedMessaging2.js","./sku-ingress.js","./log-sanitizer.js","./sw-page-bridge.js","./workcenter-command-wire.js","./ViewTransferRouting.js"])))=>i.map(i=>d[i]);
 import { t as __vitePreload } from "../assets/index-C9QTqpCS.js";
 import { gt as loadAsAdopted } from "../fest/core.js";
 import { t as withTimeout } from "../fest/core3.js";
@@ -1958,7 +1958,7 @@ var bootLoader = class BootLoader {
 			if (isCapacitorCwsNativeShell()) {
 				__vitePreload(() => import("./capacitor-share-intent.js").then((mod) => mod.installCapacitorShareIntentBridge()), __vite__mapDeps([0,1,2,3,4]), import.meta.url).catch(() => void 0);
 				__vitePreload(() => import("./capacitor-clipboard-asset.js").then((mod) => mod.installCapacitorClipboardAssetBridge()), __vite__mapDeps([5,3,4]), import.meta.url).catch(() => void 0);
-				__vitePreload(() => import("../com/app.js").then((n) => n.m).then((mod) => mod.ensureNativeStorageProvide()), __vite__mapDeps([6,4,1]), import.meta.url).catch(() => void 0);
+				__vitePreload(() => import("../com/app.js").then((n) => n._).then((mod) => mod.ensureNativeStorageProvide()), __vite__mapDeps([6,4,1]), import.meta.url).catch(() => void 0);
 			}
 			try {
 				const { initFrontendDebugCapture } = await __vitePreload(async () => {
@@ -1993,9 +1993,9 @@ var bootLoader = class BootLoader {
 				}
 			})()) try {
 				const { initIngressPWA } = await __vitePreload(async () => {
-					const { initIngressPWA } = await import("./sw-handling.js");
+					const { initIngressPWA } = await import("../vendor/@fest-lib_lure.js");
 					return { initIngressPWA };
-				}, __vite__mapDeps([16,1,17,4,18,11,19,20,12,21,22,23,24,25,13,2,9,10,8,14,15,26,27,28,29,30,31,32,33,34,35,36]), import.meta.url);
+				}, __vite__mapDeps([16,1,17,4,18,11,19,20,12,21,22,23,24,25,26,13,2,9,10,8,14,15,27,28,29,30,31,32,33,34,35,36,37]), import.meta.url);
 				await initIngressPWA();
 			} catch (e) {
 				console.warn("[BootLoader] Share-target / service worker ingress failed (non-fatal):", e);

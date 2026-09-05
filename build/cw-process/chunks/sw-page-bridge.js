@@ -1,4 +1,4 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./sw-handling.js","../assets/index-C9QTqpCS.js","../fest/core4.js","./rolldown-runtime.js","../fest/core.js","../fest/core2.js","../fest/object.js","../fest/core5.js","../fest/uniform.js","../vendor/jsox.js","./open-policy.js","./ecosystem-skus.js","./SettingsTypes.js","./process-ingress.js","./airpad-cwsp-client-parity.js","./multi-value-list.js","./cws-bridge.js","../fest/core3.js","../vendor/@capacitor_core.js","./UniformInterop2.js","./names.js","./remote-connection-runtime.js","./UnifiedMessaging.js","./UniformInterop.js","./process-api-result.js","./ShareTargetGateway.js","./UnifiedMessaging2.js","./sku-ingress.js","./log-sanitizer.js","./ViewTransferRouting.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../vendor/@fest-lib_lure.js","../assets/index-C9QTqpCS.js","../fest/core4.js","./rolldown-runtime.js","../fest/core.js","../fest/core2.js","../fest/object.js","../fest/core5.js","../fest/uniform.js","../vendor/jsox.js","../vendor/jsox2.js","./open-policy.js","./ecosystem-skus.js","./SettingsTypes.js","./process-ingress.js","./airpad-cwsp-client-parity.js","./multi-value-list.js","./cws-bridge.js","../fest/core3.js","../vendor/@capacitor_core.js","./UniformInterop2.js","./names.js","./remote-connection-runtime.js","./UnifiedMessaging.js","./UniformInterop.js","./process-api-result.js","./ShareTargetGateway.js","./UnifiedMessaging2.js","./sku-ingress.js","./log-sanitizer.js","./ViewTransferRouting.js"])))=>i.map(i=>d[i]);
 import { r as __exportAll } from "./rolldown-runtime.js";
 import { t as __vitePreload } from "../assets/index-C9QTqpCS.js";
 import { c as inferCwspSkuFromLocation } from "./ecosystem-skus.js";
@@ -152,9 +152,9 @@ var deliverShareTargetInput = async (data) => {
 	if (!payload.timestamp) payload.timestamp = Date.now();
 	if (inferCwspSkuFromLocation() === "document") try {
 		const { ingestSharePayload } = await __vitePreload(async () => {
-			const { ingestSharePayload } = await import("./sw-handling.js");
+			const { ingestSharePayload } = await import("../vendor/@fest-lib_lure.js");
 			return { ingestSharePayload };
-		}, __vite__mapDeps([0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29]), import.meta.url);
+		}, __vite__mapDeps([0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30]), import.meta.url);
 		return await ingestSharePayload({
 			...payload,
 			files,
@@ -174,23 +174,23 @@ var deliverShareTargetInput = async (data) => {
 	let settings = peekProcessIngressSettings();
 	if (!settings) try {
 		const { loadSettings } = await __vitePreload(async () => {
-			const { loadSettings } = await import("../vendor/jsox.js").then((n) => n.t);
+			const { loadSettings } = await import("../vendor/jsox2.js").then((n) => n.t);
 			return { loadSettings };
-		}, __vite__mapDeps([9,3,1,2,4,5,6,7,8,10,11,12,13,14,15,16,17,18,19,20,21]), import.meta.url);
+		}, __vite__mapDeps([10,3,1,11,12,13,14,15,16,17,18,5,8,19,20,21,22]), import.meta.url);
 		settings = await loadSettings().catch(() => null);
 		if (settings) {
 			const { rememberProcessIngressSettings } = await __vitePreload(async () => {
 				const { rememberProcessIngressSettings } = await import("./process-ingress.js").then((n) => n.l);
 				return { rememberProcessIngressSettings };
-			}, __vite__mapDeps([13,3,1,10,11]), import.meta.url);
+			}, __vite__mapDeps([14,3,1,11,12]), import.meta.url);
 			rememberProcessIngressSettings(settings);
 		}
 	} catch {}
 	if (resolveProcessIngressKind(settings, kind).mode === "process") try {
 		const { processShareTargetData } = await __vitePreload(async () => {
-			const { processShareTargetData } = await import("./sw-handling.js");
+			const { processShareTargetData } = await import("../vendor/@fest-lib_lure.js");
 			return { processShareTargetData };
-		}, __vite__mapDeps([0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29]), import.meta.url);
+		}, __vite__mapDeps([0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30]), import.meta.url);
 		return await processShareTargetData({
 			...payload,
 			files,

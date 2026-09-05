@@ -1,4 +1,4 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../chunks/src2.js","./core4.js","../chunks/rolldown-runtime.js","../assets/index-C9QTqpCS.js","./core.js","./core2.js","./object.js","./core5.js","./uniform.js","../chunks/shells.js","../vendor/jsox.js","../chunks/open-policy.js","../chunks/ecosystem-skus.js","../chunks/SettingsTypes.js","../chunks/process-ingress.js","../chunks/airpad-cwsp-client-parity.js","../chunks/multi-value-list.js","../chunks/cws-bridge.js","./core3.js","../vendor/@capacitor_core.js","../chunks/UniformInterop2.js","../chunks/names.js","../chunks/remote-connection-runtime.js","./icon.js","./icon2.js","./icon3.js","../chunks/Theme.js","../chunks/StateStorage.js","./object2.js","../chunks/Clipboard.js","../chunks/Runtime.js","../chunks/settings-shell-profile.js","../shells/preference.js","../chunks/toast.js","../chunks/preview.js","../chunks/src3.js","../chunks/window.js","../com/app4.js","../vendor/culori.js","../com/app3.js","../com/app.js","../com/app2.js","../com/app5.js","./veela2.js","./veela3.js","../com/app6.js","../vendor/dompurify.js","../vendor/marked2.js","../vendor/katex.js","../chunks/tabbed.js","../chunks/environment.js","../chunks/src7.js","../chunks/UniformViewTransport.js","../chunks/UnifiedMessaging.js","../chunks/UniformInterop.js","../chunks/channel-actions.js","../views/ingress-validation.js","../chunks/types.js","../chunks/sku-ingress.js","../com/app8.js","../chunks/src8.js","../com/app7.js","../chunks/process-api-result.js","../chunks/UnifiedMessaging2.js","../chunks/log-sanitizer.js","../chunks/utils.js","../chunks/CustomInstructions.js","../vendor/@toon-format_toon.js","../chunks/core.js","../chunks/unified.js","../chunks/RuntimeSettings.js","../chunks/ShareTargetGateway2.js","../chunks/WorkCenterState.js","../shells/boot-history-base.js","../chunks/packet-wire-hash.js","../chunks/ecosystem-skus2.js","../chunks/cws-bridge2.js","../vendor/@capacitor_core2.js","../chunks/layer-manager.js","./veela4.js","../chunks/capacitor-permissions.js","../chunks/capacitor-settings-permissions.js","../chunks/templates.js","../chunks/admin-doors.js","../chunks/capacitor-settings-permissions3.js","../chunks/capacitor-permissions3.js","../chunks/hub-socket-boot.js","../chunks/clipboard-device.js","../chunks/src6.js","../chunks/frontend-debug-capture.js","../chunks/src5.js","../chunks/transfer-history-runtime.js","./veela.js","../chunks/src4.js","./veela5.js","../chunks/launcher-state.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../chunks/src2.js","./core4.js","../chunks/rolldown-runtime.js","../assets/index-C9QTqpCS.js","./core.js","./core2.js","./object.js","./core5.js","./uniform.js","../vendor/jsox.js","../chunks/shells.js","../vendor/jsox2.js","../chunks/open-policy.js","../chunks/ecosystem-skus.js","../chunks/SettingsTypes.js","../chunks/process-ingress.js","../chunks/airpad-cwsp-client-parity.js","../chunks/multi-value-list.js","../chunks/cws-bridge.js","./core3.js","../vendor/@capacitor_core.js","../chunks/UniformInterop2.js","../chunks/names.js","../chunks/remote-connection-runtime.js","./icon.js","./icon2.js","./icon3.js","../chunks/Theme.js","../chunks/StateStorage.js","./object2.js","../chunks/Clipboard.js","../chunks/Runtime.js","../chunks/settings-shell-profile.js","../shells/preference.js","../chunks/toast.js","../chunks/preview.js","../chunks/src3.js","../chunks/window.js","../com/app4.js","../vendor/culori.js","../com/app3.js","../com/app.js","../com/app2.js","../com/app5.js","./veela2.js","./veela3.js","../com/app6.js","../vendor/dompurify.js","../vendor/marked2.js","../vendor/katex.js","../chunks/tabbed.js","../chunks/environment.js","../chunks/src7.js","../chunks/UniformViewTransport.js","../chunks/UnifiedMessaging.js","../chunks/UniformInterop.js","../chunks/channel-actions.js","../views/ingress-validation.js","../chunks/types.js","../chunks/sku-ingress.js","../com/app8.js","../chunks/src8.js","../com/app7.js","../chunks/process-api-result.js","../chunks/UnifiedMessaging2.js","../chunks/log-sanitizer.js","../chunks/utils.js","../chunks/CustomInstructions.js","../vendor/@toon-format_toon.js","../chunks/core.js","../chunks/unified.js","../chunks/RuntimeSettings.js","../chunks/ShareTargetGateway2.js","../chunks/WorkCenterState.js","../shells/boot-history-base.js","../chunks/packet-wire-hash.js","../chunks/ecosystem-skus2.js","../chunks/cws-bridge2.js","../vendor/@capacitor_core2.js","../chunks/layer-manager.js","./veela4.js","../chunks/capacitor-permissions.js","../chunks/capacitor-settings-permissions.js","../chunks/templates.js","../chunks/admin-doors.js","../chunks/capacitor-settings-permissions3.js","../chunks/capacitor-permissions3.js","../chunks/hub-socket-boot.js","../chunks/clipboard-device.js","../chunks/src6.js","../chunks/frontend-debug-capture.js","../chunks/src5.js","../chunks/transfer-history-runtime.js","./veela.js","../chunks/src4.js","./veela5.js","../chunks/launcher-state.js"])))=>i.map(i=>d[i]);
 import { t as __vitePreload } from "../assets/index-C9QTqpCS.js";
 import { s as detectExecutionContext } from "./uniform.js";
 import { d as isViewLocalToSurface } from "../chunks/ecosystem-skus.js";
@@ -994,43 +994,43 @@ function registerDefaultShells() {
 		id: "immersive",
 		name: "Immersive",
 		description: "Chromeless immersive shell (standalone pages, extensions, embedded); legacy boot id `base` aliases here.",
-		loader: () => __vitePreload(() => import("../chunks/src2.js"), __vite__mapDeps([0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33]), import.meta.url)
+		loader: () => __vitePreload(() => import("../chunks/src2.js"), __vite__mapDeps([0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34]), import.meta.url)
 	});
 	ShellRegistry.register({
 		id: "minimal",
 		name: "Minimal",
 		description: "Minimal toolbar-based navigation",
-		loader: () => __vitePreload(() => import("../chunks/preview.js").then((n) => n.t), __vite__mapDeps([34,2,3,1,4,5,6,7,8,23,24,25,9,10,11,12,13,14,15,16,17,18,19,20,21,22,26,27,28,29,30,31,32,33]), import.meta.url)
+		loader: () => __vitePreload(() => import("../chunks/preview.js").then((n) => n.t), __vite__mapDeps([35,2,3,1,4,5,6,7,8,9,24,25,26,10,11,12,13,14,15,16,17,18,19,20,21,22,23,27,28,29,30,31,32,33,34]), import.meta.url)
 	});
 	ShellRegistry.register({
 		id: "content",
 		name: "Content",
 		description: "CRX content shell with overlay-focused layering",
-		loader: () => __vitePreload(() => import("../chunks/src3.js"), __vite__mapDeps([35,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33]), import.meta.url)
+		loader: () => __vitePreload(() => import("../chunks/src3.js"), __vite__mapDeps([36,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34]), import.meta.url)
 	});
 	ShellRegistry.register({
 		id: "immersive",
 		name: "Immersive",
 		description: "Chromeless immersive host (extensions / embedded)",
-		loader: () => __vitePreload(() => import("../chunks/src2.js"), __vite__mapDeps([0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33]), import.meta.url)
+		loader: () => __vitePreload(() => import("../chunks/src2.js"), __vite__mapDeps([0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34]), import.meta.url)
 	});
 	ShellRegistry.register({
 		id: "window",
 		name: "Window",
 		description: "Window-capable shell (multi-view)",
-		loader: () => __vitePreload(() => import("../chunks/window.js"), __vite__mapDeps([36,37,3,4,5,6,1,2,7,8,38,39,40,41,42,28,23,24,25,17,18,15,16,19,20,21,9,10,11,12,13,14,22,26,27,29,30,31,32,33,43,44,45,46,47,48,34]), import.meta.url)
+		loader: () => __vitePreload(() => import("../chunks/window.js"), __vite__mapDeps([37,38,3,4,5,6,1,2,7,8,9,39,40,41,42,43,29,24,25,26,18,19,16,17,20,21,22,10,11,12,13,14,15,23,27,28,30,31,32,33,34,44,45,46,47,48,49,35]), import.meta.url)
 	});
 	ShellRegistry.register({
 		id: "tabbed",
 		name: "Tabbed",
 		description: "Tabbed window shell",
-		loader: () => __vitePreload(() => import("../chunks/tabbed.js"), __vite__mapDeps([49,36,37,3,4,5,6,1,2,7,8,38,39,40,41,42,28,23,24,25,17,18,15,16,19,20,21,9,10,11,12,13,14,22,26,27,29,30,31,32,33,43,44,45,46,47,48,34]), import.meta.url)
+		loader: () => __vitePreload(() => import("../chunks/tabbed.js"), __vite__mapDeps([50,37,38,3,4,5,6,1,2,7,8,9,39,40,41,42,43,29,24,25,26,18,19,16,17,20,21,22,10,11,12,13,14,15,23,27,28,30,31,32,33,34,44,45,46,47,48,49,35]), import.meta.url)
 	});
 	ShellRegistry.register({
 		id: "environment",
 		name: "Environment",
 		description: "Desktop/launcher shell: wallpaper, Speed Dial, taskbar, ui-window",
-		loader: () => __vitePreload(() => import("../chunks/environment.js"), __vite__mapDeps([50,37,3,4,5,6,1,2,7,8,38,39,40,41,42,28,23,24,25,17,18,15,16,19,20,21,9,10,11,12,13,14,22,26,27,29,30,31,32,33,43,44,45,46,47,48]), import.meta.url)
+		loader: () => __vitePreload(() => import("../chunks/environment.js"), __vite__mapDeps([51,38,3,4,5,6,1,2,7,8,9,39,40,41,42,43,29,24,25,26,18,19,16,17,20,21,22,10,11,12,13,14,15,23,27,28,30,31,32,33,34,44,45,46,47,48,49]), import.meta.url)
 	});
 }
 /** Register the built-in views that are enabled by current feature flags. */
@@ -1039,55 +1039,55 @@ function registerDefaultViews() {
 		id: "viewer",
 		name: "Viewer",
 		icon: "eye",
-		loader: () => __vitePreload(() => import("../chunks/src7.js"), __vite__mapDeps([51,3,52,1,2,4,5,6,7,8,53,21,54,40,10,11,12,13,14,15,16,17,18,19,20,22,55,23,24,25,56,46,47,48,57,58,59]), import.meta.url)
+		loader: () => __vitePreload(() => import("../chunks/src7.js"), __vite__mapDeps([52,3,53,1,2,4,5,6,7,8,9,54,22,55,41,11,12,13,14,15,16,17,18,19,20,21,23,56,24,25,26,57,47,48,49,58,59,60]), import.meta.url)
 	});
 	ViewRegistry.register({
 		id: "workcenter",
 		name: "Work Center",
 		icon: "lightning",
-		loader: () => __vitePreload(() => import("../chunks/src8.js"), __vite__mapDeps([60,4,5,6,1,2,3,7,8,12,39,40,41,42,28,23,24,25,44,38,43,45,46,47,48,61,10,11,13,14,15,16,17,18,19,20,21,22,29,53,54,62,56,63,58,59,64,65,66,67,30,68,69,70,71,72]), import.meta.url)
+		loader: () => __vitePreload(() => import("../chunks/src8.js"), __vite__mapDeps([61,4,5,6,1,2,3,7,8,9,13,40,41,42,43,29,24,25,26,45,39,44,46,47,48,49,62,11,12,14,15,16,17,18,19,20,21,22,23,30,54,55,63,57,64,59,60,65,66,67,68,31,69,70,71,72,73]), import.meta.url)
 	});
 	ViewRegistry.register({
 		id: "settings",
 		name: "Settings",
 		icon: "gear",
-		loader: () => __vitePreload(() => import("../shells/boot-history-base.js"), __vite__mapDeps([73,3,4,5,6,1,2,7,8,10,11,12,13,14,15,16,17,18,19,20,21,22,39,40,41,42,28,23,24,25,53,54,74,75,76,77,55,26,27,29,30,31,44,38,43,45,46,47,48,78,79,80,81,66,65,82,68,83,84,85,86,87]), import.meta.url)
+		loader: () => __vitePreload(() => import("../shells/boot-history-base.js"), __vite__mapDeps([74,3,4,5,6,1,2,7,8,9,11,12,13,14,15,16,17,18,19,20,21,22,23,40,41,42,43,29,24,25,26,54,55,75,76,77,78,56,27,28,30,31,32,45,39,44,46,47,48,49,79,80,81,82,60,67,66,83,69,84,85,86,87,88]), import.meta.url)
 	});
 	ViewRegistry.register({
 		id: "network",
 		name: "Network",
 		icon: "wifi-high",
-		loader: () => __vitePreload(() => import("../chunks/src6.js"), __vite__mapDeps([88,4,5,6,1,2,3,7,8,10,11,12,13,14,15,16,17,18,19,20,21,22,87,89,86,74,75,76,54,77]), import.meta.url)
+		loader: () => __vitePreload(() => import("../chunks/src6.js"), __vite__mapDeps([89,4,5,6,1,2,3,7,8,9,11,12,13,14,15,16,17,18,19,20,21,22,23,88,90,87,75,76,77,55,78]), import.meta.url)
 	});
 	ViewRegistry.register({
 		id: "history",
 		name: "History",
 		icon: "clock-counter-clockwise",
-		loader: () => __vitePreload(() => import("../chunks/src5.js"), __vite__mapDeps([90,4,5,6,1,2,3,7,8,55,91]), import.meta.url)
+		loader: () => __vitePreload(() => import("../chunks/src5.js"), __vite__mapDeps([91,4,5,6,1,2,3,7,8,9,56,92]), import.meta.url)
 	});
 	ViewRegistry.register({
 		id: "explorer",
 		name: "Explorer",
 		icon: "folder",
-		loader: () => __vitePreload(() => import("./veela.js"), __vite__mapDeps([92,3,52,1,2,4,5,6,7,8,53,21,54,40,41,10,11,12,13,14,15,16,17,18,19,20,22,27,28,29,30,39,42,23,24,25,55]), import.meta.url)
+		loader: () => __vitePreload(() => import("./veela.js"), __vite__mapDeps([93,3,53,1,2,4,5,6,7,8,9,54,22,55,41,42,11,12,13,14,15,16,17,18,19,20,21,23,28,29,30,31,40,43,24,25,26,56]), import.meta.url)
 	});
 	ViewRegistry.register({
 		id: "editor",
 		name: "Editor",
 		icon: "pencil",
-		loader: () => __vitePreload(() => import("../chunks/src4.js"), __vite__mapDeps([93,4,5,6,1,2,3,7,8,12,57]), import.meta.url)
+		loader: () => __vitePreload(() => import("../chunks/src4.js"), __vite__mapDeps([94,4,5,6,1,2,3,7,8,9,13,58]), import.meta.url)
 	});
 	ViewRegistry.register({
 		id: "home",
 		name: "Home",
 		icon: "house",
-		loader: () => __vitePreload(() => import("./veela5.js"), __vite__mapDeps([94,3,4,5,6,1,2,7,8,41,40,38,39,42,28,23,24,25,55,43,45,95]), import.meta.url)
+		loader: () => __vitePreload(() => import("./veela5.js"), __vite__mapDeps([95,3,4,5,6,1,2,7,8,9,42,41,39,40,43,29,24,25,26,56,44,46,96]), import.meta.url)
 	});
 	ViewRegistry.register({
 		id: "print",
 		name: "Print",
 		icon: "printer",
-		loader: () => __vitePreload(() => import("../chunks/src7.js"), __vite__mapDeps([51,3,52,1,2,4,5,6,7,8,53,21,54,40,10,11,12,13,14,15,16,17,18,19,20,22,55,23,24,25,56,46,47,48,57,58,59]), import.meta.url)
+		loader: () => __vitePreload(() => import("../chunks/src7.js"), __vite__mapDeps([52,3,53,1,2,4,5,6,7,8,9,54,22,55,41,11,12,13,14,15,16,17,18,19,20,21,23,56,24,25,26,57,47,48,49,58,59,60]), import.meta.url)
 	});
 }
 var defaultTheme = {

@@ -1,8 +1,8 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../chunks/WorkCenterState.js","../chunks/rolldown-runtime.js","../chunks/templates.js","../chunks/core.js","../chunks/UnifiedMessaging.js","../fest/uniform.js","../assets/index-C9QTqpCS.js","../fest/core2.js","../chunks/names.js","../chunks/UniformInterop.js","../vendor/pdfjs-dist.js","../vendor/underscore.js"])))=>i.map(i=>d[i]);
 import { o as __toESM, r as __exportAll } from "../chunks/rolldown-runtime.js";
 import { t as __vitePreload } from "../assets/index-C9QTqpCS.js";
-import { B as writeText, C as createContentAddressedStore, Z as H, b as parseDataUrl, v as isBase64Like, y as normalizeDataAsset } from "../fest/core4.js";
-import { a as loadSettings } from "../vendor/jsox.js";
+import { B as writeText, Z as H, b as normalizeDataAsset, w as createContentAddressedStore, x as parseDataUrl, y as isBase64Like } from "../fest/core4.js";
+import { a as loadSettings } from "../vendor/jsox2.js";
 import "../chunks/Clipboard.js";
 import { g as shouldHandoffViewToSibling, v as stashSkuHandoff } from "../chunks/ecosystem-skus.js";
 import { n as BROADCAST_CHANNELS, o as ROUTE_HASHES, p as viewBroadcastChannelName } from "../chunks/names.js";
@@ -14,7 +14,7 @@ import { a as replayQueuedMessagesForDestination, c as isProcessApiUnavailable, 
 import { i as renderSafeMarkdown, n as configureMarkdownRendering } from "../vendor/dompurify.js";
 import { t as f } from "../vendor/marked2.js";
 import { c as isAndroidLocalShareUri, h as takeHeldIngressFiles, l as onHeldIngressFiles, r as dropHeldIngressFiles } from "../chunks/sku-ingress.js";
-import { n as highlightCodeTree } from "./app8.js";
+import { r as highlightCodeTree } from "./app8.js";
 import { t as summarizeForLog } from "../chunks/log-sanitizer.js";
 import { i as buildInstructionPrompt } from "../chunks/utils.js";
 import { a as getCustomInstructions, o as getInstructionRegistry, s as setActiveInstruction } from "../chunks/CustomInstructions.js";

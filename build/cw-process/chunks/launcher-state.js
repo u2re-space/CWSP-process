@@ -1,10 +1,11 @@
 import { r as __exportAll } from "./rolldown-runtime.js";
 import { t as __vitePreload } from "../assets/index-C9QTqpCS.js";
-import { F as decodeDesktopState, I as loadDesktopRaw, M as makeUIState, N as saveUIState, P as JSOX } from "../fest/core4.js";
+import { F as decodeDesktopState, I as loadDesktopRaw, N as makeUIState, P as saveUIState } from "../fest/core4.js";
 import { _ as safe, p as stringRef, u as observe } from "../fest/object.js";
 import { t as makeObjectAssignable } from "../fest/object2.js";
-import { y as resolveEntryIcon } from "../com/app.js";
+import { w as resolveEntryIcon } from "../com/app.js";
 import { i as subscribeFsBackendRegister, r as resolveFsBackend } from "../com/app2.js";
+import { t as JSOX } from "../vendor/jsox.js";
 //#region ../../modules/views/home-view/src/ts/layout.ts
 var DEFAULT_LAYOUT = [4, 8];
 var clamp = (value, min, max) => {

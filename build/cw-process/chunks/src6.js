@@ -1,6 +1,6 @@
 import { gt as loadAsAdopted } from "../fest/core.js";
 import { Z as H } from "../fest/core4.js";
-import { a as loadSettings } from "../vendor/jsox.js";
+import { a as loadSettings } from "../vendor/jsox2.js";
 import { i as resolveEcosystemToken } from "./SettingsTypes.js";
 import { G as resolveFleetWanGatewayHost, H as probeEndpointOriginReport, I as buildEndpointOriginCandidates, K as splitConnectHostList, L as collectEndpointProbeCandidates, V as parseConnectHostInput } from "./airpad-cwsp-client-parity.js";
 import { a as invokeCwsNative, o as invokeCwsPlatformIPC, s as isCapacitorCwsNativeShell, t as CwsBridge } from "./cws-bridge.js";

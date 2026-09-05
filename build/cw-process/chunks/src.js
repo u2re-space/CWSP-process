@@ -1,11 +1,11 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./sw-page-bridge.js","./rolldown-runtime.js","../assets/index-C9QTqpCS.js","./ecosystem-skus.js","./open-policy.js","./process-ingress.js","./process-api-result.js","./UniformInterop2.js","./names.js","./ShareTargetGateway.js","./UnifiedMessaging2.js","../fest/uniform.js","../fest/core2.js","./sku-ingress.js","./workcenter-command-wire.js","./capacitor-share-intent.js","./multi-value-list.js","./capacitor-permissions.js","../vendor/@capacitor_core.js","./BootLoader.js","../fest/core.js","../fest/object.js","../fest/core3.js","../fest/uniform2.js","./UnifiedMessaging.js","./UniformInterop.js","../views/inbound-timing.js","../views/ingress-validation.js","./airpad-cwsp-client-parity.js","./cws-bridge.js","./remote-connection-runtime.js","./packet-wire-hash.js","../fest/core4.js","../fest/core5.js","./ecosystem-skus2.js","./cws-bridge2.js","../vendor/@capacitor_core2.js","../shells/preference.js","./layer-manager.js","../fest/veela4.js","../vendor/culori.js","../vendor/jsox.js","./SettingsTypes.js","./StateStorage.js","../fest/object2.js","./Clipboard.js","./Runtime.js","./clipboard-device.js","./capacitor-settings-permissions.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./sw-page-bridge.js","./rolldown-runtime.js","../assets/index-C9QTqpCS.js","./ecosystem-skus.js","./open-policy.js","./process-ingress.js","./process-api-result.js","./UniformInterop2.js","./names.js","./ShareTargetGateway.js","./UnifiedMessaging2.js","../fest/uniform.js","../fest/core2.js","./sku-ingress.js","./workcenter-command-wire.js","./capacitor-share-intent.js","./multi-value-list.js","./capacitor-permissions.js","../vendor/@capacitor_core.js","./BootLoader.js","../fest/core.js","../fest/object.js","../fest/core3.js","../fest/uniform2.js","./UnifiedMessaging.js","./UniformInterop.js","../views/inbound-timing.js","../views/ingress-validation.js","./airpad-cwsp-client-parity.js","./cws-bridge.js","./remote-connection-runtime.js","./packet-wire-hash.js","../vendor/jsox.js","./ecosystem-skus2.js","./cws-bridge2.js","../vendor/@capacitor_core2.js","../shells/preference.js","./layer-manager.js","../fest/veela4.js","../fest/core4.js","../fest/core5.js","../vendor/culori.js","../vendor/jsox2.js","./SettingsTypes.js","./StateStorage.js","../fest/object2.js","./Clipboard.js","./Runtime.js","./clipboard-device.js","./capacitor-settings-permissions.js"])))=>i.map(i=>d[i]);
 import { t as __vitePreload } from "../assets/index-C9QTqpCS.js";
 import { gt as loadAsAdopted } from "../fest/core.js";
 import "../fest/core4.js";
 import { a as applyCwspSku } from "./ecosystem-skus.js";
 import { c as safeCachesKeys, s as safeCachesDelete } from "./ShareTargetGateway.js";
 import { t as initializeLayers } from "./layer-manager.js";
-import { checkPendingShareData, ensureAppCss, handleShareTarget, initReceivers, n as ensureServiceWorkerRegistered, setupLaunchQueueConsumer, t as dropStaleServiceWorkerRegistrations } from "./sw-handling.js";
+import { checkPendingShareData, ensureAppCss, handleShareTarget, initReceivers, n as ensureServiceWorkerRegistered, setupLaunchQueueConsumer, t as dropStaleServiceWorkerRegistrations } from "../vendor/@fest-lib_lure.js";
 //#region src/shared/routing/pwa/pwa-handling.ts
 var IS_DEV = Boolean(false);
 var AUTO_RELOAD_COOLDOWN_MS = 120 * 1e3;
@@ -525,7 +525,7 @@ var bootProcessSku = async (container, kind, view = "workcenter") => {
 	const { bootMinimal } = await __vitePreload(async () => {
 		const { bootMinimal } = await import("./BootLoader.js");
 		return { bootMinimal };
-	}, __vite__mapDeps([19,2,20,12,21,22,23,11,3,1,8,24,25,7,26,27,9,10,28,16,29,18,30,31,32,33,34,35,36,37,38,39,40,41,4,42,5,43,44,45,46,47,48,17]), import.meta.url);
+	}, __vite__mapDeps([19,2,20,12,21,22,23,11,3,1,8,24,25,7,26,27,9,10,28,16,29,18,30,31,32,33,34,35,36,37,38,39,40,41,42,4,43,5,44,45,46,47,48,49,17]), import.meta.url);
 	await bootMinimal(container, resolved, { rememberChoice: false });
 };
 //#endregion

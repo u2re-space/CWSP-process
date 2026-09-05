@@ -1,4 +1,4 @@
-import { y as normalizeDataAsset } from "../fest/core4.js";
+import { b as normalizeDataAsset } from "../fest/core4.js";
 import { n as createProtocolEnvelope } from "../fest/uniform.js";
 import { u as sendProtocolMessage } from "./UnifiedMessaging.js";
 //#region ../../modules/projects/subsystem/registry.ts

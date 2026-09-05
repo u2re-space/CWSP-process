@@ -1,8 +1,8 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./cws-bridge.js","./rolldown-runtime.js","../fest/core3.js","../fest/core2.js","../fest/uniform.js","../assets/index-C9QTqpCS.js","./airpad-cwsp-client-parity.js","./multi-value-list.js","../vendor/@capacitor_core.js","./UniformInterop2.js","./names.js","../vendor/culori.js","../fest/core.js","../fest/object.js","../fest/core4.js","../fest/core5.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./cws-bridge.js","./rolldown-runtime.js","../fest/core3.js","../fest/core2.js","../fest/uniform.js","../assets/index-C9QTqpCS.js","./airpad-cwsp-client-parity.js","./multi-value-list.js","../vendor/@capacitor_core.js","./UniformInterop2.js","./names.js","../vendor/culori.js","../fest/core.js","../fest/object.js","../fest/core4.js","../fest/core5.js","../vendor/jsox.js"])))=>i.map(i=>d[i]);
 import { r as __exportAll } from "./rolldown-runtime.js";
 import { t as __vitePreload } from "../assets/index-C9QTqpCS.js";
 import { ct as Q } from "../fest/core4.js";
-import { a as loadSettings, s as saveSettings } from "../vendor/jsox.js";
+import { a as loadSettings, s as saveSettings } from "../vendor/jsox2.js";
 import { n as applyGridSettings } from "./StateStorage.js";
 //#region src/shared/other/utils/appearance-base-color.ts
 /**
@@ -204,7 +204,7 @@ var extractFromImage = async (src) => {
 		const { applyThemeFromWallpaper } = await __vitePreload(async () => {
 			const { applyThemeFromWallpaper } = await import("../vendor/culori.js").then((n) => n.t);
 			return { applyThemeFromWallpaper };
-		}, __vite__mapDeps([11,1,12,3,13,14,5,15,4]), import.meta.url);
+		}, __vite__mapDeps([11,1,12,3,13,14,5,15,4,16]), import.meta.url);
 		return normalizeHexColor((await applyThemeFromWallpaper(src, { force: false }))?.primary);
 	} catch {
 		return "";
@@ -229,7 +229,7 @@ var colorFromAppWallpaper = async () => {
 		const { resolveAppWallpaperUrl } = await __vitePreload(async () => {
 			const { resolveAppWallpaperUrl } = await import("../vendor/culori.js").then((n) => n.t);
 			return { resolveAppWallpaperUrl };
-		}, __vite__mapDeps([11,1,12,3,13,14,5,15,4]), import.meta.url);
+		}, __vite__mapDeps([11,1,12,3,13,14,5,15,4,16]), import.meta.url);
 		const url = await resolveAppWallpaperUrl();
 		if (!url) return cached;
 		if (/\/assets\/wallpaper\.jpg(?:$|[?#])/i.test(url)) return cached;
@@ -586,7 +586,7 @@ var resumeThemeAfterForeground = (force = false) => {
 			const { rehydrateAdoptedStyleSheets } = await __vitePreload(async () => {
 				const { rehydrateAdoptedStyleSheets } = await import("../fest/core4.js").then((n) => n.t);
 				return { rehydrateAdoptedStyleSheets };
-			}, __vite__mapDeps([14,1,5,12,3,13,15,4]), import.meta.url);
+			}, __vite__mapDeps([14,1,5,12,3,13,15,4,16]), import.meta.url);
 			rehydrateAdoptedStyleSheets();
 		} catch {}
 		restampChromeScheme();

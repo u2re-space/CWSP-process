@@ -1,4 +1,4 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../fest/core4.js","../chunks/rolldown-runtime.js","../assets/index-C9QTqpCS.js","../fest/core.js","../fest/core2.js","../fest/object.js","../fest/core5.js","../fest/uniform.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../fest/core4.js","../chunks/rolldown-runtime.js","../assets/index-C9QTqpCS.js","../fest/core.js","../fest/core2.js","../fest/object.js","../fest/core5.js","../fest/uniform.js","../vendor/jsox.js"])))=>i.map(i=>d[i]);
 import { r as __exportAll } from "../chunks/rolldown-runtime.js";
 import { t as __vitePreload } from "../assets/index-C9QTqpCS.js";
 //#region ../../modules/projects/fl.ui/src/ui/explorer/fs-backend.ts
@@ -104,10 +104,13 @@ function resolveEntryIcon(entry) {
 var storage_bridge_exports = /* @__PURE__ */ __exportAll({
 	canShowDirectoryPicker: () => canShowDirectoryPicker,
 	copyNativeStorageImage: () => copyNativeStorageImage,
+	createNativeStorageDocument: () => createNativeStorageDocument,
 	ensureNativeStorageProvide: () => ensureNativeStorageProvide,
 	getAllFilesStatus: () => getAllFilesStatus,
+	installNativeShowSaveFilePicker: () => installNativeShowSaveFilePicker,
 	isNativeStorageAvailable: () => isNativeStorageAvailable,
 	listNativeStorage: () => listNativeStorage,
+	nativeUriFromSaveHandle: () => nativeUriFromSaveHandle,
 	openNativeStorageFile: () => openNativeStorageFile,
 	pickBrowserDirectory: () => pickBrowserDirectory,
 	pickSafTree: () => pickSafTree,
@@ -116,10 +119,13 @@ var storage_bridge_exports = /* @__PURE__ */ __exportAll({
 	requestAllFilesAccess: () => requestAllFilesAccess,
 	resolveNativeStorageRealPath: () => resolveNativeStorageRealPath,
 	resolveNativeStorageUri: () => resolveNativeStorageUri,
+	saveDocumentMimeForName: () => saveDocumentMimeForName,
 	setExplorerStorageApi: () => setExplorerStorageApi,
 	shareNativeStorageFile: () => shareNativeStorageFile,
 	toNativeStorageVirtualPath: () => toNativeStorageVirtualPath,
-	writeNativeClipboardImage: () => writeNativeClipboardImage
+	writeNativeClipboardImage: () => writeNativeClipboardImage,
+	writeNativeStorageFile: () => writeNativeStorageFile,
+	writeNativeStorageUri: () => writeNativeStorageUri
 });
 var api = null;
 var setExplorerStorageApi = (next) => {
@@ -309,6 +315,145 @@ var writeNativeClipboardImage = async (dataUrl, mimeType = "image/png", name = "
 	});
 	return echo.copied === true || echo.ok === true;
 };
+var writeEchoOk = (echo) => echo.written === true || echo.ok === true;
+/** Write UTF-8 text to `/sdcard/` or `/saf/` (creates parents + file). */
+var writeNativeStorageFile = async (virtualPath, content, opts) => {
+	const parsed = parseNativeStoragePath(virtualPath);
+	if (!parsed) return false;
+	const payload = {
+		root: parsed.root,
+		path: parsed.rel,
+		text: String(content ?? ""),
+		mimeType: String(opts?.mimeType || "text/markdown")
+	};
+	const echo = await capacitorInvoke("storage:write", payload);
+	if (writeEchoOk(echo)) return true;
+	if (opts?.requestAccess === false) return false;
+	if (parsed.root === "sdcard") {
+		if (/all-files-required|permission|EACCES|denied/i.test(String(echo.error || ""))) {
+			await requestAllFilesAccess();
+			return writeEchoOk(await capacitorInvoke("storage:write", payload));
+		}
+	}
+	return false;
+};
+/** Overwrite a remembered `content://` / `file://` from ACTION_CREATE_DOCUMENT. */
+var writeNativeStorageUri = async (uri, content) => {
+	const target = String(uri || "").trim();
+	if (!target) return false;
+	return writeEchoOk(await capacitorInvoke("storage:write-uri", {
+		uri: target,
+		text: String(content ?? "")
+	}));
+};
+var nativeBridgePlugin = () => {
+	const g = globalThis;
+	return g.__CWS_BRIDGE_PLUGIN__ || g.Capacitor?.Plugins?.CwsBridge || null;
+};
+/** WHY: Android MimeTypeMap maps `.ts` → `video/mp2t`. CREATE_DOCUMENT then
+* treats TypeScript as MPEG-TS or rewrites the extension. Octet-stream keeps the name. */
+var saveDocumentMimeForName = (filename, fallback = "text/markdown") => {
+	const n = String(filename || "").trim().toLowerCase();
+	if (/\.(tsx?|mts|cts|jsx?|mjs|cjs|css|scss|sass|less|vue|svelte|json|xml|ya?ml|sh|bash|py|rs|go|java|kt)$/.test(n)) return "application/octet-stream";
+	if (n.endsWith(".md") || n.endsWith(".markdown")) return "text/markdown";
+	if (n.endsWith(".txt") || n.endsWith(".log") || n.endsWith(".csv")) return "text/plain";
+	if (n.endsWith(".html") || n.endsWith(".htm")) return "text/html";
+	if (n.endsWith(".svg")) return "image/svg+xml";
+	return fallback;
+};
+var mimeFromSavePickerOptions = (options) => {
+	const fromName = saveDocumentMimeForName(String(options?.suggestedName || "").trim(), "");
+	if (fromName) return fromName;
+	const accept = options?.types?.[0]?.accept;
+	if (accept && typeof accept === "object") {
+		const first = Object.keys(accept).find((key) => key && key !== "*/*" && !key.startsWith("video/"));
+		if (first) return first;
+	}
+	return "text/markdown";
+};
+var invokeCreateDocument = async (filename, content, mimeType) => {
+	const plugin = nativeBridgePlugin();
+	if (typeof plugin?.invoke !== "function") return { ok: false };
+	const r = await Promise.resolve(plugin.invoke({
+		channel: "storage:create-document",
+		payload: {
+			name: filename,
+			text: String(content ?? ""),
+			mimeType
+		}
+	}));
+	const echo = r?.echo || {};
+	const err = String(echo.error || r?.error || "");
+	if (/cancel/i.test(err)) return {
+		ok: false,
+		cancelled: true
+	};
+	const uri = String(echo.uri || echo.url || "").trim();
+	if (uri && content && echo.written !== true) {
+		if (await writeNativeStorageUri(uri, content)) return {
+			ok: true,
+			uri
+		};
+	}
+	return r?.ok !== false && (echo.written === true || echo.ok === true || Boolean(uri)) ? {
+		ok: true,
+		uri: uri || void 0
+	} : { ok: false };
+};
+var nativeFileHandle = (uri, name) => {
+	const chunks = [];
+	return {
+		kind: "file",
+		name,
+		__cwsNativeUri: uri,
+		queryPermission: async () => "granted",
+		requestPermission: async () => "granted",
+		getFile: async () => new File([], name),
+		createWritable: async () => ({
+			write: async (chunk) => {
+				const data = chunk && typeof chunk === "object" && "data" in chunk ? chunk.data : chunk;
+				if (data != null && (typeof data === "string" || data instanceof Blob || ArrayBuffer.isView(data) || data instanceof ArrayBuffer)) chunks.push(data);
+			},
+			close: async () => {
+				const text = await new Blob(chunks).text();
+				chunks.length = 0;
+				if (!await writeNativeStorageUri(uri, text)) throw new DOMException("Write failed.", "InvalidStateError");
+			},
+			abort: async () => {
+				chunks.length = 0;
+			}
+		})
+	};
+};
+/**
+* Capacitor stand-in for `showSaveFilePicker`: ACTION_CREATE_DOCUMENT, then write.
+* WHY: Android WebView has no FSA picker; this call waits on the system sheet (no 12s cap).
+*/
+var createNativeStorageDocument = async (filename, content, mimeType = "text/markdown") => {
+	if (!isNativeStorageAvailable()) return { ok: false };
+	const name = String(filename || "document.md").trim() || "document.md";
+	return invokeCreateDocument(name, content, mimeType || saveDocumentMimeForName(name));
+};
+var nativeUriFromSaveHandle = (handle) => String(handle?.__cwsNativeUri || "").trim();
+/**
+* Overwrite WebView `showSaveFilePicker` (stub / NotAllowedError) with ACTION_CREATE_DOCUMENT.
+* INVARIANT: only on Capacitor; web/PWA/CRX keep the browser picker.
+*/
+var installNativeShowSaveFilePicker = () => {
+	if (!isNativeStorageAvailable()) return false;
+	const g = globalThis;
+	if (g.__CWS_NATIVE_SAVE_PICKER__ && typeof g.showSaveFilePicker === "function") return true;
+	g.showSaveFilePicker = async (options) => {
+		const opts = options || {};
+		const name = String(opts.suggestedName || "document.md").trim() || "document.md";
+		const created = await invokeCreateDocument(name, "", mimeFromSavePickerOptions(opts));
+		if (created.cancelled) throw new DOMException("The user aborted a request.", "AbortError");
+		if (!created.uri) throw new DOMException("Could not create file.", "InvalidStateError");
+		return nativeFileHandle(created.uri, name);
+	};
+	g.__CWS_NATIVE_SAVE_PICKER__ = true;
+	return true;
+};
 /** Delete a `/sdcard/` or `/saf/` file or folder through CwsBridge (`storage:delete`). */
 var removeNativeStorage = async (virtualPath) => {
 	const parsed = parseNativeStoragePath(virtualPath);
@@ -384,7 +529,7 @@ var ensureNativeStorageProvide = async () => {
 		const { registerProvideBackend } = await __vitePreload(async () => {
 			const { registerProvideBackend } = await import("../fest/core4.js").then((n) => n.t);
 			return { registerProvideBackend };
-		}, __vite__mapDeps([0,1,2,3,4,5,6,7]), import.meta.url);
+		}, __vite__mapDeps([0,1,2,3,4,5,6,7,8]), import.meta.url);
 		const bind = (root) => {
 			registerProvideBackend({
 				root,
@@ -398,7 +543,10 @@ var ensureNativeStorageProvide = async () => {
 						path: row.path || `${base}${row.name}${row.kind === "directory" ? "/" : ""}`
 					}));
 				},
-				readFile: (path) => readNativeStorageFile(path)
+				readFile: (path) => readNativeStorageFile(path),
+				writeFile: async (path, file) => {
+					return writeNativeStorageFile(path, await file.text().catch(() => ""), { mimeType: file.type || "text/markdown" });
+				}
 			});
 		};
 		bind("/sdcard/");
@@ -435,4 +583,4 @@ var pickBrowserDirectory = async () => {
 	}
 };
 //#endregion
-export { buildExplorerDragPayload as _, listNativeStorage as a, toExplorerStoragePath as b, readNativeStorageFile as c, resolveNativeStorageRealPath as d, resolveNativeStorageUri as f, writeNativeClipboardImage as g, toNativeStorageVirtualPath as h, isNativeStorageAvailable as i, removeNativeStorage as l, storage_bridge_exports as m, copyNativeStorageImage as n, pickBrowserDirectory as o, shareNativeStorageFile as p, getAllFilesStatus as r, pickSafTree as s, canShowDirectoryPicker as t, requestAllFilesAccess as u, normalizeVirtualPath as v, resolveEntryIcon as y };
+export { normalizeVirtualPath as C, buildExplorerDragPayload as S, toExplorerStoragePath as T, storage_bridge_exports as _, installNativeShowSaveFilePicker as a, writeNativeStorageFile as b, nativeUriFromSaveHandle as c, readNativeStorageFile as d, removeNativeStorage as f, shareNativeStorageFile as g, resolveNativeStorageUri as h, getAllFilesStatus as i, pickBrowserDirectory as l, resolveNativeStorageRealPath as m, copyNativeStorageImage as n, isNativeStorageAvailable as o, requestAllFilesAccess as p, createNativeStorageDocument as r, listNativeStorage as s, canShowDirectoryPicker as t, pickSafTree as u, toNativeStorageVirtualPath as v, resolveEntryIcon as w, writeNativeStorageUri as x, writeNativeClipboardImage as y };

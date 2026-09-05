@@ -1,14 +1,4 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../chunks/crx-control-session.js","../assets/index-C9QTqpCS.js","../fest/core4.js","../chunks/rolldown-runtime.js","../fest/core.js","../fest/core2.js","../fest/object.js","../fest/core5.js","../fest/uniform.js"])))=>i.map(i=>d[i]);
-import { r as __exportAll } from "../chunks/rolldown-runtime.js";
-import { t as __vitePreload } from "../assets/index-C9QTqpCS.js";
-import { g as writeFileSmart } from "../fest/core4.js";
-import { T as detectSettingsHost, c as mergeOpenPolicy, h as resolveHostOpenPolicy, l as mergeOpenPolicyByHost, p as rememberOpenPolicyFromSettings } from "../chunks/open-policy.js";
-import { n as DEFAULT_SETTINGS, r as normalizeEcosystemToken } from "../chunks/SettingsTypes.js";
-import { s as mergeProcessIngress, u as rememberProcessIngressSettings } from "../chunks/process-ingress.js";
-import { u as isAssociableFleetWireNodeId, v as normalizeWireNodeIdForWire, w as sanitizeFleetSelfWireNodeId, z as migrateLegacyCwspPublicPort } from "../chunks/airpad-cwsp-client-parity.js";
-import { c as isCwsNativeIpcAvailable, i as initCwsNativeBridge, l as patchNativeUnifiedSettingsDetailed, r as getNativeUnifiedSettings } from "../chunks/cws-bridge.js";
-import { E as syncAirpadRemoteConfigFromAppSettings, t as applyAirpadRuntimeFromAppSettings } from "../chunks/remote-connection-runtime.js";
-//#region node_modules/jsox/lib/jsox.mjs
+//#region ../../node_modules/jsox/lib/jsox.mjs
 var _JSON = JSON;
 /**
 * JSOX container for all JSOX methods.
@@ -109,10 +99,6 @@ var keywords = {
 	["Infinity"]: Infinity,
 	["undefined"]: void 0
 };
-var canTagOrBeTagged = (value_type) => value_type === VALUE_UNSET || value_type === VALUE_STRING;
-var isKeywordValue = (value_type) => value_type === VALUE_TRUE || value_type === VALUE_FALSE || value_type === VALUE_NULL || value_type === VALUE_UNDEFINED || value_type === VALUE_NAN || value_type === VALUE_NEG_NAN || value_type === VALUE_INFINITY || value_type === VALUE_NEG_INFINITY;
-var isWhitespace = (cInt) => cInt === 32 || cInt === 9 || cInt === 10 || cInt === 13 || cInt === 65279 || cInt === 8232 || cInt === 8233;
-var isLineTerminator = (cInt) => cInt === 10 || cInt === 13 || cInt === 8232 || cInt === 8233;
 /**
 * Extend Date type with a nanosecond field.
 * @constructor
@@ -121,36 +107,10 @@ var isLineTerminator = (cInt) => cInt === 10 || cInt === 13 || cInt === 8232 || 
 */
 var DateNS = class extends Date {
 	constructor(a, b) {
-		if (a === void 0) super();
-		else super(a);
+		super(a);
 		this.ns = b || 0;
 	}
-	toString() {
-		return dateNSToLocalISO(this);
-	}
-	toISOString() {
-		const base = Date.prototype.toISOString.call(this);
-		const frac = (base.slice(-4, -1) + dateNSPad6(this.ns)).replace(/0+$/, "");
-		return base.slice(0, -5) + (frac ? "." + frac : "") + "Z";
-	}
-	toLocalISOString() {
-		return dateNSToLocalISO(this);
-	}
 };
-function dateNSPad6(num) {
-	const norm = Math.floor(Math.abs(num));
-	return (norm < 1e5 ? "0" : "") + (norm < 1e4 ? "0" : "") + (norm < 1e3 ? "0" : "") + (norm < 100 ? "0" : "") + (norm < 10 ? "0" : "") + norm;
-}
-function dateNSToLocalISO(this_) {
-	const tzo = -this_.getTimezoneOffset(), dif = tzo >= 0 ? "+" : "-", pad = function(num) {
-		const norm = Math.floor(Math.abs(num));
-		return (norm < 10 ? "0" : "") + norm;
-	}, pad3 = function(num) {
-		const norm = Math.floor(Math.abs(num));
-		return (norm < 100 ? "0" : "") + (norm < 10 ? "0" : "") + norm;
-	};
-	return this_.getFullYear() + "-" + pad(this_.getMonth() + 1) + "-" + pad(this_.getDate()) + "T" + pad(this_.getHours()) + ":" + pad(this_.getMinutes()) + ":" + pad(this_.getSeconds()) + "." + pad3(this_.getMilliseconds()) + dateNSPad6(this_.ns) + dif + pad(Math.abs(tzo) / 60) + ":" + pad(Math.abs(tzo) % 60);
-}
 JSOX.DateNS = DateNS;
 var contexts = [];
 /**
@@ -198,12 +158,7 @@ function dropBuffer(buf) {
 /**
 * Provide minimal escapes for a string to be encapsulated as a JSOX string in quotes.
 *
-* The caller supplies the quotes, and may append the result in segments, so this
-* cannot know which of the three quote characters will end up delimiting it; all
-* three are escaped regardless.  A parser accepts a foreign quote unescaped -- and
-* a raw newline in any quote style -- so this is conservative, not required.
-*
-* @param {string} string
+* @param {string} string 
 * @returns {string}
 */
 JSOX.escape = function(string) {
@@ -230,71 +185,13 @@ JSOX.reset = function() {
 	toObjectTypes = /* @__PURE__ */ new Map();
 	fromProtoTypes = /* @__PURE__ */ new Map();
 	commonClasses = [];
-	_parse_level = 0;
 };
-/**
-* Placeholder standing in for a reference that could not be resolved while
-* parsing -- either it pointed forward at something not built yet, or it pointed
-* at an object still open, whose identity is not settled until its revive returns.
-* Replaced by resolveDeferredRefs() once the value is complete.
-* @internal
-*/
-var DeferredRef = class {
-	constructor(path, cause) {
-		this.path = path;
-		this.cause = cause;
-	}
-};
-/**
-* Second pass: once the value is complete, every reference path resolves by plain
-* traversal from the root, so no context-stack guessing is required. Resolves each
-* deferred path, then substitutes the placeholders wherever they landed.
-* @internal
-*/
-function resolveDeferredRefs(root, refs, fixups) {
-	const resolved = /* @__PURE__ */ new Map();
-	const inProgress = /* @__PURE__ */ new Set();
-	const deref = (v) => v instanceof DeferredRef ? resolveOne(v) : v;
-	function resolveOne(ref) {
-		if (resolved.has(ref)) return resolved.get(ref);
-		if (inProgress.has(ref)) throw new Error("Reference path is circular through other references: " + ref.path);
-		inProgress.add(ref);
-		let obj = deref(root);
-		for (let i = 0; i < ref.path.length; i++) {
-			const key = ref.path[i];
-			if (obj === void 0 || obj === null) throw new Error("Reference did not resolve: ref[" + ref.path + "] -- nothing to index at position " + i + " ('" + key + "')");
-			obj = deref(obj[key]);
-		}
-		if (obj === void 0) throw new Error("Reference did not resolve: ref[" + ref.path + "] -- target is undefined");
-		inProgress.delete(ref);
-		resolved.set(ref, obj);
-		return obj;
-	}
-	for (const ref of refs) resolveOne(ref);
-	if (fixups) {
-		for (const f of fixups) if (f.container[f.key] === f.ref) f.container[f.key] = resolved.get(f.ref);
-	}
-	const seen = /* @__PURE__ */ new Set();
-	function substitute(node) {
-		if (!node || "object" !== typeof node || seen.has(node)) return;
-		seen.add(node);
-		const keys = Array.isArray(node) ? node.keys() : Object.keys(node);
-		for (const k of keys) {
-			const v = node[k];
-			if (v instanceof DeferredRef) node[k] = resolved.get(v);
-			else substitute(v);
-		}
-	}
-	substitute(root);
-	for (const ref of refs) substitute(ref.owner);
-	return root instanceof DeferredRef ? resolved.get(root) : root;
-}
 /**
 * Create a streaming parser.  Add data with parser.write(data); values that
 * are found are dispatched to the callback.
 *
 * @param {(value:any) => void} [cb]
-* @param {(this: any, key: string, value: any) => any} [reviver]
+* @param {(this: any, key: string, value: any) => any} [reviver] 
 * @returns {JSOXParser}
 */
 JSOX.begin = function(cb, reviver) {
@@ -312,7 +209,7 @@ JSOX.begin = function(cb, reviver) {
 	let n = 0;
 	let str;
 	let localFromProtoTypes = /* @__PURE__ */ new Map();
-	let word = WORD_POS_RESET, status = true, redefineClass = false, negative = false, signPending = false, result = null, rootObject = null, deferredRefs = null, deferredFixups = null, elements = void 0, context_stack = {
+	let word = WORD_POS_RESET, status = true, redefineClass = false, negative = false, result = null, rootObject = null, elements = void 0, context_stack = {
 		first: null,
 		last: null,
 		saved: null,
@@ -334,26 +231,16 @@ JSOX.begin = function(cb, reviver) {
 			this.length++;
 		},
 		pop() {
-			let r = this.last;
-			if (!(this.last = r.prior)) this.first = null;
-			r.next = this.saved;
+			let result = this.last;
+			if (!(this.last = result.prior)) this.first = null;
+			result.next = this.saved;
 			if (this.last) this.last.next = null;
-			if (!r.next) r.first = null;
-			this.saved = r;
+			if (!result.next) result.first = null;
+			this.saved = result;
 			this.length--;
-			return r.node;
+			return result.node;
 		},
-		length: 0,
-		dump() {
-			console.log("STACK LENGTH:", this.length);
-			let cur = this.first;
-			let level = 0;
-			while (cur) {
-				console.log("Context:", level, cur.node);
-				level++;
-				cur = cur.next;
-			}
-		}
+		length: 0
 	}, classes = [], protoTypes = {}, current_proto = null, current_class = null, current_class_field = 0, arrayType = -1, parse_context = CONTEXT_UNKNOWN, comment = 0, fromHex = false, decimal = false, exponent = false, exponent_sign = false, exponent_digit = false, inQueue = {
 		first: null,
 		last: null,
@@ -375,12 +262,12 @@ JSOX.begin = function(cb, reviver) {
 			this.last = recover;
 		},
 		shift() {
-			let r = this.first;
-			if (!r) return null;
-			if (!(this.first = r.next)) this.last = null;
-			r.next = this.saved;
-			this.saved = r;
-			return r.node;
+			let result = this.first;
+			if (!result) return null;
+			if (!(this.first = result.next)) this.last = null;
+			result.next = this.saved;
+			this.saved = result;
+			return result.node;
 		},
 		unshift(node) {
 			let recover = this.saved;
@@ -436,7 +323,6 @@ JSOX.begin = function(cb, reviver) {
 		reset() {
 			word = WORD_POS_RESET;
 			status = true;
-			result = null;
 			if (inQueue.last) inQueue.last.next = inQueue.save;
 			inQueue.save = inQueue.first;
 			inQueue.first = inQueue.last = null;
@@ -455,7 +341,6 @@ JSOX.begin = function(cb, reviver) {
 			val.name = null;
 			val.string = "";
 			val.className = null;
-			val.contains = null;
 			pos.line = 1;
 			pos.col = 1;
 			negative = false;
@@ -465,18 +350,6 @@ JSOX.begin = function(cb, reviver) {
 			stringEscape = false;
 			cr_escaped = false;
 			date_format = false;
-			arrayType = -1;
-			gatheringNumber = false;
-			signPending = false;
-			redefineClass = false;
-			rootObject = null;
-			deferredRefs = null;
-			deferredFixups = null;
-			stringUnicode = false;
-			unicodeWide = false;
-			stringHex = false;
-			hex_char = 0;
-			hex_char_len = 0;
 		},
 		usePrototype(className, protoType) {
 			protoTypes[className] = protoType;
@@ -490,7 +363,7 @@ JSOX.begin = function(cb, reviver) {
 			if (typeof msg !== "string" && typeof msg !== "undefined") msg = String(msg);
 			if (!status) throw new Error("Parser is still in an error state, please reset before resuming");
 			for (retcode = this._write(msg, false); retcode > 0; retcode = this._write()) {
-				const res = typeof reviver === "function" ? function walk(holder, key) {
+				if (typeof reviver === "function") (function walk(holder, key) {
 					let k, v, value = holder[key];
 					if (value && typeof value === "object") {
 						for (k in value) if (Object.prototype.hasOwnProperty.call(value, k)) {
@@ -500,9 +373,8 @@ JSOX.begin = function(cb, reviver) {
 						}
 					}
 					return reviver.call(holder, key, value);
-				}({ "": result }, "") : result;
-				result = null;
-				cb(res);
+				})({ "": result }, "");
+				result = cb(result);
 				if (retcode < 2) break;
 			}
 		},
@@ -519,9 +391,9 @@ JSOX.begin = function(cb, reviver) {
 			const writeResult = this._write(msg, true);
 			if (writeResult > 0) {
 				if (writeResult > 1) {}
-				let res = this.value();
-				if ("undefined" === typeof res && writeResult > 1) throw new Error("Pending value could not complete");
-				res = typeof reviver === "function" ? function walk(holder, key) {
+				let result = this.value();
+				if ("undefined" === typeof result && writeResult > 1) throw new Error("Pending value could not complete");
+				result = typeof reviver === "function" ? function walk(holder, key) {
 					let k, v, value = holder[key];
 					if (value && typeof value === "object") {
 						for (k in value) if (Object.prototype.hasOwnProperty.call(value, k)) {
@@ -531,9 +403,8 @@ JSOX.begin = function(cb, reviver) {
 						}
 					}
 					return reviver.call(holder, key, value);
-				}({ "": res }, "") : res;
-				result = null;
-				return res;
+				}({ "": result }, "") : result;
+				return result;
 			}
 			this.finalError();
 		},
@@ -577,16 +448,10 @@ JSOX.begin = function(cb, reviver) {
 						if (val.className) {
 							fp = localFromProtoTypes.get(val.className);
 							if (!fp) fp = fromProtoTypes.get(val.className);
-							val.className = null;
-							if (fp && (fp.cb || !fp.synthetic)) {
-								const inst = fp.protoCon ? new fp.protoCon(val.string) : val.string;
-								if (fp.cb) {
-									const r = fp.cb.call(inst, void 0, val.string);
-									return r === void 0 ? inst : r;
-								}
-								return inst;
-							}
-							return val.string;
+							if (fp && fp.cb) {
+								val.className = null;
+								return fp.cb.call(val.string);
+							} else throw new Error("Double string error, no constructor for: new " + val.className + "(" + val.string + ")");
 						}
 						return val.string;
 					case VALUE_TRUE: return true;
@@ -609,94 +474,67 @@ JSOX.begin = function(cb, reviver) {
 					case VALUE_ARRAY:
 						if (arrayType >= 0) {
 							let ab;
-							val.className = null;
-							if (val.contains.length) {
-								if ("string" !== typeof val.contains[0]) throw new Error("Invalid base64 payload in " + knownArrayTypeNames[arrayType] + "[...]; a payload starting with a digit must be quoted");
-								ab = DecodeBase64(val.contains[0]);
-							} else ab = DecodeBase64(val.string);
+							if (val.contains.length) ab = DecodeBase64(val.contains[0]);
+							else ab = DecodeBase64(val.string);
 							if (arrayType === 0) {
 								arrayType = -1;
 								return ab;
 							} else {
-								const per = knownArrayTypes[arrayType].BYTES_PER_ELEMENT;
-								if (ab.byteLength % per) throw new Error("bad encoding for typed array data in " + knownArrayTypeNames[arrayType] + "[...]; " + ab.byteLength + " bytes is not a multiple of " + per);
 								const newab = new knownArrayTypes[arrayType](ab);
 								arrayType = -1;
 								return newab;
 							}
 						} else if (arrayType === -2) {
-							const deferPath = val.contains.slice();
-							try {
-								let obj = rootObject;
-								let lvl;
-								let lastResume = -1;
-								val.className = null;
-								const pathlen = val.contains.length;
-								for (lvl = 0; lvl < pathlen; lvl++) {
-									const idx = val.contains[lvl];
-									let nextObj = obj[idx];
-									if (!nextObj) {
-										let ctx = context_stack.first;
-										let p = 0;
-										while (ctx && p < pathlen && p < context_stack.length) {
-											const thisKey = val.contains[p];
-											if (!ctx.next || thisKey !== ctx.next.node.name) break;
-											if (ctx.next) if ("number" === typeof thisKey) {
-												const actualObject = ctx.next.node.elements;
-												if (actualObject && thisKey >= actualObject.length) if (p === context_stack.length - 1) {
-													console.log("This is actually at the current object so use that", p, val.contains, elements);
-													nextObj = elements;
-													p++;
-													ctx = ctx.next;
-													break;
-												} else {
-													if (ctx.next.next && thisKey === actualObject.length) {
-														nextObj = ctx.next.next.node.elements;
-														ctx = ctx.next;
-														p++;
-														obj = nextObj;
-														continue;
-													}
-													nextObj = elements;
-													p++;
-													break;
-												}
-											} else if (thisKey !== ctx.next.node.name) {
-												nextObj = ctx.next.node.elements[thisKey];
-												lvl = p;
+							let obj = rootObject;
+							let lvl;
+							const pathlen = val.contains.length;
+							for (lvl = 0; lvl < pathlen; lvl++) {
+								const idx = val.contains[lvl];
+								let nextObj = obj[idx];
+								if (!nextObj) {
+									let ctx = context_stack.first;
+									let p = 0;
+									while (ctx && p < pathlen && p < context_stack.length) {
+										const thisKey = val.contains[p];
+										if (!ctx.next || thisKey !== ctx.next.node.name) break;
+										if (ctx.next) if ("number" === typeof thisKey) {
+											const actualObject = ctx.next.node.elements;
+											if (actualObject && thisKey >= actualObject.length) if (p === context_stack.length - 1) {
+												console.log("This is actually at the current object so use that", p, val.contains, elements);
+												nextObj = elements;
+												p++;
+												ctx = ctx.next;
 												break;
-											} else if (ctx.next.next) nextObj = ctx.next.next.node.elements;
-											else nextObj = elements;
-											else nextObj = nextObj[thisKey];
-											ctx = ctx.next;
-											p++;
-										}
-										if (p <= lastResume) throw new Error("Path did not resolve properly:" + val.contains + " stalled at " + p + " (no progress)");
-										lastResume = p;
-										if (p < pathlen) lvl = p - 1;
-										else lvl = p;
+											} else {
+												if (ctx.next.next && thisKey === actualObject.length) {
+													nextObj = ctx.next.next.node.elements;
+													ctx = ctx.next;
+													p++;
+													obj = nextObj;
+													continue;
+												}
+												nextObj = elements;
+												p++;
+												break;
+											}
+										} else if (thisKey !== ctx.next.node.name) {
+											nextObj = ctx.next.node.elements[thisKey];
+											lvl = p;
+											break;
+										} else if (ctx.next.next) nextObj = ctx.next.next.node.elements;
+										else nextObj = elements;
+										else nextObj = nextObj[thisKey];
+										ctx = ctx.next;
+										p++;
 									}
-									if (nextObj === void 0 || nextObj === null) throw new Error("Path did not resolve properly:" + val.contains + " at " + idx + "(" + lvl + ")");
-									if (nextObj === val.contains) throw new Error("Reference points at the slot holding it: ref[" + val.contains + "]");
-									obj = nextObj;
+									if (p < pathlen) lvl = p - 1;
+									else lvl = p;
 								}
-								arrayType = -3;
-								if (isStillOpen(obj)) {
-									const placeholder = new DeferredRef(deferPath, null);
-									placeholder.owner = elements;
-									if (!deferredRefs) deferredRefs = [];
-									deferredRefs.push(placeholder);
-									return placeholder;
-								}
-								return obj;
-							} catch (err) {
-								arrayType = -3;
-								const placeholder = new DeferredRef(deferPath, err);
-								placeholder.owner = elements;
-								if (!deferredRefs) deferredRefs = [];
-								deferredRefs.push(placeholder);
-								return placeholder;
+								if ("object" === typeof nextObj && !nextObj) throw new Error("Path did not resolve properly:" + val.contains + " at " + idx + "(" + lvl + ")");
+								obj = nextObj;
 							}
+							arrayType = -3;
+							return obj;
 						}
 						if (val.className) {
 							fp = localFromProtoTypes.get(val.className);
@@ -710,37 +548,9 @@ JSOX.begin = function(cb, reviver) {
 						break;
 				}
 			}
-			function noteDeferred(ref, container, key) {
-				if (!deferredFixups) deferredFixups = [];
-				deferredFixups.push({
-					ref,
-					container,
-					key
-				});
-			}
-			function isStillOpen(obj) {
-				if (!obj || "object" !== typeof obj) return false;
-				if (obj === elements) return true;
-				for (let ctx = context_stack.first; ctx; ctx = ctx.next) if (ctx.node && ctx.node.elements === obj) return true;
-				return false;
-			}
-			function reviveTaggedArray() {
-				if (!val.className) return void 0;
-				let fp = localFromProtoTypes.get(val.className);
-				if (!fp) fp = fromProtoTypes.get(val.className);
-				val.className = null;
-				if (fp && fp.cb) return fp.cb.call(val.contains);
-			}
 			function arrayPush() {
 				if (arrayType == -3) {
 					if (val.value_type === VALUE_OBJECT) elements.push(val.contains);
-					else if (val.value_type === VALUE_ARRAY) {
-						const revived = reviveTaggedArray();
-						if (revived !== void 0) {
-							const idx = elements.lastIndexOf(val.contains);
-							if (idx >= 0) elements[idx] = revived;
-						}
-					}
 					arrayType = -1;
 					return;
 				}
@@ -749,43 +559,30 @@ JSOX.begin = function(cb, reviver) {
 						elements.push(void 0);
 						delete elements[elements.length - 1];
 						break;
-					default: {
-						const pushed = convertValue();
-						elements.push(pushed);
-						if (pushed instanceof DeferredRef) noteDeferred(pushed, elements, elements.length - 1);
-						if (arrayType === -3) arrayType = -1;
+					default:
+						elements.push(convertValue());
 						break;
-					}
 				}
 				RESET_VAL();
 			}
-			function nextClassField() {
-				if (elements && Object.keys(elements).length > current_class_field) throwError("class body mixes named and positional values; fault while parsing;", cInt);
-				const name = current_class.fields[current_class_field++];
-				if (void 0 === name) throwError("class field has no matching field definitions;", cInt);
-				return name;
-			}
 			function objectPush() {
 				if (arrayType === -3 && val.value_type === VALUE_ARRAY) {
-					const revived = reviveTaggedArray();
-					if (revived !== void 0 && elements[val.name] === val.contains) elements[val.name] = revived;
 					RESET_VAL();
 					arrayType = -1;
 					return;
 				}
 				if (val.value_type === VALUE_EMPTY) return;
-				if (!val.name && current_class) val.name = nextClassField();
+				if (!val.name && current_class) val.name = current_class.fields[current_class_field++];
 				let value = convertValue();
 				if (current_proto && current_proto.protoDef && current_proto.protoDef.cb) {
 					value = current_proto.protoDef.cb.call(elements, val.name, value);
-					if (value !== void 0) elements[val.name] = value;
+					if (value) elements[val.name] = value;
 				} else elements[val.name] = value;
-				if (elements[val.name] instanceof DeferredRef) noteDeferred(elements[val.name], elements, val.name);
 				RESET_VAL();
 			}
 			function recoverIdent(cInt) {
 				if (word !== WORD_POS_RESET) {
-					if (negative) throwError("fault while parsing number;", cInt);
+					if (negative) throwError("Negative outside of quotes, being converted to a string (would lose count of leading '-' characters)", cInt);
 					switch (word) {
 						case WORD_POS_END:
 							switch (val.value_type) {
@@ -802,13 +599,15 @@ JSOX.begin = function(cb, reviver) {
 									val.string += "Infinity";
 									break;
 								case VALUE_NEG_INFINITY:
-									throwError("fault while parsing number;", cInt);
+									val.string += "-Infinity";
+									throwError("Negative outside of quotes, being converted to a string", cInt);
 									break;
 								case VALUE_NAN:
 									val.string += "NaN";
 									break;
 								case VALUE_NEG_NAN:
-									throwError("fault while parsing number;", cInt);
+									val.string += "-NaN";
+									throwError("Negative outside of quotes, being converted to a string", cInt);
 									break;
 								case VALUE_UNDEFINED:
 									val.string += "undefined";
@@ -902,7 +701,9 @@ JSOX.begin = function(cb, reviver) {
 						case WORD_POS_RESET: break;
 						case WORD_POS_FIELD: break;
 						case WORD_POS_AFTER_FIELD: break;
-						case WORD_POS_AFTER_FIELD_VALUE: break;
+						case WORD_POS_AFTER_FIELD_VALUE:
+							throwError("String-keyword recovery fail (after whitespace)", cInt);
+							break;
 						default:
 					}
 					val.value_type = VALUE_STRING;
@@ -916,19 +717,7 @@ JSOX.begin = function(cb, reviver) {
 				else if (cInt == 44) {} else {
 					if (cInt == 32 || cInt == 13 || cInt == 10 || cInt == 9 || cInt == 65279 || cInt == 8232 || cInt == 8233) return;
 					if (cInt == 44 || cInt == 125 || cInt == 93 || cInt == 58);
-					else {
-						if (word === WORD_POS_AFTER_FIELD || word === WORD_POS_AFTER_FIELD_VALUE) {
-							if (val.className) {
-								status = false;
-								throwError("too many strings in a row; fault while parsing;", cInt);
-							}
-							getProto();
-							if (!val.className) val.className = val.string;
-							val.string = "";
-							word = WORD_POS_END;
-						}
-						val.string += str;
-					}
+					else val.string += str;
 				}
 			}
 			function gatherString(start_c) {
@@ -1084,11 +873,6 @@ JSOX.begin = function(cb, reviver) {
 						if (cInt == 95) continue;
 						pos.col++;
 						if (cInt >= 48 && cInt <= 57) {
-							if (fromHex && ((val.string[1] === "b" || val.string[1] === "B") && cInt > 49 || (val.string[1] === "o" || val.string[1] === "O") && cInt > 55)) {
-								status = false;
-								throwError("fault while parsing number;", cInt);
-								break;
-							}
 							if (exponent) exponent_digit = true;
 							val.string += str;
 						} else if (cInt == 45 || cInt == 43) if (val.string.length == 0 || exponent && !exponent_sign && !exponent_digit) {
@@ -1151,7 +935,7 @@ JSOX.begin = function(cb, reviver) {
 						else if (cInt == 110) {
 							isBigInt = true;
 							break;
-						} else if (fromHex && (val.string[1] === "x" || val.string[1] === "X") && (cInt >= 97 && cInt <= 102 || cInt >= 65 && cInt <= 70)) val.string += str;
+						} else if (fromHex && (cInt >= 95 && cInt <= 102 || cInt >= 65 && cInt <= 70)) val.string += str;
 						else if (cInt == 120 || cInt == 98 || cInt == 111 || cInt == 88 || cInt == 66 || cInt == 79) if (!fromHex && val.string == "0") {
 							fromHex = true;
 							val.string += str;
@@ -1168,19 +952,16 @@ JSOX.begin = function(cb, reviver) {
 							throwError("fault while parsing number;", cInt);
 							break;
 						}
-						else {
-							if (cInt == 160) break;
-							if (cInt == 32 || cInt == 13 || cInt == 10 || cInt == 9 || cInt == 47 || cInt == 35 || cInt == 44 || cInt == 125 || cInt == 93 || cInt == 123 || cInt == 91 || cInt == 34 || cInt == 39 || cInt == 96 || cInt == 58) {
-								pos.col -= n - _n;
-								n = _n;
-								break;
-							} else {
-								if (complete_at_end) {
-									status = false;
-									throwError("fault while parsing number;", cInt);
-								}
-								break;
+						else if (cInt == 32 || cInt == 13 || cInt == 10 || cInt == 9 || cInt == 47 || cInt == 35 || cInt == 44 || cInt == 125 || cInt == 93 || cInt == 123 || cInt == 91 || cInt == 34 || cInt == 39 || cInt == 96 || cInt == 58) {
+							pos.col -= n - _n;
+							n = _n;
+							break;
+						} else {
+							if (complete_at_end) {
+								status = false;
+								throwError("fault while parsing number;", cInt);
 							}
+							break;
 						}
 					}
 				}
@@ -1206,7 +987,7 @@ JSOX.begin = function(cb, reviver) {
 							function privateProto() {}
 							classes.push(cls = {
 								name: val.string,
-								protoCon: protoDef && protoDef.protoDef && protoDef.protoDef.protoCon || privateProto.prototype.constructor,
+								protoCon: protoDef && protoDef.protoDef && protoDef.protoDef.protoCon || privateProto.constructor,
 								fields: []
 							});
 							nextMode = CONTEXT_CLASS_FIELD;
@@ -1230,13 +1011,12 @@ JSOX.begin = function(cb, reviver) {
 							function privateProto() {}
 							localFromProtoTypes.set(val.string, {
 								protoCon: privateProto.prototype.constructor,
-								cb: null,
-								synthetic: true
+								cb: null
 							});
 							tmpobj = new privateProto();
 						} else {
 							nextMode = CONTEXT_CLASS_VALUE;
-							tmpobj = new cls.protoCon();
+							tmpobj = {};
 						}
 					}
 					word = WORD_POS_RESET;
@@ -1253,7 +1033,7 @@ JSOX.begin = function(cb, reviver) {
 					if (arrayType == -1) {}
 					val.name = elements.length;
 				} else if (parse_context == CONTEXT_OBJECT_FIELD_VALUE || parse_context == CONTEXT_CLASS_VALUE) {
-					if (!val.name && current_class) val.name = nextClassField();
+					if (!val.name && current_class) val.name = current_class.fields[current_class_field++];
 					elements[val.name] = tmpobj;
 				}
 				old_context.context = parse_context;
@@ -1279,7 +1059,7 @@ JSOX.begin = function(cb, reviver) {
 			}
 			function openArray() {
 				if (word > WORD_POS_RESET && word < WORD_POS_FIELD) recoverIdent(91);
-				if ((word == WORD_POS_END || parse_context !== CONTEXT_UNKNOWN && (word == WORD_POS_AFTER_FIELD || word == WORD_POS_AFTER_FIELD_VALUE) || parse_context == CONTEXT_UNKNOWN && word == WORD_POS_FIELD) && val.string.length) {
+				if (word == WORD_POS_END && val.string.length) {
 					let typeIndex = knownArrayTypeNames.findIndex((type) => type === val.string);
 					word = WORD_POS_RESET;
 					if (typeIndex >= 0) {
@@ -1291,7 +1071,7 @@ JSOX.begin = function(cb, reviver) {
 						arrayType = -2;
 					} else if (localFromProtoTypes.get(val.string)) val.className = val.string;
 					else if (fromProtoTypes.get(val.string)) val.className = val.string;
-					else val.className = null;
+					else throwError(`Unknown type '${val.string}' specified for array`, cInt);
 				} else if (parse_context == CONTEXT_OBJECT_FIELD || word == WORD_POS_FIELD || word == WORD_POS_AFTER_FIELD) {
 					throwError("Fault while parsing; while getting field name unexpected", cInt);
 					status = false;
@@ -1340,26 +1120,26 @@ JSOX.begin = function(cb, reviver) {
 				return true;
 			}
 			function getProto() {
-				const rv = {
+				const result = {
 					protoDef: null,
 					cls: null
 				};
-				if (rv.protoDef = localFromProtoTypes.get(val.string)) {
+				if (result.protoDef = localFromProtoTypes.get(val.string)) {
 					if (!val.className) {
 						val.className = val.string;
 						val.string = null;
 					}
-				} else if (rv.protoDef = fromProtoTypes.get(val.string)) {
+				} else if (result.protoDef = fromProtoTypes.get(val.string)) {
 					if (!val.className) {
 						val.className = val.string;
 						val.string = null;
 					}
 				}
 				if (val.string) {
-					rv.cls = classes.find((cls) => cls.name === val.string);
-					if (!rv.protoDef && !rv.cls) {}
+					result.cls = classes.find((cls) => cls.name === val.string);
+					if (!result.protoDef && !result.cls) {}
 				}
-				return rv.protoDef || rv.cls ? rv : null;
+				return result.protoDef || result.cls ? result : null;
 			}
 			if (!status) return -1;
 			if (msg && msg.length) {
@@ -1394,31 +1174,18 @@ JSOX.begin = function(cb, reviver) {
 						str += buf.charAt(n);
 						n++;
 					}
-					const sawSignPending = signPending;
-					signPending = false;
-					if (sawSignPending && !(cInt >= 48 && cInt <= 57 || cInt == 46 || cInt == 73 || cInt == 78)) return throwError("extra data after token; sign is not followed by a number;", cInt);
 					pos.col++;
 					if (comment) {
-						let loneSolidus = false;
 						if (comment == 1) if (cInt == 42) comment = 3;
-						else if (cInt == 47) comment = 2;
-						else {
-							comment = 0;
-							loneSolidus = true;
-						}
+						else if (cInt != 47) return throwError("fault while parsing;", cInt);
+						else comment = 2;
 						else if (comment == 2) {
-							if (isLineTerminator(cInt)) comment = 0;
+							if (cInt == 10 || cInt == 13) comment = 0;
 						} else if (comment == 3) {
 							if (cInt == 42) comment = 4;
 						} else if (cInt == 47) comment = 0;
 						else comment = 3;
-						if (!loneSolidus) continue;
-						{
-							const held = str;
-							str = "/";
-							recoverIdent(47);
-							str = held;
-						}
+						continue;
 					}
 					switch (cInt) {
 						case 35:
@@ -1428,35 +1195,24 @@ JSOX.begin = function(cb, reviver) {
 							comment = 1;
 							break;
 						case 123:
+							openObject();
+							break;
 						case 91:
-							if (parse_context !== CONTEXT_UNKNOWN && !canTagOrBeTagged(val.value_type)) {
-								status = false;
-								throwError("fault while parsing; two values with no separator between them;", cInt);
-							}
-							if (cInt === 123) openObject();
-							else openArray();
+							openArray();
 							break;
 						case 58:
 							if (parse_context == CONTEXT_CLASS_VALUE) {
-								if (current_class_field > 0) {
-									status = false;
-									throwError("class body mixes named and positional values; fault while parsing;", cInt);
-								}
 								word = WORD_POS_RESET;
 								val.name = val.string;
 								val.string = "";
 								val.value_type = VALUE_UNSET;
 							} else if (parse_context == CONTEXT_OBJECT_FIELD || parse_context == CONTEXT_CLASS_FIELD) if (parse_context == CONTEXT_CLASS_FIELD) {
-								if (current_class && current_class.fields.length) {
-									status = false;
-									throwError("class body mixes named and positional values; fault while parsing;", cInt);
-								}
 								if (!Object.keys(elements).length) {
-									function privateProto() {}
+									console.log("This is a full object, not a class def...", val.className);
+									const privateProto = () => {};
 									localFromProtoTypes.set(context_stack.last.node.current_class.name, {
 										protoCon: privateProto.prototype.constructor,
-										cb: null,
-										synthetic: true
+										cb: null
 									});
 									elements = new privateProto();
 									parse_context = CONTEXT_OBJECT_FIELD_VALUE;
@@ -1464,6 +1220,7 @@ JSOX.begin = function(cb, reviver) {
 									word = WORD_POS_RESET;
 									val.string = "";
 									val.value_type = VALUE_UNSET;
+									console.log("don't do default;s do a revive...");
 								}
 							} else {
 								if (word != WORD_POS_RESET && word != WORD_POS_END && word != WORD_POS_FIELD && word != WORD_POS_AFTER_FIELD) recoverIdent(32);
@@ -1499,13 +1256,12 @@ JSOX.begin = function(cb, reviver) {
 								arrayType = old_context.arrayType;
 								val.value_type = old_context.valueType;
 								val.className = old_context.className;
-								val.value_type = VALUE_UNSET;
 								rootObject = null;
 								dropContext(old_context);
 							} else throwError("State error; gathering class fields, and lost the class", cInt);
 							else if (parse_context == CONTEXT_OBJECT_FIELD || parse_context == CONTEXT_CLASS_VALUE) {
 								if (val.value_type != VALUE_UNSET) {
-									if (current_class && !val.name) val.name = nextClassField();
+									if (current_class) val.name = current_class.fields[current_class_field++];
 									objectPush();
 								}
 								val.value_type = VALUE_OBJECT;
@@ -1593,7 +1349,7 @@ JSOX.begin = function(cb, reviver) {
 							} else throwError("State error; gathering class fields, and lost the class", cInt);
 							else if (parse_context == CONTEXT_OBJECT_FIELD) {
 								if (current_class) {
-									val.name = nextClassField();
+									val.name = current_class.fields[current_class_field++];
 									if (val.value_type != VALUE_UNSET) {
 										objectPush();
 										RESET_VAL();
@@ -1601,7 +1357,7 @@ JSOX.begin = function(cb, reviver) {
 								} else if (val.string || val.value_type) throwError("State error; comma in field name and/or lost the class", cInt);
 							} else if (parse_context == CONTEXT_CLASS_VALUE) {
 								if (current_class) {
-									if (arrayType != -3 && !val.name) val.name = nextClassField();
+									if (arrayType != -3 && !val.name) val.name = current_class.fields[current_class_field++];
 									if (val.value_type != VALUE_UNSET) {
 										if (arrayType != -3) objectPush();
 										RESET_VAL();
@@ -1630,10 +1386,6 @@ JSOX.begin = function(cb, reviver) {
 							negative = false;
 							break;
 						default:
-							if (parse_context !== CONTEXT_UNKNOWN && (word === WORD_POS_RESET || word === WORD_POS_AFTER_FIELD || word === WORD_POS_AFTER_FIELD_VALUE) && !canTagOrBeTagged(val.value_type) && !isWhitespace(cInt)) {
-								status = false;
-								throwError("fault while parsing; two values with no separator between them;", cInt);
-							}
 							switch (cInt) {
 								default:
 									if (parse_context == CONTEXT_UNKNOWN || parse_context == CONTEXT_OBJECT_FIELD_VALUE && word == WORD_POS_FIELD || parse_context == CONTEXT_OBJECT_FIELD || word == WORD_POS_FIELD || parse_context == CONTEXT_CLASS_FIELD) switch (cInt) {
@@ -1685,10 +1437,6 @@ JSOX.begin = function(cb, reviver) {
 											break;
 										default:
 											if (word == WORD_POS_RESET && (cInt >= 48 && cInt <= 57 || cInt == 43 || cInt == 46 || cInt == 45)) {
-												if (parse_context !== CONTEXT_UNKNOWN && val.value_type !== VALUE_UNSET) {
-													status = false;
-													throwError("fault while parsing; two values with no separator between them;", cInt);
-												}
 												fromHex = false;
 												exponent = false;
 												date_format = false;
@@ -1715,8 +1463,7 @@ JSOX.begin = function(cb, reviver) {
 												if (word !== WORD_POS_RESET && word !== WORD_POS_END) recoverIdent(cInt);
 											} else {
 												if (word === WORD_POS_END || word === WORD_POS_FIELD) {
-													if (isKeywordValue(val.value_type)) recoverIdent(cInt);
-													else val.string += str;
+													val.string += str;
 													break;
 												}
 												if (parse_context == CONTEXT_OBJECT_FIELD) {
@@ -1732,10 +1479,6 @@ JSOX.begin = function(cb, reviver) {
 									}
 									else {
 										if (word == WORD_POS_RESET && (cInt >= 48 && cInt <= 57 || cInt == 43 || cInt == 46 || cInt == 45)) {
-											if (parse_context !== CONTEXT_UNKNOWN && val.value_type !== VALUE_UNSET) {
-												status = false;
-												throwError("fault while parsing; two values with no separator between them;", cInt);
-											}
 											fromHex = false;
 											exponent = false;
 											date_format = false;
@@ -1757,38 +1500,20 @@ JSOX.begin = function(cb, reviver) {
 											if (val.value_type != VALUE_STRING) {
 												if (val.value_type == VALUE_OBJECT || val.value_type == VALUE_ARRAY) throwError("String unexpected", cInt);
 												recoverIdent(cInt);
-												break;
 											}
-											if (word == WORD_POS_AFTER_FIELD || word == WORD_POS_AFTER_FIELD_VALUE) {
-												if (val.className) {
-													status = false;
-													throwError("too many strings in a row; fault while parsing;", cInt);
-												}
-												getProto();
-												if (!val.className) val.className = val.string;
-												val.string = str;
-												word = WORD_POS_END;
-												break;
-											} else if (word == WORD_POS_END) val.string += str;
+											if (word == WORD_POS_AFTER_FIELD) if (getProto()) val.string = str;
+											else throwError("String unexpected", cInt);
+											else if (word == WORD_POS_END) val.string += str;
 											else throwError("String unexpected", cInt);
 										} else if (parse_context == CONTEXT_IN_ARRAY) {
 											if (word == WORD_POS_AFTER_FIELD) {
-												if (val.className) {
-													status = false;
-													throwError("too many strings in a row; fault while parsing;", cInt);
-												}
 												if (!val.className) {
 													val.className = val.string;
 													val.string = "";
-													word = WORD_POS_END;
 												}
 												val.string += str;
 												break;
-											} else if (word == WORD_POS_END) if (isKeywordValue(val.value_type)) recoverIdent(cInt);
-											else val.string += str;
-										} else if (parse_context == CONTEXT_CLASS_VALUE) {
-											if (word == WORD_POS_END) if (isKeywordValue(val.value_type)) recoverIdent(cInt);
-											else val.string += str;
+											} else if (word == WORD_POS_END) val.string += str;
 										}
 										break;
 									}
@@ -1796,14 +1521,6 @@ JSOX.begin = function(cb, reviver) {
 								case 96:
 								case 34:
 								case 39:
-									if (parse_context !== CONTEXT_UNKNOWN && !canTagOrBeTagged(val.value_type)) {
-										status = false;
-										throwError("fault while parsing; two values with no separator between them;", cInt);
-									}
-									if (val.className) {
-										status = false;
-										throwError("too many strings in a row; fault while parsing;", cInt);
-									}
 									if (val.string) val.className = val.string;
 									val.string = "";
 									if (gatherString(cInt)) {
@@ -1934,14 +1651,11 @@ JSOX.begin = function(cb, reviver) {
 									} else recoverIdent(cInt);
 									break;
 								case 45:
-									if (word == WORD_POS_RESET) {
-										negative = !negative;
-										signPending = true;
-									} else recoverIdent(cInt);
+									if (word == WORD_POS_RESET) negative = !negative;
+									else recoverIdent(cInt);
 									break;
 								case 43:
 									if (word !== WORD_POS_RESET) recoverIdent(cInt);
-									else signPending = true;
 									break;
 							}
 							break;
@@ -1973,12 +1687,6 @@ JSOX.begin = function(cb, reviver) {
 			if (completed && val.value_type != VALUE_UNSET) {
 				word = WORD_POS_RESET;
 				result = convertValue();
-				if (deferredRefs) {
-					const refs = deferredRefs, fixups = deferredFixups;
-					deferredRefs = null;
-					deferredFixups = null;
-					result = resolveDeferredRefs(result, refs, fixups);
-				}
 				negative = false;
 				val.string = "";
 				val.value_type = VALUE_UNSET;
@@ -2008,9 +1716,9 @@ JSOX.parse = function(msg, reviver) {
 	const writeResult = parser._write(msg, true);
 	if (writeResult > 0) {
 		if (writeResult > 1) {}
-		let value = parser.value();
-		if ("undefined" === typeof value && writeResult > 1) throw new Error("Pending value could not complete");
-		value = typeof reviver === "function" ? function walk(holder, key) {
+		let result = parser.value();
+		if ("undefined" === typeof result && writeResult > 1) throw new Error("Pending value could not complete");
+		result = typeof reviver === "function" ? function walk(holder, key) {
 			let k, v, value = holder[key];
 			if (value && typeof value === "object") {
 				for (k in value) if (Object.prototype.hasOwnProperty.call(value, k)) {
@@ -2020,9 +1728,9 @@ JSOX.parse = function(msg, reviver) {
 				}
 			}
 			return reviver.call(holder, key, value);
-		}({ "": value }, "") : value;
+		}({ "": result }, "") : result;
 		_parse_level--;
-		return value;
+		return result;
 	}
 	parser.finalError();
 };
@@ -2079,7 +1787,7 @@ JSOX.registerToJSOX = function(name, ptype, f) {
 */
 JSOX.toJSOX = function(name, ptype, f) {
 	if (!ptype.prototype || ptype.prototype !== Object.prototype) {
-		if (toProtoTypes.get(ptype.prototype)) throw new Error("Existing toJSOX has been registered for prototype " + name + " " + ptype?.name);
+		if (toProtoTypes.get(ptype.prototype)) throw new Error("Existing toJSOX has been registered for prototype");
 		toProtoTypes.set(ptype.prototype, {
 			external: true,
 			name: name || f.constructor.name,
@@ -2141,8 +1849,6 @@ JSOX.stringifier = function() {
 	let classes = [];
 	let useQuote = "\"";
 	let fieldMap = /* @__PURE__ */ new WeakMap();
-	let sortFields = true;
-	let depth = 0;
 	const path = [];
 	let encoding = [];
 	const localToProtoTypes = /* @__PURE__ */ new WeakMap();
@@ -2273,7 +1979,7 @@ JSOX.stringifier = function() {
 		});
 		toProtoTypes.set(Uint8ClampedArray.prototype, {
 			external: true,
-			name: "cu8",
+			name: "uc8",
 			cb: function() {
 				return "[" + getIdentifier(base64ArrayBuffer(this.buffer)) + "]";
 			}
@@ -2408,20 +2114,7 @@ JSOX.stringifier = function() {
 		stringify(o, r, s) {
 			return stringify(o, r, s);
 		},
-		get sort() {
-			return sortFields;
-		},
-		set sort(v) {
-			sortFields = !!v;
-		},
-		get quote() {
-			return useQuote;
-		},
-		set quote(q) {
-			useQuote = q;
-		},
 		setQuote(q) {
-			console.log("JSOX: setQuote() is deprecated, use `stringifier.quote = ...` instead.");
 			useQuote = q;
 		},
 		registerToJSOX(n, p, f) {
@@ -2520,21 +2213,6 @@ JSOX.stringifier = function() {
 	function stringify(object, replacer, space) {
 		if (object === void 0) return "undefined";
 		if (object === null) return;
-		let restoreSort;
-		let restoreQuote;
-		if (replacer && "object" === typeof replacer && !Array.isArray(replacer)) {
-			const opts = replacer;
-			replacer = opts.replacer;
-			if (space === void 0) space = opts.pretty !== void 0 ? opts.pretty : opts.space;
-			if (opts.sort !== void 0) {
-				restoreSort = sortFields;
-				sortFields = !!opts.sort;
-			}
-			if (opts.quote !== void 0) {
-				restoreQuote = useQuote;
-				useQuote = opts.quote;
-			}
-		}
 		let gap;
 		let indent;
 		let rep;
@@ -2547,19 +2225,11 @@ JSOX.stringifier = function() {
 		else if (spaceType === "string") indent = space;
 		rep = replacer;
 		if (replacer && repType !== "function" && (repType !== "object" || typeof replacer.length !== "number")) throw new Error("JSOX.stringify");
-		if (!depth) {
-			path.length = 0;
-			fieldMap = /* @__PURE__ */ new WeakMap();
-		}
-		depth++;
-		try {
-			return str("", { "": object });
-		} finally {
-			depth--;
-			if (!depth) commonClasses.length = 0;
-			if (restoreSort !== void 0) sortFields = restoreSort;
-			if (restoreQuote !== void 0) useQuote = restoreQuote;
-		}
+		path.length = 0;
+		fieldMap = /* @__PURE__ */ new WeakMap();
+		const finalResult = str("", { "": object });
+		commonClasses.length = 0;
+		return finalResult;
 		function str(key, holder) {
 			var mind = gap;
 			const doArrayToJSOX_ = arrayToJSOX.cb;
@@ -2696,10 +2366,6 @@ JSOX.stringifier = function() {
 									if (!Object.prototype.propertyIsEnumerable.call(value, k)) continue;
 								}
 								if (Object.prototype.hasOwnProperty.call(value, k)) {
-									if (!sortFields && !partialClass) {
-										keys.push(k);
-										continue;
-									}
 									let n;
 									for (n = 0; n < keys.length; n++) if (keys[n] > k) {
 										keys.splice(n, 0, k);
@@ -2801,13 +2467,9 @@ function DecodeBase64(buf) {
 	return ab;
 }
 /**
-* @param {unknown} object
-* @param {((this: unknown, key: string, value: unknown)=>any)|string[]|{replacer?:(this: unknown, key: string, value: unknown)=>any,pretty?:string|number,space?:string|number,sort?:boolean,quote?:string}} [replacer]
-*        a replacer function, a field-name array, or an options object; the options
-*        object may carry `pretty`/`space` (indent), `sort` (false emits fields in
-*        insertion order) and `quote` (the quote to prefer, default `"`), each
-*        applying only to this call.
-* @param {string | number} [space]
+* @param {unknown} object 
+* @param {(this: unknown, key: string, value: unknown)} [replacer] 
+* @param {string | number} [space] 
 * @returns {string}
 */
 JSOX.stringify = function(object, replacer, space) {
@@ -2834,1679 +2496,4 @@ JSOX.stringify = function(object, replacer, space) {
 	};
 });
 //#endregion
-//#region src/shared/other/config/Settings.ts
-var Settings_exports = /* @__PURE__ */ __exportAll({
-	DB_NAME: () => DB_NAME,
-	SETTINGS_KEY: () => SETTINGS_KEY,
-	SETTINGS_LS_MIRROR_KEY: () => SETTINGS_LS_MIRROR_KEY,
-	STORE: () => STORE,
-	WebDavSync: () => WebDavSync,
-	currentWebDav: () => currentWebDav,
-	default: () => WebDavSync,
-	didPersistShellMaintainHubSocket: () => didPersistShellMaintainHubSocket,
-	ensureCapacitorCwspSettingsSeeded: () => ensureCapacitorCwspSettingsSeeded,
-	ensureCrxCwspSettingsSeeded: () => ensureCrxCwspSettingsSeeded,
-	getByPath: () => getByPath,
-	getLastSettingsSaveReport: () => getLastSettingsSaveReport,
-	idbGetSettings: () => idbGetSettings,
-	idbPutSettings: () => idbPutSettings,
-	loadSettings: () => loadSettings,
-	normalizeCoreEndpointOrigin: () => normalizeCoreEndpointOrigin,
-	noteSettingsControlSync: () => noteSettingsControlSync,
-	saveSettings: () => saveSettings,
-	shouldDeferCrxHubSocketBootstrap: () => shouldDeferCrxHubSocketBootstrap,
-	slugify: () => slugify,
-	splitPath: () => splitPath,
-	updateWebDavSettings: () => updateWebDavSettings
-});
-var SETTINGS_KEY = "rs-settings";
-/** localStorage mirror for Capacitor WebView when IndexedDB is flaky or empty. */
-var SETTINGS_LS_MIRROR_KEY = "rs-settings.v1";
-var lastSettingsSaveReport = { nativeSynced: null };
-var getLastSettingsSaveReport = () => ({ ...lastSettingsSaveReport });
-/** Public /cwsp Settings arm reports Control POST outcome (Capacitor Java or Neutralino). */
-var noteSettingsControlSync = (ok, error) => {
-	lastSettingsSaveReport = {
-		...lastSettingsSaveReport,
-		webnativeSynced: ok,
-		webnativeError: ok ? void 0 : error
-	};
-};
-var trimSetting = (v) => typeof v === "string" ? v.trim() : "";
-/** Factory defaults — not treated as user-configured Client-ID on Capacitor. */
-var CAPACITOR_FACTORY_SELF_IDS = /* @__PURE__ */ new Set([
-	"L-196",
-	"L-208",
-	"L-210"
-]);
-var isCapacitorFactorySelfId = (id) => {
-	if (!id) return true;
-	const shortId = sanitizeFleetSelfWireNodeId(id) || id;
-	return CAPACITOR_FACTORY_SELF_IDS.has(shortId);
-};
-/** Home fleet Client-ID — accepts short {@code L-196} via normalize → {@code L-192.168.0.196}. */
-var isHomeFleetClientId = (id) => Boolean(id) && isAssociableFleetWireNodeId(normalizeWireNodeIdForWire(id));
-/** Persist short home-fleet Client-ID ({@code L-196}); never expand to full LAN form. */
-var normalizePersistedClientId = (raw) => sanitizeFleetSelfWireNodeId(raw) || String(raw ?? "").trim();
-var isCapacitorNativeShell = () => {
-	try {
-		const c = globalThis.Capacitor;
-		return typeof c?.isNativePlatform === "function" && Boolean(c.isNativePlatform());
-	} catch {
-		return false;
-	}
-};
-/** Desk Neutralino / endpoint peer — must be in Android clipboard destinations for Win images. */
-var CAPACITOR_DESK_PEER_ID = "L-110";
-var isDeskPeerId = (id) => {
-	return (sanitizeFleetSelfWireNodeId(id) || id.trim()) === CAPACITOR_DESK_PEER_ID;
-};
-var splitClipboardDestIds = (raw) => {
-	const seen = /* @__PURE__ */ new Set();
-	const out = [];
-	for (const part of raw.split(/[,;\s\n\r]+/)) {
-		const id = part.trim();
-		if (!id || seen.has(id)) continue;
-		seen.add(id);
-		out.push(id);
-	}
-	return out;
-};
-var joinClipboardDestIds = (ids) => ids.filter(Boolean).join(";");
-/**
-* Prepend L-110 when missing. Leaves `*` alone (wildcard already covers desk).
-* WHY: legacy Capacitor prefs were phone-only (L-196;L-210;L-208) → Android↔Android only.
-*/
-var ensureDeskPeerInDestCsv = (raw) => {
-	const t = String(raw || "").trim();
-	if (!t || t === "*") return {
-		value: t || "*",
-		changed: false
-	};
-	const ids = splitClipboardDestIds(t);
-	if (ids.some(isDeskPeerId)) return {
-		value: joinClipboardDestIds(ids),
-		changed: false
-	};
-	return {
-		value: joinClipboardDestIds([CAPACITOR_DESK_PEER_ID, ...ids]),
-		changed: true
-	};
-};
-/** Patch Capacitor settings so routeTarget + share destinations include desk L-110. */
-var ensureCapacitorDeskClipboardTargets = (settings) => {
-	if (!isCapacitorNativeShell()) return null;
-	const route = trimSetting(settings.core?.socket?.routeTarget);
-	const share = trimSetting(settings.shell?.clipboardShareDestinationIds);
-	const fallback = "L-196;L-210";
-	const r = ensureDeskPeerInDestCsv(route || fallback);
-	const s = ensureDeskPeerInDestCsv(share || route || fallback);
-	if (!r.changed && !s.changed) return null;
-	return {
-		...settings,
-		core: {
-			...settings.core,
-			socket: {
-				...settings.core?.socket || {},
-				routeTarget: r.value
-			}
-		},
-		shell: {
-			...settings.shell,
-			clipboardShareDestinationIds: s.value
-		}
-	};
-};
-var CAPACITOR_CLIPBOARD_ASK_MIGRATED_KEY = "cwsp.clipboardAskHeadsMigratedV1";
-/**
-* WHY: older Capacitor IDB defaults used shell.clipboard*Mode=auto — Accept never posts.
-* One-shot upgrade to ask (user can switch back in Settings).
-*/
-var ensureCapacitorClipboardAskModes = (settings) => {
-	if (!isCapacitorNativeShell()) return null;
-	try {
-		if (globalThis.localStorage?.getItem?.(CAPACITOR_CLIPBOARD_ASK_MIGRATED_KEY) === "1") return null;
-	} catch {}
-	const inbound = String(settings.shell?.clipboardInboundMode || "auto").trim().toLowerCase();
-	const outbound = String(settings.shell?.clipboardOutboundMode || "auto").trim().toLowerCase();
-	const needIn = inbound !== "ask";
-	const needOut = outbound !== "ask";
-	try {
-		globalThis.localStorage?.setItem?.(CAPACITOR_CLIPBOARD_ASK_MIGRATED_KEY, "1");
-	} catch {}
-	if (!needIn && !needOut) return null;
-	return {
-		...settings,
-		shell: {
-			...settings.shell,
-			...needIn ? { clipboardInboundMode: "ask" } : null,
-			...needOut ? { clipboardOutboundMode: "ask" } : null
-		}
-	};
-};
-/** Compose Capacitor shell migrations (desk peers + ask modes). */
-var applyCapacitorShellMigrations = (settings) => {
-	let next = null;
-	const desk = ensureCapacitorDeskClipboardTargets(settings);
-	if (desk) next = desk;
-	const ask = ensureCapacitorClipboardAskModes(next || settings);
-	if (ask) next = ask;
-	return next;
-};
-/** Neutralino / WebNative / /cwsp Control bridge shares `/service/config`. */
-var isWebnativeSurface = () => {
-	try {
-		const g = globalThis;
-		const auth = g.__WEBNATIVE_AUTH__ || g.__NEUTRALINO_AUTH__;
-		return Boolean(g.__CWS_WEBNATIVE_BOOT__ || g.__CWS_NEUTRALINO_BOOT__ || g.__CWSP_CONTROL_BRIDGE_LIVE__ || auth && typeof auth.port === "number");
-	} catch {
-		return false;
-	}
-};
-var readDesktopControlAuth = () => {
-	try {
-		const g = globalThis;
-		const src = g.__CWSP_CONTROL_SOURCE__;
-		const via = String(g.__CWSP_CONTROL_VIA__ || "");
-		if (via === "android" && src && typeof src.port === "number" && src.host) return {
-			port: src.port,
-			key: String(src.apiKey || src.userKey || ""),
-			host: String(src.host).trim(),
-			scheme: src.scheme === "https" ? "https" : "http"
-		};
-		if (via === "neutralino" || g.__NEUTRALINO_AUTH__) {
-			const n = g.__NEUTRALINO_AUTH__ || g.__WEBNATIVE_AUTH__;
-			if (n && typeof n.port === "number") return {
-				port: n.port || 29110,
-				key: String(n.key || "cwsp-neutralino-local"),
-				host: String(n.host || "127.0.0.1"),
-				scheme: n.scheme === "https" ? "https" : "http"
-			};
-		}
-		const auth = g.__WEBNATIVE_AUTH__ || g.__NEUTRALINO_AUTH__;
-		if (auth && typeof auth.port === "number") return {
-			port: auth.port,
-			key: String(auth.key || src?.apiKey || src?.userKey || ""),
-			host: String(auth.host || src?.host || "127.0.0.1").trim() || "127.0.0.1",
-			scheme: auth.scheme === "https" || src?.scheme === "https" ? "https" : "http"
-		};
-		if (src && typeof src.port === "number" && src.host) return {
-			port: src.port,
-			key: String(src.apiKey || src.userKey || ""),
-			host: String(src.host).trim() || "127.0.0.1",
-			scheme: src.scheme === "https" ? "https" : "http"
-		};
-		return null;
-	} catch {
-		return null;
-	}
-};
-var readControlBridgeVia = () => {
-	try {
-		return String(globalThis.__CWSP_CONTROL_VIA__ || "");
-	} catch {
-		return "";
-	}
-};
-/** https://cwsp.u2re.space Control SPA — settings:patch arm owns device SoT (not saveSettings Node push). */
-var isPublicCwspControlSpa = () => {
-	try {
-		if (String(globalThis.document?.documentElement?.dataset?.cwspSurface || "").toLowerCase() === "cwsp-control") return true;
-		return /^(www\.)?cwsp\.u2re\.space$/i.test(String(location?.hostname || ""));
-	} catch {
-		return false;
-	}
-};
-var isChromeExtensionPage = () => {
-	try {
-		return String(location?.protocol || "").toLowerCase() === "chrome-extension:";
-	} catch {
-		return false;
-	}
-};
-var readControlSessionToken = () => {
-	try {
-		const fromGlobal = String(globalThis.__CWSP_CONTROL_SESSION__ || "").trim();
-		if (fromGlobal) return fromGlobal;
-	} catch {}
-	try {
-		const raw = sessionStorage.getItem("cwsp-control-session-v1");
-		if (!raw) return "";
-		const parsed = JSON.parse(raw);
-		if (!parsed?.token) return "";
-		if (Number(parsed.expiresAt) && Date.now() >= Number(parsed.expiresAt)) return "";
-		try {
-			if (parsed.origin && parsed.origin !== String(location.origin || "")) return "";
-		} catch {}
-		return String(parsed.token).trim();
-	} catch {
-		return "";
-	}
-};
-/** CRX persistent session lives in chrome.storage.local (not sessionStorage). */
-var readCrxControlSessionTokenAsync = async () => {
-	if (!isChromeExtensionPage()) return "";
-	try {
-		return await (await __vitePreload(() => import("../chunks/crx-control-session.js"), __vite__mapDeps([0,1]), import.meta.url)).getCrxControlSessionToken() || "";
-	} catch {
-		return "";
-	}
-};
-var webnativeControl = async (path, init) => {
-	try {
-		const auth = readDesktopControlAuth();
-		if (!auth || typeof auth.port !== "number") return null;
-		const host = String(auth.host || "127.0.0.1").trim() || "127.0.0.1";
-		const scheme = auth.scheme === "https" ? "https" : "http";
-		const pageHost = String(location.hostname || "").toLowerCase();
-		const pageIsPublicHttps = location.protocol === "https:" && pageHost !== "127.0.0.1" && pageHost !== "localhost" && pageHost !== "::1";
-		const viaAndroid = readControlBridgeVia() === "android";
-		if (pageIsPublicHttps && !viaAndroid && (host === "127.0.0.1" || host === "localhost" || host === "::1") && auth.port === 8434) return null;
-		const headers = new Headers(init?.headers);
-		headers.set("Content-Type", "application/json");
-		const pageIsChromeExtension = isChromeExtensionPage();
-		let session = readControlSessionToken();
-		if (!session && pageIsChromeExtension) {
-			session = await readCrxControlSessionTokenAsync();
-			if (session) try {
-				globalThis.__CWSP_CONTROL_SESSION__ = session;
-			} catch {}
-		}
-		if (pageIsPublicHttps || pageIsChromeExtension) {
-			if (!session) {
-				const method = String(init?.method || "GET").toUpperCase();
-				if (pageIsChromeExtension && method !== "GET" && method !== "HEAD") try {
-					globalThis.dispatchEvent(new CustomEvent("cwsp-control-unauthorized", { detail: {
-						status: 401,
-						path,
-						reason: "missing-session"
-					} }));
-				} catch {}
-				return null;
-			}
-			headers.set("X-Control-Session", session);
-			headers.delete("X-API-Key");
-			headers.delete("X-Skip-Legacy-Key");
-			if (pageIsChromeExtension) try {
-				const id = String(globalThis.chrome?.runtime?.id || "").trim();
-				if (id) headers.set("X-Control-Origin", `chrome-extension://${id}`);
-			} catch {}
-		} else {
-			if (session) headers.set("X-Control-Session", session);
-			if (auth.key) headers.set("X-API-Key", auth.key);
-		}
-		const signal = init?.signal ?? (typeof AbortSignal !== "undefined" && typeof AbortSignal.timeout === "function" ? AbortSignal.timeout(2500) : void 0);
-		const url = `${scheme}://${host.includes(":") && !host.startsWith("[") ? `[${host}]` : host}:${auth.port}${path.startsWith("/") ? path : `/${path}`}`;
-		const isLoopback = host === "127.0.0.1" || host === "localhost" || host === "::1";
-		const isPrivate = /^10\./.test(host) || /^192\.168\./.test(host) || /^172\.(1[6-9]|2\d|3[0-1])\./.test(host);
-		const fetchInit = {
-			...init,
-			headers,
-			cache: "no-store",
-			signal,
-			mode: "cors",
-			credentials: "omit"
-		};
-		if (isLoopback) fetchInit.targetAddressSpace = "loopback";
-		else if (isPrivate) fetchInit.targetAddressSpace = "local";
-		const res = await fetch(url, fetchInit);
-		if ((res.status === 401 || res.status === 403) && (pageIsPublicHttps || pageIsChromeExtension)) try {
-			sessionStorage.removeItem("cwsp-control-session-v1");
-			delete globalThis.__CWSP_CONTROL_SESSION__;
-			const g = globalThis;
-			g.__CWSP_CONTROL_BRIDGE_LIVE__ = false;
-			g.__CWS_NODE_CLIPBOARD_HUB__ = false;
-			if (pageIsChromeExtension) __vitePreload(() => import("../chunks/crx-control-session.js").then((m) => m.clearCrxControlSession()), __vite__mapDeps([0,1]), import.meta.url).catch(() => void 0);
-			globalThis.dispatchEvent(new CustomEvent("cwsp-control-unauthorized", { detail: {
-				status: res.status,
-				path
-			} }));
-		} catch {}
-		if (!res.ok) return null;
-		return await res.json();
-	} catch {
-		return null;
-	}
-};
-/**
-* Map a resolved CWSP config snapshot (`readServerV2ConfigSnapshot` shape from the backend's
-* GET /service/config) onto the AppSettings.core fields the Settings/Network views render. The
-* snapshot's `bridge` section carries the canonical endpoint URL + identity + TLS decision.
-*/
-var mapWebnativeSnapshotToCore = (snap) => {
-	if (!snap || typeof snap !== "object") return null;
-	const bridge = snap.bridge || {};
-	const shell = snap.shell || {};
-	const coreIn = snap.core && typeof snap.core === "object" ? snap.core : {};
-	const listenPort = Number(snap.listenPort) || Number(snap.publicHttpPort) || 8434;
-	const endpointUrlRaw = String(coreIn.endpointUrl || bridge.endpointUrl || shell.remoteHost || "").trim();
-	const endpointsList = Array.isArray(bridge.endpoints) ? bridge.endpoints.map((e) => String(e || "").trim()).filter(Boolean) : [];
-	const endpointUrl = endpointUrlRaw || endpointsList[0] || "";
-	const userId = String(coreIn.userId || bridge.userId || bridge.deviceId || "").trim();
-	const userKey = String(coreIn.ecosystemToken || coreIn.userKey || bridge.userKey || shell.accessToken || shell.clientToken || "").trim();
-	const allowInsecureTls = bridge.allowInsecureTls !== void 0 ? Boolean(bridge.allowInsecureTls) : coreIn.allowInsecureTls !== void 0 ? Boolean(coreIn.allowInsecureTls) : void 0;
-	if (!endpointUrl && !userId && !userKey) return null;
-	const overlay = {};
-	if (endpointUrl) overlay.endpointUrl = endpointUrl;
-	else if (!endpointUrl && !userId) overlay.endpointUrl = `https://127.0.0.1:${listenPort}`;
-	if (userId) overlay.userId = userId;
-	if (userKey) {
-		overlay.userKey = userKey;
-		overlay.ecosystemToken = userKey;
-		overlay.socket = { accessToken: userKey };
-	}
-	if (allowInsecureTls !== void 0) overlay.allowInsecureTls = allowInsecureTls;
-	overlay.preferBackendSync = (coreIn.preferBackendSync ?? true) !== false;
-	return overlay;
-};
-/** Shell keys owned by Node portable.config — backend wins when present. */
-var mapWebnativeBundleToShell = (bundle) => {
-	const shell = bundle?.settings?.shell || bundle?.portable?.shell || bundle?.snapshot?.shell;
-	if (!shell || typeof shell !== "object") return null;
-	return { ...shell };
-};
-var webnativeBundleCache = null;
-var webnativeSnapshotFetchedAt = 0;
-var loadWebnativeControlBundle = async () => {
-	if (Date.now() - webnativeSnapshotFetchedAt < 2e3 && webnativeBundleCache) return webnativeBundleCache;
-	const bundle = await webnativeControl("/service/config");
-	webnativeBundleCache = bundle || null;
-	bundle?.snapshot || bundle?.settings || bundle?.portable;
-	webnativeSnapshotFetchedAt = Date.now();
-	return webnativeBundleCache;
-};
-/** Best-effort push of a settings save into `portable.config.json` via the backend control RPC. */
-var pushWebnativeSettingsPatch = async (settings) => {
-	if (!isWebnativeSurface()) return false;
-	try {
-		const pageHost = String(location.hostname || "").toLowerCase();
-		if (location.protocol === "https:" && pageHost !== "127.0.0.1" && pageHost !== "localhost" && pageHost !== "::1" && !readControlSessionToken()) {
-			console.warn("[Settings] Control session missing — pair before saving to device");
-			return false;
-		}
-	} catch {}
-	const core = settings.core;
-	if (!core) return false;
-	const token = String(core.ecosystemToken || core.userKey || core.socket?.accessToken || "").trim();
-	const remoteHost = String(core.endpointUrl || "").trim();
-	const clientId = String(core.userId || "").trim();
-	const shell = settings.shell || {};
-	const patch = {
-		bridge: {
-			endpointUrl: remoteHost,
-			userId: clientId,
-			userKey: token,
-			allowInsecureTls: Boolean(core.allowInsecureTls)
-		},
-		shell: {
-			remoteHost,
-			accessToken: token,
-			clientToken: token,
-			clipboardBroadcastTargets: String(shell.clipboardBroadcastTargets || core.socket?.routeTarget || "L-196;L-210").trim(),
-			clipboardOutboundMode: String(shell.clipboardOutboundMode || "ask").trim().toLowerCase() === "ask" ? "ask" : "auto",
-			clipboardInboundMode: String(shell.clipboardInboundMode || "ask").trim().toLowerCase() === "ask" ? "ask" : "auto",
-			clipboardOutboundShowErase: shell.clipboardOutboundShowErase !== false,
-			clipboardInboundShowUndo: shell.clipboardInboundShowUndo !== false,
-			clipboardPromptDismissMs: (() => {
-				const n = Number(shell.clipboardPromptDismissMs);
-				return Number.isFinite(n) && n >= 1e3 ? Math.floor(n) : 1e4;
-			})(),
-			filesShareDestinationIds: String(shell.filesShareDestinationIds || "").trim(),
-			filesAllowShareToAll: Boolean(shell.filesAllowShareToAll),
-			filesOpenForShareMode: String(shell.filesOpenForShareMode || "auto").trim().toLowerCase() === "manual" ? "manual" : "auto",
-			filesInboundMode: String(shell.filesInboundMode || "ask").trim().toLowerCase() === "auto" ? "auto" : "ask",
-			filesCopyOnReceive: shell.filesCopyOnReceive !== false,
-			filesByteTransport: (() => {
-				const v = String(shell.filesByteTransport || "auto").trim().toLowerCase();
-				return v === "http" || v === "ws" ? v : "auto";
-			})(),
-			filesLandingMode: (() => {
-				const v = String(shell.filesLandingMode || "app").trim().toLowerCase();
-				return v === "downloads" || v === "saf" ? v : "app";
-			})(),
-			filesIncomingDir: String(shell.filesIncomingDir || "").trim(),
-			filesAskDirEveryTime: shell.filesAskDirEveryTime !== false,
-			filesStagingRoot: (() => {
-				const v = String(shell.filesStagingRoot || "app").trim().toLowerCase();
-				return v === "cache" || v === "external" ? v : "app";
-			})(),
-			acceptInboundFilesData: shell.acceptInboundFilesData !== false
-		},
-		launcherEnv: {
-			CWS_ASSOCIATED_ID: clientId,
-			CWS_ASSOCIATED_TOKEN: token
-		}
-	};
-	if (core.ops?.directUrl) patch.bridge.endpoints = [String(core.ops.directUrl).trim()];
-	const authForPatch = readDesktopControlAuth();
-	const isCapacitorControl = readControlBridgeVia() === "android" || Number(authForPatch?.port) === 8434;
-	let body = patch;
-	if (isCapacitorControl) {
-		const coreIn = { ...settings.core || {} };
-		delete coreIn.userKey;
-		delete coreIn.ecosystemToken;
-		if (coreIn.socket && typeof coreIn.socket === "object") {
-			const sock = { ...coreIn.socket };
-			delete sock.accessToken;
-			delete sock.airpadAuthToken;
-			delete sock.clientAccessToken;
-			coreIn.socket = sock;
-		}
-		const shellIn = {
-			...patch.shell,
-			...settings.shell || {}
-		};
-		delete shellIn.accessToken;
-		delete shellIn.clientToken;
-		const bridgeIn = { ...patch.bridge };
-		delete bridgeIn.userKey;
-		body = {
-			...patch,
-			bridge: bridgeIn,
-			core: coreIn,
-			shell: shellIn,
-			cwsp: settings.cwsp
-		};
-	}
-	const r = await webnativeControl("/service/config", {
-		method: "POST",
-		body: JSON.stringify(body)
-	});
-	try {
-		const auth = readDesktopControlAuth();
-		const hubPort = Number(auth?.port) || 0;
-		const hubHost = String(auth?.host || "127.0.0.1");
-		if (hubPort === 29110 && (hubHost === "127.0.0.1" || hubHost === "localhost" || hubHost === "::1")) {
-			const hubBody = {};
-			if (remoteHost) hubBody.remoteHost = remoteHost;
-			if (token) {
-				hubBody.accessToken = token;
-				hubBody.clientToken = token;
-			}
-			if (clientId) hubBody.clientId = clientId;
-			if (Object.keys(hubBody).length) await webnativeControl("/service/clipboard-hub", {
-				method: "POST",
-				body: JSON.stringify(hubBody)
-			});
-		}
-	} catch {}
-	webnativeSnapshotFetchedAt = 0;
-	webnativeBundleCache = null;
-	return Boolean(r?.ok === true || isCapacitorControl && r && (r.settings || r.portable));
-};
-/** First-boot CWSP defaults for CWSAndroid when IDB still has dev/empty endpoint fields. */
-var CAPACITOR_CWSP_BOOTSTRAP = {
-	core: {
-		endpointUrl: "https://192.168.0.200:8434",
-		ecosystemToken: "n3v3rm1nd",
-		userKey: "n3v3rm1nd",
-		allowInsecureTls: true,
-		useCoreIdentityForAirPad: true,
-		ops: { directUrl: "https://192.168.0.110:8434" },
-		socket: {
-			routeTarget: "L-110;L-196;L-210",
-			accessToken: "n3v3rm1nd",
-			allowAccessTokenWithoutUserKey: true,
-			protocol: "auto"
-		},
-		interop: { preferNativeWebsocket: true }
-	},
-	shell: {
-		bridgeDaemonEnabled: true,
-		allowControlApi: false,
-		autoStartOnBoot: true,
-		enableRemoteClipboardBridge: true,
-		acceptInboundClipboardData: true,
-		applyRemoteClipboardToDevice: true,
-		maintainHubSocketConnection: false,
-		clipboardShareDestinationIds: "L-110;L-196;L-210",
-		clipboardInboundMode: "ask",
-		clipboardOutboundMode: "ask"
-	}
-};
-var needsCapacitorCwspBootstrap = (settings) => {
-	if (!isCapacitorNativeShell()) return false;
-	const ep = trimSetting(settings.core?.endpointUrl);
-	const uid = trimSetting(settings.core?.userId);
-	const access = trimSetting(settings.core?.ecosystemToken) || trimSetting(settings.core?.socket?.accessToken) || trimSetting(settings.core?.userKey);
-	const defaultEp = trimSetting(DEFAULT_SETTINGS.core?.endpointUrl);
-	if (!uid || !access) return true;
-	if (!ep || ep === defaultEp || /localhost|127\.0\.0\.1|:8434/i.test(ep)) return true;
-	return false;
-};
-/** Seed mobile CWSP settings + sync to Java prefs on first Capacitor boot. */
-var capacitorCwspSeedDone = false;
-var ensureCapacitorCwspSettingsSeeded = async () => {
-	if (!isCapacitorNativeShell()) return null;
-	if (capacitorCwspSeedDone) return null;
-	let nativeUserId = "";
-	try {
-		if (isCwsNativeIpcAvailable()) {
-			const core = (await getNativeUnifiedSettings())?.core;
-			nativeUserId = trimSetting(core && typeof core === "object" && core !== null && "userId" in core ? core.userId : "");
-		}
-	} catch {}
-	const current = await loadSettings({ nativeOverlay: false });
-	const currentUserId = trimSetting(current.core?.userId);
-	const needsBootstrap = needsCapacitorCwspBootstrap(current);
-	const identityDrift = Boolean(nativeUserId) && Boolean(currentUserId) && nativeUserId !== currentUserId && isCapacitorFactorySelfId(currentUserId) && isHomeFleetClientId(nativeUserId);
-	const idbUserConfigured = Boolean(currentUserId) && isHomeFleetClientId(currentUserId);
-	const nativeDriftsFromIdb = Boolean(nativeUserId) && Boolean(currentUserId) && nativeUserId !== currentUserId;
-	const nativeIsGuestLanId = Boolean(nativeUserId) && !isHomeFleetClientId(nativeUserId);
-	if (!needsBootstrap && nativeDriftsFromIdb && (idbUserConfigured || nativeIsGuestLanId)) {
-		capacitorCwspSeedDone = true;
-		console.log("[Settings] pushing WebView client id to native prefs");
-		return saveSettings(applyCapacitorShellMigrations(current) || current);
-	}
-	if (!needsBootstrap && !identityDrift) {
-		capacitorCwspSeedDone = true;
-		const migrated = applyCapacitorShellMigrations(current);
-		if (migrated) {
-			console.log("[Settings] Capacitor shell migrations (desk peers / ask modes)");
-			return saveSettings(migrated);
-		}
-		return null;
-	}
-	if (identityDrift && !needsBootstrap) {
-		capacitorCwspSeedDone = true;
-		const aligned = {
-			...current,
-			core: {
-				...current.core,
-				userId: nativeUserId,
-				socket: {
-					...current.core?.socket || {},
-					selfId: nativeUserId
-				}
-			}
-		};
-		console.log("[Settings] aligning Capacitor client id with native prefs");
-		return saveSettings(applyCapacitorShellMigrations(aligned) || aligned);
-	}
-	const merged = {
-		...current,
-		core: {
-			...CAPACITOR_CWSP_BOOTSTRAP.core,
-			...current.core,
-			userId: (isHomeFleetClientId(nativeUserId) ? nativeUserId : "") || (isHomeFleetClientId(currentUserId) ? currentUserId : "") || trimSetting(CAPACITOR_CWSP_BOOTSTRAP.core?.userId) || "",
-			ops: {
-				...CAPACITOR_CWSP_BOOTSTRAP.core?.ops || {},
-				...current.core?.ops || {}
-			},
-			socket: {
-				...CAPACITOR_CWSP_BOOTSTRAP.core?.socket || {},
-				...current.core?.socket || {},
-				selfId: (isHomeFleetClientId(nativeUserId) ? nativeUserId : "") || (isHomeFleetClientId(trimSetting(current.core?.socket?.selfId)) ? trimSetting(current.core?.socket?.selfId) : "") || ""
-			},
-			interop: {
-				...CAPACITOR_CWSP_BOOTSTRAP.core?.interop || {},
-				...current.core?.interop || {}
-			}
-		},
-		shell: {
-			...CAPACITOR_CWSP_BOOTSTRAP.shell || {},
-			...current.shell || {}
-		}
-	};
-	console.log("[Settings] seeding Capacitor CWSP defaults");
-	capacitorCwspSeedDone = true;
-	return saveSettings(applyCapacitorShellMigrations(merged) || merged);
-};
-/**
-* Chrome extension CWSP defaults: same local hub as Neutralino (`127.0.0.1:8434`),
-* wire identity {@code L-110-crx} (distinct from desk Neutralino {@code L-110}).
-*
-* WHY: sharing L-110 with Neutralino steals the desk socket — inbound ask-holds
-* never reach the extension. Neutralino mirrors paste-hold → L-110-crx; CRX
-* holds for "Paste by CWSP" and control-take dismisses Accept.
-*/
-var CRX_CWSP_CLIENT_ID = "L-110-crx";
-/** WHY: hub `verify()` requires a non-empty userKey; L-110-crx policy accepts associated tokens. */
-var CRX_CWSP_BOOTSTRAP_TOKEN = "n3v3rm1nd";
-/** Extension wire hub (chrome.storage) — not CWSP Relay / Neutralino portable. */
-var CRX_LOCAL_HUB_URL = "https://127.0.0.1:8434/";
-var isCrxExtensionRuntime = () => {
-	try {
-		const id = globalThis.chrome?.runtime?.id;
-		return typeof id === "string" && id.length > 0;
-	} catch {
-		return false;
-	}
-};
-var readLocalStorageSettingsMirror = () => {
-	try {
-		const raw = globalThis.localStorage?.getItem?.(SETTINGS_LS_MIRROR_KEY);
-		if (!raw) return null;
-		return JSON.parse(raw);
-	} catch {
-		return null;
-	}
-};
-var writeLocalStorageSettingsMirror = (value) => {
-	try {
-		globalThis.localStorage?.setItem?.(SETTINGS_LS_MIRROR_KEY, JSON.stringify(value));
-		return true;
-	} catch {
-		return false;
-	}
-};
-/** Control SPA hosts that must never win as Relay / gateway in Capacitor Settings. */
-var isControlSpaRelayUrl = (url) => {
-	const raw = String(url || "").trim().toLowerCase();
-	if (!raw) return false;
-	try {
-		const withScheme = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
-		const host = new URL(withScheme).hostname.toLowerCase();
-		return host === "cwsp.u2re.space" || host === "www.cwsp.u2re.space" || host === "transfer.u2re.space" || host === "www.transfer.u2re.space" || host === "md.u2re.space" || host === "www.md.u2re.space";
-	} catch {
-		return /cwsp\.u2re\.space|transfer\.u2re\.space|md\.u2re\.space/i.test(raw);
-	}
-};
-/**
-* Capacitor-only: overlay native Relay when IDB is empty/loopback/Control-SPA-poisoned.
-* WHY: full native overlay was disabled so IDB stays SoT — but Relay must track Java Configure.
-*/
-var mergeCapacitorNativeRelayOverlay = (base, native) => {
-	if (!native || typeof native !== "object") return base;
-	const nativeEp = trimSetting(native.core?.endpointUrl);
-	if (!nativeEp || isControlSpaRelayUrl(nativeEp)) return base;
-	const localEp = trimSetting(base.core?.endpointUrl);
-	const localBad = !localEp || isControlSpaRelayUrl(localEp) || /^(https?:\/\/)?(127\.0\.0\.1|localhost)(:\d+)?\/?$/i.test(localEp);
-	if (!localBad && localEp === nativeEp) return base;
-	if (!localBad) return base;
-	return {
-		...base,
-		core: {
-			...base.core,
-			endpointUrl: nativeEp
-		}
-	};
-};
-/** Only apply native fields that carry a non-empty value — empty bridge rows must not wipe IDB. */
-var mergeNativeSettingsOverlay = (base, native) => {
-	if (!native || typeof native !== "object") return base;
-	const patch = {};
-	const corePatch = {};
-	let touched = false;
-	const ep = trimSetting(native.core?.endpointUrl);
-	if (ep) {
-		corePatch.endpointUrl = ep;
-		touched = true;
-	}
-	const userId = trimSetting(native.core?.userId);
-	if (userId && isHomeFleetClientId(userId)) {
-		const baseUserId = trimSetting(base.core?.userId);
-		if (isCapacitorFactorySelfId(baseUserId) || !isHomeFleetClientId(baseUserId)) {
-			corePatch.userId = userId;
-			touched = true;
-		}
-	}
-	const userKey = trimSetting(native.core?.userKey);
-	if (userKey) {
-		corePatch.userKey = userKey;
-		touched = true;
-	}
-	const appClientId = trimSetting(native.core?.appClientId);
-	if (appClientId) {
-		corePatch.appClientId = appClientId;
-		touched = true;
-	}
-	const socketPatch = {};
-	let socketTouched = false;
-	const routeTarget = trimSetting(native.core?.socket?.routeTarget);
-	if (routeTarget) {
-		socketPatch.routeTarget = routeTarget;
-		socketTouched = true;
-	}
-	const accessToken = trimSetting(native.core?.socket?.accessToken);
-	if (accessToken) {
-		socketPatch.accessToken = accessToken;
-		socketTouched = true;
-	}
-	const clientAccessToken = trimSetting(native.core?.socket?.clientAccessToken);
-	if (clientAccessToken) {
-		socketPatch.clientAccessToken = clientAccessToken;
-		socketTouched = true;
-	}
-	const nativeSelfId = trimSetting(native.core?.socket?.selfId);
-	if (nativeSelfId && isHomeFleetClientId(nativeSelfId)) {
-		const baseSelfId = trimSetting(base.core?.socket?.selfId) || trimSetting(base.core?.userId);
-		if (isCapacitorFactorySelfId(baseSelfId) || !isHomeFleetClientId(baseSelfId)) {
-			socketPatch.selfId = nativeSelfId;
-			socketTouched = true;
-		}
-	}
-	if (socketTouched) {
-		corePatch.socket = socketPatch;
-		touched = true;
-	}
-	const shellPatch = {};
-	let shellTouched = false;
-	const shareDest = trimSetting(native.shell?.clipboardShareDestinationIds);
-	if (shareDest) {
-		shellPatch.clipboardShareDestinationIds = shareDest;
-		shellTouched = true;
-	}
-	const inboundAllow = trimSetting(native.shell?.clipboardInboundAllowIds);
-	if (inboundAllow) {
-		shellPatch.clipboardInboundAllowIds = inboundAllow;
-		shellTouched = true;
-	}
-	if (shellTouched) {
-		patch.shell = shellPatch;
-		touched = true;
-	}
-	if (!touched) return base;
-	patch.core = corePatch;
-	return mergeAppSettingsShape(base, patch);
-};
-var splitPath = (path) => path.split(".");
-var getByPath = (source, path) => splitPath(path).reduce((acc, key) => acc == null ? acc : acc[key], source);
-var slugify = (value) => value.replace(/[^a-z0-9]+/gi, "-").replace(/^-+|-+$/g, "").toLowerCase();
-var DB_NAME = "req-store";
-var STORE = "settings";
-var mergeAppSettingsShape = (base, patch) => {
-	if (!patch || typeof patch !== "object") return base;
-	return {
-		...base,
-		...patch,
-		core: {
-			...base.core || {},
-			...patch.core || {},
-			network: {
-				...base.core?.network || {},
-				...patch.core?.network || {}
-			},
-			socket: {
-				...base.core?.socket || {},
-				...patch.core?.socket || {}
-			},
-			interop: {
-				...base.core?.interop || {},
-				...patch.core?.interop || {}
-			},
-			ops: {
-				...base.core?.ops || {},
-				...patch.core?.ops || {}
-			},
-			admin: {
-				...base.core?.admin || {},
-				...patch.core?.admin || {}
-			}
-		},
-		ai: {
-			...base.ai || {},
-			...patch.ai || {},
-			mcp: patch.ai?.mcp ?? base.ai?.mcp ?? [],
-			customInstructions: patch.ai?.customInstructions ?? base.ai?.customInstructions ?? [],
-			activeInstructionId: patch.ai?.activeInstructionId ?? base.ai?.activeInstructionId ?? "",
-			processIngress: mergeProcessIngress(base.ai?.processIngress, patch.ai?.processIngress)
-		},
-		webdav: {
-			...base.webdav || {},
-			...patch.webdav || {}
-		},
-		timeline: {
-			...base.timeline || {},
-			...patch.timeline || {}
-		},
-		appearance: {
-			...base.appearance || {},
-			...patch.appearance || {},
-			markdown: {
-				...base.appearance?.markdown || {},
-				...patch.appearance?.markdown || {},
-				page: {
-					...base.appearance?.markdown?.page || {},
-					...patch.appearance?.markdown?.page || {}
-				},
-				modules: {
-					...base.appearance?.markdown?.modules || {},
-					...patch.appearance?.markdown?.modules || {}
-				},
-				plugins: {
-					...base.appearance?.markdown?.plugins || {},
-					...patch.appearance?.markdown?.plugins || {}
-				}
-			}
-		},
-		speech: {
-			...base.speech || {},
-			...patch.speech || {}
-		},
-		grid: {
-			...base.grid || {},
-			...patch.grid || {}
-		},
-		shell: {
-			...base.shell || {},
-			...patch.shell || {}
-		},
-		openPolicyByHost: mergeOpenPolicyByHost(base.openPolicyByHost, patch.openPolicyByHost),
-		openPolicy: resolveHostOpenPolicy({
-			openPolicy: mergeOpenPolicy(base.openPolicy, patch.openPolicy),
-			openPolicyByHost: mergeOpenPolicyByHost(base.openPolicyByHost, patch.openPolicyByHost)
-		})
-	};
-};
-var getWebDavCreateClient = async () => {
-	return null;
-};
-var isContentScriptContext = () => {
-	try {
-		if (typeof chrome === "undefined" || !chrome?.runtime) return false;
-		if (typeof window !== "undefined" && globalThis?.location?.protocol?.startsWith("http")) return true;
-		return false;
-	} catch {
-		return false;
-	}
-};
-var hasChromeStorage = () => typeof chrome !== "undefined" && chrome?.storage?.local;
-async function idbOpen() {
-	if (typeof indexedDB === "undefined") throw new Error("IndexedDB not available");
-	if (isContentScriptContext()) throw new Error("IndexedDB not accessible in content script context");
-	return new Promise((res, rej) => {
-		try {
-			const req = indexedDB.open(DB_NAME, 1);
-			req.onupgradeneeded = () => req.result.createObjectStore(STORE, { keyPath: "key" });
-			req.onsuccess = () => res(req.result);
-			req.onerror = () => rej(req.error);
-		} catch (e) {
-			rej(e);
-		}
-	});
-}
-var idbGetSettings = async (key = SETTINGS_KEY) => {
-	try {
-		if (isCapacitorNativeShell() && typeof indexedDB !== "undefined") {
-			try {
-				const db = await idbOpen();
-				const idbValue = await new Promise((res, rej) => {
-					const req = db.transaction(STORE, "readonly").objectStore(STORE).get(key);
-					req.onsuccess = () => {
-						res(req.result?.value);
-						db.close();
-					};
-					req.onerror = () => {
-						rej(req.error);
-						db.close();
-					};
-				});
-				if (idbValue != null) return idbValue;
-			} catch (e) {
-				console.warn("[Settings] Capacitor IndexedDB read failed, trying mirror:", e);
-			}
-			const mirror = readLocalStorageSettingsMirror();
-			if (mirror != null) return mirror;
-		}
-		if (hasChromeStorage()) {
-			console.log("[Settings] Using chrome.storage.local for get");
-			const chromeValue = await new Promise((res) => {
-				try {
-					chrome.storage.local.get([key], (result) => {
-						if (chrome.runtime.lastError) {
-							console.warn("[Settings] chrome.storage.local.get error:", chrome.runtime.lastError);
-							res(null);
-						} else {
-							console.log("[Settings] chrome.storage.local.get success, has data:", !!result[key]);
-							res(result[key]);
-						}
-					});
-				} catch (e) {
-					console.warn("[Settings] chrome.storage access failed:", e);
-					res(null);
-				}
-			});
-			if (chromeValue != null) return chromeValue;
-		}
-		if (typeof indexedDB !== "undefined") {
-			console.log("[Settings] Using IndexedDB for get");
-			const db = await idbOpen();
-			const idbValue = await new Promise((res, rej) => {
-				const req = db.transaction(STORE, "readonly").objectStore(STORE).get(key);
-				req.onsuccess = () => {
-					console.log("[Settings] IndexedDB get success, has data:", !!req.result?.value);
-					res(req.result?.value);
-					db.close();
-				};
-				req.onerror = () => {
-					console.warn("[Settings] IndexedDB get error:", req.error);
-					rej(req.error);
-					db.close();
-				};
-			});
-			if (idbValue != null) return idbValue;
-		} else console.warn("[Settings] IndexedDB not available");
-	} catch (e) {
-		console.warn("[Settings] Settings storage access failed:", e);
-	}
-	const mirror = readLocalStorageSettingsMirror();
-	if (mirror != null) {
-		console.log("[Settings] Using localStorage mirror fallback for get");
-		return mirror;
-	}
-	return null;
-};
-var idbPutSettings = async (value, key = SETTINGS_KEY) => {
-	let idbOk = false;
-	let lsOk = false;
-	if (hasChromeStorage()) {
-		await new Promise((res, rej) => {
-			try {
-				chrome.storage.local.set({ [key]: value }, () => {
-					if (chrome.runtime.lastError) rej(chrome.runtime.lastError);
-					else res();
-				});
-			} catch (e) {
-				rej(e);
-			}
-		});
-		return;
-	}
-	lsOk = writeLocalStorageSettingsMirror(value);
-	try {
-		if (typeof indexedDB === "undefined") {
-			if (!lsOk && isCapacitorNativeShell()) throw new Error("Settings storage unavailable (no IndexedDB or localStorage)");
-			return;
-		}
-		const db = await idbOpen();
-		await new Promise((res, rej) => {
-			const tx = db.transaction(STORE, "readwrite");
-			tx.objectStore(STORE).put({
-				key,
-				value
-			});
-			tx.oncomplete = () => {
-				idbOk = true;
-				res();
-				db.close();
-			};
-			tx.onerror = () => {
-				rej(tx.error);
-				db.close();
-			};
-		});
-	} catch (e) {
-		console.warn("[Settings] IndexedDB write failed:", e);
-		if (!lsOk && isCapacitorNativeShell()) throw new Error("Settings could not be saved (IndexedDB and localStorage failed)");
-	}
-	if (!idbOk && lsOk) console.log("[Settings] persisted to localStorage mirror (IndexedDB skipped or failed)");
-};
-/** Normalize `core.endpointUrl` for equality checks (scheme + host + port, lowercase).
-* Multi-hub lists stay multi-hub (`;`-joined); never parse the whole list as one URL.
-*/
-var normalizeCoreEndpointOrigin = (raw) => {
-	const t = (raw || "").trim();
-	if (!t) return "";
-	return (migrateLegacyCwspPublicPort(t) || t).toLowerCase();
-};
-/** Rewrite legacy `:8443` URLs and listenPort in persisted settings after fleet port migration. */
-var applyLegacyCwspPortMigration = (settings) => {
-	const core = settings.core;
-	if (!core) return settings;
-	const migrateList = (items) => items?.map((entry) => migrateLegacyCwspPublicPort(entry));
-	const migrateTargets = (items) => items?.map((entry) => ({
-		...entry,
-		url: migrateLegacyCwspPublicPort(entry.url ?? "")
-	}));
-	const listenPortHttps = core.network?.listenPortHttps === 8443 || core.network?.listenPortHttps === 8343 ? 8434 : core.network?.listenPortHttps;
-	return {
-		...settings,
-		core: {
-			...core,
-			endpointUrl: migrateLegacyCwspPublicPort(core.endpointUrl ?? ""),
-			ops: core.ops ? {
-				...core.ops,
-				directUrl: migrateLegacyCwspPublicPort(core.ops.directUrl ?? ""),
-				httpTargets: migrateTargets(core.ops.httpTargets),
-				wsTargets: migrateTargets(core.ops.wsTargets),
-				syncTargets: migrateTargets(core.ops.syncTargets)
-			} : core.ops,
-			admin: core.admin ? {
-				...core.admin,
-				httpsOrigin: migrateLegacyCwspPublicPort(core.admin.httpsOrigin ?? "")
-			} : core.admin,
-			network: core.network ? {
-				...core.network,
-				listenPortHttps,
-				destinations: migrateList(core.network.destinations)
-			} : core.network
-		}
-	};
-};
-/**
-* True when persisted settings explicitly contain `shell.maintainHubSocketConnection`
-* (Shell section was saved with that field — distinct from merge-time defaults).
-*/
-var didPersistShellMaintainHubSocket = async () => {
-	try {
-		const raw = await idbGetSettings();
-		const stored = typeof raw === "string" ? JSOX.parse(raw) : raw;
-		if (!stored || typeof stored !== "object") return false;
-		const shell = stored.shell;
-		return typeof shell === "object" && shell !== null && Object.prototype.hasOwnProperty.call(shell, "maintainHubSocketConnection");
-	} catch {
-		return false;
-	}
-};
-/**
-* Seed CRX wire identity + Local hub only.
-*
-* INVARIANT: do not write CWSP Relay (`core.endpointUrl`), clipboard modes, or
-* gateway bootstrap into chrome.storage — those load from Neutralino Control at
-* Extension Local hub URL (`shell.localHubUrl`, default https://127.0.0.1:8434)
-* via settings:get /service/config.
-*/
-var crxCwspSeedDone = false;
-var ensureCrxCwspSettingsSeeded = async () => {
-	if (!isCrxExtensionRuntime()) return null;
-	if (crxCwspSeedDone) return null;
-	const current = await loadSettings({ nativeOverlay: false });
-	const currentUserId = trimSetting(current.core?.userId);
-	const hubPersisted = await didPersistShellMaintainHubSocket();
-	const existingToken = trimSetting(current.core?.ecosystemToken) || trimSetting(current.core?.userKey) || trimSetting(current.core?.socket?.accessToken);
-	const needsHttpsProtocol = current.core?.socket?.protocol !== "https";
-	const needsCrxIdNormalize = /^L-110$/i.test(currentUserId);
-	const savedLocalHub = trimSetting(current.shell?.localHubUrl);
-	const needsLocalHub = !savedLocalHub;
-	if (!(!currentUserId || needsCrxIdNormalize || !/^L-110-crx$/i.test(currentUserId) || !hubPersisted || !existingToken || needsHttpsProtocol || needsLocalHub)) {
-		crxCwspSeedDone = true;
-		return null;
-	}
-	const keepUserId = CRX_CWSP_CLIENT_ID;
-	const savedEp = trimSetting(current.core?.endpointUrl);
-	const savedEpIsLoopback = (() => {
-		try {
-			const h = new URL(/^https?:\/\//i.test(savedEp) ? savedEp : `https://${savedEp}`).hostname.toLowerCase();
-			return h === "127.0.0.1" || h === "localhost" || h === "::1";
-		} catch {
-			return /^(https?:\/\/)?(127\.0\.0\.1|localhost)(:|\/|$)/i.test(savedEp);
-		}
-	})();
-	const localHubUrl = savedLocalHub || (savedEpIsLoopback && savedEp ? savedEp : "") || CRX_LOCAL_HUB_URL;
-	const relayUrl = savedEpIsLoopback ? "" : savedEp;
-	const seedToken = existingToken || CRX_CWSP_BOOTSTRAP_TOKEN;
-	const merged = {
-		...current,
-		core: {
-			...current.core,
-			allowInsecureTls: current.core?.allowInsecureTls ?? true,
-			useCoreIdentityForAirPad: current.core?.useCoreIdentityForAirPad ?? true,
-			userId: keepUserId,
-			...existingToken ? {} : {
-				ecosystemToken: seedToken,
-				userKey: seedToken
-			},
-			endpointUrl: relayUrl,
-			ops: { ...current.core?.ops || {} },
-			socket: {
-				...current.core?.socket || {},
-				selfId: keepUserId,
-				protocol: "https",
-				...existingToken ? {} : {
-					accessToken: seedToken,
-					allowAccessTokenWithoutUserKey: true
-				},
-				allowAccessTokenWithoutUserKey: current.core?.socket?.allowAccessTokenWithoutUserKey ?? true
-			}
-		},
-		shell: {
-			...current.shell,
-			localHubUrl,
-			maintainHubSocketConnection: hubPersisted ? Boolean(current.shell?.maintainHubSocketConnection) : true,
-			clientId: (() => {
-				const cid = trimSetting(current.shell?.clientId);
-				if (!cid || /^L-\d{1,3}-crx$/i.test(cid)) return "L-110";
-				return cid;
-			})()
-		}
-	};
-	console.log("[Settings] seeding CRX wire defaults (Relay left for Control hydrate)", {
-		clientId: keepUserId,
-		relay: merged.core?.endpointUrl || "(empty → Neutralino)",
-		localHub: merged.shell?.localHubUrl
-	});
-	crxCwspSeedDone = true;
-	return saveSettings(merged);
-};
-/**
-* MV3 Chrome extension: skip hub WebSocket bootstrap only when hub-maintain is off and
-* the endpoint is still the unused bundled default. When CRX seeds {@code maintainHubSocketConnection}
-* (localhost Neutralino hub or WAN), connect immediately.
-*/
-var shouldDeferCrxHubSocketBootstrap = async (settings) => {
-	if (!isCrxExtensionRuntime()) return false;
-	if (settings.shell?.maintainHubSocketConnection === true) return false;
-	if (await didPersistShellMaintainHubSocket()) return false;
-	const defaultEp = normalizeCoreEndpointOrigin(DEFAULT_SETTINGS.core?.endpointUrl || "");
-	const currentEp = normalizeCoreEndpointOrigin(settings.core?.endpointUrl || "");
-	return Boolean(defaultEp) && currentEp === defaultEp;
-};
-var loadSettings = async (opts) => {
-	try {
-		let raw = await idbGetSettings();
-		if (raw == null) raw = readLocalStorageSettingsMirror();
-		const stored = typeof raw === "string" ? JSOX.parse(raw) : raw;
-		console.log("[Settings] loadSettings - raw type:", typeof raw, "stored type:", typeof stored);
-		if (stored && typeof stored === "object") {
-			let result = {
-				core: {
-					...DEFAULT_SETTINGS.core,
-					...stored?.core,
-					network: {
-						...DEFAULT_SETTINGS.core?.network || {},
-						...stored?.core?.network || {}
-					},
-					socket: {
-						...DEFAULT_SETTINGS.core?.socket || {},
-						...stored?.core?.socket || {}
-					},
-					interop: {
-						...DEFAULT_SETTINGS.core?.interop || {},
-						...stored?.core?.interop || {}
-					},
-					ops: {
-						...DEFAULT_SETTINGS.core?.ops || {},
-						...stored?.core?.ops || {}
-					},
-					admin: {
-						...DEFAULT_SETTINGS.core?.admin || {},
-						...stored?.core?.admin || {}
-					}
-				},
-				ai: {
-					...DEFAULT_SETTINGS.ai,
-					...stored?.ai,
-					mcp: stored?.ai?.mcp || [],
-					customInstructions: stored?.ai?.customInstructions || [],
-					activeInstructionId: stored?.ai?.activeInstructionId || "",
-					processIngress: mergeProcessIngress(DEFAULT_SETTINGS.ai.processIngress, stored?.ai?.processIngress)
-				},
-				webdav: {
-					...DEFAULT_SETTINGS.webdav,
-					...stored?.webdav
-				},
-				timeline: {
-					...DEFAULT_SETTINGS.timeline,
-					...stored?.timeline
-				},
-				appearance: {
-					...DEFAULT_SETTINGS.appearance,
-					...stored?.appearance,
-					markdown: {
-						...DEFAULT_SETTINGS.appearance?.markdown || {},
-						...stored?.appearance?.markdown || {},
-						page: {
-							...DEFAULT_SETTINGS.appearance?.markdown?.page || {},
-							...stored?.appearance?.markdown?.page || {}
-						},
-						modules: {
-							...DEFAULT_SETTINGS.appearance?.markdown?.modules || {},
-							...stored?.appearance?.markdown?.modules || {}
-						},
-						plugins: {
-							...DEFAULT_SETTINGS.appearance?.markdown?.plugins || {},
-							...stored?.appearance?.markdown?.plugins || {}
-						}
-					}
-				},
-				speech: {
-					...DEFAULT_SETTINGS.speech,
-					...stored?.speech
-				},
-				grid: {
-					...DEFAULT_SETTINGS.grid,
-					...stored?.grid
-				},
-				shell: {
-					...DEFAULT_SETTINGS.shell || {},
-					...stored?.shell || {}
-				},
-				appMenu: {
-					...DEFAULT_SETTINGS.appMenu,
-					...stored?.appMenu
-				},
-				explorer: {
-					...DEFAULT_SETTINGS.explorer,
-					...stored?.explorer
-				},
-				openPolicyByHost: mergeOpenPolicyByHost(stored?.openPolicyByHost),
-				openPolicy: resolveHostOpenPolicy({
-					openPolicy: stored?.openPolicy,
-					openPolicyByHost: stored?.openPolicyByHost
-				})
-			};
-			try {
-				if (opts?.nativeOverlay !== false && isCwsNativeIpcAvailable()) {
-					const nativeSettings = await getNativeUnifiedSettings();
-					if (nativeSettings && typeof nativeSettings === "object") if (isCapacitorNativeShell()) result = mergeCapacitorNativeRelayOverlay(result, nativeSettings);
-					else result = mergeNativeSettingsOverlay(result, nativeSettings);
-				}
-			} catch {}
-			try {
-				if (isWebnativeSurface()) {
-					if ((result.core?.preferBackendSync ?? true) !== false) {
-						const bundle = await loadWebnativeControlBundle();
-						const coreOverlay = mapWebnativeSnapshotToCore({
-							...bundle?.snapshot || bundle?.settings || bundle?.portable || {},
-							...bundle?.settings || {},
-							...bundle?.portable || {}
-						});
-						const shellOverlay = mapWebnativeBundleToShell(bundle);
-						if (coreOverlay || shellOverlay) result = {
-							...result || { core: {} },
-							core: coreOverlay ? {
-								...result.core || {},
-								...coreOverlay,
-								socket: {
-									...result.core?.socket || {},
-									...coreOverlay.socket || {}
-								},
-								ops: { ...result.core?.ops || {} },
-								admin: { ...result.core?.admin || {} },
-								network: { ...result.core?.network || {} },
-								interop: { ...result.core?.interop || {} }
-							} : result.core,
-							shell: shellOverlay ? {
-								...result.shell || {},
-								...shellOverlay
-							} : result.shell
-						};
-					}
-				}
-			} catch {}
-			console.log("[Settings] loadSettings result:", {
-				hasApiKey: !!result.ai?.apiKey,
-				instructionCount: result.ai?.customInstructions?.length || 0,
-				activeInstructionId: result.ai?.activeInstructionId || "(none)"
-			});
-			const migrated = applyLegacyCwspPortMigration(result);
-			rememberOpenPolicyFromSettings(migrated);
-			rememberProcessIngressSettings(migrated);
-			return migrated;
-		}
-		console.log("[Settings] loadSettings - no stored data, returning defaults");
-	} catch (e) {
-		console.warn("[Settings] loadSettings error:", e);
-	}
-	const fallback = JSOX.parse(JSOX.stringify(DEFAULT_SETTINGS));
-	rememberOpenPolicyFromSettings(fallback);
-	rememberProcessIngressSettings(fallback);
-	return fallback;
-};
-var saveSettings = async (settings) => {
-	const current = await loadSettings({ nativeOverlay: false });
-	const getMcp = () => {
-		if (settings.ai?.mcp !== void 0) return settings.ai.mcp;
-		if (current.ai?.mcp !== void 0) return current.ai.mcp;
-		return [];
-	};
-	const getCustomInstructions = () => {
-		if (settings.ai?.customInstructions !== void 0) return settings.ai.customInstructions;
-		if (current.ai?.customInstructions !== void 0) return current.ai.customInstructions;
-		return [];
-	};
-	const getActiveInstructionId = () => {
-		if (Object.prototype.hasOwnProperty.call(settings.ai || {}, "activeInstructionId")) return settings.ai?.activeInstructionId ?? "";
-		if (current.ai?.activeInstructionId !== void 0) return current.ai.activeInstructionId;
-		return "";
-	};
-	const merged = {
-		core: {
-			...DEFAULT_SETTINGS.core || {},
-			...current.core || {},
-			...settings.core || {},
-			network: {
-				...DEFAULT_SETTINGS.core?.network || {},
-				...current.core?.network || {},
-				...settings.core?.network || {}
-			},
-			socket: {
-				...DEFAULT_SETTINGS.core?.socket || {},
-				...current.core?.socket || {},
-				...settings.core?.socket || {}
-			},
-			interop: {
-				...DEFAULT_SETTINGS.core?.interop || {},
-				...current.core?.interop || {},
-				...settings.core?.interop || {}
-			},
-			ops: {
-				...DEFAULT_SETTINGS.core?.ops || {},
-				...current.core?.ops || {},
-				...settings.core?.ops || {}
-			},
-			admin: {
-				...DEFAULT_SETTINGS.core?.admin || {},
-				...current.core?.admin || {},
-				...settings.core?.admin || {}
-			}
-		},
-		ai: {
-			...DEFAULT_SETTINGS.ai || {},
-			...current.ai || {},
-			...settings.ai || {},
-			mcp: getMcp(),
-			customInstructions: getCustomInstructions(),
-			activeInstructionId: getActiveInstructionId(),
-			processIngress: mergeProcessIngress(DEFAULT_SETTINGS.ai.processIngress, current.ai?.processIngress, settings.ai?.processIngress)
-		},
-		webdav: {
-			...DEFAULT_SETTINGS.webdav || {},
-			...current.webdav || {},
-			...settings.webdav || {}
-		},
-		timeline: {
-			...DEFAULT_SETTINGS.timeline || {},
-			...current.timeline || {},
-			...settings.timeline || {}
-		},
-		appearance: {
-			...DEFAULT_SETTINGS.appearance || {},
-			...current.appearance || {},
-			...settings.appearance || {},
-			markdown: {
-				...DEFAULT_SETTINGS.appearance?.markdown || {},
-				...current.appearance?.markdown || {},
-				...settings.appearance?.markdown || {},
-				page: {
-					...DEFAULT_SETTINGS.appearance?.markdown?.page || {},
-					...current.appearance?.markdown?.page || {},
-					...settings.appearance?.markdown?.page || {}
-				},
-				modules: {
-					...DEFAULT_SETTINGS.appearance?.markdown?.modules || {},
-					...current.appearance?.markdown?.modules || {},
-					...settings.appearance?.markdown?.modules || {}
-				},
-				plugins: {
-					...DEFAULT_SETTINGS.appearance?.markdown?.plugins || {},
-					...current.appearance?.markdown?.plugins || {},
-					...settings.appearance?.markdown?.plugins || {}
-				}
-			}
-		},
-		speech: {
-			...DEFAULT_SETTINGS.speech || {},
-			...current.speech || {},
-			...settings.speech || {}
-		},
-		grid: {
-			...DEFAULT_SETTINGS.grid || {},
-			...current.grid || {},
-			...settings.grid || {}
-		},
-		shell: {
-			...DEFAULT_SETTINGS.shell || {},
-			...current.shell || {},
-			...settings.shell || {}
-		},
-		appMenu: {
-			...DEFAULT_SETTINGS.appMenu || {},
-			...current.appMenu || {},
-			...settings.appMenu || {}
-		},
-		explorer: {
-			...DEFAULT_SETTINGS.explorer || {},
-			...current.explorer || {},
-			...settings.explorer || {}
-		},
-		openPolicyByHost: (() => {
-			const host = detectSettingsHost();
-			const next = mergeOpenPolicy(DEFAULT_SETTINGS.openPolicy, current.openPolicy, settings.openPolicy);
-			return mergeOpenPolicyByHost(current.openPolicyByHost, settings.openPolicyByHost, { [host]: next });
-		})(),
-		openPolicy: resolveHostOpenPolicy({
-			openPolicy: mergeOpenPolicy(DEFAULT_SETTINGS.openPolicy, current.openPolicy, settings.openPolicy),
-			openPolicyByHost: mergeOpenPolicyByHost(current.openPolicyByHost, settings.openPolicyByHost, { [detectSettingsHost()]: mergeOpenPolicy(DEFAULT_SETTINGS.openPolicy, current.openPolicy, settings.openPolicy) })
-		})
-	};
-	if (merged.core) {
-		const canonicalUserId = normalizePersistedClientId(merged.core.userId);
-		if (canonicalUserId) merged.core.userId = canonicalUserId;
-		normalizeEcosystemToken(merged);
-		if (merged.core.socket) {
-			const selfRaw = String(merged.core.socket.selfId || "").trim();
-			if (selfRaw) {
-				const canonicalSelf = normalizePersistedClientId(selfRaw);
-				merged.core.socket.selfId = canonicalSelf && canonicalSelf === (merged.core.userId || "") ? canonicalSelf : "";
-			} else merged.core.socket.selfId = "";
-		}
-	}
-	rememberOpenPolicyFromSettings(merged);
-	await idbPutSettings(merged);
-	lastSettingsSaveReport = { nativeSynced: null };
-	try {
-		if (isCwsNativeIpcAvailable()) {
-			await initCwsNativeBridge().catch(() => null);
-			const patch = await patchNativeUnifiedSettingsDetailed(merged);
-			lastSettingsSaveReport = {
-				nativeSynced: patch.ok,
-				nativeError: patch.error
-			};
-			if (!patch.ok) console.warn("[Settings] native settings patch did not confirm ok:", patch.error);
-		}
-	} catch (e) {
-		lastSettingsSaveReport = {
-			nativeSynced: false,
-			nativeError: String(e instanceof Error ? e.message : e)
-		};
-		console.warn("[Settings] native settings patch failed:", e);
-	}
-	if (isWebnativeSurface() && !isCapacitorNativeShell() && !isPublicCwspControlSpa()) try {
-		const ok = await pushWebnativeSettingsPatch(merged);
-		const via = readControlBridgeVia();
-		lastSettingsSaveReport = {
-			...lastSettingsSaveReport,
-			webnativeSynced: ok,
-			webnativeError: ok ? void 0 : via === "android" ? "phone Control unreachable (Allow Control API + Pair + Accept)" : "desk Control RPC unavailable"
-		};
-		if (!ok) console.warn("[Settings] Control config patch not confirmed");
-	} catch (e) {
-		lastSettingsSaveReport = {
-			...lastSettingsSaveReport,
-			webnativeSynced: false,
-			webnativeError: String(e instanceof Error ? e.message : e)
-		};
-		console.warn("[Settings] Control config patch failed:", e);
-	}
-	try {
-		applyAirpadRuntimeFromAppSettings(merged);
-		syncAirpadRemoteConfigFromAppSettings(merged, { persist: true });
-	} catch (e) {
-		console.warn("[Settings] AirPad runtime sync failed:", e);
-	}
-	updateWebDavSettings(merged)?.catch?.(console.warn.bind(console));
-	rememberProcessIngressSettings(merged);
-	return merged;
-};
-var joinPath = (base, name, addTrailingSlash = false) => {
-	const b = (base || "/").replace(/\/+$/g, "") || "/";
-	const n = (name || "").replace(/^\/+/g, "");
-	let out = b === "/" ? `/${n}` : `${b}/${n}`;
-	if (addTrailingSlash) out = out.replace(/\/?$/g, "/");
-	return out.replace(/\/{2,}/g, "/");
-};
-var isDirHandle = (h) => h?.kind === "directory";
-var safeTime = (v) => {
-	const t = new Date(v).getTime();
-	return Number.isFinite(t) ? t : 0;
-};
-/** Lazy `fest/lure` — keeps content scripts / lightweight callers from pulling lure + UI CSS. */
-var lureFsPromise = null;
-var isServiceWorkerScope = () => {
-	try {
-		return typeof globalThis.ServiceWorkerGlobalScope !== "undefined" && typeof globalThis.clients !== "undefined" && typeof globalThis.document === "undefined";
-	} catch {
-		return false;
-	}
-};
-var loadLureFs = () => {
-	if (isServiceWorkerScope()) return Promise.reject(/* @__PURE__ */ new Error("@fest-lib/lure FS unavailable in ServiceWorkerGlobalScope"));
-	if (!lureFsPromise) lureFsPromise = __vitePreload(() => import("../fest/core4.js").then((n) => n.t).then((m) => ({
-		getDirectoryHandle: m.getDirectoryHandle,
-		readFile: m.readFile
-	})), __vite__mapDeps([2,3,1,4,5,6,7,8]), import.meta.url);
-	return lureFsPromise;
-};
-var downloadContentsToOPFS = async (webDavClient, path = "/", opts = {}, rootHandle = null) => {
-	const { getDirectoryHandle, readFile } = await loadLureFs();
-	const files = await webDavClient?.getDirectoryContents?.(path || "/")?.catch?.((e) => {
-		console.warn(e);
-		return [];
-	});
-	if (opts.pruneLocal && files?.length > 0) try {
-		const dirHandle = await getDirectoryHandle(rootHandle, path)?.catch?.(() => null);
-		if (dirHandle?.entries) {
-			const localEntries = await Array.fromAsync(dirHandle.entries());
-			const remoteNames = new Set(files?.map?.((f) => f?.basename).filter(Boolean));
-			await Promise.all(localEntries.filter(([name]) => !remoteNames.has(name)).map(([name]) => dirHandle.removeEntry(name, { recursive: true })?.catch?.(console.warn.bind(console))));
-		}
-	} catch (e) {
-		console.warn(e);
-	}
-	return Promise.all(files.map(async (file) => {
-		const isDir = file?.type === "directory";
-		const fullPath = isDir ? joinPath(file.filename, "", true) : file.filename;
-		if (isDir) return downloadContentsToOPFS(webDavClient, fullPath, opts, rootHandle);
-		if (file?.type === "file") {
-			const localMtime = safeTime((await readFile(rootHandle, fullPath).catch(() => null))?.lastModified);
-			if (safeTime(file?.lastmod) > localMtime) {
-				const contents = await webDavClient.getFileContents(fullPath).catch((e) => {
-					console.warn(e);
-					return null;
-				});
-				if (!contents || contents.byteLength === 0) return;
-				const mime = file?.mime || "application/octet-stream";
-				return writeFileSmart(rootHandle, fullPath, new File([contents], file.basename, { type: mime }));
-			}
-		}
-	}));
-};
-var uploadOPFSToWebDav = async (webDavClient, dirHandle = null, path = "/", opts = {}) => {
-	const { getDirectoryHandle } = await loadLureFs();
-	const effectiveDirHandle = dirHandle ?? await getDirectoryHandle(null, path, { create: true })?.catch?.(console.warn.bind(console));
-	const entries = await Array.fromAsync(effectiveDirHandle?.entries?.() ?? []);
-	if (path != "/") {
-		if (opts.pruneRemote && entries?.length >= 0) {
-			const remoteItems = await webDavClient.getDirectoryContents(path || "/").catch((e) => {
-				console.warn(e);
-				return [];
-			});
-			const localSet = new Set(entries.map(([name]) => name.toLowerCase()));
-			const filesFirst = [...remoteItems.filter((r) => {
-				const base = (r?.basename || "").toLowerCase();
-				return base && !localSet.has(base);
-			}).filter((x) => x.type !== "directory")];
-			for (const r of filesFirst) {
-				const remotePath = r.filename || joinPath(path, r.basename, r.type === "directory");
-				try {
-					await webDavClient.deleteFile(remotePath);
-				} catch (e) {
-					console.warn("delete failed:", remotePath, e);
-				}
-			}
-		}
-	}
-	await Promise.all(entries.map(async ([name, fileOrDir]) => {
-		const isDir = isDirHandle(fileOrDir);
-		const remotePath = joinPath(path, name, isDir);
-		if (isDir) {
-			const dirPathNoSlash = joinPath(path, name, false);
-			if (!await webDavClient.exists(dirPathNoSlash).catch((_e) => {
-				return false;
-			})) await webDavClient.createDirectory(dirPathNoSlash, { recursive: true }).catch(console.warn);
-			return uploadOPFSToWebDav(webDavClient, fileOrDir, remotePath, opts);
-		}
-		const fileContent = await fileOrDir.getFile();
-		if (!fileContent || fileContent.size === 0) return;
-		const fullFilePath = joinPath(path, name, false);
-		const remoteStat = await webDavClient.stat(fullFilePath).catch(() => null);
-		const remoteMtime = safeTime(remoteStat?.lastmod);
-		const localMtime = safeTime(fileContent.lastModified);
-		if (!remoteStat || localMtime > remoteMtime) await webDavClient.putFileContents(fullFilePath, await fileContent.arrayBuffer(), { overwrite: true }).catch((_e) => {
-			return null;
-		});
-	}));
-};
-var getHostOnly = (address) => {
-	const url = new URL(address);
-	return url.protocol + url.hostname + ":" + url.port;
-};
-var WebDavSync = async (address, options = {}) => {
-	console.log("[Settings] WebDavSync", address, options);
-	if (!address) return null;
-	const createClient = await getWebDavCreateClient();
-	if (!createClient) return null;
-	const client = createClient(getHostOnly(address), options);
-	return {
-		status: currentWebDav?.sync?.getDAVCompliance?.()?.catch?.(console.warn.bind(console)) ?? null,
-		client,
-		upload(withPrune = false) {
-			if (this.status != null) return uploadOPFSToWebDav(client, null, "/", { pruneRemote: withPrune })?.catch?.((e) => {
-				console.warn(e);
-				return [];
-			});
-		},
-		download(withPrune = false) {
-			if (this.status != null) return downloadContentsToOPFS(client, "/", { pruneLocal: withPrune })?.catch?.((e) => {
-				console.warn(e);
-				return [];
-			});
-		}
-	};
-};
-var currentWebDav = { sync: null };
-if (!isContentScriptContext()) (async () => {
-	try {
-		const settings = await loadSettings();
-		if (settings?.core?.mode === "endpoint" && settings?.core?.preferBackendSync) return;
-		if (!settings?.webdav?.url) return;
-		currentWebDav.sync = await WebDavSync(settings.webdav.url, {
-			withCredentials: true,
-			username: settings.webdav.username,
-			password: settings.webdav.password,
-			token: settings.webdav.token
-		}) ?? currentWebDav.sync;
-		await currentWebDav?.sync?.upload?.(true);
-		await currentWebDav?.sync?.download?.(true);
-	} catch (e) {}
-})();
-var updateWebDavSettings = async (settings) => {
-	settings ||= await loadSettings();
-	if (settings?.core?.mode === "endpoint" && settings?.core?.preferBackendSync) {
-		currentWebDav.sync = null;
-		return;
-	}
-	if (!settings?.webdav?.url) return;
-	currentWebDav.sync = await WebDavSync(settings.webdav.url, {
-		withCredentials: true,
-		username: settings.webdav.username,
-		password: settings.webdav.password,
-		token: settings.webdav.token
-	}) ?? currentWebDav.sync;
-	await currentWebDav?.sync?.upload?.();
-	await currentWebDav?.sync?.download?.(true);
-};
-if (!isContentScriptContext()) {
-	try {
-		if (typeof window !== "undefined" && typeof addEventListener === "function") {
-			addEventListener("pagehide", () => {
-				currentWebDav?.sync?.upload?.()?.catch?.(() => {});
-			});
-			addEventListener("beforeunload", () => {
-				currentWebDav?.sync?.upload?.()?.catch?.(() => {});
-			});
-		}
-	} catch {}
-	(async () => {
-		try {
-			while (true) {
-				await currentWebDav?.sync?.upload?.()?.catch?.(() => {});
-				await new Promise((resolve) => setTimeout(resolve, 3e3));
-			}
-		} catch {}
-	})();
-}
-//#endregion
-export { loadSettings as a, JSOX as c, getLastSettingsSaveReport as i, ensureCapacitorCwspSettingsSeeded as n, noteSettingsControlSync as o, ensureCrxCwspSettingsSeeded as r, saveSettings as s, Settings_exports as t };
+export { JSOX as t };

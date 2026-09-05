@@ -1,8 +1,8 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../vendor/dompurify2.js","../assets/index-C9QTqpCS.js","./UniformViewTransport.js","../fest/core4.js","./rolldown-runtime.js","../fest/core.js","../fest/core2.js","../fest/object.js","../fest/core5.js","../fest/uniform.js","./UnifiedMessaging.js","./names.js","./UniformInterop.js","../com/app.js","../fest/uniform2.js","./ecosystem-skus.js","./UniformInterop2.js","../views/inbound-timing.js","../views/ingress-validation.js","./ShareTargetGateway.js","./UnifiedMessaging2.js","../vendor/jsox.js","./open-policy.js","./SettingsTypes.js","./process-ingress.js","./airpad-cwsp-client-parity.js","./multi-value-list.js","./cws-bridge.js","../fest/core3.js","../vendor/@capacitor_core.js","./remote-connection-runtime.js","./channel-actions.js","../fest/icon.js","../fest/icon2.js","../fest/icon3.js","../vendor/dompurify.js","../vendor/marked2.js","../vendor/katex.js","./types.js","./sku-ingress.js","../com/app8.js","./MarkdownEditor.js","../vendor/lodash-es.js","../com/app7.js","./Clipboard.js","./process-api-result.js","./log-sanitizer.js","./utils.js","./CustomInstructions.js","../vendor/@toon-format_toon.js","./Runtime.js","./core.js","./unified.js","./RuntimeSettings.js","./ShareTargetGateway2.js","./WorkCenterState.js","../shells/boot-history-base.js","../com/app3.js","../com/app2.js","../com/app5.js","../fest/object2.js","./packet-wire-hash.js","./ecosystem-skus2.js","./cws-bridge2.js","../vendor/@capacitor_core2.js","./Theme.js","./StateStorage.js","./settings-shell-profile.js","../fest/veela3.js","../vendor/culori.js","../fest/veela2.js","../com/app6.js","./layer-manager.js","../fest/veela4.js","./capacitor-permissions.js","./capacitor-settings-permissions.js","./templates.js","./admin-doors.js","./capacitor-settings-permissions3.js","./capacitor-permissions3.js","./hub-socket-boot.js","./clipboard-device.js","../fest/veela.js","../vendor/marked-katex-extension.js","../vendor/marked.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../vendor/dompurify2.js","../assets/index-C9QTqpCS.js","./UniformViewTransport.js","../fest/core4.js","./rolldown-runtime.js","../fest/core.js","../fest/core2.js","../fest/object.js","../fest/core5.js","../fest/uniform.js","../vendor/jsox.js","./UnifiedMessaging.js","./names.js","./UniformInterop.js","../com/app.js","../fest/uniform2.js","./ecosystem-skus.js","./UniformInterop2.js","../views/inbound-timing.js","../views/ingress-validation.js","./ShareTargetGateway.js","./UnifiedMessaging2.js","../vendor/jsox2.js","./open-policy.js","./SettingsTypes.js","./process-ingress.js","./airpad-cwsp-client-parity.js","./multi-value-list.js","./cws-bridge.js","../fest/core3.js","../vendor/@capacitor_core.js","./remote-connection-runtime.js","./channel-actions.js","../fest/icon.js","../fest/icon2.js","../fest/icon3.js","../vendor/dompurify.js","../vendor/marked2.js","../vendor/katex.js","./types.js","./sku-ingress.js","../com/app8.js","./MarkdownEditor.js","../vendor/lodash-es.js","../com/app7.js","./Clipboard.js","./process-api-result.js","./log-sanitizer.js","./utils.js","./CustomInstructions.js","../vendor/@toon-format_toon.js","./Runtime.js","./core.js","./unified.js","./RuntimeSettings.js","./ShareTargetGateway2.js","./WorkCenterState.js","../shells/boot-history-base.js","../com/app3.js","../com/app2.js","../com/app5.js","../fest/object2.js","./packet-wire-hash.js","./ecosystem-skus2.js","./cws-bridge2.js","../vendor/@capacitor_core2.js","./Theme.js","./StateStorage.js","./settings-shell-profile.js","../fest/veela3.js","../vendor/culori.js","../fest/veela2.js","../com/app6.js","./layer-manager.js","../fest/veela4.js","./capacitor-permissions.js","./capacitor-settings-permissions.js","./templates.js","./admin-doors.js","./capacitor-settings-permissions3.js","./capacitor-permissions3.js","./hub-socket-boot.js","./clipboard-device.js","../fest/veela.js","../vendor/marked-katex-extension.js","../vendor/marked.js"])))=>i.map(i=>d[i]);
 import { t as __vitePreload } from "../assets/index-C9QTqpCS.js";
 import { gt as loadAsAdopted } from "../fest/core.js";
-import { Z as H, h as createFileHandler, j as getSpeechPrompt, k as createTemplateManager, n as getCachedComponent } from "../fest/core4.js";
-import { a as loadSettings } from "../vendor/jsox.js";
+import { A as createTemplateManager, M as getSpeechPrompt, Z as H, _ as createFileHandler, n as getCachedComponent } from "../fest/core4.js";
+import { a as loadSettings } from "../vendor/jsox2.js";
 import { c as getBroadcastChannelForDestination, n as BROADCAST_CHANNELS } from "./names.js";
 import { a as initializeComponent, d as unifiedMessaging, i as hasPendingMessages, n as createMessageWithOverrides, o as processInitialContent, r as enqueuePendingMessage, s as registerComponent } from "./UnifiedMessaging.js";
 import { n as debugIconSystem, r as testIconRacing, t as clearIconCaches } from "../fest/icon.js";
@@ -773,7 +773,7 @@ var mountShellApp = (mountElement, options = {}) => {
     </div>`;
 		content.append(loadingElement);
 		try {
-			const viewer = (await getCachedComponent("markdown-viewer", () => __vitePreload(() => import("../vendor/dompurify2.js"), __vite__mapDeps([0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40]), import.meta.url), { componentName: "MarkdownViewer" })).component.createMarkdownView({
+			const viewer = (await getCachedComponent("markdown-viewer", () => __vitePreload(() => import("../vendor/dompurify2.js"), __vite__mapDeps([0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41]), import.meta.url), { componentName: "MarkdownViewer" })).component.createMarkdownView({
 				content: state.markdown || DEFAULT_MD,
 				title: "Markdown Viewer",
 				onOpen: () => {
@@ -873,7 +873,7 @@ var mountShellApp = (mountElement, options = {}) => {
     </div>`;
 		content.append(loadingElement);
 		try {
-			const editor = (await getCachedComponent("markdown-editor", () => __vitePreload(() => import("./MarkdownEditor.js"), __vite__mapDeps([41,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40]), import.meta.url), { componentName: "MarkdownEditor" })).component.createMarkdownEditor({
+			const editor = (await getCachedComponent("markdown-editor", () => __vitePreload(() => import("./MarkdownEditor.js"), __vite__mapDeps([42,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41]), import.meta.url), { componentName: "MarkdownEditor" })).component.createMarkdownEditor({
 				initialContent: state.markdown || "",
 				onContentChange: (content) => {
 					state.markdown = content;
@@ -930,7 +930,7 @@ var mountShellApp = (mountElement, options = {}) => {
     </div>`;
 		content.append(loadingElement);
 		try {
-			const editor = (await getCachedComponent("quill-editor", () => __vitePreload(() => import("../vendor/lodash-es.js"), __vite__mapDeps([42,4,3,1,5,6,7,8,9]), import.meta.url), { componentName: "QuillEditor" })).component.createQuillEditor({
+			const editor = (await getCachedComponent("quill-editor", () => __vitePreload(() => import("../vendor/lodash-es.js"), __vite__mapDeps([43,4,3,1,5,6,7,8,9,10]), import.meta.url), { componentName: "QuillEditor" })).component.createQuillEditor({
 				initialContent: state.markdown || "",
 				onContentChange: (content) => {
 					state.markdown = content;
@@ -987,10 +987,10 @@ var mountShellApp = (mountElement, options = {}) => {
     </div>`;
 		content.append(loadingElement);
 		try {
-			const historyManager = (await getCachedComponent("history-manager", () => __vitePreload(() => import("../fest/core4.js").then((n) => n.t), __vite__mapDeps([3,4,1,5,6,7,8,9]), import.meta.url), { componentName: "HistoryManager" })).component.createHistoryManager();
+			const historyManager = (await getCachedComponent("history-manager", () => __vitePreload(() => import("../fest/core4.js").then((n) => n.t), __vite__mapDeps([3,4,1,5,6,7,8,9,10]), import.meta.url), { componentName: "HistoryManager" })).component.createHistoryManager();
 			if (state.history.length === 0) state.history = historyManager.getAllEntries();
 			const historyElement = historyManager.createHistoryView((entry) => {
-				if (state.view === "workcenter") getCachedComponent("workcenter", () => __vitePreload(() => import("../com/app7.js").then((n) => n.n).then((m) => m.WorkCenterManager), __vite__mapDeps([43,4,1,3,5,6,7,8,9,21,22,15,23,24,25,26,27,28,29,16,11,30,44,10,12,45,18,20,35,36,37,39,40,46,47,48,49,50,51,52,53,54,55]), import.meta.url), { componentName: "WorkCenter" }).then(() => {
+				if (state.view === "workcenter") getCachedComponent("workcenter", () => __vitePreload(() => import("../com/app7.js").then((n) => n.n).then((m) => m.WorkCenterManager), __vite__mapDeps([44,4,1,3,5,6,7,8,9,10,22,23,16,24,25,26,27,28,29,30,17,12,31,45,11,13,46,19,21,36,37,38,40,41,47,48,49,50,51,52,53,54,55,56]), import.meta.url), { componentName: "WorkCenter" }).then(() => {
 					if (state.managers.workCenter.instance) state.managers.workCenter.instance.getState().currentPrompt = entry.prompt;
 				});
 			});
@@ -1210,7 +1210,7 @@ var mountShellApp = (mountElement, options = {}) => {
 			const res = customAIFunction ? await customAIFunction(input, { useActiveInstruction: true }) : await (await __vitePreload(async () => {
 				const { recognizeByInstructions } = await import("./unified.js").then((n) => n.n);
 				return { recognizeByInstructions };
-			}, __vite__mapDeps([52,4,1,21,3,5,6,7,8,9,22,15,23,24,25,26,27,28,29,16,11,30,47,51,49,50,53]), import.meta.url)).recognizeByInstructions(input, instructions);
+			}, __vite__mapDeps([53,4,1,22,23,16,24,25,26,27,28,29,6,9,30,17,12,31,48,52,50,51,54]), import.meta.url)).recognizeByInstructions(input, instructions);
 			const after = res?.ok && res?.data ? String(res.data) : "";
 			state.history.push({
 				ts: Date.now(),
@@ -1278,7 +1278,7 @@ var mountShellApp = (mountElement, options = {}) => {
 			const renderer = {
 				"settings": async () => {
 					content.innerHTML = "<div class=\"component-loading\"><div class=\"loading-spinner\"></div><span>Loading Settings...</span></div>";
-					const settingsEl = (await loadComponent("settings", () => __vitePreload(() => import("../shells/boot-history-base.js"), __vite__mapDeps([56,1,5,6,7,3,4,8,9,14,15,11,10,12,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,57,13,58,59,60,32,33,34,61,62,63,64,31,65,66,44,50,67,68,69,70,71,35,36,37,72,73,74,75,48,47,76,51,77,78,79,80,81]), import.meta.url), { componentName: "Settings" })).component.createSettingsView({
+					const settingsEl = (await loadComponent("settings", () => __vitePreload(() => import("../shells/boot-history-base.js"), __vite__mapDeps([57,1,5,6,7,3,4,8,9,10,15,16,12,11,13,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,58,14,59,60,61,33,34,35,62,63,64,65,32,66,67,45,51,68,69,70,71,72,36,37,38,73,74,75,76,41,49,48,77,52,78,79,80,81,82]), import.meta.url), { componentName: "Settings" })).component.createSettingsView({
 						isExtension: isLikelyExtension(),
 						onTheme: (t) => applyTheme(root, t)
 					});
@@ -1296,7 +1296,7 @@ var mountShellApp = (mountElement, options = {}) => {
 				},
 				"file-explorer": async () => {
 					content.innerHTML = "<div class=\"component-loading\"><div class=\"loading-spinner\"></div><span>Loading File Explorer...</span></div>";
-					await loadComponent("file-explorer", () => __vitePreload(() => import("../fest/veela.js"), __vite__mapDeps([82,1,2,3,4,5,6,7,8,9,10,11,12,13,58,21,22,15,23,24,25,26,27,28,29,16,30,66,60,44,50,57,59,32,33,34,31]), import.meta.url), { componentName: "FileManager" });
+					await loadComponent("file-explorer", () => __vitePreload(() => import("../fest/veela.js"), __vite__mapDeps([83,1,2,3,4,5,6,7,8,9,10,11,12,13,14,59,22,23,16,24,25,26,27,28,29,30,17,31,67,61,45,51,58,60,33,34,35,32]), import.meta.url), { componentName: "FileManager" });
 					const explorerEl = document.createElement("ui-file-manager");
 					explorerEl.addEventListener("open-item", async (e) => {
 						const { item } = e.detail;
@@ -1478,7 +1478,7 @@ var mountShellApp = (mountElement, options = {}) => {
 			}
 			if (state.view === "workcenter") {
 				content.innerHTML = "<div class=\"component-loading\"><div class=\"loading-spinner\"></div><span>Loading Work Center...</span></div>";
-				getCachedComponent("workcenter", () => __vitePreload(() => import("../com/app7.js").then((n) => n.n).then((m) => m.WorkCenterManager), __vite__mapDeps([43,4,1,3,5,6,7,8,9,21,22,15,23,24,25,26,27,28,29,16,11,30,44,10,12,45,18,20,35,36,37,39,40,46,47,48,49,50,51,52,53,54,55]), import.meta.url), { componentName: "WorkCenter" }).then(async (workCenterModule) => {
+				getCachedComponent("workcenter", () => __vitePreload(() => import("../com/app7.js").then((n) => n.n).then((m) => m.WorkCenterManager), __vite__mapDeps([44,4,1,3,5,6,7,8,9,10,22,23,16,24,25,26,27,28,29,30,17,12,31,45,11,13,46,19,21,36,37,38,40,41,47,48,49,50,51,52,53,54,55,56]), import.meta.url), { componentName: "WorkCenter" }).then(async (workCenterModule) => {
 					if (!state.managers.workCenter.instance) state.managers.workCenter.instance = new workCenterModule.component({
 						state,
 						history: state.history,
@@ -1553,7 +1553,7 @@ var mountShellApp = (mountElement, options = {}) => {
 					const { downloadMarkdownAsDocx } = await __vitePreload(async () => {
 						const { downloadMarkdownAsDocx } = await import("../vendor/marked-katex-extension.js");
 						return { downloadMarkdownAsDocx };
-					}, __vite__mapDeps([83,4,84,37]), import.meta.url);
+					}, __vite__mapDeps([84,4,85,38]), import.meta.url);
 					await downloadMarkdownAsDocx(md, {
 						title: "CWSP-shell",
 						filename: `crossword-${Date.now()}.docx`

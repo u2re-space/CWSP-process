@@ -1,8 +1,8 @@
 import { St as preloadStyle, vt as loadInlineStyle } from "../fest/core.js";
-import { D as dynamicTheme } from "../fest/core4.js";
+import { O as dynamicTheme } from "../fest/core4.js";
 import { f as ref } from "../fest/object.js";
 import { l as serviceChannels, n as ViewRegistry, p as isEnabledView } from "../fest/uniform2.js";
-import { a as loadSettings, s as saveSettings } from "../vendor/jsox.js";
+import { a as loadSettings, s as saveSettings } from "../vendor/jsox2.js";
 import { g as shouldHandoffViewToSibling, m as publicHrefForView } from "./ecosystem-skus.js";
 import "../fest/icon.js";
 import { n as ensureStyleSheet } from "../fest/icon3.js";

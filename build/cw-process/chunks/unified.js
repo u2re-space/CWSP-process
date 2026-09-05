@@ -1,7 +1,7 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./CustomInstructions.js","./rolldown-runtime.js","../vendor/jsox.js","../assets/index-C9QTqpCS.js","../fest/core4.js","../fest/core.js","../fest/core2.js","../fest/object.js","../fest/core5.js","../fest/uniform.js","./open-policy.js","./ecosystem-skus.js","./SettingsTypes.js","./process-ingress.js","./airpad-cwsp-client-parity.js","./multi-value-list.js","./cws-bridge.js","../fest/core3.js","../vendor/@capacitor_core.js","./UniformInterop2.js","./names.js","./remote-connection-runtime.js","./utils.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./CustomInstructions.js","./rolldown-runtime.js","../vendor/jsox2.js","../assets/index-C9QTqpCS.js","./open-policy.js","./ecosystem-skus.js","./SettingsTypes.js","./process-ingress.js","./airpad-cwsp-client-parity.js","./multi-value-list.js","./cws-bridge.js","../fest/core3.js","../fest/core2.js","../fest/uniform.js","../vendor/@capacitor_core.js","./UniformInterop2.js","./names.js","./remote-connection-runtime.js","./utils.js"])))=>i.map(i=>d[i]);
 import { r as __exportAll } from "./rolldown-runtime.js";
 import { t as __vitePreload } from "../assets/index-C9QTqpCS.js";
-import { a as loadSettings } from "../vendor/jsox.js";
+import { a as loadSettings } from "../vendor/jsox2.js";
 import { i as buildInstructionPrompt, n as SVG_GRAPHICS_ADDON, o as getIntermediateRecognitionInstruction, r as TRANSLATE_INSTRUCTION, s as getOutputFormatInstruction, t as LANGUAGE_INSTRUCTIONS } from "./utils.js";
 import "./core.js";
 import { a as unwrapUnwantedCodeBlocks, i as isImageData, n as getGPTInstance, r as getResponseFormat } from "../vendor/@toon-format_toon.js";
@@ -34,7 +34,7 @@ var getActiveCustomInstruction = async () => {
 		const { getActiveInstructionText } = await __vitePreload(async () => {
 			const { getActiveInstructionText } = await import("./CustomInstructions.js").then((n) => n.t);
 			return { getActiveInstructionText };
-		}, __vite__mapDeps([0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22]), import.meta.url);
+		}, __vite__mapDeps([0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18]), import.meta.url);
 		return await getActiveInstructionText();
 	} catch {
 		return "";

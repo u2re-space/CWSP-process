@@ -1,5 +1,5 @@
 import { r as __exportAll } from "./rolldown-runtime.js";
-import { a as loadSettings, s as saveSettings } from "../vendor/jsox.js";
+import { a as loadSettings, s as saveSettings } from "../vendor/jsox2.js";
 import "./SettingsTypes.js";
 import { a as generateInstructionId } from "./utils.js";
 //#region src/service/instructions/CustomInstructions.ts

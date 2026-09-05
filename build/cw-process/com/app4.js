@@ -1,7 +1,7 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../fest/core4.js","../chunks/rolldown-runtime.js","../assets/index-C9QTqpCS.js","../fest/core.js","../fest/core2.js","../fest/object.js","../fest/core5.js","../fest/uniform.js","../chunks/launcher-bridge.js","../chunks/cws-bridge.js","../fest/core3.js","../chunks/airpad-cwsp-client-parity.js","../chunks/multi-value-list.js","../vendor/@capacitor_core.js","../chunks/UniformInterop2.js","../chunks/names.js","../chunks/src6.js","../vendor/jsox.js","../chunks/open-policy.js","../chunks/ecosystem-skus.js","../chunks/SettingsTypes.js","../chunks/process-ingress.js","../chunks/remote-connection-runtime.js","../chunks/clipboard-device.js","../chunks/frontend-debug-capture.js","../chunks/hub-socket-boot.js","../chunks/packet-wire-hash.js","../chunks/ecosystem-skus2.js","../chunks/cws-bridge2.js","../chunks/UniformInterop.js","../vendor/@capacitor_core2.js","../shells/boot-history-base.js","../fest/uniform2.js","../chunks/UnifiedMessaging.js","../views/inbound-timing.js","../views/ingress-validation.js","../chunks/ShareTargetGateway.js","../chunks/UnifiedMessaging2.js","./app3.js","./app.js","./app2.js","./app5.js","../fest/object2.js","../fest/icon.js","../fest/icon2.js","../fest/icon3.js","../chunks/channel-actions.js","../chunks/Theme.js","../chunks/StateStorage.js","../chunks/Clipboard.js","../chunks/Runtime.js","../chunks/settings-shell-profile.js","../fest/veela3.js","../vendor/culori.js","../fest/veela2.js","./app6.js","../vendor/dompurify.js","../vendor/marked2.js","../vendor/katex.js","../chunks/layer-manager.js","../fest/veela4.js","../chunks/capacitor-permissions.js","../chunks/capacitor-settings-permissions.js","../chunks/CustomInstructions.js","../chunks/utils.js","../chunks/templates.js","../chunks/core.js","../chunks/admin-doors.js","../chunks/capacitor-settings-permissions3.js","../chunks/capacitor-permissions3.js","../fest/veela.js","../chunks/UniformViewTransport.js","../chunks/src7.js","../chunks/types.js","../chunks/sku-ingress.js","./app8.js","../chunks/src5.js","../chunks/transfer-history-runtime.js","../chunks/src8.js","./app7.js","../chunks/process-api-result.js","../chunks/log-sanitizer.js","../vendor/@toon-format_toon.js","../chunks/unified.js","../chunks/RuntimeSettings.js","../chunks/ShareTargetGateway2.js","../chunks/WorkCenterState.js","../chunks/src4.js","../fest/veela5.js","../chunks/launcher-state.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../fest/core4.js","../chunks/rolldown-runtime.js","../assets/index-C9QTqpCS.js","../fest/core.js","../fest/core2.js","../fest/object.js","../fest/core5.js","../fest/uniform.js","../vendor/jsox.js","../chunks/launcher-bridge.js","../chunks/cws-bridge.js","../fest/core3.js","../chunks/airpad-cwsp-client-parity.js","../chunks/multi-value-list.js","../vendor/@capacitor_core.js","../chunks/UniformInterop2.js","../chunks/names.js","../chunks/src6.js","../vendor/jsox2.js","../chunks/open-policy.js","../chunks/ecosystem-skus.js","../chunks/SettingsTypes.js","../chunks/process-ingress.js","../chunks/remote-connection-runtime.js","../chunks/clipboard-device.js","../chunks/frontend-debug-capture.js","../chunks/hub-socket-boot.js","../chunks/packet-wire-hash.js","../chunks/ecosystem-skus2.js","../chunks/cws-bridge2.js","../chunks/UniformInterop.js","../vendor/@capacitor_core2.js","../shells/boot-history-base.js","../fest/uniform2.js","../chunks/UnifiedMessaging.js","../views/inbound-timing.js","../views/ingress-validation.js","../chunks/ShareTargetGateway.js","../chunks/UnifiedMessaging2.js","./app3.js","./app.js","./app2.js","./app5.js","../fest/object2.js","../fest/icon.js","../fest/icon2.js","../fest/icon3.js","../chunks/channel-actions.js","../chunks/Theme.js","../chunks/StateStorage.js","../chunks/Clipboard.js","../chunks/Runtime.js","../chunks/settings-shell-profile.js","../fest/veela3.js","../vendor/culori.js","../fest/veela2.js","./app6.js","../vendor/dompurify.js","../vendor/marked2.js","../vendor/katex.js","../chunks/layer-manager.js","../fest/veela4.js","../chunks/capacitor-permissions.js","../chunks/capacitor-settings-permissions.js","./app8.js","../chunks/CustomInstructions.js","../chunks/utils.js","../chunks/templates.js","../chunks/core.js","../chunks/admin-doors.js","../chunks/capacitor-settings-permissions3.js","../chunks/capacitor-permissions3.js","../fest/veela.js","../chunks/UniformViewTransport.js","../chunks/src7.js","../chunks/types.js","../chunks/sku-ingress.js","../chunks/src5.js","../chunks/transfer-history-runtime.js","../chunks/src8.js","./app7.js","../chunks/process-api-result.js","../chunks/log-sanitizer.js","../vendor/@toon-format_toon.js","../chunks/unified.js","../chunks/RuntimeSettings.js","../chunks/ShareTargetGateway2.js","../chunks/WorkCenterState.js","../chunks/src4.js","../fest/veela5.js","../chunks/launcher-state.js"])))=>i.map(i=>d[i]);
 import { t as __vitePreload } from "../assets/index-C9QTqpCS.js";
 import { St as preloadStyle, vt as loadInlineStyle } from "../fest/core.js";
-import { G as makeTask, H as resolveOverlayHost, K as getBy, O as placeOverlay, V as registerTransientOverlay, W as bindOutsideDismiss, Y as defineElement, Z as H, at as navigate, bt as addEvent, et as closeHighestPriority, ot as E, q as navigationEnable, tt as hasActiveCloseable, yt as MOCElement } from "../fest/core4.js";
+import { G as makeTask, H as resolveOverlayHost, K as getBy, V as registerTransientOverlay, W as bindOutsideDismiss, Y as defineElement, Z as H, at as navigate, bt as addEvent, et as closeHighestPriority, k as placeOverlay, ot as E, q as navigationEnable, tt as hasActiveCloseable, yt as MOCElement } from "../fest/core4.js";
 import { W as registerDirectoryRoot } from "../fest/core5.js";
 import { a as effect, c as booleanRef, f as ref, l as numberRef, u as observe } from "../fest/object.js";
 import { a as refreshAppWallpaperPaint, c as restoreWallpaperThemeCache, i as initializeAppCanvasLayer, s as applyWallpaperPaperFromLuma } from "../vendor/culori.js";
@@ -2247,7 +2247,7 @@ var bindFsBackendToProvide = (backend) => {
 	__vitePreload(async () => {
 		const { registerProvideBackend } = await import("../fest/core4.js").then((n) => n.t);
 		return { registerProvideBackend };
-	}, __vite__mapDeps([0,1,2,3,4,5,6,7]), import.meta.url).then(({ registerProvideBackend }) => {
+	}, __vite__mapDeps([0,1,2,3,4,5,6,7,8]), import.meta.url).then(({ registerProvideBackend }) => {
 		registerProvideBackend({
 			root: backend.root,
 			list: async (path) => {
@@ -2275,7 +2275,7 @@ var loadIdbRoot = async () => {
 		const { getIdbRoot } = await __vitePreload(async () => {
 			const { getIdbRoot } = await import("../fest/core4.js").then((n) => n.t);
 			return { getIdbRoot };
-		}, __vite__mapDeps([0,1,2,3,4,5,6,7]), import.meta.url);
+		}, __vite__mapDeps([0,1,2,3,4,5,6,7,8]), import.meta.url);
 		return await getIdbRoot();
 	} catch {
 		return null;
@@ -2338,7 +2338,7 @@ function ensureDefaultFsBackends() {
 		__vitePreload(async () => {
 			const { unregisterProvideBackend } = await import("../fest/core4.js").then((n) => n.t);
 			return { unregisterProvideBackend };
-		}, __vite__mapDeps([0,1,2,3,4,5,6,7]), import.meta.url).then(({ unregisterProvideBackend }) => {
+		}, __vite__mapDeps([0,1,2,3,4,5,6,7,8]), import.meta.url).then(({ unregisterProvideBackend }) => {
 			unregisterProvideBackend("/idb/");
 		}).catch(() => {});
 	}
@@ -2350,7 +2350,7 @@ function ensureDefaultFsBackends() {
 				const { tryRemoteMountedList } = await __vitePreload(async () => {
 					const { tryRemoteMountedList } = await import("../fest/core4.js").then((n) => n.t);
 					return { tryRemoteMountedList };
-				}, __vite__mapDeps([0,1,2,3,4,5,6,7]), import.meta.url);
+				}, __vite__mapDeps([0,1,2,3,4,5,6,7,8]), import.meta.url);
 				return await tryRemoteMountedList(path) ?? [];
 			} catch {
 				return [];
@@ -2363,7 +2363,7 @@ function ensureDefaultFsBackends() {
 				const { tryRemoteMountedRead } = await __vitePreload(async () => {
 					const { tryRemoteMountedRead } = await import("../fest/core4.js").then((n) => n.t);
 					return { tryRemoteMountedRead };
-				}, __vite__mapDeps([0,1,2,3,4,5,6,7]), import.meta.url);
+				}, __vite__mapDeps([0,1,2,3,4,5,6,7,8]), import.meta.url);
 				const remote = await tryRemoteMountedRead(p);
 				if (remote) return remote;
 			} catch {}
@@ -2381,7 +2381,7 @@ function ensureDefaultFsBackends() {
 	__vitePreload(async () => {
 		const { ensureRemoteMountedFs } = await import("../fest/core4.js").then((n) => n.t);
 		return { ensureRemoteMountedFs };
-	}, __vite__mapDeps([0,1,2,3,4,5,6,7]), import.meta.url).then(({ ensureRemoteMountedFs }) => {
+	}, __vite__mapDeps([0,1,2,3,4,5,6,7,8]), import.meta.url).then(({ ensureRemoteMountedFs }) => {
 		ensureRemoteMountedFs();
 	}).catch(() => {});
 	if (!resolveFsBackend("/bookmarks/")) {
@@ -3995,7 +3995,7 @@ function resolveAppMenuMode() {
 async function resolveLauncherBridge() {
 	if (registeredLauncherBridge) return registeredLauncherBridge;
 	try {
-		return await __vitePreload(() => import("../chunks/launcher-bridge.js"), __vite__mapDeps([8,9,1,10,4,7,2,11,12,13,14,15]), import.meta.url);
+		return await __vitePreload(() => import("../chunks/launcher-bridge.js"), __vite__mapDeps([9,10,1,11,4,7,2,12,13,14,15,16]), import.meta.url);
 	} catch {
 		return null;
 	}
@@ -4820,6 +4820,7 @@ function mountEnvironmentAppMenu() {
 	search.className = "env-shell-app-menu__search";
 	search.placeholder = mode === "bookmarks" ? "Search bookmarks" : "Search apps";
 	search.autocomplete = "off";
+	search.inputMode = "search";
 	search.setAttribute("aria-label", mode === "bookmarks" ? "Search bookmarks" : "Search apps");
 	const tools = document.createElement("div");
 	tools.className = "env-shell-app-menu__tools";
@@ -7353,15 +7354,15 @@ function mergeNativeOpt(viewId, opts) {
 	return base;
 }
 var CWSP_VIEW_LOADERS = {
-	network: () => __vitePreload(() => import("../chunks/src6.js"), __vite__mapDeps([16,3,4,5,0,1,2,6,7,17,18,19,20,21,11,12,9,10,13,14,15,22,23,24,25,26,27,28,29,30]), import.meta.url),
-	settings: () => __vitePreload(() => import("../shells/boot-history-base.js"), __vite__mapDeps([31,2,3,4,5,0,1,6,7,32,19,15,33,29,14,34,35,36,37,17,18,20,21,11,12,9,10,13,22,38,39,40,41,42,43,44,45,26,27,28,30,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,25,23]), import.meta.url),
-	explorer: () => __vitePreload(() => import("../fest/veela.js"), __vite__mapDeps([70,2,71,0,1,3,4,5,6,7,33,15,29,39,40,17,18,19,20,21,11,12,9,10,13,14,22,48,42,49,50,38,41,43,44,45,46]), import.meta.url),
-	viewer: () => __vitePreload(() => import("../chunks/src7.js"), __vite__mapDeps([72,2,71,0,1,3,4,5,6,7,33,15,29,39,32,19,14,34,35,36,37,17,18,20,21,11,12,9,10,13,22,46,43,44,45,56,57,58,73,74,75]), import.meta.url),
-	markdown: () => __vitePreload(() => import("../chunks/src7.js"), __vite__mapDeps([72,2,71,0,1,3,4,5,6,7,33,15,29,39,32,19,14,34,35,36,37,17,18,20,21,11,12,9,10,13,22,46,43,44,45,56,57,58,73,74,75]), import.meta.url),
-	history: () => __vitePreload(() => import("../chunks/src5.js"), __vite__mapDeps([76,3,4,5,0,1,2,6,7,46,77]), import.meta.url),
-	workcenter: () => __vitePreload(() => import("../chunks/src8.js"), __vite__mapDeps([78,3,4,5,0,1,2,6,7,19,38,39,40,41,42,43,44,45,52,53,54,55,56,57,58,79,17,18,20,21,11,12,9,10,13,14,15,22,49,33,29,80,35,37,74,75,81,64,63,82,50,66,83,84,85,86]), import.meta.url),
-	editor: () => __vitePreload(() => import("../chunks/src4.js"), __vite__mapDeps([87,3,4,5,0,1,2,6,7,19,73]), import.meta.url),
-	home: () => __vitePreload(() => import("../fest/veela5.js"), __vite__mapDeps([88,2,3,4,5,0,1,6,7,40,39,53,38,41,42,43,44,45,46,54,55,89]), import.meta.url)
+	network: () => __vitePreload(() => import("../chunks/src6.js"), __vite__mapDeps([17,3,4,5,0,1,2,6,7,8,18,19,20,21,22,12,13,10,11,14,15,16,23,24,25,26,27,28,29,30,31]), import.meta.url),
+	settings: () => __vitePreload(() => import("../shells/boot-history-base.js"), __vite__mapDeps([32,2,3,4,5,0,1,6,7,8,33,20,16,34,30,15,35,36,37,38,18,19,21,22,12,13,10,11,14,23,39,40,41,42,43,44,45,46,27,28,29,31,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,26,24]), import.meta.url),
+	explorer: () => __vitePreload(() => import("../fest/veela.js"), __vite__mapDeps([72,2,73,0,1,3,4,5,6,7,8,34,16,30,40,41,18,19,20,21,22,12,13,10,11,14,15,23,49,43,50,51,39,42,44,45,46,47]), import.meta.url),
+	viewer: () => __vitePreload(() => import("../chunks/src7.js"), __vite__mapDeps([74,2,73,0,1,3,4,5,6,7,8,34,16,30,40,33,20,15,35,36,37,38,18,19,21,22,12,13,10,11,14,23,47,44,45,46,57,58,59,75,76,64]), import.meta.url),
+	markdown: () => __vitePreload(() => import("../chunks/src7.js"), __vite__mapDeps([74,2,73,0,1,3,4,5,6,7,8,34,16,30,40,33,20,15,35,36,37,38,18,19,21,22,12,13,10,11,14,23,47,44,45,46,57,58,59,75,76,64]), import.meta.url),
+	history: () => __vitePreload(() => import("../chunks/src5.js"), __vite__mapDeps([77,3,4,5,0,1,2,6,7,8,47,78]), import.meta.url),
+	workcenter: () => __vitePreload(() => import("../chunks/src8.js"), __vite__mapDeps([79,3,4,5,0,1,2,6,7,8,20,39,40,41,42,43,44,45,46,53,54,55,56,57,58,59,80,18,19,21,22,12,13,10,11,14,15,16,23,50,34,30,81,36,38,76,64,82,66,65,83,51,68,84,85,86,87]), import.meta.url),
+	editor: () => __vitePreload(() => import("../chunks/src4.js"), __vite__mapDeps([88,3,4,5,0,1,2,6,7,8,20,75]), import.meta.url),
+	home: () => __vitePreload(() => import("../fest/veela5.js"), __vite__mapDeps([89,2,3,4,5,0,1,6,7,8,41,40,54,39,42,43,44,45,46,47,55,56,90]), import.meta.url)
 };
 /** Views allowed as Speed Dial / floating windows (no airpad). */
 var CWSP_LAUNCHER_VIEWS = [
@@ -7376,7 +7377,7 @@ var CWSP_LAUNCHER_VIEWS = [
 ];
 async function seedCwspLauncherTiles() {
 	try {
-		const mod = await __vitePreload(() => import("../chunks/launcher-state.js").then((n) => n.j), __vite__mapDeps([89,1,2,0,3,4,5,6,7,42,39,40]), import.meta.url);
+		const mod = await __vitePreload(() => import("../chunks/launcher-state.js").then((n) => n.j), __vite__mapDeps([90,1,2,0,3,4,5,6,7,8,43,40,41]), import.meta.url);
 		const items = mod.speedDialItems;
 		if (!items || typeof items.findIndex !== "function") return;
 		let removedAirpad = false;
@@ -7640,7 +7641,7 @@ var EnvironmentShell = class extends ShellBase {
 		} else this.mountHomeDesktop(homeMount, shellContext);
 	}
 	mountHomeDesktop(homeMount, shellContext) {
-		mountViewModule(() => __vitePreload(() => import("../fest/veela5.js"), __vite__mapDeps([88,2,3,4,5,0,1,6,7,40,39,53,38,41,42,43,44,45,46,54,55,89]), import.meta.url), homeMount, { shellContext }).then((unmount) => {
+		mountViewModule(() => __vitePreload(() => import("../fest/veela5.js"), __vite__mapDeps([89,2,3,4,5,0,1,6,7,8,41,40,54,39,42,43,44,45,46,47,55,56,90]), import.meta.url), homeMount, { shellContext }).then((unmount) => {
 			this.homeUnmount = unmount;
 		}).catch((err) => {
 			console.warn("[EnvironmentShell] home-view failed", err);

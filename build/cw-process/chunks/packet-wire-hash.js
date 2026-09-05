@@ -1,6 +1,6 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./cws-bridge2.js","./rolldown-runtime.js","../fest/core3.js","../fest/core2.js","../fest/uniform.js","../assets/index-C9QTqpCS.js","./UniformInterop.js","./names.js","./airpad-cwsp-client-parity.js","./multi-value-list.js","../vendor/@capacitor_core2.js","./crx-control-session2.js","../fest/core4.js","../fest/core.js","../fest/object.js","../fest/core5.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./cws-bridge2.js","./rolldown-runtime.js","../fest/core3.js","../fest/core2.js","../fest/uniform.js","../assets/index-C9QTqpCS.js","./UniformInterop.js","./names.js","./airpad-cwsp-client-parity.js","./multi-value-list.js","../vendor/@capacitor_core2.js","./crx-control-session2.js","../fest/core4.js","../fest/core.js","../fest/object.js","../fest/core5.js","../vendor/jsox.js"])))=>i.map(i=>d[i]);
 import { t as __vitePreload } from "../assets/index-C9QTqpCS.js";
-import { P as JSOX, g as writeFileSmart } from "../fest/core4.js";
+import { t as JSOX } from "../vendor/jsox.js";
 import { u as isAssociableFleetWireNodeId, v as normalizeWireNodeIdForWire, w as sanitizeFleetSelfWireNodeId, z as migrateLegacyCwspPublicPort } from "./airpad-cwsp-client-parity.js";
 import { E as syncAirpadRemoteConfigFromAppSettings, t as applyAirpadRuntimeFromAppSettings } from "./remote-connection-runtime.js";
 import { n as isCwspNativeHost } from "./ecosystem-skus2.js";
@@ -2029,7 +2029,7 @@ var safeTime = (v) => {
 var lureFsPromise = null;
 var isServiceWorkerScope = () => {
 	try {
-		return typeof globalThis.ServiceWorkerGlobalScope !== "undefined" && typeof globalThis.clients !== "undefined" && typeof globalThis.document === "undefined";
+		return typeof globalThis.ServiceWorkerGlobalScope !== "undefined" && typeof globalThis.clients !== "undefined";
 	} catch {
 		return false;
 	}
@@ -2038,12 +2038,13 @@ var loadLureFs = () => {
 	if (isServiceWorkerScope()) return Promise.reject(/* @__PURE__ */ new Error("@fest-lib/lure FS unavailable in ServiceWorkerGlobalScope"));
 	if (!lureFsPromise) lureFsPromise = __vitePreload(() => import("../fest/core4.js").then((n) => n.t).then((m) => ({
 		getDirectoryHandle: m.getDirectoryHandle,
-		readFile: m.readFile
-	})), __vite__mapDeps([12,1,5,13,3,14,15,4]), import.meta.url);
+		readFile: m.readFile,
+		writeFileSmart: m.writeFileSmart
+	})), __vite__mapDeps([12,1,5,13,3,14,15,4,16]), import.meta.url);
 	return lureFsPromise;
 };
 var downloadContentsToOPFS = async (webDavClient, path = "/", opts = {}, rootHandle = null) => {
-	const { getDirectoryHandle, readFile } = await loadLureFs();
+	const { getDirectoryHandle, readFile, writeFileSmart } = await loadLureFs();
 	const files = await webDavClient?.getDirectoryContents?.(path || "/")?.catch?.((e) => {
 		console.warn(e);
 		return [];

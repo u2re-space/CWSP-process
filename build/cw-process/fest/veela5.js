@@ -1,7 +1,7 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["../chunks/launcher-bridge.js","../chunks/cws-bridge.js","../chunks/rolldown-runtime.js","./core3.js","./core2.js","./uniform.js","../assets/index-C9QTqpCS.js","../chunks/airpad-cwsp-client-parity.js","../chunks/multi-value-list.js","../vendor/@capacitor_core.js","../chunks/UniformInterop2.js","../chunks/names.js","../chunks/ecosystem-skus.js","../com/app.js"])))=>i.map(i=>d[i]);
 import { t as __vitePreload } from "../assets/index-C9QTqpCS.js";
 import { St as preloadStyle, gt as loadAsAdopted } from "./core.js";
-import { A as pointerAnchorRef, Q as vector2Ref, U as elementPointerMap, Z as H, _t as updateVP, at as navigate, dt as DOMMixin, gt as orientationNumberMap, ht as getCorrectOrientation, it as registerModal, pt as ensureVirtualKeyboardOverlay, st as M, xt as isInFocus, yt as MOCElement } from "./core4.js";
+import { Q as vector2Ref, U as elementPointerMap, Z as H, _t as updateVP, at as navigate, dt as DOMMixin, gt as orientationNumberMap, ht as getCorrectOrientation, it as registerModal, j as pointerAnchorRef, pt as ensureVirtualKeyboardOverlay, st as M, xt as isInFocus, yt as MOCElement } from "./core4.js";
 import { E as handleIncomingEntries } from "./core5.js";
 import { d as propRef, i as affected, l as numberRef, u as observe } from "./object.js";
 import { n as listVirtualRootEntriesFromRouter, r as resolveFsBackend } from "../com/app2.js";
@@ -1010,7 +1010,7 @@ var openNativeStorageByLinkTarget = async (path, linkTarget, mimeType) => {
 	if (!virtual) return false;
 	try {
 		const { openNativeStorageFile } = await __vitePreload(async () => {
-			const { openNativeStorageFile } = await import("../com/app.js").then((n) => n.m);
+			const { openNativeStorageFile } = await import("../com/app.js").then((n) => n._);
 			return { openNativeStorageFile };
 		}, __vite__mapDeps([13,2,6]), import.meta.url);
 		const declared = String(mimeType || "").trim();
