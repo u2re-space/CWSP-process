@@ -20,8 +20,11 @@ import {
 } from "./vite-chunk-placement.mjs";
 
 //
-import https from "../private/https/certificate.mjs";
+import { loadViteHttpsOptions } from "../../../runtime/https/load-vite-https.mjs";
 import postcssConfig from "../postcss.config.js";
+
+/* WHY: app-local PEMs are optional; Capacitor/PWA build must not import a missing module. */
+const https = await loadViteHttpsOptions(import.meta.dirname);
 
 //
 import { viteStaticCopy } from 'vite-plugin-static-copy';
@@ -790,12 +793,16 @@ export const initiate = (NAME = "generic", tsconfig = {}, __dirname = resolve(".
         ws: hmrEnabled ? undefined : false,
         allowedHosts: true,
         appType: 'spa',
-        https: {
-            ...https,
-            /* WHY: Vite 8 HTTPS is always node:http2 (ALPN h2). Chrome then opens
-             * HMR as WebSocket-over-h2; `ws` cannot parse those frames. */
-            ALPNProtocols: ["http/1.1"],
-        },
+        ...(https
+            ? {
+                  https: {
+                      ...https,
+                      /* WHY: Vite 8 HTTPS is always node:http2 (ALPN h2). Chrome then opens
+                       * HMR as WebSocket-over-h2; `ws` cannot parse those frames. */
+                      ALPNProtocols: ["http/1.1"],
+                  },
+              }
+            : {}),
         proxy: {
             // Proxy Phosphor icons to avoid CORS issues
             '/assets/icons/phosphor': {
