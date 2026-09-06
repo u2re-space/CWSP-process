@@ -145,3 +145,8 @@ vite.config.ts.timestamp-*
 # Capacitor / APK output (do not pack into .git)
 build/
 *.apk
+platforms/android/.gradle/
+platforms/android/build/
+platforms/android/local.properties
+platforms/android/capacitor-cordova-android-plugins/build/
+platforms/android/src/main/assets/public/
