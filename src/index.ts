@@ -8,7 +8,7 @@
 
 import { initPWA, checkForUpdates, forceRefreshAssets } from "core/pwa/pwa-handling";
 import { initializeLayers } from "shared/routing/layer-manager";
-import { loadAsAdopted } from "@fest-lib/dom";
+import { ensureVirtualKeyboardOverlay, loadAsAdopted } from "@fest-lib/dom";
 import {
     ensureAppCss,
     initReceivers,
@@ -21,6 +21,8 @@ import {
     stampProcessSku,
     showProcessBootFailure
 } from "./frontend/web/sku-boot";
+
+ensureVirtualKeyboardOverlay();
 
 // WHY: stamp before BootLoader/views so `isViewLocalToSurface` sees process SKU.
 try {

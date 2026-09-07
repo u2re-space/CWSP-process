@@ -266,7 +266,7 @@ export const getUsableData = async (data: DataInput) => {
 export class GPTResponses {
     private apiKey: string;
     private apiSecret: string;
-    private apiUrl: string = "https://api.proxyapi.ru/openai/v1";
+    private apiUrl: string = "https://api.proxyapi.ru/v1";
     private model: string = "gpt-5.6-luna";
     private responseId?: string | null = null;
 
@@ -1005,7 +1005,7 @@ export const createGPTInstance = (
 ): GPTResponses => {
     return new GPTResponses(
         apiKey,
-        apiUrl || "https://api.proxyapi.ru/openai/v1",
+        apiUrl || "https://api.proxyapi.ru/v1",
         "",
         model || "gpt-5.6-luna"
     );
