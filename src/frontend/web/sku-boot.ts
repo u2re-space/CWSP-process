@@ -100,15 +100,22 @@ export const showProcessBootFailure = (error: unknown, mount: HTMLElement = docu
 };
 
 /**
- * WHY: install the share bridge before `bootMinimal` so cold-start SEND/VIEW
- * is not dropped while BootLoader is still loading settings/styles.
+ * WHY: Capacitor SEND lands in ProcessShareActivity before the WebView.
+ * PWA share-target POST and launch-queue stay on `initIngressPWA` and
+ * `InstallEvent.addRoutes` (cold POST uses the network until the worker runs).
  */
 export const installProcessShareIngress = (): void => {
     try {
         const g = globalThis as { Capacitor?: { isNativePlatform?: () => boolean } };
-        if (typeof g.Capacitor?.isNativePlatform !== "function" || !g.Capacitor.isNativePlatform()) return;
-        void import("boot/capacitor-share-intent")
-            .then((mod) => mod.installCapacitorShareIntentBridge())
+        const native = typeof g.Capacitor?.isNativePlatform === "function" && g.Capacitor.isNativePlatform();
+        if (native) {
+            void import("boot/capacitor-share-intent")
+                .then((mod) => mod.installCapacitorShareIntentBridge())
+                .catch(() => undefined);
+            return;
+        }
+        void import("core/pwa/sw-handling")
+            .then((mod) => mod.initIngressPWA())
             .catch(() => undefined);
     } catch {
         /* web / preview */
