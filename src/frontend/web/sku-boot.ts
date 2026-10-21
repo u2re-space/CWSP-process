@@ -2,8 +2,8 @@
  * Filename: sku-boot.ts
  * FullPath: apps/CWSP-process/src/frontend/web/sku-boot.ts
  * FIND:sku
- * Change date: 17.58.00_31.08.2026
- * Reason: Process SKU always boots minimal-shell; default view is workcenter-view.
+ * Change date: 12.00.00_21.10.2026
+ * Reason: Process SKU keeps the native Android nav bar visible (no SystemBars.hide).
  */
 
 import { applyCwspSku } from "com/config/ecosystem-skus";
@@ -130,15 +130,6 @@ export const bootProcessSku = async (
     const host = detectHostKind(kind);
     stampProcessSku(host);
     installProcessShareIngress();
-
-    if (host === "capacitor") {
-        try {
-            const { SystemBarType, SystemBars } = await import("@capacitor/core");
-            await SystemBars.hide({ bar: SystemBarType.NavigationBar });
-        } catch {
-            /* web preview */
-        }
-    }
 
     const resolved = resolveProcessBootView(view);
     const { bootMinimal } = await import("boot/BootLoader");
