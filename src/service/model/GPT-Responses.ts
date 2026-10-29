@@ -267,7 +267,7 @@ export class GPTResponses {
     private apiKey: string;
     private apiSecret: string;
     private apiUrl: string = "https://api.proxyapi.ru/v1";
-    private model: string = "gpt-5.6-luna";
+    private model: string = "gpt-6-luna";
     private responseId?: string | null = null;
 
     protected pending: any[] = [];
@@ -1007,7 +1007,7 @@ export const createGPTInstance = (
         apiKey,
         apiUrl || "https://api.proxyapi.ru/v1",
         "",
-        model || "gpt-5.6-luna"
+        model || "gpt-6-luna"
     );
 }
 
